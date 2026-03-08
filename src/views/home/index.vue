@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import HeaderBanner from './modules/header-banner.vue';
 
 defineOptions({

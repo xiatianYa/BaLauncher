@@ -77,3 +77,45 @@ textarea {
 ::-webkit-scrollbar-thumb:hover {
   background-color: rgba(133, 133, 133, 0.2);
 }
+
+/* 禁止选择文字 */
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* 输入框和文本区域允许选择 */
+input,
+textarea,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* 禁止拖动图片和元素 */
+img {
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
+  pointer-events: none;
+}
+
+/* 允许按钮、链接等可交互元素的 pointer-events */
+button,
+a,
+[role='button'] {
+  pointer-events: auto;
+}
+
+/* 禁止选中文本时的高亮 */
+::selection {
+  background: transparent;
+}
+
+::-moz-selection {
+  background: transparent;
+}

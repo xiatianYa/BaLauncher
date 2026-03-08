@@ -28,6 +28,18 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       icon: "tabler:server",
       isPersistent: true
     },
+    {
+      name:"工具箱",
+      key:"tools",
+      icon:"gg:toolbox",
+      isPersistent:true
+    },
+    {
+      name: "系统设置",
+      key: "system",
+      icon: "tabler:settings",
+      isPersistent: true
+    },
   ];
 
   const storedRoutes = localStg.get('sideNavRoutes');

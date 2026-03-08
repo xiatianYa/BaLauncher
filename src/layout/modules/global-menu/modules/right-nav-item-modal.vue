@@ -20,7 +20,7 @@ const SideNavRoutes: Api.Route.SideNavItem[] = reactive([
     {
         name: "设置",
         key: "setting",
-        icon: "material-symbols:settings-outline",
+        icon: "tabler:settings",
         isPersistent: true
     }
 ])
