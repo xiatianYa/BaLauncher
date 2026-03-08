@@ -1,0 +1,79 @@
+@import './reset.css';
+@import './nprogress.css';
+@import './transition.css';
+
+html,
+body,
+#app {
+  height: 100%;
+  /* 使用更小的光标，通过调整 URL 参数或使用不同大小的文件 */
+  cursor: url('../../assets/pointer/WangXiaoTaoPoint.png') 8 8, auto;
+  font-family:
+    'Inter',
+    'Noto Sans SC',
+    'PingFang SC',
+    'Microsoft YaHei',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  letter-spacing: 0.01em;
+}
+
+/* 所有元素一起变色 */
+.n-config-provider * {
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    fill 0.3s ease,
+    stroke 0.3s ease !important;
+}
+
+html {
+  overflow-x: hidden;
+}
+
+/* 确保所有元素都继承字体和光标设置 */
+* {
+  font-family: inherit;
+  cursor: inherit;
+}
+
+/* 确保链接和按钮等可点击元素也使用自定义光标 */
+a,
+button,
+input,
+select,
+textarea {
+  cursor: url('../../assets/pointer/WangXiaoTaoPoint.png') 8 8, pointer;
+}
+
+/* 选中整个垂直滚动条，并设置其宽度 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+/* 设置滚动条轨道的样式 */
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* 设置滚动条滑块的样式 */
+::-webkit-scrollbar-thumb {
+  background-color: rgba(133, 133, 133, 0.1);
+  /* 中灰色滑块 */
+  border-radius: 5px;
+  /* 让滑块两端变成圆角 */
+}
+
+/* 设置鼠标悬停在滑块上时的样式 */
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(133, 133, 133, 0.2);
+}
