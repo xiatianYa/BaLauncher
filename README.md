@@ -129,18 +129,18 @@ pnpm run commit
 - Node.js >= 18
 - pnpm >= 10
 
-## � 功能计划表
+## 📋 功能计划表
 
 ### 已实现功能
-- [x] 游戏服务器实时查询与管理
-- [x] 多社区服务器列表展示
-- [x] 一键加入游戏服务器
-- [x] 自动连接服务器功能
-- [x] 服务器地址快捷复制
-- [x] 自动刷新服务器状态
-- [x] Steam/QQ 登录支持
-- [x] 服务器信息统计
-- [x] 精美的用户界面
+- <span style="color: green;">[✓]</span> 游戏服务器实时查询与管理
+- <span style="color: green;">[✓]</span> 多社区服务器列表展示
+- <span style="color: green;">[✓]</span> 一键加入游戏服务器
+- <span style="color: green;">[✓]</span> 自动连接服务器功能
+- <span style="color: green;">[✓]</span> 服务器地址快捷复制
+- <span style="color: green;">[✓]</span> 自动刷新服务器状态
+- <span style="color: green;">[✓]</span> Steam/QQ 登录支持
+- <span style="color: green;">[✓]</span> 服务器信息统计
+- <span style="color: green;">[✓]</span> 精美的用户界面
 
 ### 计划添加功能
 - [ ] 游戏状态托盘
@@ -158,14 +158,16 @@ pnpm run commit
 - [ ] 服务器比分数据
 - [ ] 延迟显示
 - [ ] 挤服托盘
+- [ ] 服务器列表显示模式切换
 
 ### 技术迁移计划
 - [ ] 考虑移植到 Tauri 的可能性
 
 ## 📚 数据来源库
-
-- **cs2-gsi-z**: [GitHub 地址](https://github.com/zombieyang/cs2-gsi-z)
-- **steam-server-query**: [GitHub 地址](https://github.com/DoctorMcKay/node-steam-server-query)
+客户端状态数据来源：
+- **cs2-gsi-z**: [GitHub 地址](https://github.com/alebcj/cs2-gsi-z)
+服务器状态数据来源：
+- **steam-server-query**: [GitHub 地址](https://github.com/GiyoMoon/steam-server-query)
 
 ## �📄 许可证
 
