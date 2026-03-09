@@ -5,6 +5,6 @@ export const themeSchemaRecord: Record<UnionKey.ThemeScheme, App.I18n.I18nKey> =
 
 export type ThemeColor = 'default' | 'primary' | 'info' | 'success' | 'warning' | 'error';
 
-export type gameStartType = 'steamexe' | 'nosteamexe';
+export type GameStartType = 'steamexe' | 'nosteamexe';
 
-export type gamePlatform = 'international' | 'perfect';
+export type GamePlatform = 'international' | 'perfect';

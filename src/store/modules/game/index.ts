@@ -7,8 +7,8 @@ import { fetchGetServerList } from '@/service/api/game/server';
 import { fetchGetMapList } from '@/service/api/game/map';
 import { fetchGetPieChart } from '@/service/api';
 import { localStg } from '@/utils/storage';
-import { gameStartType } from '@/constants/app';
-import { gamePlatform } from '@/constants/app';
+import { GameStartType } from '@/constants/app';
+import { GamePlatform } from '@/constants/app';
 
 export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
@@ -24,7 +24,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 地图列表
   const mapList: Api.Game.Map[] = reactive([]);
 
-  // 当前要查询的服务器列表数据
+  // 当前服务器原始时间列表(本地缓存)
   const currentServerList: Api.Game.InfoResponse[] = reactive([]);
 
   // 当前选择的社区
@@ -82,7 +82,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   let connectionCheckTimer: ReturnType<typeof setTimeout> | null = null;
 
   // 游戏平台：international 国际服，perfect 完美平台
-  const gamePlatform = ref<gamePlatform>('international');
+  const GamePlatform = ref<GamePlatform>('international');
 
   // Csgo2 安装目录
   const csgo2Path = ref<string>('');
@@ -92,13 +92,13 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // 从存储读取设置
   function loadSettingsFromStorage() {
-    const savedPlatform = localStg.get('gamePlatform');
+    const savedPlatform = localStg.get('GamePlatform');
     const savedCsgo2Path = localStg.get('csgo2Path');
     const savedSteamPath = localStg.get('steamPath');
     const savedAutomaticJoinConfig = localStg.get('automaticJoinConfig');
 
     if (savedPlatform) {
-      gamePlatform.value = savedPlatform as 'international' | 'perfect';
+      GamePlatform.value = savedPlatform as 'international' | 'perfect';
     }
     if (savedCsgo2Path) {
       csgo2Path.value = savedCsgo2Path;
@@ -113,7 +113,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // 保存设置到存储
   function saveSettingsToStorage() {
-    localStg.set('gamePlatform', gamePlatform.value);
+    localStg.set('GamePlatform', GamePlatform.value);
     localStg.set('csgo2Path', csgo2Path.value);
     localStg.set('steamPath', steamPath.value);
     localStg.set('automaticJoinConfig', automaticJoinConfig.value);
@@ -121,7 +121,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // 设置游戏平台
   function setGamePlatform(platform: 'international' | 'perfect') {
-    gamePlatform.value = platform;
+    GamePlatform.value = platform;
     saveSettingsToStorage();
   }
 
@@ -302,7 +302,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   }
 
   // 启动游戏
-  async function startGame(startType: gameStartType) {
+  async function startGame(startType: GameStartType) {
     console.log("启动游戏");
     // 使用 gameStore 中的配置
     if (!csgo2Path.value) {
@@ -318,8 +318,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     }
 
     isGameLaunching.value = true;
-    // 根据 gamePlatform 动态计算 serverMode
-    const serverMode = gamePlatform.value === 'perfect' ? 'perfectworld' : 'worldwide';
+    // 根据 GamePlatform 动态计算 serverMode
+    const serverMode = GamePlatform.value === 'perfect' ? 'perfectworld' : 'worldwide';
     // 启动游戏
     const launchResult = await window.ipcRenderer.launchCs2(
       csgo2Path.value,
@@ -376,7 +376,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     }
 
     try {
-        console.log("开始发送IPC请求");
+      console.log("开始发送IPC请求");
       const result = await window.ipcRenderer.invoke('start-automatic-join', {
         serverAddr: joinServerInfo.value.addr,
         maxPlayers: automaticJoinConfig.value.joinServerPersonValue,
@@ -507,7 +507,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     currentServerList,
     selectedCommunityId,
     isGameRunning,
-    gamePlatform,
+    GamePlatform,
     csgo2Path,
     steamPath,
     refreshingServerAddrs,

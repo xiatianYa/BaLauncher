@@ -2,6 +2,7 @@
 import { ref, onMounted, nextTick, computed } from 'vue';
 import { useGameStore } from '@/store/modules/game';
 import { animate } from 'animejs';
+import type { GamePlatform } from '@/constants/app';
 
 defineOptions({
   name: 'setting'
@@ -13,19 +14,19 @@ const titleRef = ref<HTMLElement | null>(null);
 const isDetectingSteam = ref(false);
 const isDetectingCsgo = ref(false);
 
-const gamePlatform = computed({
-  get: () => gameStore.gamePlatform,
-  set: (val) => gameStore.setGamePlatform(val)
+const GamePlatform = computed({
+  get: () => gameStore.GamePlatform,
+  set: (val: GamePlatform) => gameStore.setGamePlatform(val)
 });
 
 const csgo2Path = computed({
   get: () => gameStore.csgo2Path,
-  set: (val) => gameStore.setCsgo2Path(val)
+  set: (val: string) => gameStore.setCsgo2Path(val)
 });
 
 const steamPath = computed({
   get: () => gameStore.steamPath,
-  set: (val) => gameStore.setSteamPath(val)
+  set: (val: string) => gameStore.setSteamPath(val)
 });
 
 const selectCsgo2Path = async () => {
@@ -79,7 +80,7 @@ const autoDetectCsgo2Path = async () => {
 };
 
 const selectPlatform = (platform: 'international' | 'perfect') => {
-  gamePlatform.value = platform;
+  GamePlatform.value = platform;
 };
 
 onMounted(() => {
@@ -148,14 +149,14 @@ onMounted(() => {
             </NText>
           </div>
           <div class="flex-1 ml-10px">
-            <NButton class="mr-10px rounded-8px" :color="gamePlatform === 'international' ? '#18a058' : '#a5aaa3'" ghost
+            <NButton class="mr-10px rounded-8px" :color="GamePlatform === 'international' ? '#18a058' : '#a5aaa3'" ghost
               size="large" @click="selectPlatform('international')">
               <template #icon>
                 <SvgIcon icon="mdi:steam" />
               </template>
               国际服
             </NButton>
-            <NButton class="rounded-8px" :color="gamePlatform === 'perfect' ? '#18a058' : '#a5aaa3'" ghost size="large"
+            <NButton class="rounded-8px" :color="GamePlatform === 'perfect' ? '#18a058' : '#a5aaa3'" ghost size="large"
               @click="selectPlatform('perfect')">
               <template #icon>
                 <SvgIcon icon="mdi:earth" />

@@ -29,7 +29,7 @@ declare namespace StorageType {
     /** The theme settings */
     themeSettings: App.Theme.ThemeSetting;
     /** game platform */
-    gamePlatform: string;
+    GamePlatform: string;
     /** csgo2 path */
     csgo2Path: string;
     /** steam path */
