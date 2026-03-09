@@ -36,7 +36,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     },
     {
       name: "系统设置",
-      key: "system",
+      key: "setting",
       icon: "tabler:settings",
       isPersistent: true
     },
