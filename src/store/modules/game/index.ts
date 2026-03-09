@@ -286,11 +286,35 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     // 使用 IPC 查询服务器信息
     if (serverDataList.length > 0) {
       // 筛选当前社区要查询的服务器
-      const serverAddresses = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value).map(server => server.connectStr);
+      const targetServers = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value);
+      const serverAddresses = targetServers.map(server => server.connectStr);
       // 过滤出currentServerWsList中addr在serverAddresses中的数据
       const filteredWsServers = currentServerWsList.filter(item => serverAddresses.includes(item.addr));
-      // 将过滤后的结果赋值给currentServerList
-      currentServerList.splice(0, currentServerList.length, ...filteredWsServers);
+      // 找出不在filteredWsServers中的服务器，创建离线服务器数据
+      const offlineServers: Api.Game.InfoResponse[] = targetServers
+        .filter(server => !filteredWsServers.some(item => item.addr === server.connectStr))
+        .map(server => ({
+          protocol: 0,
+          name: server.serverName || '',
+          map: '',
+          folder: '',
+          game: '',
+          appId: 0,
+          players: 0,
+          maxPlayers: 0,
+          bots: 0,
+          serverType: '',
+          environment: '',
+          visibility: 0,
+          vac: 0,
+          version: '',
+          addr: server.connectStr as string,
+          isOnline: false
+        }));
+      // 合并在线和离线服务器
+      const allServers = [...filteredWsServers, ...offlineServers];
+      // 将结果赋值给currentServerList
+      currentServerList.splice(0, currentServerList.length, ...allServers);
       await countServerServerNumber();
       await countServerPlayerNumber();
     } else {
@@ -422,7 +446,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
               console.log('用户未成功连接，继续自动挤服');
               startAutomaticJoinServer();
             }
-          }, 30000); // 30秒超时检测
+          }, 60000); // 60秒超时检测
         } else {
           isAutomatic.value = false;
           isAutomaticRetry.value = false;

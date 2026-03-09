@@ -44,24 +44,13 @@ let countdownInterval: number | null = null;
 const selectCommunity = async (id: number) => {
   //点击相同社区 不进行加载
   if (gameStore.selectedCommunityId === id || serverLoading.value || isRefreshing.value) return;
-  //确保切换社区数据秒加载
-  console.log(gameStore.currentServerWsList);
-  if (gameStore.currentServerWsList.length > 0) {
-    console.log("WS数据");
-    serverLoading.value = true;
-    gameStore.selectedCommunityId = id;
-    await queryWsServerInfos();
-    serverLoading.value = false;
-  } else {
-    console.log("A2S数据");
-    serverLoading.value = true;
-    gameStore.selectedCommunityId = id;
-    window.ipcRenderer.off('query-game-servers', () => {
-      console.log('取消查询服务器');
-    });
-    await queryServerInfos();
-    serverLoading.value = false;
-  }
+  serverLoading.value = true;
+  gameStore.selectedCommunityId = id;
+  window.ipcRenderer.off('query-game-servers', () => {
+    console.log('取消查询服务器');
+  });
+  await queryServerInfos();
+  serverLoading.value = false;
 };
 
 // 根据地图名称获取地图信息
@@ -152,8 +141,12 @@ const queryServerInfos = async (showAnimationFlag: boolean = true) => {
 
   try {
     await gameStore.countServerServerNumber();
-    gameStore.countServerPlayerNumber();
-    await gameStore.queryServerInfosResponse();
+    await gameStore.countServerPlayerNumber();
+    if (gameStore.currentServerWsList.length > 0) {
+      await gameStore.queryWsServerInfosResponse();
+    } else {
+      await gameStore.queryServerInfosResponse();
+    }
   } finally {
     if (showAnimationFlag) {
       serverLoading.value = false;
