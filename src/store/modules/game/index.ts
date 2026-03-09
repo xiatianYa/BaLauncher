@@ -12,20 +12,20 @@ import { GamePlatform } from '@/constants/app';
 
 export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
-  // 服务器数据
-  const gameServerData: Api.Game.GameCommunityServerData[] = reactive([]);
-
   // 社区列表
   const communityList: Api.Game.Community[] = reactive([]);
 
-  // 服务器数据存储
+  // 服务器列表存储
   const serverDataList: Api.Game.Server[] = reactive([]);
 
   // 地图列表
   const mapList: Api.Game.Map[] = reactive([]);
 
-  // 当前服务器原始时间列表(本地缓存)
+  // 当前服务器原始数据列表(本地缓存)
   const currentServerList: Api.Game.InfoResponse[] = reactive([]);
+
+  // 当前服务器数据列表(Ws推送)
+  const currentServerWsList: Api.Game.InfoResponse[] = reactive([]);
 
   // 当前选择的社区
   const selectedCommunityId = ref<number | null>(null);
@@ -239,7 +239,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     }
   }
 
-  // 查询服务器信息(批量)
+  /**
+   *  查询服务器列表信息(源服务器)
+   */
   async function queryServerInfosResponse() {
     // 使用 IPC 查询服务器信息
     if (serverDataList.length > 0) {
@@ -267,9 +269,33 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             }
           }
         }
-      } catch (error) {
-        console.error('查询服务器失败:', error);
+      } finally {
+        countServerServerNumber();
+        countServerPlayerNumber();
       }
+    } else {
+      countServerServerNumber();
+      countServerPlayerNumber();
+    }
+  }
+
+  /**
+   *  查询服务器列表信息(WS服务器)
+   */
+  async function queryWsServerInfosResponse() {
+    // 使用 IPC 查询服务器信息
+    if (serverDataList.length > 0) {
+      // 筛选当前社区要查询的服务器
+      const serverAddresses = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value).map(server => server.connectStr);
+      // 过滤出currentServerWsList中addr在serverAddresses中的数据
+      const filteredWsServers = currentServerWsList.filter(item => serverAddresses.includes(item.addr));
+      // 将过滤后的结果赋值给currentServerList
+      currentServerList.splice(0, currentServerList.length, ...filteredWsServers);
+      await countServerServerNumber();
+      await countServerPlayerNumber();
+    } else {
+      await countServerServerNumber();
+      await countServerPlayerNumber();
     }
   }
 
@@ -498,7 +524,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   return {
     automaticInfo,
-    gameServerData,
     automaticCount,
     isAutomatic,
     communityList,
@@ -514,6 +539,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     joinServerInfo,
     isGameLaunching,
     automaticJoinConfig,
+    currentServerWsList,
     initServerWebsocket,
     initServerList,
     closeServerWebsocket,
@@ -537,5 +563,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     startAutomaticJoinServer,
     stopAutomaticJoinServer,
     connectServerUsingSteamUrl,
+    queryWsServerInfosResponse,
   };
 });

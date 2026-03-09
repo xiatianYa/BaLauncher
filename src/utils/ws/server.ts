@@ -2,8 +2,7 @@ import { useAuthStore } from '@/store/modules/auth';
 import { useGameStore } from '@/store/modules/game';
 
 // 连接地址
-// const wsUrl = process.env.NODE_ENV === 'development' ? 'ws://127.0.0.1:8080/ws/server/' : 'wss://www.bluearchive.top/websocket/ws/server/';
-const wsUrl = 'wss://www.bluearchive.top/websocket/ws/server/';
+const wsUrl = process.env.NODE_ENV === 'development' ? 'ws://127.0.0.1:8080/ws/server/' : 'wss://www.bluearchive.top/websocket/ws/server/';
 
 // 定义ServerWebsocket相关的类型
 interface ServerWebsocketType {
@@ -42,8 +41,6 @@ const ServerWebsocket: ServerWebsocketType = {
         const { code, data } = JSON.parse(e.data);
         // 定义一个处理函数的映射对象
         const handlers: { [key: string]: (data: any) => void } = {
-          '200': () => {
-          },
           '201': () => {
             gameStore.automaticInfo!.numPlayers = data.players ?? gameStore.automaticInfo!.numPlayers;
             gameStore.automaticInfo!.maxPlayers = data.maxPlayers ?? gameStore.automaticInfo!.maxPlayers;
@@ -70,8 +67,10 @@ const ServerWebsocket: ServerWebsocketType = {
               keepAliveOnHover: true
             });
           },
-          '202': () => {
-            gameStore.gameServerData = data;
+          '205': () => {
+            if (Array.isArray(data)) {
+              gameStore.currentServerWsList.splice(0, gameStore.currentServerWsList.length, ...data);
+            }
           }
         };
 

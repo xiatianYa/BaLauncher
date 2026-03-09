@@ -44,14 +44,24 @@ let countdownInterval: number | null = null;
 const selectCommunity = async (id: number) => {
   //点击相同社区 不进行加载
   if (gameStore.selectedCommunityId === id || serverLoading.value || isRefreshing.value) return;
-  //切换社区 取消正在进行的查询服务器
-  serverLoading.value = true;
-  window.ipcRenderer.off('query-game-servers', () => {
-    console.log('取消查询服务器');
-  });
-  gameStore.selectedCommunityId = id;
-  await queryServerInfos();
-  serverLoading.value = false;
+  //确保切换社区数据秒加载
+  console.log(gameStore.currentServerWsList);
+  if (gameStore.currentServerWsList.length > 0) {
+    console.log("WS数据");
+    serverLoading.value = true;
+    gameStore.selectedCommunityId = id;
+    await queryWsServerInfos();
+    serverLoading.value = false;
+  } else {
+    console.log("A2S数据");
+    serverLoading.value = true;
+    gameStore.selectedCommunityId = id;
+    window.ipcRenderer.off('query-game-servers', () => {
+      console.log('取消查询服务器');
+    });
+    await queryServerInfos();
+    serverLoading.value = false;
+  }
 };
 
 // 根据地图名称获取地图信息
@@ -131,6 +141,7 @@ const animateNumber = (num: number) => {
   }
 };
 
+// 查询服务器列表 源服务器
 const queryServerInfos = async (showAnimationFlag: boolean = true) => {
   if (isRefreshing.value) return;
 
@@ -153,10 +164,33 @@ const queryServerInfos = async (showAnimationFlag: boolean = true) => {
   }
 };
 
+// 查询服务器列表 WS服务器
+const queryWsServerInfos = async (showAnimationFlag: boolean = true) => {
+  if (isRefreshing.value) return;
+
+  isRefreshing.value = true;
+  if (showAnimationFlag) {
+    serverLoading.value = true;
+  }
+
+  try {
+    await gameStore.queryWsServerInfosResponse();
+  } finally {
+    if (showAnimationFlag) {
+      serverLoading.value = false;
+    }
+    isRefreshing.value = false;
+
+    startCountdown(true);
+  }
+};
+
+// 查询服务器地图类型
 const queryServerMapType = (mapName: string) => {
   return gameStore.mapList.find(map => map.mapName === mapName)?.type;
 }
 
+// 查询服务器地图标签
 const queryServerMapTag = (mapName: string) => {
   return gameStore.mapList.find(map => map.mapName === mapName)?.tag;
 }

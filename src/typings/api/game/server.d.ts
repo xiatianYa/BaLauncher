@@ -1,5 +1,6 @@
 declare namespace Api {
     namespace Game {
+        
         /** server search params */
         type ServerSearchParams = CommonType.RecordNullable<
             Pick<
@@ -37,6 +38,7 @@ declare namespace Api {
             serverInfoData: InfoResponse[];
         }
 
+        // 游戏社区基础信息
         type GameCommunity = {
             /** 社区名称（如 "ZED"） */
             communityName: string;
@@ -58,6 +60,7 @@ declare namespace Api {
             website: string;
         }
 
+        // 服务器VO
         type ServerVo = {
             /** 服务器连接地址*/
             connectStr: string;
@@ -88,6 +91,7 @@ declare namespace Api {
             data: InfoResponse;
         }
 
+        // 源服务器数据
         type InfoResponse = {
             protocol: number;
             name: string;
@@ -113,6 +117,7 @@ declare namespace Api {
             isOnline: boolean;
         }
 
+        // 服务器数据
         type Server = {
             //服务器名称
             serverName?: string;
@@ -132,6 +137,7 @@ declare namespace Api {
             connectStr?: string;
         }
 
+        // 服务器消息类型
         type WsServerMsgType = {
             type: string;
             data: any;

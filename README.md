@@ -166,10 +166,11 @@ pnpm run commit
 ## 📚 数据来源库
 客户端状态数据来源：
 - **cs2-gsi-z**: [GitHub 地址](https://github.com/alebcj/cs2-gsi-z)
+
 服务器状态数据来源：
 - **steam-server-query**: [GitHub 地址](https://github.com/GiyoMoon/steam-server-query)
 
-## �📄 许可证
+## 📄 许可证
 
 MIT License
 
