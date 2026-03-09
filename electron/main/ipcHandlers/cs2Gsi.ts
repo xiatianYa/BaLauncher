@@ -255,58 +255,239 @@ async function startGsiService() {
         isGsiConnected = true
         console.log('✅ GSI 服务已启动，监听端口 3345')
 
-        // 监听 GSI 服务的「时间戳变更」事件
-        // payload：包含当前最新的游戏时间戳信息（如游戏运行时长、UTC 时间戳等）
+        // ========== Provider 事件 ==========
+        gsiService.on(EVENTS.provider.nameChanged, (payload: any) => {
+            sendGsiDataToRenderer("provider:nameChanged", payload)
+        })
         gsiService.on(EVENTS.provider.timestampChanged, (payload: any) => {
-            sendGsiDataToRenderer("timestampChanged", payload)
+            sendGsiDataToRenderer("provider:timestampChanged", payload)
         })
 
-        // 监听 GSI 服务的「地图名称变更」事件
-        // payload：包含当前游戏地图的名称（如 de_dust2、de_inferno、de_mirage 等）
+        // ========== Map 事件 ==========
         gsiService.on(EVENTS.map.nameChanged, (payload: any) => {
-            sendGsiDataToRenderer("nameChanged", payload)
+            sendGsiDataToRenderer("map:nameChanged", payload)
         })
-
-        // 监听 GSI 服务的「地图阶段变更」事件
-        // payload：包含当前地图的游戏阶段（如热身 warmup、上半场 live、暂停 pause、结束 gameover 等）
         gsiService.on(EVENTS.map.phaseChanged, (payload: any) => {
-            sendGsiDataToRenderer("phaseChanged", payload)
+            sendGsiDataToRenderer("map:phaseChanged", payload)
         })
-
-        // 监听 GSI 服务的「CT 阵营分数变更」事件
-        // payload：包含 CT 阵营的最新分数（数值类型，如 8、13 等）
-        gsiService.on(EVENTS.map.teamCtScoreChanged, (payload: any) => {
-            sendGsiDataToRenderer("teamCtScoreChanged", payload)
+        gsiService.on(EVENTS.map.roundChanged, (payload: any) => {
+            sendGsiDataToRenderer("map:roundChanged", payload)
         })
-
-        // 监听 GSI 服务的「T 阵营分数变更」事件
-        // payload：包含 T 阵营的最新分数（数值类型，如 5、16 等）
+        gsiService.on(EVENTS.map.teamCTScoreChanged, (payload: any) => {
+            sendGsiDataToRenderer("map:teamCTScoreChanged", payload)
+        })
         gsiService.on(EVENTS.map.teamTScoreChanged, (payload: any) => {
-            sendGsiDataToRenderer("teamTScoreChanged", payload)
+            sendGsiDataToRenderer("map:teamTScoreChanged", payload)
+        })
+        gsiService.on(EVENTS.map.currentSpectatorsChanged, (payload: any) => {
+            sendGsiDataToRenderer("map:currentSpectatorsChanged", payload)
+        })
+        gsiService.on(EVENTS.map.souvenirsTotalChanged, (payload: any) => {
+            sendGsiDataToRenderer("map:souvenirsTotalChanged", payload)
+        })
+        gsiService.on(EVENTS.map.roundWinsChanged, (payload: any) => {
+            sendGsiDataToRenderer("map:roundWinsChanged", payload)
         })
 
-        // 监听 GSI 服务的「玩家阵营变更」事件
-        // payload：包含当前玩家所属阵营（ct/t/spectator，即CT/恐怖分子/观察者）
+        // ========== Round 事件 ==========
+        gsiService.on(EVENTS.round.phaseChanged, (payload: any) => {
+            sendGsiDataToRenderer("round:phaseChanged", payload)
+        })
+        gsiService.on(EVENTS.round.started, (payload: any) => {
+            sendGsiDataToRenderer("round:started", payload)
+        })
+        gsiService.on(EVENTS.round.ended, (payload: any) => {
+            sendGsiDataToRenderer("round:ended", payload)
+        })
+        gsiService.on(EVENTS.round.won, (payload: any) => {
+            sendGsiDataToRenderer("round:won", payload)
+        })
+
+        // ========== Player 事件 ==========
+        gsiService.on(EVENTS.player.nameChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:nameChanged", payload)
+        })
+        gsiService.on(EVENTS.player.clanChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:clanChanged", payload)
+        })
+        gsiService.on(EVENTS.player.xpOverloadLevelChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:xpOverloadLevelChanged", payload)
+        })
+        gsiService.on(EVENTS.player.steamidChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:steamidChanged", payload)
+        })
         gsiService.on(EVENTS.player.teamChanged, (payload: any) => {
-            sendGsiDataToRenderer("teamChanged", payload)
+            sendGsiDataToRenderer("player:teamChanged", payload)
         })
-
-        // 监听 GSI 服务的「玩家活动状态变更」事件
-        // payload：包含玩家当前活动状态（如 playing/menu/spectating，即游戏中/菜单/观战）
         gsiService.on(EVENTS.player.activityChanged, (payload: any) => {
-            sendGsiDataToRenderer("activityChanged", payload)
+            sendGsiDataToRenderer("player:activityChanged", payload)
+        })
+        gsiService.on(EVENTS.player.observerSlotChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:observerSlotChanged", payload)
+        })
+        gsiService.on(EVENTS.player.specTargetChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:specTargetChanged", payload)
+        })
+        gsiService.on(EVENTS.player.positionChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:positionChanged", payload)
+        })
+        gsiService.on(EVENTS.player.forwardDirectionChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:forwardDirectionChanged", payload)
+        })
+        gsiService.on(EVENTS.player.hpChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:hpChanged", payload)
+        })
+        gsiService.on(EVENTS.player.armorChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:armorChanged", payload)
+        })
+        gsiService.on(EVENTS.player.helmetChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:helmetChanged", payload)
+        })
+        gsiService.on(EVENTS.player.flashedChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:flashedChanged", payload)
+        })
+        gsiService.on(EVENTS.player.smokedChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:smokedChanged", payload)
+        })
+        gsiService.on(EVENTS.player.burningChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:burningChanged", payload)
+        })
+        gsiService.on(EVENTS.player.moneyChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:moneyChanged", payload)
+        })
+        gsiService.on(EVENTS.player.equipmentValueChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:equipmentValueChanged", payload)
+        })
+        gsiService.on(EVENTS.player.weaponChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:weaponChanged", payload)
+        })
+        gsiService.on(EVENTS.player.ammoClipChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:ammoClipChanged", payload)
+        })
+        gsiService.on(EVENTS.player.ammoReserveChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:ammoReserveChanged", payload)
+        })
+        gsiService.on(EVENTS.player.killsChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:killsChanged", payload)
+        })
+        gsiService.on(EVENTS.player.deathsChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:deathsChanged", payload)
+        })
+        gsiService.on(EVENTS.player.assistsChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:assistsChanged", payload)
+        })
+        gsiService.on(EVENTS.player.scoreChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:scoreChanged", payload)
+        })
+        gsiService.on(EVENTS.player.mvpsChanged, (payload: any) => {
+            sendGsiDataToRenderer("player:mvpsChanged", payload)
         })
 
-        // 监听 GSI 服务的「玩家状态变更」事件
-        // payload：包含玩家实时状态（如生命值、护甲、武器、位置、是否倒地/死亡等）
-        gsiService.on(EVENTS.player.stateChanged, (payload: any) => {
-            sendGsiDataToRenderer("stateChanged", payload)
+        // ========== PhaseCountdowns 事件 ==========
+        gsiService.on(EVENTS.phaseCountdowns.phaseChanged, (payload: any) => {
+            sendGsiDataToRenderer("phaseCountdowns:phaseChanged", payload)
+        })
+        gsiService.on(EVENTS.phaseCountdowns.phaseEndsInChanged, (payload: any) => {
+            sendGsiDataToRenderer("phaseCountdowns:phaseEndsInChanged", payload)
         })
 
-        // 监听 GSI 服务的「玩家对局统计数据变更」事件
-        // payload：包含玩家本局统计数据（如击杀数、死亡数、助攻数、伤害量、经济等）
-        gsiService.on(EVENTS.player.matchStatsChanged, (payload: any) => {
-            sendGsiDataToRenderer("matchStatsChanged", payload)
+        // ========== AllPlayers 事件 ==========
+        gsiService.on(EVENTS.allPlayers.joined, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:joined", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.left, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:left", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.teamChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:teamChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.observerSlotChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:observerSlotChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.positionChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:positionChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.forwardDirectionChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:forwardDirectionChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.hpChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:hpChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.armorChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:armorChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.helmetChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:helmetChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.flashedChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:flashedChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.smokedChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:smokedChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.burningChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:burningChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.moneyChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:moneyChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.equipmentValueChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:equipmentValueChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.weaponChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:weaponChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.ammoClipChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:ammoClipChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.ammoReserveChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:ammoReserveChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.killsChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:killsChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.deathsChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:deathsChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.assistsChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:assistsChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.scoreChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:scoreChanged", payload)
+        })
+        gsiService.on(EVENTS.allPlayers.mvpsChanged, (payload: any) => {
+            sendGsiDataToRenderer("allPlayers:mvpsChanged", payload)
+        })
+
+        // ========== Bomb 事件 ==========
+        gsiService.on(EVENTS.bomb.stateChanged, (payload: any) => {
+            sendGsiDataToRenderer("bomb:stateChanged", payload)
+        })
+        gsiService.on(EVENTS.bomb.positionChanged, (payload: any) => {
+            sendGsiDataToRenderer("bomb:positionChanged", payload)
+        })
+        gsiService.on(EVENTS.bomb.playerChanged, (payload: any) => {
+            sendGsiDataToRenderer("bomb:playerChanged", payload)
+        })
+
+        // ========== Grenades 事件 ==========
+        gsiService.on(EVENTS.grenades.existenceChanged, (payload: any) => {
+            sendGsiDataToRenderer("grenades:existenceChanged", payload)
+        })
+        gsiService.on(EVENTS.grenades.positionChanged, (payload: any) => {
+            sendGsiDataToRenderer("grenades:positionChanged", payload)
+        })
+        gsiService.on(EVENTS.grenades.velocityChanged, (payload: any) => {
+            sendGsiDataToRenderer("grenades:velocityChanged", payload)
+        })
+        gsiService.on(EVENTS.grenades.lifetimeChanged, (payload: any) => {
+            sendGsiDataToRenderer("grenades:lifetimeChanged", payload)
+        })
+        gsiService.on(EVENTS.grenades.effectTimeChanged, (payload: any) => {
+            sendGsiDataToRenderer("grenades:effectTimeChanged", payload)
+        })
+        gsiService.on(EVENTS.grenades.flamesChanged, (payload: any) => {
+            sendGsiDataToRenderer("grenades:flamesChanged", payload)
         })
         return { success: true }
     } catch (error) {

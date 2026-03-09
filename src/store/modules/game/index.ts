@@ -9,6 +9,7 @@ import { fetchGetPieChart } from '@/service/api';
 import { localStg } from '@/utils/storage';
 import { GameStartType } from '@/constants/app';
 import { GamePlatform } from '@/constants/app';
+import dayjs from 'dayjs';
 
 export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
@@ -158,7 +159,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 检查游戏是否启动
   async function checkGameRunning() {
     try {
-      console.log("开始查询游戏是否启动");
       const { isRunning } = await window.ipcRenderer.checkCsgo2Running();
       isGameRunning.value = isRunning;
       if (isGameRunning.value) {
@@ -488,29 +488,281 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     }
   }
 
+  // 安全打印日志的函数
+  function safeLog(message: string, ...args: any[]) {
+    try {
+      console.log(message, ...args);
+    } catch (error) {
+      console.log(message, '[日志打印失败，原始数据:]', args);
+    }
+  }
+
   // 监听 GSI 数据的函数
   function listenToGsiData() {
-    console.log("开始监听 GSI 数据");
+    safeLog("开始监听 GSI 数据");
     isGsiRunning.value = true;
     window.ipcRenderer.on('cs2-gsi-data', (_event, res) => {
       const { eventName, data } = res;
-      // 记录客户端地图切换事件
-      if (eventName === 'nameChanged') {
-        console.log(joinServerInfo.value?.map, data.current);
-        if (joinServerInfo.value?.map === data.current) {
-          isAutomaticRetry.value = false;
-          isAutomatic.value = false;
-          // 用户成功连接，清除定时器
-          if (connectionCheckTimer) {
-            //连接服务器
-            clearTimeout(connectionCheckTimer);
-            connectionCheckTimer = null;
-            console.log('用户已成功连接到目标服务器');
-            window.$message?.success("连接成功")
+
+      // 根据事件类型打印详细信息
+      switch (eventName) {
+        // ========== Provider 事件 ==========
+        case 'provider:nameChanged':
+          safeLog('🎮 [Provider:名称变更] - 游戏提供商名称', data.current, data.previous);
+          break;
+        case 'provider:timestampChanged':
+          safeLog('⏰ [Provider:时间戳变更] - 游戏运行时间或时间戳更新', data.current, data.previous);
+          break;
+
+        // ========== Map 事件 ==========
+        case 'map:nameChanged':
+          safeLog('🗺️ [Map:地图名称变更] - 当前游戏地图已切换', {
+            '原地图': data.previous || '无',
+            '当前地图': data.current,
+            '目标服务器地图': joinServerInfo.value?.map || '未设置'
+          });
+          // 记录客户端地图切换事件
+          if (joinServerInfo.value?.map === data.current) {
+            isAutomaticRetry.value = false;
+            isAutomatic.value = false;
+            // 用户成功连接，清除定时器
+            if (connectionCheckTimer) {
+              clearTimeout(connectionCheckTimer);
+              connectionCheckTimer = null;
+              safeLog('✅ 用户已成功连接到目标服务器');
+              window.$message?.success("连接成功")
+            }
           }
-        }
+          // 玩家离开服务器(手动断开连接)
+          if (data.current === 'unknown') {
+          }
+          break;
+        case 'map:phaseChanged':
+          safeLog('🎯 [Map:阶段变更] - 游戏阶段已更新', data.current, data.previous);
+          break;
+        case 'map:roundChanged':
+          safeLog('🔄 [Map:回合变更] - 回合数已更新', data.current, data.previous);
+          break;
+        case 'map:teamCTScoreChanged':
+          safeLog('🔵 [Map:CT分数变更] - CT阵营分数已更新', data.current, data.previous);
+          break;
+        case 'map:teamTScoreChanged':
+          safeLog('🟠 [Map:T分数变更] - T阵营分数已更新', data.current, data.previous);
+          break;
+        case 'map:currentSpectatorsChanged':
+          safeLog('👁️ [Map:观众数变更] - 当前观众人数已更新', data.current, data.previous);
+          break;
+        case 'map:souvenirsTotalChanged':
+          safeLog('🎁 [Map:纪念品总数变更] - 纪念品总数已更新', data.current, data.previous);
+          break;
+        case 'map:roundWinsChanged':
+          safeLog('🏆 [Map:回合胜利变更] - 回合胜利记录已更新', data.current, data.previous);
+          break;
+
+        // ========== Round 事件 ==========
+        case 'round:phaseChanged':
+          safeLog('⏱️ [Round:阶段变更] - 回合阶段已更新', data.current, data.previous);
+          break;
+        case 'round:started':
+          safeLog('▶️ [Round:开始] - 新回合开始', data.current, data.previous);
+          break;
+        case 'round:ended':
+          safeLog('⏹️ [Round:结束] - 回合结束', data.current, data.previous);
+          break;
+        case 'round:won':
+          safeLog('🎉 [Round:胜利] - 回合获胜', data.current, data.previous);
+          break;
+
+        // ========== Player 事件 ==========
+        case 'player:nameChanged':
+          safeLog('👤 [Player:名称变更] - 玩家名称已更新', data.current, data.previous);
+          break;
+        case 'player:clanChanged':
+          safeLog('🏠 [Player:战队变更] - 玩家战队已更新', data.current, data.previous);
+          break;
+        case 'player:xpOverloadLevelChanged':
+          safeLog('📈 [Player:经验等级变更] - 玩家经验过载等级已更新', data.current, data.previous);
+          break;
+        case 'player:steamidChanged':
+          safeLog('🆔 [Player:SteamID变更] - 玩家SteamID已更新', data.current, data.previous);
+          break;
+        case 'player:teamChanged':
+          safeLog('👥 [Player:阵营变更] - 玩家所属阵营已切换', data.current, data.previous);
+          break;
+        case 'player:activityChanged':
+          safeLog('🎮 [Player:活动状态变更] - 玩家活动状态已更新', data.current, data.previous);
+          break;
+        case 'player:observerSlotChanged':
+          safeLog('👁️ [Player:观察者槽变更] - 观察者槽已更新', data.current, data.previous);
+          break;
+        case 'player:specTargetChanged':
+          safeLog('🎯 [Player:观察目标变更] - 观察目标已更新', data.current, data.previous);
+          break;
+        case 'player:positionChanged':
+          safeLog('📍 [Player:位置变更] - 玩家位置已更新', data.current, data.previous);
+          break;
+        case 'player:forwardDirectionChanged':
+          safeLog('➡️ [Player:朝向变更] - 玩家朝向已更新', data.current, data.previous);
+          break;
+        case 'player:hpChanged':
+          safeLog('❤️ [Player:生命值变更] - 玩家生命值已更新', data.current, data.previous);
+          break;
+        case 'player:armorChanged':
+          safeLog('🛡️ [Player:护甲值变更] - 玩家护甲值已更新', data.current, data.previous);
+          break;
+        case 'player:helmetChanged':
+          safeLog('⛑️ [Player:头盔变更] - 玩家头盔状态已更新', data.current, data.previous);
+          break;
+        case 'player:flashedChanged':
+          safeLog('💡 [Player:闪光效果变更] - 玩家闪光效果已更新', data.current, data.previous);
+          break;
+        case 'player:smokedChanged':
+          safeLog('💨 [Player:烟雾效果变更] - 玩家烟雾效果已更新', data.current, data.previous);
+          break;
+        case 'player:burningChanged':
+          safeLog('🔥 [Player:燃烧效果变更] - 玩家燃烧效果已更新', data.current, data.previous);
+          break;
+        case 'player:moneyChanged':
+          safeLog('💰 [Player:金钱变更] - 玩家金钱已更新', data.current, data.previous);
+          break;
+        case 'player:equipmentValueChanged':
+          safeLog('💎 [Player:装备价值变更] - 玩家装备价值已更新', data.current, data.previous);
+          break;
+        case 'player:weaponChanged':
+          safeLog('🔫 [Player:武器变更] - 玩家武器已更新', data.current, data.previous);
+          break;
+        case 'player:ammoClipChanged':
+          safeLog('📦 [Player:弹夹弹药变更] - 玩家弹夹弹药已更新', data.current, data.previous);
+          break;
+        case 'player:ammoReserveChanged':
+          safeLog('🎒 [Player:备用弹药变更] - 玩家备用弹药已更新', data.current, data.previous);
+          break;
+        case 'player:killsChanged':
+          safeLog('💀 [Player:击杀数变更] - 玩家击杀数已更新', data.current, data.previous);
+          break;
+        case 'player:deathsChanged':
+          safeLog('☠️ [Player:死亡数变更] - 玩家死亡数已更新', data.current, data.previous);
+          break;
+        case 'player:assistsChanged':
+          safeLog('🤝 [Player:助攻数变更] - 玩家助攻数已更新', data.current, data.previous);
+          break;
+        case 'player:scoreChanged':
+          safeLog('📊 [Player:分数变更] - 玩家分数已更新', data.current, data.previous);
+          break;
+        case 'player:mvpsChanged':
+          safeLog('🏅 [Player:MVP数变更] - 玩家MVP数已更新', data.current, data.previous);
+          break;
+
+        // ========== PhaseCountdowns 事件 ==========
+        case 'phaseCountdowns:phaseChanged':
+          safeLog('⏰ [PhaseCountdowns:阶段变更] - 阶段已更新', data.current, data.previous);
+          break;
+        case 'phaseCountdowns:phaseEndsInChanged':
+          safeLog('⏳ [PhaseCountdowns:阶段结束时间变更] - 阶段结束时间已更新', data.current, data.previous);
+          break;
+
+        // ========== AllPlayers 事件 ==========
+        case 'allPlayers:joined':
+          safeLog('🎉 [AllPlayers:加入] - 有玩家加入', data.current, data.previous);
+          break;
+        case 'allPlayers:left':
+          safeLog('👋 [AllPlayers:离开] - 有玩家离开', data.current, data.previous);
+          break;
+        case 'allPlayers:teamChanged':
+          safeLog('👥 [AllPlayers:阵营变更] - 有玩家阵营变更', data.current, data.previous);
+          break;
+        case 'allPlayers:observerSlotChanged':
+          safeLog('👁️ [AllPlayers:观察者槽变更] - 有玩家观察者槽变更', data.current, data.previous);
+          break;
+        case 'allPlayers:positionChanged':
+          safeLog('📍 [AllPlayers:位置变更] - 有玩家位置变更', data.current, data.previous);
+          break;
+        case 'allPlayers:forwardDirectionChanged':
+          safeLog('➡️ [AllPlayers:朝向变更] - 有玩家朝向变更', data.current, data.previous);
+          break;
+        case 'allPlayers:hpChanged':
+          safeLog('❤️ [AllPlayers:生命值变更] - 有玩家生命值变更', data.current, data.previous);
+          break;
+        case 'allPlayers:armorChanged':
+          safeLog('🛡️ [AllPlayers:护甲值变更] - 有玩家护甲值变更', data.current, data.previous);
+          break;
+        case 'allPlayers:helmetChanged':
+          safeLog('⛑️ [AllPlayers:头盔变更] - 有玩家头盔状态变更', data.current, data.previous);
+          break;
+        case 'allPlayers:flashedChanged':
+          safeLog('💡 [AllPlayers:闪光效果变更] - 有玩家闪光效果变更', data.current, data.previous);
+          break;
+        case 'allPlayers:smokedChanged':
+          safeLog('💨 [AllPlayers:烟雾效果变更] - 有玩家烟雾效果变更', data.current, data.previous);
+          break;
+        case 'allPlayers:burningChanged':
+          safeLog('🔥 [AllPlayers:燃烧效果变更] - 有玩家燃烧效果变更', data.current, data.previous);
+          break;
+        case 'allPlayers:moneyChanged':
+          safeLog('💰 [AllPlayers:金钱变更] - 有玩家金钱变更', data.current, data.previous);
+          break;
+        case 'allPlayers:equipmentValueChanged':
+          safeLog('💎 [AllPlayers:装备价值变更] - 有玩家装备价值变更', data.current, data.previous);
+          break;
+        case 'allPlayers:weaponChanged':
+          safeLog('🔫 [AllPlayers:武器变更] - 有玩家武器变更', data.current, data.previous);
+          break;
+        case 'allPlayers:ammoClipChanged':
+          safeLog('📦 [AllPlayers:弹夹弹药变更] - 有玩家弹夹弹药变更', data.current, data.previous);
+          break;
+        case 'allPlayers:ammoReserveChanged':
+          safeLog('🎒 [AllPlayers:备用弹药变更] - 有玩家备用弹药变更', data.current, data.previous);
+          break;
+        case 'allPlayers:killsChanged':
+          safeLog('💀 [AllPlayers:击杀数变更] - 有玩家击杀数变更', data.current, data.previous);
+          break;
+        case 'allPlayers:deathsChanged':
+          safeLog('☠️ [AllPlayers:死亡数变更] - 有玩家死亡数变更', data.current, data.previous);
+          break;
+        case 'allPlayers:assistsChanged':
+          safeLog('🤝 [AllPlayers:助攻数变更] - 有玩家助攻数变更', data.current, data.previous);
+          break;
+        case 'allPlayers:scoreChanged':
+          safeLog('📊 [AllPlayers:分数变更] - 有玩家分数变更', data.current, data.previous);
+          break;
+        case 'allPlayers:mvpsChanged':
+          safeLog('🏅 [AllPlayers:MVP数变更] - 有玩家MVP数变更', data.current, data.previous);
+          break;
+
+        // ========== Bomb 事件 ==========
+        case 'bomb:stateChanged':
+          safeLog('💣 [Bomb:状态变更] - 炸弹状态已更新', data.current, data.previous);
+          break;
+        case 'bomb:positionChanged':
+          safeLog('📍 [Bomb:位置变更] - 炸弹位置已更新', data.current, data.previous);
+          break;
+        case 'bomb:playerChanged':
+          safeLog('👤 [Bomb:持有者变更] - 炸弹持有者已更新', data.current, data.previous);
+          break;
+
+        // ========== Grenades 事件 ==========
+        case 'grenades:existenceChanged':
+          safeLog('💥 [Grenades:存在变更] - 手雷存在状态已更新', data.current, data.previous);
+          break;
+        case 'grenades:positionChanged':
+          safeLog('📍 [Grenades:位置变更] - 手雷位置已更新', data.current, data.previous);
+          break;
+        case 'grenades:velocityChanged':
+          safeLog('💨 [Grenades:速度变更] - 手雷速度已更新', data.current, data.previous);
+          break;
+        case 'grenades:lifetimeChanged':
+          safeLog('⏱️ [Grenades:生命周期变更] - 手雷生命周期已更新', data.current, data.previous);
+          break;
+        case 'grenades:effectTimeChanged':
+          safeLog('⏰ [Grenades:效果时间变更] - 手雷效果时间已更新', data.current, data.previous);
+          break;
+        case 'grenades:flamesChanged':
+          safeLog('🔥 [Grenades:火焰变更] - 手雷火焰已更新', data.current, data.previous);
+          break;
+
+        default:
+          safeLog('❓ [未知事件]', { eventName, data });
       }
-      console.log('🎮 GSI 数据:', data);
     });
   }
 
