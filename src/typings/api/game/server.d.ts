@@ -1,6 +1,6 @@
 declare namespace Api {
     namespace Game {
-        
+
         /** server search params */
         type ServerSearchParams = CommonType.RecordNullable<
             Pick<
@@ -93,7 +93,7 @@ declare namespace Api {
 
         // 源服务器数据
         type InfoResponse = {
-            protocol: number;
+            protocol?: number;
             name: string;
             map: string;
             folder: string;
@@ -115,6 +115,52 @@ declare namespace Api {
             gameId?: BigInt;
             addr: string;
             isOnline: boolean;
+            round: string;
+            ctScore: string;
+            tScore: string;
+            csgoPlayer: CsgoPlayer[];
+        }
+
+        type ServerInfoData = {
+            /** 地址 */
+            addr: string;
+            /** 回合 */
+            round: string;
+            /** CT分数 */
+            ctScore: string;
+            /** T分数 */
+            tScore: string;
+            /** 地图阶段 */
+            mapStage: string;
+            /** 游戏阶段 */
+            mapPhase: string;
+            /** 玩家数据 */
+            csgoPlayer: CsgoPlayer;
+        }
+
+        type CsgoPlayer = {
+            // 玩家阵营（ct/t/spectator）
+            team: string;
+            // 生命值
+            health: number;
+            // 护甲值
+            armor: number;
+            // 金钱数
+            money: number;
+            // 装备价值
+            equipValue: number;
+            // 当前武器
+            weapon: any;
+            // 弹夹内弹药数
+            clipAmmo: number;
+            // 备用弹药数
+            reserveAmmo: number;
+            // 是否有头盔
+            helmet: boolean;
+            // 击杀数
+            kills: number;
+            // 分数（CSGO内的玩家积分）
+            score: number;
         }
 
         // 服务器数据
@@ -122,11 +168,11 @@ declare namespace Api {
             //服务器名称
             serverName?: string;
             // 社区ID
-            communityId?: number; 
+            communityId?: number;
             // 服务器IP
             ip?: string;
             // 服务器端口
-            port?: string; 
+            port?: string;
             // 排序值
             sort?: number;
             // 是否统计 
