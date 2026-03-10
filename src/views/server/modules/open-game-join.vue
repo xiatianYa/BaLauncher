@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useGameStore } from '@/store/modules/game';
-import { NModal, NText, NSpace, NTag, NButton, NSwitch, NSlider } from 'naive-ui';
+import { NModal, NText, NSpace, NTag, NButton, NSwitch, NSlider, NCollapse, NCollapseItem, NAvatar } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
 
 const props = defineProps<{
@@ -24,6 +24,26 @@ const queryServerMapType = (mapName: string | undefined) => {
 
 const queryServerMapTag = (mapName: string | undefined) => {
     return gameStore.mapList.find(map => map.mapName === mapName)?.tag || '';
+};
+
+const getTeamColor = (team: string) => {
+    if (!team) return 'default';
+    switch (team.toLowerCase()) {
+        case 'ct': return 'info';
+        case 't': return 'warning';
+        case 'spectator': return 'default';
+        default: return 'default';
+    }
+};
+
+const getTeamLabel = (team: string) => {
+    if (!team) return '未知';
+    switch (team.toLowerCase()) {
+        case 'ct': return 'CT';
+        case 't': return 'T';
+        case 'spectator': return '观察者';
+        default: return team;
+    }
 };
 
 const getOnLineColor = (players: number, maxPlayers: number) => {
@@ -225,6 +245,89 @@ const handleConfirmOpen = async () => {
                         </div>
                     </div>
                 </div>
+                <div class="server-players overflow-y-auto">
+                    <NGrid x-gap="5" :cols="1">
+                        <NGridItem v-for="(player, index) in gameStore.currentGisPlayerList" :key="index" :name="index"
+                            v-show="player.team !== 'unknown'" class="mb-5px mt-5px">
+                            <NCollapse accordion>
+                                <NCollapseItem>
+                                    <template #header>
+                                        <div class="flex items-center gap-2">
+                                            <NAvatar round size="small" :src="player.loginUser?.avatar"
+                                                fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
+                                            <span class="ml-2 font-bold">{{ player.loginUser?.nickName || '未知玩家'
+                                            }}</span>
+                                            <NTag size="small" :type="getTeamColor(player.team)" class="ml-2"
+                                                :bordered="false">
+                                                {{ getTeamLabel(player.team) }}
+                                            </NTag>
+                                        </div>
+                                    </template>
+                                    <div class="grid grid-cols-2 gap-5px text-12px font-bold player-info">
+                                        <div class="flex items-center">
+                                            <div class="flex items-center justify-center font-size-16px">
+                                                <SvgIcon icon="solar:health-broken" class="mr-5px" />
+                                            </div>
+                                            <NText>
+                                                {{ player.health }} 生命值
+                                            </NText>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <div class="flex items-center justify-center font-size-16px">
+                                                <SvgIcon icon="hugeicons:body-armor" class="mr-5px" />
+                                            </div>
+                                            <NText>
+                                                {{
+                                                    player.armor }} 护甲
+                                            </NText>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <div class="flex items-center justify-center font-size-16px">
+                                                <SvgIcon icon="material-symbols:price-change-outline" class="mr-5px" />
+                                            </div>
+                                            <NText>
+                                                {{ player.money }} 金币
+                                            </NText>
+                                        </div>
+
+                                        <div class="flex items-center">
+                                            <div class="flex items-center justify-center font-size-16px">
+                                                <SvgIcon icon="ph:knife" class="mr-5px" />
+                                            </div>
+                                            <NText>
+                                                {{ player.kills }} 击杀
+                                            </NText>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <div class="flex items-center justify-center font-size-16px">
+                                                <SvgIcon icon="mdi:scoreboard-outline" class="mr-5px" />
+                                            </div>
+                                            <NText>
+                                                {{ player.score }} 分
+                                            </NText>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <div class="flex items-center justify-center font-size-16px">
+                                                <SvgIcon icon="solar:tag-price-broken" class="mr-5px" />
+                                            </div>
+                                            <NText>
+                                                {{ player.equipValue }} 装备价值
+                                            </NText>
+                                        </div>
+                                        <div class="flex items-center">
+                                            <div class="flex items-center justify-center font-size-16px">
+                                                <SvgIcon icon="hugeicons:gun" class="mr-5px" />
+                                            </div>
+                                            <NText>
+                                                {{ player.weapon.name || '无' }}
+                                            </NText>
+                                        </div>
+                                    </div>
+                                </NCollapseItem>
+                            </NCollapse>
+                        </NGridItem>
+                    </NGrid>
+                </div>
             </div>
         </div>
     </NModal>
@@ -299,6 +402,18 @@ const handleConfirmOpen = async () => {
                 height: 100%;
                 background-color: rgba(0, 0, 0, 0.5);
                 opacity: 1;
+            }
+        }
+
+        .server-players {
+            flex: 1;
+            overflow-y: auto;
+            padding: 5px 10px 5px 10px;
+
+            .player-info {
+                background-color: rgba(133, 133, 133, 0.1);
+                border-radius: 8px;
+                padding: 10px;
             }
         }
     }

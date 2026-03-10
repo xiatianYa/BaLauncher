@@ -116,8 +116,8 @@ declare namespace Api {
             addr: string;
             isOnline: boolean;
             round: string;
-            ctScore: string;
-            tScore: string;
+            CTScore: string;
+            TScore: string;
             csgoPlayer: CsgoPlayer[];
         }
 
@@ -127,18 +127,20 @@ declare namespace Api {
             /** 回合 */
             round: string;
             /** CT分数 */
-            ctScore: string;
+            CTScore: string;
             /** T分数 */
-            tScore: string;
+            TScore: string;
             /** 地图阶段 */
             mapStage: string;
             /** 游戏阶段 */
             mapPhase: string;
-            /** 玩家数据 */
-            csgoPlayer: CsgoPlayer;
         }
 
         type CsgoPlayer = {
+            //系统用户信息
+            loginUser?:Api.Auth.LoginUser;
+            //服务器地址
+            addr: string;
             // 玩家阵营（ct/t/spectator）
             team: string;
             // 生命值

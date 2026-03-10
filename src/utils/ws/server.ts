@@ -7,10 +7,8 @@ const wsUrl = process.env.NODE_ENV === 'development' ? 'ws://127.0.0.1:8080/ws/s
 // 定义ServerWebsocket相关的类型
 interface ServerWebsocketType {
   ServerWebsocket: WebSocket | null;
-  connectURL: string;
   reconnectTimer: NodeJS.Timeout | null;
   reconnectInterval: number;
-  notification: any;
   init(): void;
   onClose(): void;
   reconnect(): void;
@@ -20,23 +18,30 @@ interface ServerWebsocketType {
 // 定义ServerWebsocket实例
 const ServerWebsocket: ServerWebsocketType = {
   ServerWebsocket: null,
-  connectURL: wsUrl,
   reconnectTimer: null,
   reconnectInterval: 8000,
-  notification: null,
 
   // 建立ServerWebsocket连接
   init(): void {
-    const authStore = useAuthStore();
+    this.close();
 
+    const authStore = useAuthStore();
     const gameStore = useGameStore();
 
     if (!authStore.isLogin) return;
 
-    ServerWebsocket.ServerWebsocket = new WebSocket(wsUrl + authStore.token);
+    this.ServerWebsocket = new WebSocket(wsUrl + authStore.token);
+
+    // 连接成功
+    this.ServerWebsocket.onopen = () => {
+      if (this.reconnectTimer) {
+        clearTimeout(this.reconnectTimer);
+        this.reconnectTimer = null;
+      }
+    };
 
     // 监听服务器返回的数据
-    ServerWebsocket.ServerWebsocket.onmessage = (e: MessageEvent) => {
+    this.ServerWebsocket.onmessage = (e: MessageEvent) => {
       try {
         const { code, data } = JSON.parse(e.data);
         // 定义一个处理函数的映射对象
@@ -54,23 +59,20 @@ const ServerWebsocket: ServerWebsocketType = {
               }, 100);
               return;
             }
-
             gameStore.isAutomatic = false;
             gameStore.automaticCount = 0;
             const aLink = document.createElement('a');
             aLink.href = `steam://rungame/730/76561198977557298/+connect ${gameStore.automaticInfo?.connectStr}`;
             aLink.click();
-
-            window.$notification?.success({
-              content: '连接成功',
-              duration: 1000,
-              keepAliveOnHover: true
-            });
           },
           '205': () => {
             if (Array.isArray(data)) {
               gameStore.currentServerWsList.splice(0, gameStore.currentServerWsList.length, ...data);
             }
+          },
+          '103': () => {
+            gameStore.currentGisServerList.splice(0, gameStore.currentGisServerList.length, ...data);
+            console.log("GIS服务器数据",gameStore.currentGisServerList);
           }
         };
 
@@ -85,48 +87,42 @@ const ServerWebsocket: ServerWebsocketType = {
     };
 
     // 连接断开时触发
-    ServerWebsocket.ServerWebsocket.onclose = () => {
+    this.ServerWebsocket.onclose = () => {
       if (!authStore.isLogin) return;
-
-      window.$notification?.warning({
-        content: '服务器连接断开',
-        meta: '自动尝试重新连接中 或 刷新浏览器!',
-        duration: 4000,
-        keepAliveOnHover: true
-      });
-
-      ServerWebsocket.onClose();
+      this.onClose();
     };
 
-    // 连接成功
-    ServerWebsocket.ServerWebsocket.onopen = () => {
-      clearTimeout(ServerWebsocket.reconnectTimer as NodeJS.Timeout);
-      ServerWebsocket.reconnectTimer = null;
+    this.ServerWebsocket.onerror = (e) => {
+      console.error('WebSocket error:', e);
     };
   },
 
   // 处理断开连接操作
   onClose(): void {
-    if (!ServerWebsocket.reconnectTimer) {
-      ServerWebsocket.reconnectTimer = setInterval(() => {
-        ServerWebsocket.reconnect();
-      }, ServerWebsocket.reconnectInterval);
-    }
+    this.reconnect();
   },
 
   // 重新连接
   reconnect(): void {
-    ServerWebsocket.init();
+    if (this.reconnectTimer) return;
+
+    this.reconnectTimer = setTimeout(() => {
+      this.init();
+      this.reconnectTimer = null;
+    }, this.reconnectInterval);
   },
 
   // 关闭ServerWebsocket连接
   close(): void {
-    if (ServerWebsocket.ServerWebsocket) {
-      ServerWebsocket.ServerWebsocket.close();
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
     }
-
-    clearTimeout(ServerWebsocket.reconnectTimer as NodeJS.Timeout);
-    ServerWebsocket.reconnectTimer = null;
+    if (this.ServerWebsocket) {
+      this.ServerWebsocket.onclose = null;
+      this.ServerWebsocket.close();
+      this.ServerWebsocket = null;
+    }
   }
 };
 

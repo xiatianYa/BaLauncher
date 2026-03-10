@@ -9,6 +9,7 @@ import { fetchGetPieChart } from '@/service/api';
 import { localStg } from '@/utils/storage';
 import { GameStartType } from '@/constants/app';
 import { GamePlatform } from '@/constants/app';
+import GisWebsocket from '@/utils/ws/gis';
 
 export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
@@ -26,6 +27,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // 当前服务器数据列表(Ws推送)
   const currentServerWsList: Api.Game.InfoResponse[] = reactive([]);
+
+  // 所有服务器的GIS信息
+  const currentGisServerList: Api.Game.ServerInfoData[] = reactive([])
+
+  // 所有玩家的GIS信息
+  const currentGisPlayerList: Api.Game.CsgoPlayer[] = reactive([])
 
   // 当前选择的社区
   const selectedCommunityId = ref<number | null>(null);
@@ -64,26 +71,30 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   });
 
   // 用户所在服务器信息
-  const userServerInfo = ref<Api.Game.ServerInfoData>({
+  const gameServerInfo = ref<Api.Game.ServerInfoData>({
     addr: '',
     round: '',
-    ctScore: '',
-    tScore: '',
+    CTScore: '',
+    TScore: '',
     mapStage: '',
     mapPhase: '',
-    csgoPlayer: {
-      team: '',
-      health: 0,
-      armor: 0,
-      money: 0,
-      equipValue: 0,
-      weapon: '',
-      clipAmmo: 0,
-      reserveAmmo: 0,
-      helmet: false,
-      kills: 0,
-      score: 0
-    },
+  });
+
+  // 用户游戏信息
+  const gamePlayerInfo = ref<Api.Game.CsgoPlayer>({
+    //服务器地址
+    addr: '',
+    team: '',
+    health: 0,
+    armor: 0,
+    money: 0,
+    equipValue: 0,
+    weapon: '',
+    clipAmmo: 0,
+    reserveAmmo: 0,
+    helmet: false,
+    kills: 0,
+    score: 0
   });
 
   // 检测次数
@@ -195,6 +206,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
         }
       } else {
         console.log("游戏已关闭");
+        //关闭自动挤服
+        stopAutomaticJoinServer();
         const gsiConnected = await window.ipcRenderer.stopGsiService();
         //关闭监听数据事件
         if (!gsiConnected && isGsiRunning.value) {
@@ -333,8 +346,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
           addr: server.connectStr as string,
           isOnline: false,
           round: '',
-          ctScore: '',
-          tScore: '',
+          CTScore: '',
+          TScore: '',
           csgoPlayer: [],
         }));
       // 合并在线和离线服务器
@@ -445,6 +458,14 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 连接服务器 使用steamUrl
   async function connectServerUsingSteamUrl() {
     if (!joinServerInfo.value) return;
+    currentGisPlayerList.splice(0, currentGisPlayerList.length);
+    if (GisWebsocket.GisWebsocket) {
+      const setAddrMessage: Api.Game.WsServerMsgType = {
+        type: '101',
+        data: joinServerInfo.value.addr
+      };
+      GisWebsocket.GisWebsocket?.send(JSON.stringify(setAddrMessage));
+    }
     const aLink = document.createElement('a');
     aLink.href = `steam://rungame/730/76561198977557298/+connect ${joinServerInfo.value.addr}`;
     aLink.click();
@@ -565,94 +586,119 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
               window.$message?.success("连接成功")
             }
           }
-          // 玩家离开服务器(手动断开连接)
-          if (data.current === 'unknown') {
-            //玩家离开服务器  停止推送数据
-          }
           break;
         case 'map:phaseChanged':
           safeLog('🎯 [Map:阶段变更] - 游戏阶段已更新', data.current, data.previous);
-          userServerInfo.value.mapPhase = data.current;
+          gameServerInfo.value.mapPhase = data.current;
+          // 发送数据给服务器
+          sendServerGisData(gameServerInfo.value);
           break;
         case 'map:roundChanged':
           safeLog('🔄 [Map:回合变更] - 回合数已更新', data.current, data.previous);
-          userServerInfo.value.round = data.current;
+          gameServerInfo.value.round = data.current;
+          // 发送数据给服务器
+          sendServerGisData(gameServerInfo.value);
           break;
         case 'map:teamCTScoreChanged':
           safeLog('🔵 [Map:CT分数变更] - CT阵营分数已更新', data.current, data.previous);
-          userServerInfo.value.ctScore = data.current;
+          gameServerInfo.value.CTScore = data.current;
+          // 发送数据给服务器
+          sendServerGisData(gameServerInfo.value);
           break;
         case 'map:teamTScoreChanged':
           safeLog('🟠 [Map:T分数变更] - T阵营分数已更新', data.current, data.previous);
-          userServerInfo.value.tScore = data.current;
+          gameServerInfo.value.TScore = data.current;
+          // 发送数据给服务器
+          sendServerGisData(gameServerInfo.value);
           break;
         // ========== Round 事件 ==========
         case 'round:phaseChanged':
           safeLog('⏱️ [Round:阶段变更] - 回合阶段已更新', data.current, data.previous);
-          userServerInfo.value.mapPhase = data.current;
+          gameServerInfo.value.mapPhase = data.current;
+          // 发送数据给服务器
+          sendServerGisData(gameServerInfo.value);
           break;
         case 'round:started':
           safeLog('▶️ [Round:开始] - 新回合开始', data.current, data.previous);
-          userServerInfo.value.mapPhase = data.current;
+          gameServerInfo.value.mapPhase = data.current;
+          // 发送数据给服务器
+          sendServerGisData(gameServerInfo.value);
           break;
         case 'round:ended':
           safeLog('⏹️ [Round:结束] - 回合结束', data.current, data.previous);
-          userServerInfo.value.mapPhase = data.current;
-          break;
-        case 'round:won':
-          safeLog('🎉 [Round:胜利] - 回合获胜', data.current, data.previous);
-          userServerInfo.value.mapPhase = data.current;
+          gameServerInfo.value.mapPhase = data.current;
+          // 发送数据给服务器
+          sendServerGisData(gameServerInfo.value);
           break;
         case 'player:teamChanged':
           safeLog('👥 [Player:阵营变更] - 玩家所属阵营已切换', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.team = data.current;
+          gamePlayerInfo.value.team = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         case 'player:hpChanged':
           safeLog('❤️ [Player:生命值变更] - 玩家生命值已更新', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.health = data.current;
+          gamePlayerInfo.value.health = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         case 'player:armorChanged':
           safeLog('🛡️ [Player:护甲值变更] - 玩家护甲值已更新', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.armor = data.current;
+          gamePlayerInfo.value.armor = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         case 'player:helmetChanged':
           safeLog('⛑️ [Player:头盔变更] - 玩家头盔状态已更新', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.helmet = data.current;
+          gamePlayerInfo.value.helmet = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         case 'player:moneyChanged':
           safeLog('💰 [Player:金钱变更] - 玩家金钱已更新', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.money = data.current;
+          gamePlayerInfo.value.money = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         case 'player:equipmentValueChanged':
           safeLog('💎 [Player:装备价值变更] - 玩家装备价值已更新', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.equipValue = data.current;
+          gamePlayerInfo.value.equipValue = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         case 'player:weaponChanged':
           safeLog('🔫 [Player:武器变更] - 玩家武器已更新', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.weapon = data.current;
+          gamePlayerInfo.value.weapon = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         case 'player:ammoClipChanged':
           safeLog('📦 [Player:弹夹弹药变更] - 玩家弹夹弹药已更新', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.clipAmmo = data.current;
+          gamePlayerInfo.value.clipAmmo = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         case 'player:ammoReserveChanged':
           safeLog('🎒 [Player:备用弹药变更] - 玩家备用弹药已更新', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.reserveAmmo = data.current;
+          gamePlayerInfo.value.reserveAmmo = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         case 'player:killsChanged':
           safeLog('💀 [Player:击杀数变更] - 玩家击杀数已更新', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.kills = data.current;
+          gamePlayerInfo.value.kills = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         case 'player:scoreChanged':
           safeLog('📊 [Player:分数变更] - 玩家分数已更新', data.current, data.previous);
-          userServerInfo.value.csgoPlayer.score = data.current;
+          gamePlayerInfo.value.score = data.current;
+          // 发送数据给服务器
+          sendUserGisData(gamePlayerInfo.value);
           break;
         default:
           safeLog('❓ [未知事件]', { eventName, data });
       }
-
-      // 发送数据给服务器
-      sendUserGisData(userServerInfo.value);
     });
   }
 
@@ -664,9 +710,41 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     });
   }
 
-  // 初始化服务器 WebSocket 连接
-  async function initServerWebsocket() {
-    ServerWebsocket.init();
+  /**
+   * WS发送用户GIS数据(快速推送)
+   */
+  function sendUserGisData(data: Api.Game.CsgoPlayer) {
+    //设置服务器地址
+    if (!joinServerInfo.value?.addr) return;
+    data.addr = joinServerInfo.value.addr;
+    const setAddrMessage: Api.Game.WsServerMsgType = {
+      type: '101',
+      data: joinServerInfo.value.addr
+    };
+    const sendMessage: Api.Game.WsServerMsgType = {
+      type: '100',
+      data
+    };
+    if (GisWebsocket.GisWebsocket) {
+      GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage));
+      GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage));
+    }
+  }
+
+  /**
+   * WS发送服务器GIS数据(快速推送)
+   */
+  function sendServerGisData(data: Api.Game.ServerInfoData) {
+    if (!joinServerInfo.value?.addr) return;
+    //设置服务器地址
+    data.addr = joinServerInfo.value.addr;
+    const sendMessage: Api.Game.WsServerMsgType = {
+      type: '103',
+      data
+    };
+    if (ServerWebsocket.ServerWebsocket) {
+      ServerWebsocket.ServerWebsocket.send(JSON.stringify(sendMessage));
+    }
   }
 
   /** WS发送挤服数据 */
@@ -680,17 +758,21 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     }
   }
 
-  /**
-   * WS发送用户GIS数据(快速推送)
-   */
-  function sendUserGisData(data: Api.Game.ServerInfoData) {
-    const sendMessage: Api.Game.WsServerMsgType = {
-      type: '103',
-      data
-    };
-    if (ServerWebsocket.ServerWebsocket) {
-      ServerWebsocket.ServerWebsocket.send(JSON.stringify(sendMessage));
+  // 初始化服务器 WebSocket 连接
+  async function initServerWebsocket() {
+    ServerWebsocket.init();
+  }
+
+  /** Close GisWebsocket connection */
+  function closeGisWebsocket() {
+    if (GisWebsocket.GisWebsocket) {
+      GisWebsocket.close();
     }
+  }
+
+  // 初始化GIS WebSocket 连接
+  async function initGisWebsocket() {
+    GisWebsocket.init();
   }
 
   /** Close ServerWebsocket connection */
@@ -719,10 +801,15 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     isGameLaunching,
     automaticJoinConfig,
     currentServerWsList,
-    userServerInfo,
+    gameServerInfo,
+    gamePlayerInfo,
+    currentGisServerList,
+    currentGisPlayerList,
     initServerWebsocket,
+    initGisWebsocket,
     initServerList,
     closeServerWebsocket,
+    closeGisWebsocket,
     sendJoinServer,
     queryServerInfosResponse,
     queryServerInfoResponse,

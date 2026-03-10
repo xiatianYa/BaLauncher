@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/modules/auth';
 import ServerWebsocket from '@/utils/ws/server';
 import { useGameStore } from '@/store/modules/game';
 import { useDictStore } from '@/store/modules/dict';
+import GisWebsocket from '@/utils/ws/gis';
 /**
  * create route guard
  *
@@ -31,6 +32,9 @@ export function createRouteGuard(router: Router) {
       await gameStore.initServerList();
       if (!ServerWebsocket.ServerWebsocket) {
         gameStore.initServerWebsocket();
+      }
+      if(!GisWebsocket.GisWebsocket){
+        gameStore.initGisWebsocket();
       }
       isInitialized = true;
     }

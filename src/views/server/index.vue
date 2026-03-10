@@ -7,6 +7,7 @@ import { NEmpty } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
 import OpenGameConfirm from '@/views/server/modules/open-game-confirm.vue';
 import OpenGameJoin from '@/views/server/modules/open-game-join.vue';
+import GisWebsocket from '@/utils/ws/gis';
 
 defineOptions({
   name: 'server'
@@ -157,27 +158,6 @@ const queryServerInfos = async (showAnimationFlag: boolean = true) => {
   }
 };
 
-// 查询服务器列表 WS服务器
-const queryWsServerInfos = async (showAnimationFlag: boolean = true) => {
-  if (isRefreshing.value) return;
-
-  isRefreshing.value = true;
-  if (showAnimationFlag) {
-    serverLoading.value = true;
-  }
-
-  try {
-    await gameStore.queryWsServerInfosResponse();
-  } finally {
-    if (showAnimationFlag) {
-      serverLoading.value = false;
-    }
-    isRefreshing.value = false;
-
-    startCountdown(true);
-  }
-};
-
 // 查询服务器地图类型
 const queryServerMapType = (mapName: string) => {
   return gameStore.mapList.find(map => map.mapName === mapName)?.type;
@@ -205,6 +185,14 @@ const joinServer = async (server: Api.Game.InfoResponse) => {
 const openAutoJoinServer = (server: Api.Game.InfoResponse) => {
   gameStore.joinServerInfo = server;
   showJoinServerConfirm.value = true;
+  gameStore.currentGisPlayerList = [];
+  if (GisWebsocket.GisWebsocket) {
+    const setAddrMessage: Api.Game.WsServerMsgType = {
+      type: '101',
+      data: gameStore.joinServerInfo.addr
+    };
+    GisWebsocket.GisWebsocket?.send(JSON.stringify(setAddrMessage));
+  }
 }
 
 // 复制服务器地址

@@ -82,6 +82,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
         // initialize the websocket
         gameStore.initServerWebsocket();
+        // initialize gis webSocket
+        gameStore.initGisWebsocket();
         // 开始监听用户是否运行CS2
         gameStore.startGameRunningCheck();
         // initialize the community list
@@ -144,6 +146,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
         // initialize the websocket
         gameStore.initServerWebsocket();
+        // initialize gis webSocket
+        gameStore.initGisWebsocket();
         // 开始监听用户是否运行CS2
         gameStore.startGameRunningCheck();
         // initialize the community list
