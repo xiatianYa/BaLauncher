@@ -319,7 +319,7 @@ const handleConfirmOpen = async () => {
                                                 <SvgIcon icon="hugeicons:gun" class="mr-5px" />
                                             </div>
                                             <NText>
-                                                {{ player.weapon.name || '无' }}
+                                                {{ player.weapon?.name || '无' }}
                                             </NText>
                                         </div>
                                     </div>

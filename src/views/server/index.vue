@@ -50,7 +50,7 @@ const selectCommunity = async (id: number) => {
   window.ipcRenderer.off('query-game-servers', () => {
     console.log('取消查询服务器');
   });
-  await queryServerInfos();
+  await queryServerInfos(true, true);
   serverLoading.value = false;
 };
 
@@ -72,6 +72,11 @@ const getOnLineColor = (server: Api.Game.InfoResponse) => {
     return `background-color: #ff4f00;width: ${(server.players / server.maxPlayers) * 100}%;`;
   }
   return `background-color: #ff0000;width: ${(server.players / server.maxPlayers) * 100}%;`;
+};
+
+const getPlayersChipBg = (server: Api.Game.InfoResponse): string | undefined => {
+  const match = getOnLineColor(server).match(/background-color:\s*([^;]+);/);
+  return match?.[1];
 };
 
 // 计算社区标签颜色
@@ -116,7 +121,7 @@ const startCountdown = (reset: boolean = true) => {
       countdownValue.value--;
       animateNumber(countdownValue.value);
     } else if (countdownValue.value <= 0 && !isRefreshing.value) {
-      queryServerInfos(false);
+      queryServerInfos(false, false);
     }
   }, 1000);
 };
@@ -132,7 +137,7 @@ const animateNumber = (num: number) => {
 };
 
 // 查询服务器列表 源服务器
-const queryServerInfos = async (showAnimationFlag: boolean = true) => {
+const queryServerInfos = async (showAnimationFlag: boolean = true, isCache: boolean = false) => {
   if (isRefreshing.value) return;
 
   isRefreshing.value = true;
@@ -143,7 +148,7 @@ const queryServerInfos = async (showAnimationFlag: boolean = true) => {
   try {
     await gameStore.countServerServerNumber();
     await gameStore.countServerPlayerNumber();
-    if (gameStore.currentServerWsList.length > 0) {
+    if (gameStore.currentServerWsList.length > 0 && isCache) {
       await gameStore.queryWsServerInfosResponse();
     } else {
       await gameStore.queryServerInfosResponse();
@@ -224,7 +229,7 @@ const refreshServerInfo = async (server: Api.Game.InfoResponse) => {
 };
 
 onMounted(async () => {
-  await queryServerInfos(true);
+  await queryServerInfos(true, true);
   startCountdown();
 });
 
@@ -247,7 +252,7 @@ onUnmounted(() => {
         <h3 class="text-lg font-bold flex align-center">服务器列表</h3>
       </template>
       <template #header-extra>
-        <div class="countdown-container cursor-pointer" @click="queryServerInfos()" v-if="!isRefreshing">
+        <div class="countdown-container cursor-pointer" @click="queryServerInfos(true, false)" v-if="!isRefreshing">
           <svg v-if="!isRefreshing" class="countdown-svg" width="40" height="40">
             <defs>
               <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -314,25 +319,44 @@ onUnmounted(() => {
                   server.name
                 }}
               </div>
-              <NEllipsis class="mt-6px ml-5px font-size-13px flex  items-center position-relative color-#fff font-bold">
-                {{
-                  `${server.map}(${server.players}/${server.maxPlayers})` }}
-              </NEllipsis>
-              <div class="mt-6px ml-5px font-size-13px flex  items-center position-relative color-#fff font-bold">
-                <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
-                {{
-                  getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel : '暂无译名'
-                }}
+              <div class="flex justify-between">
+                <NEllipsis
+                  class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
+                  {{
+                    `${server.map}`
+                  }}
+                </NEllipsis>
+                <div class="stat-chip chip-players mr-5px" :style="{ '--chip-players-bg': getPlayersChipBg(server) }">
+                  <SvgIcon icon="mdi:account-group" class="chip-icon" />
+                  <span class="chip-text">{{ `${server.players}/${server.maxPlayers}` }}</span>
+                </div>
               </div>
-              <div class="flex-y-center ml-5px mt-6px position-relative font-bold"
-                v-if="queryServerMapType(server.map)">
+              <div
+                class="mt-6px ml-5px font-size-13px flex items-center justify-between position-relative color-#fff font-bold">
+                <div class="flex items-center justify-center">
+                  <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
+                  {{
+                    getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel : '暂无译名'
+                  }}
+                </div>
+                <div class="stat-chip chip-score mr-5px" v-show="server.mapPhase">
+                  <span class="team team-ct">CT {{ server.CTScore || '0' }}</span>
+                  <SvgIcon icon="mdi:scoreboard-outline" class="chip-icon" />
+                  <span class="team team-t">T {{ server.TScore || '0' }}</span>
+                </div>
+              </div>
+              <div class="flex-y-center ml-5px mt-6px position-relative font-bold">
                 <NTag size="small" round class="mr-3px" ghost
-                  :type="dictOptions('game_type').find((item: any) => item.value === queryServerMapType(server.map))?.type">
+                  :type="dictOptions('game_type').find((item: any) => item.value === queryServerMapType(server.map))?.type"
+                  v-show="queryServerMapType(server.map)">
                   {{dictOptions('game_type').find((item: any) => item.value === queryServerMapType(server.map))?.label}}
                 </NTag>
                 <NTag v-for="(tag, index) in queryServerMapTag(server.map)" :key="index" size="small" round
-                  class="mr-3px" type="success">
+                  class="mr-3px" type="success" v-show="queryServerMapType(server.map)">
                   {{dictOptions('game_tag').find((item: any) => item.value === tag)?.label}}
+                </NTag>
+                <NTag size="small" round class="mr-3px" ghost type="info" v-show="server.ping">
+                  {{ server.ping }}ms
                 </NTag>
               </div>
               <div class="server-card-button mt-6px">
@@ -605,7 +629,7 @@ onUnmounted(() => {
 .sercer-card {
   position: relative;
   width: 100%;
-  height: 140px;
+  height: 155px;
   border-radius: 10px;
   background-color: #a5aaa3;
   font-family: 'SimHei';
@@ -667,7 +691,7 @@ onUnmounted(() => {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.4);
+    background-color: rgba(0, 0, 0, 0.5);
     opacity: 1;
     transition: opacity 0.2s ease;
   }
@@ -730,7 +754,62 @@ onUnmounted(() => {
   }
 
   &:hover .server-card-mask {
-    opacity: 0;
+    opacity: 0.5;
   }
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(6px);
+}
+
+.chip-icon {
+  font-size: 16px;
+  opacity: 0.9;
+}
+
+.chip-text {
+  line-height: 1;
+}
+
+.chip-players {
+  background: var(--chip-players-bg, linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #f59e0b 100%));
+}
+
+.chip-score {
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #ef4444 100%);
+}
+
+.team {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.team-ct::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #60a5fa;
+  display: inline-block;
+}
+
+.team-t::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f59e0b;
+  display: inline-block;
 }
 </style>

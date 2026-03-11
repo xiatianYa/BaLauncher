@@ -12,14 +12,14 @@
 - 🔄 自动刷新服务器状态
 - 🚀 Steam/QQ 登录支持
 - 📊 服务器信息统计
-- 🎨 精美的用户界面
+- 🎨 简洁的用户界面
 
 ## 🛠️ 技术栈
 
 - **Electron** - 跨平台桌面应用框架
 - **Vue 3** - 渐进式 JavaScript 框架
 - **TypeScript** - 类型安全的 JavaScript 超集
-- **Vite** - 下一代前端构建工具
+- **Vite** - 前端构建工具
 - **Naive UI** - Vue 3 组件库
 - **Pinia** - Vue 状态管理
 - **Vue Router** - Vue 路由管理器
@@ -28,9 +28,6 @@
 ## 📦 安装依赖
 
 ```bash
-# 使用 pnpm（推荐）
-pnpm install
-
 # 或使用 npm
 npm install
 ```
@@ -40,36 +37,36 @@ npm install
 ### 开发模式
 
 ```bash
-pnpm run dev
+npm run dev
 ```
 
 ### 构建生产版本
 
 ```bash
 # Windows
-pnpm run build:win
+npm run build:win
 
 # macOS
-pnpm run build:mac
+npm run build:mac
 
 # Linux
-pnpm run build:linux
+npm run build:linux
 
 # 构建所有平台
-pnpm run build
+npm run build
 ```
 
 ### 发布版本
 
 ```bash
 # Windows
-pnpm run publish:win
+npm run publish:win
 
 # macOS
-pnpm run publish:mac
+npm run publish:mac
 
 # Linux
-pnpm run publish:linux
+npm run publish:linux
 ```
 
 ## 📁 项目结构
@@ -121,7 +118,7 @@ BaLauncher/
 项目使用 Commitizen 进行提交规范管理：
 
 ```bash
-pnpm run commit
+npm run commit
 ```
 
 ### 环境要求
@@ -140,7 +137,8 @@ pnpm run commit
 - <span style="color: green;">[✓]</span> 自动刷新服务器状态
 - <span style="color: green;">[✓]</span> Steam/QQ 登录支持
 - <span style="color: green;">[✓]</span> 服务器信息统计
-- <span style="color: green;">[✓]</span> 精美的用户界面
+- <span style="color: green;">[✓]</span> 服务器比分数据
+- <span style="color: green;">[✓]</span> 延迟显示
 
 ### 计划添加功能
 - [ ] 游戏状态托盘
@@ -155,13 +153,11 @@ pnpm run commit
 - [ ] 游戏直播
 - [ ] 直播OBS
 - [ ] 服务器热身状态
-- [ ] 服务器比分数据
-- [ ] 延迟显示
 - [ ] 挤服托盘
 - [ ] 服务器列表显示模式切换
 
-### 技术迁移计划
-- [ ] 考虑移植到 Tauri 的可能性
+### 迁移计划
+- 移植到 Tauri 的可能性
 
 ## 📚 数据来源库
 客户端状态数据来源：

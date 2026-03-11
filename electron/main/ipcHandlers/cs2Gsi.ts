@@ -202,7 +202,7 @@ async function launchCs2(
 }
 
 // ========== 等待CS2游戏启动完成 ==========
-async function waitForCs2Launch(csgo2Path?: string, maxWaitMs: number = 90000) {
+async function waitForCs2Launch(csgo2Path?: string, maxWaitMs: number = 60000) {
     const endTime = Date.now() + maxWaitMs
 
     while (Date.now() < endTime) {

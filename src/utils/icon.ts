@@ -72,5 +72,12 @@ export const commonIcons = [
   'basil:qq-outline',
   'gg:toolbox',
   'ph:sign-out',
-  'ph:sign-in'
+  'ph:sign-in',
+  'solar:health-broken',
+  'hugeicons:body-armor',
+  'material-symbols:price-change-outline',
+  'ph:knife',
+  'mdi:scoreboard-outline',
+  'solar:tag-price-broken',
+  'hugeicons:gun'
 ]

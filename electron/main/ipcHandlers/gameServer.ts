@@ -29,9 +29,11 @@ export function setupGameServerIpc() {
     try {
       const queryTimeout = timeout || 5000
       const queryAttempts = attempts || 2
-
+      const start = Date.now()
       const data = await queryGameServerInfo(gameServer, queryAttempts, queryTimeout)
-      data.addr = gameServer
+      const end = Date.now()
+      data.addr = gameServer;
+      data.ping = end - start
       console.log('[query-game-server] 查询成功:', gameServer, data)
       return {
         success: true,
@@ -52,11 +54,15 @@ export function setupGameServerIpc() {
       const queryAttempts = attempts || 2
       const results = await Promise.allSettled(
         gameServers.map(async (server) => {
+          const start = Date.now()
           try {
             const data = await queryGameServerInfo(server, queryAttempts, queryTimeout)
-            data.addr = server
+            const end = Date.now()
+            data.addr = server;
+            data.ping = end - start
             return data
           } catch (error) {
+            const end = Date.now()
             return {
               addr: server,
               success: false,

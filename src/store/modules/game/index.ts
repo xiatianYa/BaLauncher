@@ -286,10 +286,21 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
         const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses);
         if (success) {
           infoResponseList.forEach((item: any) => {
+            //查询服务器是否在线
             if (item.success === false) {
               item.isOnline = false;
             } else {
               item.isOnline = true;
+            }
+            //查询服务器是否有状态
+            const matchingServer = currentGisServerList.find(gisServer => gisServer.addr === item.addr);
+
+            if (matchingServer) {
+              item.round = matchingServer.round || '';
+              item.CTScore = matchingServer.CTScore || '';
+              item.TScore = matchingServer.TScore || '';
+              item.mapStage = matchingServer.mapStage || '';
+              item.mapPhase = matchingServer.mapPhase || '';
             }
           });
           currentServerList.splice(0, currentServerList.length, ...infoResponseList);
@@ -320,11 +331,27 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   async function queryWsServerInfosResponse() {
     // 使用 IPC 查询服务器信息
     if (serverDataList.length > 0) {
+      // 先查询源服务器信息 不等待 获取ping
+      queryServerInfosResponse();
       // 筛选当前社区要查询的服务器
       const targetServers = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value);
       const serverAddresses = targetServers.map(server => server.connectStr);
       // 过滤出currentServerWsList中addr在serverAddresses中的数据
       const filteredWsServers = currentServerWsList.filter(item => serverAddresses.includes(item.addr));
+      filteredWsServers.forEach(item => {
+        item.isOnline = true;
+        //查询服务器是否有状态
+        const matchingServer = currentGisServerList.find(gisServer => gisServer.addr === item.addr);
+        console.log("服务器比分数:", matchingServer);
+
+        if (matchingServer) {
+          item.round = matchingServer.round || '';
+          item.CTScore = matchingServer.CTScore || '';
+          item.TScore = matchingServer.TScore || '';
+          item.mapStage = matchingServer.mapStage || '';
+          item.mapPhase = matchingServer.mapPhase || '';
+        }
+      })
       // 找出不在filteredWsServers中的服务器，创建离线服务器数据
       const offlineServers: Api.Game.InfoResponse[] = targetServers
         .filter(server => !filteredWsServers.some(item => item.addr === server.connectStr))
@@ -343,11 +370,13 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
           visibility: 0,
           vac: 0,
           version: '',
-          addr: server.connectStr as string,
+          addr: server.connectStr || '',
           isOnline: false,
           round: '',
           CTScore: '',
           TScore: '',
+          mapStage: '',
+          mapPhase: '',
           csgoPlayer: [],
         }));
       // 合并在线和离线服务器

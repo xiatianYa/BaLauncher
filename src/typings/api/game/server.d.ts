@@ -118,7 +118,10 @@ declare namespace Api {
             round: string;
             CTScore: string;
             TScore: string;
-            csgoPlayer: CsgoPlayer[];
+            mapStage: string;
+            mapPhase: string;
+            ping?: number;
+            csgoPlayer?: CsgoPlayer[];
         }
 
         type ServerInfoData = {
@@ -138,7 +141,7 @@ declare namespace Api {
 
         type CsgoPlayer = {
             //系统用户信息
-            loginUser?:Api.Auth.LoginUser;
+            loginUser?: Api.Auth.LoginUser;
             //服务器地址
             addr: string;
             // 玩家阵营（ct/t/spectator）
