@@ -2,6 +2,7 @@
 import { useGameStore } from '@/store/modules/game';
 import { NModal, NText, NSpace, NTag, NButton, NSwitch, NSlider, NCollapse, NCollapseItem, NAvatar } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
+import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 
 const props = defineProps<{
     showJoinServer: boolean;
@@ -13,6 +14,207 @@ const emit = defineEmits<{
 
 const gameStore = useGameStore();
 const { dictOptions } = useDict();
+
+type BounceState = {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    size: number;
+};
+
+const animationRef = ref<HTMLElement | null>(null);
+const bounceStates = reactive<Record<string, BounceState>>({});
+const cleanupAtMap = reactive<Record<string, number>>({});
+let rafId: number | null = null;
+let lastTs = 0;
+
+const automaticDynamicMessages = computed(() => {
+    const list = gameStore.currentAutomaticPlayerDynamicList;
+    return list.length <= 12 ? list : list.slice(-12);
+});
+
+const createBounceState = (w: number, h: number): BounceState => {
+    const size = 32;
+    const maxX = Math.max(0, w - size);
+    const maxY = Math.max(0, h - size);
+    const speedX = (0.05 + Math.random() * 0.06);
+    const speedY = (0.05 + Math.random() * 0.06);
+
+    const edge = Math.floor(Math.random() * 4);
+    let x = 0;
+    let y = 0;
+    let vx = 0;
+    let vy = 0;
+
+    if (edge === 0) {
+        x = Math.random() * maxX;
+        y = 0;
+        vx = (Math.random() > 0.5 ? 1 : -1) * speedX;
+        vy = speedY;
+    } else if (edge === 1) {
+        x = Math.random() * maxX;
+        y = maxY;
+        vx = (Math.random() > 0.5 ? 1 : -1) * speedX;
+        vy = -speedY;
+    } else if (edge === 2) {
+        x = 0;
+        y = Math.random() * maxY;
+        vx = speedX;
+        vy = (Math.random() > 0.5 ? 1 : -1) * speedY;
+    } else {
+        x = maxX;
+        y = Math.random() * maxY;
+        vx = -speedX;
+        vy = (Math.random() > 0.5 ? 1 : -1) * speedY;
+    }
+
+    return {
+        x,
+        y,
+        vx,
+        vy,
+        size
+    };
+};
+
+const step = (ts: number) => {
+    const el = animationRef.value;
+    if (!el) {
+        rafId = requestAnimationFrame(step);
+        return;
+    }
+
+    const rect = el.getBoundingClientRect();
+    const w = rect.width;
+    const h = rect.height;
+
+    const dt = Math.min(40, ts - lastTs || 16);
+    lastTs = ts;
+
+    const keepKeys = new Set<string>();
+    for (const player of gameStore.currentAutomaticPlayerList) {
+        const key = String(player.userId);
+        keepKeys.add(key);
+        delete cleanupAtMap[key];
+
+        if (!bounceStates[key]) {
+            bounceStates[key] = createBounceState(w, h);
+        }
+
+        const state = bounceStates[key];
+        const maxX = Math.max(0, w - state.size);
+        const maxY = Math.max(0, h - state.size);
+
+        state.x += state.vx * dt;
+        state.y += state.vy * dt;
+
+        if (state.x <= 0) {
+            state.x = 0;
+            state.vx = Math.abs(state.vx);
+        } else if (state.x >= maxX) {
+            state.x = maxX;
+            state.vx = -Math.abs(state.vx);
+        }
+
+        if (state.y <= 0) {
+            state.y = 0;
+            state.vy = Math.abs(state.vy);
+        } else if (state.y >= maxY) {
+            state.y = maxY;
+            state.vy = -Math.abs(state.vy);
+        }
+    }
+
+    const clamp = (n: number, min: number, max: number) => Math.min(max, Math.max(min, n));
+
+    const activeKeys = Array.from(keepKeys);
+    for (let i = 0; i < activeKeys.length; i += 1) {
+        for (let j = i + 1; j < activeKeys.length; j += 1) {
+            const keyA = activeKeys[i];
+            const keyB = activeKeys[j];
+            const a = bounceStates[keyA];
+            const b = bounceStates[keyB];
+            if (!a || !b) continue;
+
+            const ar = a.size / 2;
+            const br = b.size / 2;
+            const ax = a.x + ar;
+            const ay = a.y + ar;
+            const bx = b.x + br;
+            const by = b.y + br;
+
+            let dx = bx - ax;
+            let dy = by - ay;
+            let dist = Math.hypot(dx, dy);
+            const minDist = ar + br;
+
+            if (dist === 0) {
+                dx = (Math.random() - 0.5) * 0.01;
+                dy = (Math.random() - 0.5) * 0.01;
+                dist = Math.hypot(dx, dy);
+            }
+
+            if (dist < minDist) {
+                const nx = dx / dist;
+                const ny = dy / dist;
+                const overlap = minDist - dist;
+
+                a.x = clamp(a.x - nx * (overlap / 2), 0, Math.max(0, w - a.size));
+                a.y = clamp(a.y - ny * (overlap / 2), 0, Math.max(0, h - a.size));
+                b.x = clamp(b.x + nx * (overlap / 2), 0, Math.max(0, w - b.size));
+                b.y = clamp(b.y + ny * (overlap / 2), 0, Math.max(0, h - b.size));
+
+                const rvx = a.vx - b.vx;
+                const rvy = a.vy - b.vy;
+                const relVel = rvx * nx + rvy * ny;
+                if (relVel < 0) {
+                    a.vx -= relVel * nx;
+                    a.vy -= relVel * ny;
+                    b.vx += relVel * nx;
+                    b.vy += relVel * ny;
+                }
+            }
+        }
+    }
+
+    for (const key of Object.keys(bounceStates)) {
+        if (!keepKeys.has(key)) {
+            if (!cleanupAtMap[key]) {
+                cleanupAtMap[key] = ts + 260;
+            }
+            if (ts >= cleanupAtMap[key]) {
+                delete bounceStates[key];
+                delete cleanupAtMap[key];
+            }
+        }
+    }
+
+    rafId = requestAnimationFrame(step);
+};
+
+const startAnimation = () => {
+    if (rafId) return;
+    lastTs = performance.now();
+    rafId = requestAnimationFrame(step);
+};
+
+const stopAnimation = () => {
+    if (!rafId) return;
+    cancelAnimationFrame(rafId);
+    rafId = null;
+};
+
+const getAvatarStyle = (userId: number) => {
+    const state = bounceStates[String(userId)];
+    if (!state) return {};
+    return {
+        left: `${state.x}px`,
+        top: `${state.y}px`,
+        width: `${state.size}px`,
+        height: `${state.size}px`
+    };
+};
 
 const getMapByMapName = (mapName: string) => {
     return gameStore.mapList.find(map => map.mapName === mapName);
@@ -61,28 +263,51 @@ const getOnLineColor = (players: number, maxPlayers: number) => {
 };
 
 const handleCancelExit = () => {
-    emit('update:showJoinServer', false);
+    if (gameStore.isAutomatic) {
+        return false
+    } else {
+        emit('update:showJoinServer', false);
+        return true
+    }
 };
 
-//暂停挤服
+//开始挤服
 const startJoinServer = () => {
+    gameStore.sendAutomaticDynamic("正在挤服中...");
     gameStore.startAutomaticJoinServer();
 };
 
 //暂停挤服
 const stopJoinServer = () => {
+    gameStore.sendAutomaticDynamic("已暂停挤服...");
+    //清空记录
+    gameStore.currentAutomaticPlayerDynamicList.splice(0, gameStore.currentAutomaticPlayerDynamicList.length);
     gameStore.stopAutomaticJoinServer();
 };
 
 // 启动游戏
 const handleConfirmOpen = async () => {
-    await gameStore.startGame('steamexe');
+    await gameStore.startGame();
 };
+
+watch(
+    () => props.showJoinServer && gameStore.isAutomatic,
+    (active) => {
+        if (active) startAnimation();
+        else stopAnimation();
+    },
+    { immediate: true }
+);
+
+onBeforeUnmount(() => {
+    stopAnimation();
+});
 </script>
 
 <template>
     <NModal v-model:show="props.showJoinServer" preset="card" class="w-750px rounded-md flex" size="small"
-        :bordered="true" :closable="false" :onMaskClick="handleCancelExit" content-style="padding:0px;">
+        :bordered="true" :closable="false" :onMaskClick="handleCancelExit" :mask-closable="false" :close-on-esc="false"
+        content-style="padding:0px;">
         <div class="game-join-container">
             <div class="game-join-option" v-if="!gameStore.isAutomatic">
                 <div class="title-container mb-10px">
@@ -187,8 +412,32 @@ const handleConfirmOpen = async () => {
                 </NSpace>
             </div>
             <div class="game-join-person" v-if="gameStore.isAutomatic">
-                <div class="game-join-person-adnimation">
-
+                <div class="game-join-person-adnimation" ref="animationRef">
+                    <TransitionGroup name="bounce" tag="div" class="bounce-layer">
+                        <div v-for="player in gameStore.currentAutomaticPlayerList" :key="player.userId"
+                            class="bounce-avatar" :style="getAvatarStyle(player.userId)">
+                            <NAvatar round size="small" :src="player.avatar"
+                                fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
+                        </div>
+                    </TransitionGroup>
+                </div>
+                <div class="game-join-person-dynamic">
+                    <div class="dynamic-header">
+                        <div class="dynamic-title">
+                            <SvgIcon icon="material-symbols:bolt" class="dynamic-icon" />
+                            <span>挤服动态</span>
+                        </div>
+                        <div class="dynamic-count">{{ gameStore.currentAutomaticPlayerDynamicList.length }}</div>
+                    </div>
+                    <div class="dynamic-body">
+                        <TransitionGroup name="dynamic" tag="div" class="dynamic-list">
+                            <div v-for="(msg, index) in automaticDynamicMessages" :key="`${msg}-${index}`"
+                                class="dynamic-item">
+                                <span class="dynamic-dot"></span>
+                                <span class="dynamic-text">{{ msg }}</span>
+                            </div>
+                        </TransitionGroup>
+                    </div>
                 </div>
                 <NSpace justify="space-between">
                     <NButton type="success" ghost class="rounded-6px" v-if="gameStore.isGameRunning" :disabled="true">
@@ -256,7 +505,7 @@ const handleConfirmOpen = async () => {
                                             <NAvatar round size="small" :src="player.loginUser?.avatar"
                                                 fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
                                             <span class="ml-2 font-bold">{{ player.loginUser?.nickName || '未知玩家'
-                                            }}</span>
+                                                }}</span>
                                             <NTag size="small" :type="getTeamColor(player.team)" class="ml-2"
                                                 :bordered="false">
                                                 {{ getTeamLabel(player.team) }}
@@ -360,6 +609,142 @@ const handleConfirmOpen = async () => {
         background-color: rgba(133, 133, 133, 0.1);
         border-radius: 10px;
         padding: 15px;
+
+        .game-join-person-adnimation {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            background-color: rgba(0, 0, 0, 0.08);
+        }
+
+        .bounce-layer {
+            position: absolute;
+            inset: 0;
+        }
+
+        .bounce-avatar {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+
+        .bounce-enter-active,
+        .bounce-leave-active {
+            transition: opacity 0.25s ease, transform 0.25s ease;
+        }
+
+        .bounce-enter-from,
+        .bounce-leave-to {
+            opacity: 0;
+            transform: scale(0.2);
+        }
+
+        .bounce-enter-to,
+        .bounce-leave-from {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .game-join-person-dynamic {
+            height: 110px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 12px;
+            background-color: rgba(0, 0, 0, 0.08);
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .dynamic-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dynamic-title {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            opacity: 0.9;
+        }
+
+        .dynamic-icon {
+            font-size: 14px;
+        }
+
+        .dynamic-count {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(0, 0, 0, 0.18);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .dynamic-body {
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .dynamic-list {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 100%;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .dynamic-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 8px;
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.10);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            line-height: 1.2;
+        }
+
+        .dynamic-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, rgba(0, 249, 26, 1), rgba(84, 112, 238, 1));
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
+            flex: 0 0 auto;
+        }
+
+        .dynamic-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            opacity: 0.95;
+        }
+
+        .dynamic-enter-active,
+        .dynamic-leave-active {
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+
+        .dynamic-enter-from,
+        .dynamic-leave-to {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+
+        .dynamic-enter-to,
+        .dynamic-leave-from {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .game-join-info {

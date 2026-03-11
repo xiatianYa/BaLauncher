@@ -168,6 +168,19 @@ declare namespace Api {
             score: number;
         }
 
+        type AutomationPlayer = {
+            /** 服务器地址 */
+            addr: string;
+            /** 用户ID */
+            userId: number;
+            /** 用户名称 */
+            userName: string;
+            /** 用户头像 */
+            avatar: string;
+            /** 挤服描述 */
+            description: string;
+        }
+
         // 服务器数据
         type Server = {
             //服务器名称

@@ -88,7 +88,7 @@ onUnmounted(() => {
 
 <template>
   <NModal v-model:show="state.show" preset="card" size="medium" :bordered="false" :show-icon="false" class="w-300px"
-    header-style="padding:10px;">
+    header-style="padding:10px;" :closable="false">
     <template #header>
       发现新版本
     </template>

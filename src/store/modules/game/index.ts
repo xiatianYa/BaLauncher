@@ -13,6 +13,12 @@ import GisWebsocket from '@/utils/ws/gis';
 
 export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
+  // 检测游戏是否启动的定时器
+  let gameCheckTimer: ReturnType<typeof setInterval> | null = null;
+
+  // 检测用户是否连接成功的定时器
+  let connectionCheckTimer: ReturnType<typeof setTimeout> | null = null;
+
   // 社区列表
   const communityList: Api.Game.Community[] = reactive([]);
 
@@ -34,6 +40,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 所有玩家的GIS信息
   const currentGisPlayerList: Api.Game.CsgoPlayer[] = reactive([])
 
+  // 所有玩家的挤服消息
+  const currentAutomaticPlayerList: Api.Game.AutomationPlayer[] = reactive([])
+
+  // 所有玩家的挤服动态消息
+  const currentAutomaticPlayerDynamicList: string[] = reactive([])
+
   // 当前选择的社区
   const selectedCommunityId = ref<number | null>(null);
 
@@ -46,15 +58,36 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 是否自动挤服
   const isAutomatic = ref<boolean>(false);
 
+  // 自动重试标识(用户是否切换到目标地图)
+  const isAutomaticRetry = ref<boolean>(false);
+
+  // 检测次数
+  const automaticCount = ref<number>(0);
+
+  // 游戏是否启动
+  const isGameRunning = ref<boolean>(false);
+
+  // 游戏是否在启动中
+  const isGameLaunching = ref<boolean>(false);
+
+  // GSI 服务是否在运行
+  const isGsiRunning = ref<boolean>(false);
+
+  // 游戏平台：international 国际服，perfect 完美平台
+  const GamePlatform = ref<GamePlatform>('international');
+
+  // Csgo2 安装目录
+  const csgo2Path = ref<string>('');
+
+  // Steam 安装目录
+  const steamPath = ref<string>('');
+
   // 自动挤服配置
   const automaticJoinConfig = ref<Api.Game.AutomaticJoinConfig>({
     joinServerPersonValue: 63,
     joinServerCountValue: 2,
     joinServerAutoRetryValue: true,
   });
-
-  // 自动重试标识(用户是否切换到目标地图)
-  const isAutomaticRetry = ref<boolean>(false);
 
   // 挤服信息
   const automaticInfo = ref<Api.Game.ServerVo>({
@@ -96,33 +129,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     kills: 0,
     score: 0
   });
-
-  // 检测次数
-  const automaticCount = ref<number>(0);
-
-  // 游戏是否启动
-  const isGameRunning = ref<boolean>(false);
-
-  // 游戏是否在启动中
-  const isGameLaunching = ref<boolean>(false);
-
-  // GSI 服务是否在运行
-  const isGsiRunning = ref<boolean>(false);
-
-  // 检测游戏是否启动的定时器
-  let gameCheckTimer: ReturnType<typeof setInterval> | null = null;
-
-  // 检测用户是否连接成功的定时器
-  let connectionCheckTimer: ReturnType<typeof setTimeout> | null = null;
-
-  // 游戏平台：international 国际服，perfect 完美平台
-  const GamePlatform = ref<GamePlatform>('international');
-
-  // Csgo2 安装目录
-  const csgo2Path = ref<string>('');
-
-  // Steam 安装目录
-  const steamPath = ref<string>('');
 
   // 从存储读取设置
   function loadSettingsFromStorage() {
@@ -419,23 +425,19 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     return success;
   }
 
-  // 启动游戏
-  async function startGame(startType: GameStartType) {
-    console.log("启动游戏");
-    // 使用 gameStore 中的配置
+  async function ensureGameStartReady() {
     if (!csgo2Path.value) {
       console.error('未配置 CS2 路径，请在设置中配置');
       window.$message?.error('未配置 CS2 路径，请在设置中配置');
       return false;
     }
 
-    if (startType === 'steamexe' && !steamPath.value) {
+    if (!steamPath.value) {
       console.error('未配置 Steam 路径，请在设置中配置');
       window.$message?.error('未配置 Steam 路径，请在设置中配置');
       return false;
     }
 
-    // 检查 GSI 配置文件是否存在
     const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2Path.value);
     if (!exists) {
       console.log('GSI 配置文件不存在，正在创建...');
@@ -449,6 +451,14 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     } else {
       console.log('GSI 配置文件已存在');
     }
+
+    return true;
+  }
+
+  // 启动游戏
+  async function startGame() {
+    const ready = await ensureGameStartReady();
+    if (!ready) return;
 
     isGameLaunching.value = true;
     // 根据 GamePlatform 动态计算 serverMode
@@ -487,6 +497,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 连接服务器 使用steamUrl
   async function connectServerUsingSteamUrl() {
     if (!joinServerInfo.value) return;
+    const ready = await ensureGameStartReady();
+    if (!ready) return;
     currentGisPlayerList.splice(0, currentGisPlayerList.length);
     if (GisWebsocket.GisWebsocket) {
       const setAddrMessage: Api.Game.WsServerMsgType = {
@@ -502,11 +514,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // 开启自动挤服
   async function startAutomaticJoinServer() {
-    console.log("开始自动挤服");
     if (!joinServerInfo.value) {
       window.$message?.error('请先选择要加入的服务器');
       return;
     }
+    const ready = await ensureGameStartReady();
+    if (!ready) return;
     isAutomatic.value = true;
     automaticCount.value = 0;
 
@@ -612,6 +625,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
               clearTimeout(connectionCheckTimer);
               connectionCheckTimer = null;
               safeLog('✅ 用户已成功连接到目标服务器');
+              sendAutomaticDynamic("已连接进服务器...");
+              //清空记录
+              currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length);
               window.$message?.success("连接成功")
             }
           }
@@ -739,25 +755,58 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     });
   }
 
+  let userGisLastSentAt = 0;
+  let userGisSendTimer: ReturnType<typeof setTimeout> | null = null;
+  let pendingUserGisData: Api.Game.CsgoPlayer | null = null;
+
+  function flushUserGisData() {
+    if (!joinServerInfo.value?.addr) return;
+    if (!GisWebsocket.GisWebsocket) return;
+    if (!pendingUserGisData) return;
+
+    const addr = joinServerInfo.value.addr;
+    const dataToSend: Api.Game.CsgoPlayer = { ...pendingUserGisData, addr };
+    pendingUserGisData = null;
+    userGisLastSentAt = Date.now();
+
+    const setAddrMessage: Api.Game.WsServerMsgType = {
+      type: '101',
+      data: addr
+    };
+    const sendMessage: Api.Game.WsServerMsgType = {
+      type: '100',
+      data: dataToSend
+    };
+
+    GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage));
+    GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage));
+  }
+
   /**
    * WS发送用户GIS数据(快速推送)
    */
   function sendUserGisData(data: Api.Game.CsgoPlayer) {
-    //设置服务器地址
     if (!joinServerInfo.value?.addr) return;
-    data.addr = joinServerInfo.value.addr;
-    const setAddrMessage: Api.Game.WsServerMsgType = {
-      type: '101',
-      data: joinServerInfo.value.addr
-    };
-    const sendMessage: Api.Game.WsServerMsgType = {
-      type: '100',
-      data
-    };
-    if (GisWebsocket.GisWebsocket) {
-      GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage));
-      GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage));
+    pendingUserGisData = { ...data, addr: joinServerInfo.value.addr };
+
+    const now = Date.now();
+    const elapsed = now - userGisLastSentAt;
+
+    if (elapsed >= 1000) {
+      if (userGisSendTimer) {
+        clearTimeout(userGisSendTimer);
+        userGisSendTimer = null;
+      }
+      flushUserGisData();
+      return;
     }
+
+    if (userGisSendTimer) return;
+
+    userGisSendTimer = setTimeout(() => {
+      userGisSendTimer = null;
+      flushUserGisData();
+    }, 1000 - elapsed);
   }
 
   /**
@@ -775,6 +824,23 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       ServerWebsocket.ServerWebsocket.send(JSON.stringify(sendMessage));
     }
   }
+
+  /**
+   * WS发送挤服动态数据
+   */
+  function sendAutomaticDynamic(data: string) {
+    if (!data) return;
+    const sendMessage: Api.Game.WsServerMsgType = {
+      type: '102',
+      data: {
+        description: data,
+      }
+    };
+    if (GisWebsocket.GisWebsocket) {
+      GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage));
+    }
+  }
+
 
   /** WS发送挤服数据 */
   function sendJoinServer(data: Api.Game.ServerVo) {
@@ -834,6 +900,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     gamePlayerInfo,
     currentGisServerList,
     currentGisPlayerList,
+    currentAutomaticPlayerList,
+    currentAutomaticPlayerDynamicList,
     initServerWebsocket,
     initGisWebsocket,
     initServerList,
@@ -860,5 +928,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     stopAutomaticJoinServer,
     connectServerUsingSteamUrl,
     queryWsServerInfosResponse,
+    sendAutomaticDynamic,
+    ensureGameStartReady,
   };
 });

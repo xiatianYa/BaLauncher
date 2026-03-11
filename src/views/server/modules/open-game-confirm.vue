@@ -21,7 +21,7 @@ const handleCancelExit = () => {
 
 // 确认打开游戏
 const handleConfirmOpen = async () => {
-  const success = await gameStore.startGame('steamexe');
+  const success = await gameStore.startGame();
   if (success) {
     gameStore.connectServerUsingSteamUrl();
     emit('update:showGameConfirm', false);

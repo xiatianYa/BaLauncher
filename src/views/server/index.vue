@@ -176,7 +176,6 @@ const queryServerMapTag = (mapName: string) => {
 // 加入服务器
 const joinServer = async (server: Api.Game.InfoResponse) => {
   gameStore.joinServerInfo = server;
-
   if (!gameStore.isGameRunning) {
     showOpenGameConfirm.value = true;
   } else {

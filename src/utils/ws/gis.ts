@@ -43,8 +43,19 @@ const GisWebsocket: GisWebsocketType = {
         // 定义一个处理函数的映射对象
         const handlers: { [key: string]: (data: any) => void } = {
           '201': () => {
-            gameStore.currentGisPlayerList = data;
-            console.log("GIS玩家数据", gameStore.currentGisPlayerList);
+            const { gisPlayers, joinPlayers } = data;
+            if (Array.isArray(gisPlayers)) {
+              gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length, ...gisPlayers);
+            }
+            if (Array.isArray(joinPlayers)) {
+              gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length, ...joinPlayers);
+            }
+          },
+          '202': () => {
+            if (data && typeof data === 'string') {
+              gameStore.currentAutomaticPlayerDynamicList.push(data);
+              console.log("用户挤服动态",gameStore.currentAutomaticPlayerDynamicList);
+            }
           }
         }
         // 根据 data.code 调用相应的处理函数
