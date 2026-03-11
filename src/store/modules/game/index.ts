@@ -792,7 +792,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     const now = Date.now();
     const elapsed = now - userGisLastSentAt;
 
-    if (elapsed >= 1000) {
+    if (elapsed >= 2000) {
       if (userGisSendTimer) {
         clearTimeout(userGisSendTimer);
         userGisSendTimer = null;
@@ -806,7 +806,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     userGisSendTimer = setTimeout(() => {
       userGisSendTimer = null;
       flushUserGisData();
-    }, 1000 - elapsed);
+    }, 2000 - elapsed);
   }
 
   /**
