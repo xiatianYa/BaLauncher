@@ -7,7 +7,6 @@ import { fetchGetServerList } from '@/service/api/game/server';
 import { fetchGetMapList } from '@/service/api/game/map';
 import { fetchGetPieChart } from '@/service/api';
 import { localStg } from '@/utils/storage';
-import { GameStartType } from '@/constants/app';
 import { GamePlatform } from '@/constants/app';
 import GisWebsocket from '@/utils/ws/gis';
 
@@ -295,6 +294,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             //查询服务器是否在线
             if (item.success === false) {
               item.isOnline = false;
+              // 如果源服务器查询失败，尝试从 currentServerWsList 获取数据
+              const wsServer = currentServerWsList.find(ws => ws.addr === item.addr);
+              if (wsServer) {
+                Object.assign(item, wsServer);
+                item.isOnline = true;
+              }
             } else {
               item.isOnline = true;
             }
@@ -341,52 +346,54 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       queryServerInfosResponse();
       // 筛选当前社区要查询的服务器
       const targetServers = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value);
-      const serverAddresses = targetServers.map(server => server.connectStr);
-      // 过滤出currentServerWsList中addr在serverAddresses中的数据
-      const filteredWsServers = currentServerWsList.filter(item => serverAddresses.includes(item.addr));
-      filteredWsServers.forEach(item => {
-        item.isOnline = true;
-        //查询服务器是否有状态
-        const matchingServer = currentGisServerList.find(gisServer => gisServer.addr === item.addr);
-        console.log("服务器比分数:", matchingServer);
 
-        if (matchingServer) {
-          item.round = matchingServer.round || '';
-          item.CTScore = matchingServer.CTScore || '';
-          item.TScore = matchingServer.TScore || '';
-          item.mapStage = matchingServer.mapStage || '';
-          item.mapPhase = matchingServer.mapPhase || '';
+      // 按照 targetServers 的顺序构建结果列表
+      const allServers: Api.Game.InfoResponse[] = targetServers.map(server => {
+        const wsServer = currentServerWsList.find(item => item.addr === server.connectStr);
+
+        if (wsServer) {
+          // 如果是WS在线服务器，处理状态并返回
+          wsServer.isOnline = true;
+          //查询服务器是否有状态
+          const matchingServer = currentGisServerList.find(gisServer => gisServer.addr === wsServer.addr);
+
+          if (matchingServer) {
+            wsServer.round = matchingServer.round || '';
+            wsServer.CTScore = matchingServer.CTScore || '';
+            wsServer.TScore = matchingServer.TScore || '';
+            wsServer.mapStage = matchingServer.mapStage || '';
+            wsServer.mapPhase = matchingServer.mapPhase || '';
+          }
+          return wsServer;
+        } else {
+          // 如果是离线服务器，构建离线数据
+          return {
+            protocol: 0,
+            name: server.serverName || '',
+            map: '',
+            folder: '',
+            game: '',
+            appId: 0,
+            players: 0,
+            maxPlayers: 0,
+            bots: 0,
+            serverType: '',
+            environment: '',
+            visibility: 0,
+            vac: 0,
+            version: '',
+            addr: server.connectStr || '',
+            isOnline: false,
+            round: '',
+            CTScore: '',
+            TScore: '',
+            mapStage: '',
+            mapPhase: '',
+            csgoPlayer: [],
+          };
         }
-      })
-      // 找出不在filteredWsServers中的服务器，创建离线服务器数据
-      const offlineServers: Api.Game.InfoResponse[] = targetServers
-        .filter(server => !filteredWsServers.some(item => item.addr === server.connectStr))
-        .map(server => ({
-          protocol: 0,
-          name: server.serverName || '',
-          map: '',
-          folder: '',
-          game: '',
-          appId: 0,
-          players: 0,
-          maxPlayers: 0,
-          bots: 0,
-          serverType: '',
-          environment: '',
-          visibility: 0,
-          vac: 0,
-          version: '',
-          addr: server.connectStr || '',
-          isOnline: false,
-          round: '',
-          CTScore: '',
-          TScore: '',
-          mapStage: '',
-          mapPhase: '',
-          csgoPlayer: [],
-        }));
-      // 合并在线和离线服务器
-      const allServers = [...filteredWsServers, ...offlineServers];
+      });
+
       // 将结果赋值给currentServerList
       currentServerList.splice(0, currentServerList.length, ...allServers);
       await countServerServerNumber();

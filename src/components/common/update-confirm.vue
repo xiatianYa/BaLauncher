@@ -90,7 +90,7 @@ onUnmounted(() => {
   <NModal v-model:show="state.show" preset="card" size="medium" :bordered="false" :show-icon="false" class="w-300px"
     header-style="padding:10px;" :closable="false">
     <template #header>
-      发现新版本
+      发现新版本(建议打开加速器更新)
     </template>
     <div class="flex flex-col items-center w-full p-10px">
       <div class="dowload-icon">

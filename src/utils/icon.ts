@@ -79,5 +79,5 @@ export const commonIcons = [
   'ph:knife',
   'mdi:scoreboard-outline',
   'solar:tag-price-broken',
-  'hugeicons:gun'
+  'hugeicons:gun',
 ]
