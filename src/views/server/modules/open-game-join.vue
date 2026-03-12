@@ -290,6 +290,14 @@ const handleConfirmOpen = async () => {
     await gameStore.startGame();
 };
 
+//清空数据
+const clearPlayerList = () => {
+    //所有玩家的挤服动态
+    gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length);
+    //所有服务器的GIS动态
+    gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length);
+}
+
 watch(
     () => props.showJoinServer && gameStore.isAutomatic,
     (active) => {
@@ -307,7 +315,7 @@ onBeforeUnmount(() => {
 <template>
     <NModal v-model:show="props.showJoinServer" preset="card" class="w-750px rounded-md flex" size="small"
         :bordered="true" :closable="false" :onMaskClick="handleCancelExit" :mask-closable="false" :close-on-esc="false"
-        content-style="padding:0px;">
+        content-style="padding:0px;" v-on:after-leave="clearPlayerList">
         <div class="game-join-container">
             <div class="game-join-option" v-if="!gameStore.isAutomatic">
                 <div class="title-container mb-10px">
@@ -511,7 +519,7 @@ onBeforeUnmount(() => {
                                             <NAvatar round size="small" :src="player.loginUser?.avatar"
                                                 fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
                                             <span class="ml-2 font-bold">{{ player.loginUser?.nickName || '未知玩家'
-                                            }}</span>
+                                                }}</span>
                                             <NTag size="small" :type="getTeamColor(player.team)" class="ml-2"
                                                 :bordered="false">
                                                 {{ getTeamLabel(player.team) }}

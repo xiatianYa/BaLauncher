@@ -256,8 +256,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     loadSettingsFromStorage();
     const { data: communityData } = await fetchGetCommunityList();
     if (communityData) communityList.push(...communityData);
-    //默认第一个社区
-    if (communityData) selectedCommunityId.value = communityData[0].id;
     const { data: mapData } = await fetchGetMapList();
     if (mapData) mapList.push(...mapData);
     // 统计所有社区下的服务器数量
@@ -538,13 +536,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     const ready = await ensureGameStartReady();
     if (!ready) return;
     currentGisPlayerList.splice(0, currentGisPlayerList.length);
-    if (GisWebsocket.GisWebsocket) {
-      const setAddrMessage: Api.Game.WsServerMsgType = {
-        type: '101',
-        data: joinServerInfo.value.addr
-      };
-      GisWebsocket.GisWebsocket?.send(JSON.stringify(setAddrMessage));
-    }
     const aLink = document.createElement('a');
     aLink.href = `steam://rungame/730/76561198977557298/+connect ${joinServerInfo.value.addr}`;
     aLink.click();
@@ -663,6 +654,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
               clearTimeout(connectionCheckTimer);
               connectionCheckTimer = null;
               safeLog('✅ 用户已成功连接到目标服务器');
+              //发送地址
+              sendUserGisAddr();
               sendAutomaticDynamic("已连接进服务器...");
               //清空记录
               currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length);
@@ -670,11 +663,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
               const appStore = useAppStore();
               const currentTheme = appStore.currentTheme;
               const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜'];
-              
               const audio = new Audio(audioSrc);
               audio.volume = 0.5;
-              audio.play().catch(e => console.error('音频播放失败:', e));
-              
+              audio.play();
               window.$message?.success("连接成功")
             }
           }
@@ -806,6 +797,17 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   let userGisSendTimer: ReturnType<typeof setTimeout> | null = null;
   let pendingUserGisData: Api.Game.CsgoPlayer | null = null;
 
+  function sendUserGisAddr() {
+    if (!joinServerInfo.value?.addr) return;
+    if (!GisWebsocket.GisWebsocket) return;
+
+    const setAddrMessage: Api.Game.WsServerMsgType = {
+      type: '101',
+      data: joinServerInfo.value.addr
+    };
+    GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage));
+  }
+
   function flushUserGisData() {
     if (!joinServerInfo.value?.addr) return;
     if (!GisWebsocket.GisWebsocket) return;
@@ -816,16 +818,11 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     pendingUserGisData = null;
     userGisLastSentAt = Date.now();
 
-    const setAddrMessage: Api.Game.WsServerMsgType = {
-      type: '101',
-      data: addr
-    };
     const sendMessage: Api.Game.WsServerMsgType = {
       type: '100',
       data: dataToSend
     };
 
-    GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage));
     GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage));
   }
 
@@ -880,6 +877,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     const sendMessage: Api.Game.WsServerMsgType = {
       type: '102',
       data: {
+        addr: joinServerInfo?.value?.addr,
         description: data,
       }
     };
@@ -977,5 +975,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     queryWsServerInfosResponse,
     sendAutomaticDynamic,
     ensureGameStartReady,
+    sendUserGisAddr,
   };
 });

@@ -185,6 +185,7 @@ const joinServer = async (server: Api.Game.InfoResponse) => {
     showOpenGameConfirm.value = true;
   } else {
     console.log('游戏已启动，直接连接服务器');
+     gameStore.sendUserGisAddr();
     // 连接服务器
     gameStore.connectServerUsingSteamUrl();
   }
@@ -195,13 +196,6 @@ const openAutoJoinServer = (server: Api.Game.InfoResponse) => {
   gameStore.joinServerInfo = server;
   showJoinServerConfirm.value = true;
   gameStore.currentGisPlayerList = [];
-  if (GisWebsocket.GisWebsocket) {
-    const setAddrMessage: Api.Game.WsServerMsgType = {
-      type: '101',
-      data: gameStore.joinServerInfo.addr
-    };
-    GisWebsocket.GisWebsocket?.send(JSON.stringify(setAddrMessage));
-  }
 }
 
 // 复制服务器地址
@@ -232,10 +226,6 @@ const refreshServerInfo = async (server: Api.Game.InfoResponse) => {
   }
 };
 
-onMounted(async () => {
-  await queryServerInfos(true, true);
-  startCountdown();
-});
 
 onUnmounted(() => {
   if (countdownInterval) {
