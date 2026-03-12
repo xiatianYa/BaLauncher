@@ -44,17 +44,19 @@ const GisWebsocket: GisWebsocketType = {
         const handlers: { [key: string]: (data: any) => void } = {
           '201': () => {
             const { gisPlayers, joinPlayers } = data;
-            if (Array.isArray(gisPlayers)) {
-              gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length, ...gisPlayers);
+            if (Array.isArray(gisPlayers) && gameStore.joinServerInfo?.addr) {
+              const gisPlayer = gisPlayers.filter((item) => item.addr === gameStore.joinServerInfo?.addr);
+              gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length, ...gisPlayer);
             }
             if (Array.isArray(joinPlayers)) {
               gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length, ...joinPlayers);
             }
+            console.log(gameStore.currentGisPlayerList, gameStore.currentAutomaticPlayerList);
           },
           '202': () => {
             if (data && typeof data === 'string') {
               gameStore.currentAutomaticPlayerDynamicList.push(data);
-              console.log("用户挤服动态",gameStore.currentAutomaticPlayerDynamicList);
+              console.log("用户挤服动态", gameStore.currentAutomaticPlayerDynamicList);
             }
           }
         }

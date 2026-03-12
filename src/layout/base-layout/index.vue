@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { onMounted } from 'vue';
 import { useThemeStore } from '@/store/modules/theme';
 import { useAuthStore } from '@/store/modules/auth';
 import WindowControls from '@/components/common/window-controls.vue';
@@ -7,14 +7,6 @@ import LoginDialog from '@/components/common/login-dialog.vue';
 
 const themeStore = useThemeStore();
 const authStore = useAuthStore();
-
-// 需要缓存的页面名称列表
-const cachedViews = ref([
-  'home',
-  'server',
-  'tools',
-  'setting'
-]);
 
 onMounted(() => {
   if (!authStore.isLogin) {
@@ -34,11 +26,9 @@ onMounted(() => {
         <GlobalHeader />
         <GlobalFooter />
       </NCard>
-      <keep-alive :include="cachedViews">
-        <NCard class="rounded-none" content-class="flex-1 h-full" :bordered="false">
-          <RouterView class="animate__animated animate__fadeInRight animate__faster" />
-        </NCard>
-      </keep-alive>
+      <NCard class="rounded-none" content-class="flex-1 h-full" :bordered="false">
+        <RouterView class="animate__animated animate__fadeInRight animate__faster" />
+      </NCard>
     </div>
     <LoginDialog />
   </div>

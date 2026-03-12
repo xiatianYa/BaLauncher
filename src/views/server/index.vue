@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { useGameStore } from '@/store/modules/game';
 import LoadingSpinner from '@/components/custom/loading-spinner.vue';
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onDeactivated, onUnmounted, nextTick, onMounted } from 'vue';
 import { animate } from 'animejs';
 import { NEmpty } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
 import OpenGameConfirm from '@/views/server/modules/open-game-confirm.vue';
 import OpenGameJoin from '@/views/server/modules/open-game-join.vue';
-import GisWebsocket from '@/utils/ws/gis';
 
 defineOptions({
   name: 'server'
@@ -185,7 +184,7 @@ const joinServer = async (server: Api.Game.InfoResponse) => {
     showOpenGameConfirm.value = true;
   } else {
     console.log('游戏已启动，直接连接服务器');
-     gameStore.sendUserGisAddr();
+    gameStore.sendUserGisAddr();
     // 连接服务器
     gameStore.connectServerUsingSteamUrl();
   }
@@ -226,10 +225,14 @@ const refreshServerInfo = async (server: Api.Game.InfoResponse) => {
   }
 };
 
+onMounted(() => {
+  startCountdown(false);
+});
 
 onUnmounted(() => {
   if (countdownInterval) {
     clearInterval(countdownInterval);
+    countdownInterval = null;
   }
 });
 </script>
