@@ -375,7 +375,7 @@ onBeforeUnmount(() => {
                     </NSpace>
                 </div>
                 <div class="mb-15px">
-                    <NSpace justify="space-between">
+                    <NSpace justify="space-between" align="center">
                         <div class="flex items-center gap-3px">
                             <div class="font-size-18px">
                                 <SvgIcon icon="material-symbols:refresh"></SvgIcon>
@@ -387,6 +387,12 @@ onBeforeUnmount(() => {
                         <NSwitch v-model:value="gameStore.automaticJoinConfig.joinServerAutoRetryValue"
                             :round="false" />
                     </NSpace>
+                    <div class="flex items-center font-bold font-size-12px mt-5px">
+                        <div class="font-size-16px mr-5px">
+                            <SvgIcon icon="material-symbols:info-outline"></SvgIcon>
+                        </div>
+                        如果未使用应用启动CS2，可能会导致自动重试失效
+                    </div>
                 </div>
                 <NSpace justify="space-between">
                     <NButton type="info" ghost strong class="rounded-6px" v-if="!gameStore.isGameRunning"
@@ -505,7 +511,7 @@ onBeforeUnmount(() => {
                                             <NAvatar round size="small" :src="player.loginUser?.avatar"
                                                 fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
                                             <span class="ml-2 font-bold">{{ player.loginUser?.nickName || '未知玩家'
-                                                }}</span>
+                                            }}</span>
                                             <NTag size="small" :type="getTeamColor(player.team)" class="ml-2"
                                                 :bordered="false">
                                                 {{ getTeamLabel(player.team) }}

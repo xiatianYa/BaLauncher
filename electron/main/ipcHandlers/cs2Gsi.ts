@@ -7,6 +7,7 @@ import fs from 'node:fs'
 // ========== 全局变量 ==========
 let mainWindow: BrowserWindow | null = null // 主窗口实例，用于发送数据到渲染进程
 let GsiService: any = null // CS2 GSI服务实例
+let GSIConfigWriter: any = null // GSI配置文件写入器
 let EVENTS: any = null // CS2 GSI服务事件常量
 let gsiService: any = null // GSI服务实例，用于与CS2游戏进行通信
 let isGsiConnected = false // 是否已连接到CS2游戏的GSI服务
@@ -30,6 +31,7 @@ async function loadCs2Gsi() {
     if (!GsiService) {
         const module = await import('cs2-gsi-z')
         GsiService = module.GsiService
+        GSIConfigWriter = module.GSIConfigWriter
         EVENTS = module.EVENTS
     }
 }
@@ -54,9 +56,10 @@ async function checkCsgo2Running(): Promise<boolean> {
 function checkGsiConfigExists(csgo2Path: string): boolean {
     if (!csgo2Path) return false
 
+    // 检查 balauncher.cfg 配置文件是否存在
     const possiblePaths = [
-        path.join(csgo2Path, 'game', 'csgo', 'cfg', 'gamestate_integration_consolesample.cfg'),
-        path.join(csgo2Path, 'csgo', 'cfg', 'gamestate_integration_consolesample.cfg')
+        path.join(csgo2Path, 'game', 'csgo', 'cfg', 'gamestate_integration_balauncher.cfg'),
+        path.join(csgo2Path, 'csgo', 'cfg', 'gamestate_integration_balauncher.cfg')
     ]
 
     for (const cfgPath of possiblePaths) {
@@ -69,37 +72,12 @@ function checkGsiConfigExists(csgo2Path: string): boolean {
 }
 
 // ========== 创建GSI配置文件 ==========
-function createGsiConfig(csgo2Path: string): boolean {
+async function createGsiConfig(csgo2Path: string): Promise<boolean> {
     if (!csgo2Path) return false
-
-    const cfgContent = `"Console Sample v.1"
-{
-    "uri" "http://127.0.0.1:3345"
-    "timeout" "5.0"
-    "buffer" "0.1"
-    "throttle" "0.5"
-    "heartbeat" "60.0"
-    "auth"
-    {
-        "token" "CCWJu64ZV3JHDT8hZc"
-    }
-    "output"
-    {
-        "precision_time" "3"
-        "precision_position" "1"
-        "precision_vector" "3"
-    }
-    "data"
-    {
-        "provider"            "1"
-        "map"                 "1"
-        "round"               "1"
-        "player_id"           "1"
-        "player_state"        "1"
-        "player_weapons"      "1"
-        "player_match_stats"  "1"
-    }
-}`
+    
+    // 确保 GSI 模块已加载
+    await loadCs2Gsi()
+    if (!GSIConfigWriter) return false
 
     const possiblePaths = [
         path.join(csgo2Path, 'game', 'csgo', 'cfg'),
@@ -108,17 +86,31 @@ function createGsiConfig(csgo2Path: string): boolean {
 
     for (const cfgDir of possiblePaths) {
         if (fs.existsSync(cfgDir)) {
-            const cfgPath = path.join(cfgDir, 'gamestate_integration_consolesample.cfg')
-            try {
-                fs.writeFileSync(cfgPath, cfgContent, 'utf-8')
-                console.log('GSI 配置文件已创建在:', cfgPath)
+            const targetPath = path.join(cfgDir, 'gamestate_integration_balauncher.cfg')
+            // 如果文件已存在，则不重复创建
+            if (fs.existsSync(targetPath)) {
+                console.log('GSI 配置文件已存在，跳过创建:', targetPath)
                 return true
+            }
+
+            try { 
+                // GSIConfigWriter.generate 返回配置文件的内容字符串，而不是文件路径
+                const configContent = GSIConfigWriter.generate({
+                    name: 'balauncher', // 这里的 name 可能只是用于注释或内部标识，实际文件名由我们写入决定
+                    uri: 'http://localhost:3345',
+                })
+
+                if (configContent) {
+                    // 直接将内容写入目标文件
+                    fs.writeFileSync(targetPath, configContent, 'utf-8')
+                    console.log('GSI 配置文件已创建在:', targetPath)
+                    return true
+                }
             } catch (error) {
                 console.log('创建 GSI 配置文件失败:', error)
             }
         }
     }
-
     return false
 }
 
@@ -524,7 +516,7 @@ export function setupCs2GsiIpc() {
     })
 
     ipcMain.handle('create-gsi-config', async (_event, csgo2Path: string) => {
-        const success = createGsiConfig(csgo2Path)
+        const success = await createGsiConfig(csgo2Path)
         return { success }
     })
 

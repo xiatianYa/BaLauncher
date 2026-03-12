@@ -202,7 +202,11 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       if (isGameRunning.value) {
         //检查 GIS 服文件是否安装
         const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2Path.value);
-        if (!exists) return;
+        if (!exists){
+            return;
+        }else{
+          console.log('GIS 文件已安装');
+        };
         // 检查 GSI 服务是否已启动
         const { isConnected } = await window.ipcRenderer.checkGsiConnected();
         if (!isConnected) {

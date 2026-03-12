@@ -80,4 +80,5 @@ export const commonIcons = [
   'mdi:scoreboard-outline',
   'solar:tag-price-broken',
   'hugeicons:gun',
+  'material-symbols:info-outline',
 ]
