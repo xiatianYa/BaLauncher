@@ -1,18 +1,41 @@
 <script setup lang="ts">
 import { ref, onMounted, nextTick, computed } from 'vue';
 import { useGameStore } from '@/store/modules/game';
+import { useAppStore } from '@/store/modules/app';
+import { localStg } from '@/utils/storage';
 import { animate } from 'animejs';
 import type { GamePlatform } from '@/constants/app';
+import { NGrid, NGridItem } from 'naive-ui';
 
 defineOptions({
   name: 'setting'
 });
 
 const gameStore = useGameStore();
+const appStore = useAppStore();
+
+const themes = computed(() => appStore.themes);
+
+const currentTheme = computed(() => appStore.currentTheme);
+
+const selectTheme = (themeId: string) => {
+  appStore.setTheme(themeId);
+  window.$message?.success(`已切换主题：${themes.value.find(t => t.id === themeId)?.name}`);
+};
 
 const titleRef = ref<HTMLElement | null>(null);
 const isDetectingSteam = ref(false);
 const isDetectingCsgo = ref(false);
+const appVersion = ref('1.0.0');
+
+const getAppVersion = async () => {
+  try {
+    const version = await window.ipcRenderer.getAppVersion();
+    appVersion.value = version;
+  } catch (error) {
+    console.error('获取版本号失败', error);
+  }
+};
 
 const GamePlatform = computed({
   get: () => gameStore.GamePlatform,
@@ -34,6 +57,23 @@ const selectCsgo2Path = async () => {
   if (result) {
     csgo2Path.value = result;
     window.$message?.success('CSGO2安装目录已保存');
+  }
+};
+
+const clearCache = () => {
+  try {
+    // 只清理侧边栏路由缓存
+    localStg.remove('sideNavRoutes');
+
+    // 重新计算缓存大小
+    calculateCacheSize();
+
+    // 刷新页面以应用更改
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  } catch (error) {
+    window.$message?.error('菜单缓存清理失败');
   }
 };
 
@@ -83,7 +123,32 @@ const selectPlatform = (platform: 'international' | 'perfect') => {
   GamePlatform.value = platform;
 };
 
+const cacheSize = ref('0 KB');
+
+const calculateCacheSize = () => {
+  let size = 0;
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('BA_')) {
+      const value = localStorage.getItem(key);
+      if (value) {
+        size += (key.length + value.length) * 2; // JS strings are UTF-16
+      }
+    }
+  }
+
+  if (size < 1024) {
+    cacheSize.value = `${size} B`;
+  } else if (size < 1024 * 1024) {
+    cacheSize.value = `${(size / 1024).toFixed(2)} KB`;
+  } else {
+    cacheSize.value = `${(size / (1024 * 1024)).toFixed(2)} MB`;
+  }
+};
+
 onMounted(() => {
+  calculateCacheSize();
+  getAppVersion();
   nextTick(() => {
     if (titleRef.value) {
       const text = titleRef.value.textContent || '';
@@ -131,6 +196,30 @@ onMounted(() => {
           </h1>
         </div>
       </template>
+      <div class="game-theme-box">
+        <div class="game-theme-title mb-10px">
+          <div class="flex font-size-24px">
+            <SvgIcon icon="unjs:theme-colors" />
+          </div>
+          <div class="ml-10px font-size-16px font-semibold">
+            <NText>
+              主题设置
+            </NText>
+          </div>
+        </div>
+        <div class="theme-list">
+          <NGrid :cols="4" :x-gap="12" :y-gap="12">
+            <NGridItem v-for="theme in themes" :key="theme.id">
+              <div class="theme-item" :class="{ active: currentTheme === theme.id }" @click="selectTheme(theme.id)">
+                <div class="theme-img-wrapper">
+                  <img :src="theme.img" :alt="theme.name" class="theme-img" />
+                </div>
+                <div class="theme-name">{{ theme.name }}</div>
+              </div>
+            </NGridItem>
+          </NGrid>
+        </div>
+      </div>
       <div class="game-setting-box">
         <div class="game-setting-title">
           <div class="flex font-size-24px">
@@ -202,8 +291,32 @@ onMounted(() => {
           </div>
         </div>
       </div>
+      <div class="game-cache-box">
+        <div class="game-cache-title mb-10px">
+          <div class="flex font-size-24px">
+            <SvgIcon icon="octicon:cache-24" />
+          </div>
+          <div class="ml-10px font-size-16px font-semibold">
+            <NText>
+              缓存管理
+            </NText>
+          </div>
+        </div>
+        <div class="game-cache-item justify-between">
+          <div class="flex flex-col">
+            <div class="text-gray-600 font-bold">本地数据缓存占用</div>
+            <div class="text-12px text-gray-400 mt-2px">缓存大小 ({{ cacheSize }})</div>
+          </div>
+          <NButton type="error" ghost @click="clearCache">
+            <template #icon>
+              <SvgIcon icon="material-symbols:delete-outline" />
+            </template>
+            立即清理
+          </NButton>
+        </div>
+      </div>
       <div class="game-info-box">
-        <div class="game-info-title">
+        <div class="game-info-title mb-10px">
           <div class="flex font-size-24px">
             <SvgIcon icon="solar:info-square-broken" />
           </div>
@@ -231,7 +344,7 @@ onMounted(() => {
             </div>
             <div class="version-text">
               <div class="license">当前版本号</div>
-              <div class="version">1.0.0</div>
+              <div class="version">{{ appVersion }}</div>
             </div>
           </div>
         </div>
@@ -457,6 +570,107 @@ onMounted(() => {
     align-items: center;
     padding: 10px 20px 10px 0px;
     border-bottom: 1px solid rgba(139, 92, 246, 0.6);
+  }
+}
+
+.game-cache-box {
+  width: full;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.1);
+
+  &:hover {
+    border-color: rgba(139, 92, 246, 0.6);
+    box-shadow: 0 6px 25px rgba(139, 92, 246, 0.2);
+  }
+
+  .game-cache-title {
+    display: flex;
+    align-items: center;
+  }
+
+  .game-cache-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 20px 10px 0px;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.6);
+  }
+}
+
+.game-theme-box {
+  width: full;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+  border: 2px solid rgba(139, 92, 246, 0.3);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.1);
+
+  &:hover {
+    border-color: rgba(139, 92, 246, 0.6);
+    box-shadow: 0 6px 25px rgba(139, 92, 246, 0.2);
+  }
+
+  .game-theme-title {
+    display: flex;
+    align-items: center;
+  }
+}
+
+.theme-list {
+  padding: 10px 0;
+
+  .theme-item {
+    cursor: pointer;
+    text-align: center;
+    border-radius: 8px;
+    padding: 8px;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+
+    &:hover {
+      background-color: rgba(139, 92, 246, 0.1);
+    }
+
+    &.active {
+      border-color: #8b5cf6;
+      background-color: rgba(139, 92, 246, 0.15);
+
+      .theme-name {
+        color: #8b5cf6;
+        font-weight: bold;
+      }
+    }
+
+    .theme-img-wrapper {
+      width: 100%;
+      aspect-ratio: 16/9;
+      overflow: hidden;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .theme-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s;
+    }
+
+    &:hover .theme-img {
+      transform: scale(1.05);
+    }
+
+    .theme-name {
+      font-size: 14px;
+      color: #666;
+    }
   }
 }
 

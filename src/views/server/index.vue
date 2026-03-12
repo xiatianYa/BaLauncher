@@ -47,9 +47,6 @@ const selectCommunity = async (id: number) => {
   if (gameStore.selectedCommunityId === id || serverLoading.value || isRefreshing.value) return;
   serverLoading.value = true;
   gameStore.selectedCommunityId = id;
-  window.ipcRenderer.off('query-game-servers', () => {
-    console.log('取消查询服务器');
-  });
   await queryServerInfos(true, true);
   serverLoading.value = false;
 };
@@ -59,7 +56,15 @@ const getMapByMapName = (mapName: string) => {
   return gameStore.mapList.find(map => map.mapName === mapName);
 };
 
-// 计算进度颜色
+// 获取 Ping 值对应的颜色类型
+const getPingType = (ping?: number) => {
+  if (ping === undefined || ping === null) return 'default';
+  if (ping < 70) return 'success';
+  if (ping < 100) return 'warning';
+  return 'error';
+};
+
+// 格式化游戏时间计算进度颜色
 const getOnLineColor = (server: Api.Game.InfoResponse) => {
   if (!server) return '';
   if (server.players <= 20) {
@@ -354,7 +359,7 @@ onUnmounted(() => {
                   class="mr-3px" type="success" v-show="queryServerMapType(server.map)">
                   {{dictOptions('game_tag').find((item: any) => item.value === tag)?.label}}
                 </NTag>
-                <NTag size="small" round class="mr-3px" ghost type="info" v-show="server.ping">
+                <NTag size="small" round class="mr-3px" ghost :type="getPingType(server.ping)" v-show="server.ping">
                   {{ server.ping }}ms
                 </NTag>
               </div>

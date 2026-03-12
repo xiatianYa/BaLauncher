@@ -9,6 +9,7 @@ import { fetchGetPieChart } from '@/service/api';
 import { localStg } from '@/utils/storage';
 import { GamePlatform } from '@/constants/app';
 import GisWebsocket from '@/utils/ws/gis';
+import { useAppStore } from '../app';
 
 export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
@@ -202,9 +203,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       if (isGameRunning.value) {
         //检查 GIS 服文件是否安装
         const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2Path.value);
-        if (!exists){
-            return;
-        }else{
+        if (!exists) {
+          return;
+        } else {
           console.log('GIS 文件已安装');
         };
         // 检查 GSI 服务是否已启动
@@ -344,13 +345,35 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   }
 
   /**
+   * 查询所有服务器的PING值
+   */
+  async function queryServerInfosPingResponse() {
+    // 使用 IPC 查询服务器信息
+    if (serverDataList.length > 0) {
+      // 筛选当前社区要查询的服务器
+      const serverAddresses = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value).map(server => server.connectStr);
+      const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses);
+      if (success) {
+        infoResponseList.forEach((item: any) => {
+          // 查找当前列表中的对应服务器
+          const server = currentServerList.find(s => s.addr === item.addr);
+          if (server) {
+            // 更新 ping 值
+            server.ping = item.ping;
+          }
+        });
+      }
+    }
+  }
+
+  /**
    *  查询服务器列表信息(WS服务器)
    */
   async function queryWsServerInfosResponse() {
     // 使用 IPC 查询服务器信息
     if (serverDataList.length > 0) {
       // 先查询源服务器信息 不等待 获取ping
-      queryServerInfosResponse();
+      queryServerInfosPingResponse();
       // 筛选当前社区要查询的服务器
       const targetServers = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value);
 
@@ -643,6 +666,15 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
               sendAutomaticDynamic("已连接进服务器...");
               //清空记录
               currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length);
+              //播放音频
+              const appStore = useAppStore();
+              const currentTheme = appStore.currentTheme;
+              const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜'];
+              
+              const audio = new Audio(audioSrc);
+              audio.volume = 0.5;
+              audio.play().catch(e => console.error('音频播放失败:', e));
+              
               window.$message?.success("连接成功")
             }
           }

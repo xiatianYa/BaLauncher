@@ -4,6 +4,10 @@ import { router as globalRouter } from "@/router";
 import { RouteLocationRaw } from "vue-router";
 import { reactive } from "vue";
 import { localStg } from "@/utils/storage";
+import icon940326 from '@/assets/imgs/menu/940326.png';
+import icon939940 from '@/assets/imgs/menu/939940.png';
+import icon911476 from '@/assets/imgs/menu/911476.png';
+import icon207977 from '@/assets/imgs/menu/207977.png';
 
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
@@ -20,24 +24,28 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       name: "首页",
       key: "home",
       icon: "material-symbols:home-outline-rounded",
+      img: icon940326,
       isPersistent: true
     },
     {
       name: "服务器列表",
       key: "server",
       icon: "tabler:server",
+      img: icon939940,
       isPersistent: true
     },
     {
       name:"工具箱",
       key:"tools",
       icon:"gg:toolbox",
+      img: icon911476,
       isPersistent:true
     },
     {
       name: "系统设置",
       key: "setting",
       icon: "tabler:settings",
+      img: icon207977,
       isPersistent: true
     },
   ];

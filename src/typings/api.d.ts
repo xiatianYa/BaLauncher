@@ -76,6 +76,7 @@ declare namespace Api {
       name: string;
       key: string;
       icon: string;
+      img: string;
       isPersistent: boolean;
     }
   }

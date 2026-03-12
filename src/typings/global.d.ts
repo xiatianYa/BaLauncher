@@ -29,6 +29,7 @@ declare global {
       launchCs2: (csgo2Path: string, serverMode?: 'perfectworld' | 'worldwide', startType?: boolean, steamPath?: string) => Promise<{ success: boolean; error?: string }>;
       waitForCs2Launch: (csgo2Path?: string, maxWaitMs?: number) => Promise<{ success: boolean; error?: string }>;
       autoDetectPaths: () => Promise<{ steamPath: string | null; csgo2Path: string | null }>;
+      getAppVersion: () => Promise<string>;
     };
   }
 

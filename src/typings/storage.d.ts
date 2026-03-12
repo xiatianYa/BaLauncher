@@ -36,6 +36,8 @@ declare namespace StorageType {
     steamPath: string;
     /** automatic join config */
     automaticJoinConfig: any;
+    /** The theme */
+    theme: string;
     /**
      * The override theme flags
      *

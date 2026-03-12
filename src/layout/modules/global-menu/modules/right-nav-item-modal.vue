@@ -3,6 +3,8 @@ import { NGridItem } from 'naive-ui';
 import { reactive } from 'vue';
 import { useRouteStore } from '@/store/modules/route';
 import { localStg } from '@/utils/storage';
+import icon911476 from '@/assets/imgs/menu/911476.png';
+import icon207977 from '@/assets/imgs/menu/207977.png';
 
 const visible = defineModel<boolean>('visible', {
     default: false
@@ -15,12 +17,14 @@ const SideNavRoutes: Api.Route.SideNavItem[] = reactive([
         name: "工具箱",
         key: "tools",
         icon: "gg:toolbox",
+        img: icon911476,
         isPersistent: true
     },
     {
         name: "设置",
         key: "setting",
         icon: "tabler:settings",
+        img: icon207977,
         isPersistent: true
     }
 ])
@@ -48,7 +52,7 @@ const AddOrRemoveSideNav = (navItem: Api.Route.SideNavItem) => {
     <NModal v-model:show="visible" preset="card" title="菜单配置" class="w-520px" :closable="true">
         <NGrid x-gap="20" y-gap="20" :cols="3">
             <NGridItem v-for="navItem in SideNavRoutes" @click="AddOrRemoveSideNav(navItem)">
-                <NButton class="nav-item-button">
+                <NButton class="nav-item-button" secondary>
                     <div class="w-full h-full flex items-center cursor-pointer">
                         <SvgIcon :icon="navItem.icon" class="h-full flex items-center font-size-32px mr-5px" />
                         <span class="w-full h-full flex items-center font-size-14px">{{ navItem.name }}</span>

@@ -1,8 +1,17 @@
-import { ipcMain, BrowserWindow, dialog } from 'electron'
+import { ipcMain, BrowserWindow, dialog, app } from 'electron'
 import { getMainWindow } from '../windowManager'
 import { preload, indexHtml, VITE_DEV_SERVER_URL } from '../config'
 
 export function setupWindowControlIpc() {
+  ipcMain.handle('electron:get-app-version', async () => {
+    try {
+      return app.getVersion();
+    } catch (err) {
+      console.error('获取版本号失败：', err);
+      return 'unknown'; // 兜底值 
+    }
+  });
+
   ipcMain.handle('open-win', (_, arg) => {
     const win = getMainWindow()
     if (!win) return

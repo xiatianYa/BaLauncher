@@ -57,6 +57,9 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   autoDetectPaths() {
     return ipcRenderer.invoke('auto-detect-paths');
   },
+  getAppVersion() {
+    return ipcRenderer.invoke('electron:get-app-version');
+  },
 });
 
 // --------- Preload scripts loading ---------

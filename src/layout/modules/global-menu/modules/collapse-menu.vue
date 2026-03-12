@@ -38,14 +38,13 @@ watch(
             <NGridItem v-for="navItem in useRoute.SideNavRoutes" :key="navItem.key">
                 <NPopover trigger="hover" placement="right">
                     <template #trigger>
-                        <NButton strong secondary :type="selectedKey === navItem.key ? 'success' : 'default'"
-                            size="large" class="w-full" @click="goToRouterPath(navItem.key)">
-                            <template #icon>
-                                <SvgIcon :icon="navItem.icon"></SvgIcon>
-                            </template>
-                        </NButton>
+                        <div class="menu-item" @click="goToRouterPath(navItem.key)">
+                            <div class="menu-icon">
+                                <img :src="navItem.img" class="menu-icon-img">
+                            </div>
+                        </div>
                     </template>
-                    <span>{{ navItem.name }}</span>
+                    <span class="font-600">{{ navItem.name }}</span>
                 </NPopover>
             </NGridItem>
         </NGrid>
@@ -58,4 +57,28 @@ watch(
     </div>
 </template>
 
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.menu-item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f1f1f1;
+    padding: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+
+    .menu-icon {
+        height: 60px;
+        background-color: #c9c9ca;
+        padding: 5px;
+        border-radius: 5px;
+
+        .menu-icon-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            background-size: 100% 100%;
+        }
+    }
+}
+</style>

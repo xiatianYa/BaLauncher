@@ -81,4 +81,5 @@ export const commonIcons = [
   'solar:tag-price-broken',
   'hugeicons:gun',
   'material-symbols:info-outline',
+  'octicon:cache-24',
 ]
