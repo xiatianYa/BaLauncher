@@ -200,6 +200,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       const { isRunning } = await window.ipcRenderer.checkCsgo2Running();
       isGameRunning.value = isRunning;
       if (isGameRunning.value) {
+        //检查 GIS 服文件是否安装
+        const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2Path.value);
+        if (!exists) return;
         // 检查 GSI 服务是否已启动
         const { isConnected } = await window.ipcRenderer.checkGsiConnected();
         if (!isConnected) {
@@ -432,6 +435,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     return success;
   }
 
+  // 确保GIS和Steam目录CSGO配置正确
   async function ensureGameStartReady() {
     if (!csgo2Path.value) {
       console.error('未配置 CS2 路径，请在设置中配置');
