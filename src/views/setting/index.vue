@@ -18,9 +18,22 @@ const themes = computed(() => appStore.themes);
 
 const currentTheme = computed(() => appStore.currentTheme);
 
+const themeAudio = ref<HTMLAudioElement | null>(null);
+
 const selectTheme = (themeId: string) => {
   appStore.setTheme(themeId);
-  window.$message?.success(`已切换主题：${themes.value.find(t => t.id === themeId)?.name}`);
+  const audioSrc = appStore.audioMap[themeId] || appStore.audioMap['阿罗娜'];
+  if (audioSrc) {
+    if (!themeAudio.value) {
+      themeAudio.value = new Audio(audioSrc);
+    } else {
+      themeAudio.value.pause();
+      themeAudio.value.currentTime = 0;
+      themeAudio.value.src = audioSrc;
+    }
+    themeAudio.value.volume = 0.5;
+    themeAudio.value.play();
+  }
 };
 
 const titleRef = ref<HTMLElement | null>(null);

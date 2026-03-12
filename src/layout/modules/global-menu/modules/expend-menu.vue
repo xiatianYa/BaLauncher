@@ -56,14 +56,14 @@ watch(
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: #f1f1f1;
+    background-color: rgba($color: #f1f1f1, $alpha: 0.7);
     padding: 5px;
     border-radius: 5px;
     cursor: pointer;
 
     .menu-icon {
         height: 60px;
-        background-color: #c9c9ca;
+        background-color: rgba($color: #c9c9ca, $alpha: 0.5);
         padding: 5px;
         border-radius: 5px;
 
