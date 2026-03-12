@@ -124,10 +124,7 @@ function handleLogin(type: 'qq' | 'steam') {
       loginLoading.value = false;
     })
     .catch(() => {
-      window.$notification?.error({
-        title: `${type}登录失败`,
-        duration: 4500,
-      });
+      loginLoading.value = false;
     });
 }
 </script>

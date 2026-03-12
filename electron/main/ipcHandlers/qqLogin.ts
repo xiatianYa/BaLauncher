@@ -5,6 +5,105 @@ import querystring from 'node:querystring'
 
 let qqLoginWindow: BrowserWindow | null = null
 
+const INJECT_HEADER_SCRIPT = `
+(function() {
+  if (document.getElementById('ba-launcher-login-header')) return;
+  
+  const style = document.createElement('style');
+  style.textContent = \`
+    #ba-launcher-login-header {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 32px;
+      background: #f3f3f3;
+      z-index: 2147483647;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      -webkit-app-region: drag;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      font-family: system-ui, -apple-system, sans-serif;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    #ba-launcher-login-title {
+      margin-left: 12px;
+      font-size: 13px;
+      color: #333;
+      font-weight: 500;
+      pointer-events: none;
+      user-select: none;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    #ba-launcher-login-close {
+      width: 46px;
+      height: 32px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+      transition: background 0.2s;
+    }
+    #ba-launcher-login-close:hover {
+      background: #e81123;
+    }
+    #ba-launcher-login-close svg {
+      width: 10px;
+      height: 10px;
+      fill: #000;
+    }
+    #ba-launcher-login-close:hover svg {
+      fill: #fff;
+    }
+    #ba-launcher-header-placeholder {
+      width: 100%;
+      height: 32px;
+      display: block;
+      visibility: hidden;
+      flex-shrink: 0;
+    }
+    html, body {
+      width: 100% !important;
+      height: 100% !important;
+      overflow: hidden !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    /* 隐藏可能存在的滚动条 */
+    ::-webkit-scrollbar {
+      display: none;
+    }
+  \`;
+  document.head.appendChild(style);
+
+  const header = document.createElement('div');
+  header.id = 'ba-launcher-login-header';
+  header.innerHTML = \`
+    <div id="ba-launcher-login-title">蔚蓝档案登录器 - QQ登陆</div>
+    <div id="ba-launcher-login-close" title="关闭">
+      <svg viewBox="0 0 10.2 10.2"><path d="M10.2,0.7L9.5,0L5.1,4.4L0.7,0L0,0.7l4.4,4.4L0,9.5l0.7,0.7l4.4-4.4l4.4,4.4l0.7-0.7L5.8,5.1L10.2,0.7z"/></svg>
+    </div>
+  \`;
+  
+  const placeholder = document.createElement('div');
+  placeholder.id = 'ba-launcher-header-placeholder';
+  
+  document.body.prepend(placeholder);
+  document.body.prepend(header);
+  
+  document.getElementById('ba-launcher-login-close').addEventListener('click', () => {
+    window.location.href = 'ba-launcher://close';
+  });
+})();
+`
+
 export function setupQqLoginIpc() {
   ipcMain.handle('open-qq-login-window', async (_, url) => {
     if (qqLoginWindow) {
@@ -16,14 +115,14 @@ export function setupQqLoginIpc() {
 
     return new Promise((resolve, reject) => {
       qqLoginWindow = new BrowserWindow({
-        title: '蔚蓝档案登录器',
+        title: '蔚蓝档案登录器 - QQ登录',
         icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
-        width: 800,
-        height: 600,
-        minWidth: 800,
-        minHeight: 600,
-        maxWidth: 800,
-        maxHeight: 600,
+        width: 500,
+        height: 782,
+        minWidth: 500,
+        minHeight: 782,
+        maxWidth: 500,
+        maxHeight: 782,
         resizable: false,
         show: false,
         webPreferences: {
@@ -36,7 +135,21 @@ export function setupQqLoginIpc() {
       })
 
       qqLoginWindow.once('ready-to-show', () => {
-        qqLoginWindow?.show()
+        // 等待注入脚本执行完毕后再显示窗口
+        qqLoginWindow?.webContents.executeJavaScript(INJECT_HEADER_SCRIPT).then(() => {
+          qqLoginWindow?.show()
+        })
+      })
+
+      qqLoginWindow.webContents.on('will-navigate', (event, url) => {
+        if (url === 'ba-launcher://close') {
+          event.preventDefault()
+          qqLoginWindow?.close()
+        }
+      })
+
+      qqLoginWindow.webContents.on('did-start-loading', () => {
+        qqLoginWindow?.webContents.executeJavaScript(INJECT_HEADER_SCRIPT)
       })
 
       qqLoginWindow.loadURL(url)
