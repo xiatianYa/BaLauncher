@@ -16,9 +16,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 检测游戏是否启动的定时器
   let gameCheckTimer: ReturnType<typeof setInterval> | null = null;
 
-  // 检测用户是否连接成功的定时器
-  let connectionCheckTimer: ReturnType<typeof setTimeout> | null = null;
-
   // 社区列表
   const communityList: Api.Game.Community[] = reactive([]);
 
@@ -555,12 +552,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     isAutomatic.value = true;
     automaticCount.value = 0;
 
-    // 清除之前的检测定时器
-    if (connectionCheckTimer) {
-      clearTimeout(connectionCheckTimer);
-      connectionCheckTimer = null;
-    }
-
     try {
       console.log("开始发送IPC请求");
       const result = await window.ipcRenderer.invoke('start-automatic-join', {
@@ -568,6 +559,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
         maxPlayers: automaticJoinConfig.value.joinServerPersonValue,
         threadCount: automaticJoinConfig.value.joinServerCountValue
       });
+      console.log("自动挤服IPC数据", result);
 
       if (result.success && result.found) {
         // 自动重试标识(用户是否切换到目标地图)
@@ -575,13 +567,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
         // 检测用户是否成功连接到服务器
         if (automaticJoinConfig.value.joinServerAutoRetryValue) {
           connectServerUsingSteamUrl();
-          connectionCheckTimer = setTimeout(() => {
-            if (isAutomaticRetry.value) {
-              // 用户没有成功连接，继续自动挤服
-              console.log('用户未成功连接，继续自动挤服');
-              startAutomaticJoinServer();
-            }
-          }, 120000); // 120秒超时检测
         } else {
           isAutomatic.value = false;
           isAutomaticRetry.value = false;
@@ -601,15 +586,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // 停止自动挤服
   async function stopAutomaticJoinServer() {
-    // 清除连接检测定时器
-    if (connectionCheckTimer) {
-      clearTimeout(connectionCheckTimer);
-      connectionCheckTimer = null;
-    }
-
     // 重置自动重试标志
     isAutomaticRetry.value = false;
-
     if (!isAutomatic.value) {
       return;
     } else {
@@ -653,26 +631,22 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             isAutomaticRetry.value = false;
             isAutomatic.value = false;
             // 用户成功连接，清除定时器
-            if (connectionCheckTimer) {
-              clearTimeout(connectionCheckTimer);
-              connectionCheckTimer = null;
-              safeLog('✅ 用户已成功连接到目标服务器');
-              //发送地址
-              sendUserGisJoinAddr();
-              //GIS清空挤服
-              pauseAutomaticJoinServer();
-              sendAutomaticDynamic("已连接进服务器...");
-              //清空记录
-              currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length);
-              //播放音频
-              const appStore = useAppStore();
-              const currentTheme = appStore.currentTheme;
-              const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜'];
-              const audio = new Audio(audioSrc);
-              audio.volume = 0.5;
-              audio.play();
-              window.$message?.success("连接成功")
-            }
+            safeLog('✅ 用户已成功连接到目标服务器');
+            //发送地址
+            sendUserGisJoinAddr();
+            //GIS清空挤服
+            pauseAutomaticJoinServer();
+            sendAutomaticDynamic("已连接进服务器...");
+            //清空记录
+            currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length);
+            //播放音频
+            const appStore = useAppStore();
+            const currentTheme = appStore.currentTheme;
+            const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜'];
+            const audio = new Audio(audioSrc);
+            audio.volume = 0.5;
+            audio.play();
+            window.$message?.success("连接成功")
           }
           break;
         case 'map:phaseChanged':

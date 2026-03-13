@@ -14,6 +14,9 @@ declare namespace UnionKey {
   /** Theme scheme */
   type ThemeScheme = 'light' | 'dark';
 
+  /** The tool module */
+  type ToolModule = 'keyBind' | 'mapOrder';
+
   /**
    * The layout mode
    *

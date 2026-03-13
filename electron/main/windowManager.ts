@@ -26,12 +26,15 @@ async function createWindow(onDidFinishLoad?: (win: BrowserWindow) => void) {
     webPreferences: {
       preload,
       devTools: true,
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
     },
     autoHideMenuBar: true,
     frame: false
   })
 
-  if (VITE_DEV_SERVER_URL) { 
+  if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
     win.webContents.openDevTools()
   } else {

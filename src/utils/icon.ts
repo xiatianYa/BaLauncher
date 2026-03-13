@@ -82,4 +82,6 @@ export const commonIcons = [
   'hugeicons:gun',
   'material-symbols:info-outline',
   'octicon:cache-24',
+  'material-symbols:keyboard-alt-outline',
+  'material-symbols:map-outline',
 ]

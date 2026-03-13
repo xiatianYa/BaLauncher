@@ -85,7 +85,6 @@ instance.interceptors.response.use(
 
     // 处理跨域错误
     if (!error.response) {
-      window.$message?.error('跨域请求失败，请检查网络或CORS配置');
       return Promise.reject(error);
     }
 

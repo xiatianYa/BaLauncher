@@ -44,13 +44,11 @@ const GisWebsocket: GisWebsocketType = {
         const handlers: { [key: string]: (data: any) => void } = {
           '201': () => {
             const { gisPlayers, joinPlayers } = data;
-            if (Array.isArray(gisPlayers) && gameStore.joinServerInfo?.addr) {
-              const gisPlayer = gisPlayers.filter((item) => item.addr === gameStore.joinServerInfo?.addr);
-              gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length, ...gisPlayer);
+            if (Array.isArray(gisPlayers)) {
+               gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length, ...gisPlayers);
             }
-            if (Array.isArray(joinPlayers) && gameStore.automaticInfo?.connectStr) {
-              const currentJoinPlayers = joinPlayers.filter((item) => item.addr === gameStore.automaticInfo.connectStr);
-              gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length, ...currentJoinPlayers);
+            if (Array.isArray(joinPlayers)) {
+                gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length, ...joinPlayers);
             }
             console.log(gameStore.currentGisPlayerList, gameStore.currentAutomaticPlayerList);
           },
