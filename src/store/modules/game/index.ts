@@ -578,7 +578,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
               console.log('用户未成功连接，继续自动挤服');
               startAutomaticJoinServer();
             }
-          }, 60000); // 60秒超时检测
+          }, 120000); // 120秒超时检测
         } else {
           isAutomatic.value = false;
           isAutomaticRetry.value = false;
@@ -655,7 +655,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
               connectionCheckTimer = null;
               safeLog('✅ 用户已成功连接到目标服务器');
               //发送地址
-              sendUserGisAddr();
+              sendUserGisJoinAddr();
+              //GIS清空挤服
+              pauseAutomaticJoinServer();
               sendAutomaticDynamic("已连接进服务器...");
               //清空记录
               currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length);
@@ -797,6 +799,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   let userGisSendTimer: ReturnType<typeof setTimeout> | null = null;
   let pendingUserGisData: Api.Game.CsgoPlayer | null = null;
 
+  // GIS发送用户接搜连接地址消息
   function sendUserGisAddr() {
     if (!joinServerInfo.value?.addr) return;
     if (!GisWebsocket.GisWebsocket) return;
@@ -806,6 +809,33 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       data: joinServerInfo.value.addr
     };
     GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage));
+  }
+
+  // GIS发送用户连接地址消息
+  function sendUserGisJoinAddr() {
+    if (!joinServerInfo.value?.addr) return;
+    if (!GisWebsocket.GisWebsocket) return;
+
+    const setAddrMessage: Api.Game.WsServerMsgType = {
+      type: '103',
+      data: joinServerInfo.value.addr
+    };
+    GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage));
+  }
+
+
+  // GIS暂停自动挤服消息
+  async function pauseAutomaticJoinServer() {
+    isAutomatic.value = false;
+    const sendMessage = {
+      code: 104,
+      data: {
+        serverAddr: joinServerInfo.value?.addr,
+      }
+    };
+    if (GisWebsocket.GisWebsocket) {
+      GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage));
+    }
   }
 
   function flushUserGisData() {
@@ -971,10 +1001,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     startGame,
     startAutomaticJoinServer,
     stopAutomaticJoinServer,
+    pauseAutomaticJoinServer,
     connectServerUsingSteamUrl,
     queryWsServerInfosResponse,
     sendAutomaticDynamic,
     ensureGameStartReady,
     sendUserGisAddr,
+    sendUserGisJoinAddr,
   };
 });

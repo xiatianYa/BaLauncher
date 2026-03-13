@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useGameStore } from '@/store/modules/game';
 import LoadingSpinner from '@/components/custom/loading-spinner.vue';
-import { ref, onDeactivated, onUnmounted, nextTick, onMounted } from 'vue';
+import { ref, onUnmounted, nextTick, onMounted } from 'vue';
 import { animate } from 'animejs';
 import { NEmpty } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
@@ -184,7 +184,7 @@ const joinServer = async (server: Api.Game.InfoResponse) => {
     showOpenGameConfirm.value = true;
   } else {
     console.log('游戏已启动，直接连接服务器');
-    gameStore.sendUserGisAddr();
+    gameStore.sendUserGisJoinAddr();
     // 连接服务器
     gameStore.connectServerUsingSteamUrl();
   }
@@ -193,6 +193,7 @@ const joinServer = async (server: Api.Game.InfoResponse) => {
 // 打开自动连接服务器窗口
 const openAutoJoinServer = (server: Api.Game.InfoResponse) => {
   gameStore.joinServerInfo = server;
+  gameStore.sendUserGisAddr();
   showJoinServerConfirm.value = true;
   gameStore.currentGisPlayerList = [];
 }
