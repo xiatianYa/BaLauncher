@@ -28,6 +28,8 @@ declare global {
       checkGsiConnected: () => Promise<{ isConnected: boolean }>;
       launchCs2: (csgo2Path: string, serverMode?: 'perfectworld' | 'worldwide', startType?: boolean, steamPath?: string) => Promise<{ success: boolean; error?: string }>;
       waitForCs2Launch: (csgo2Path?: string, maxWaitMs?: number) => Promise<{ success: boolean; error?: string }>;
+      startLogReader: (csgo2Path: string) => Promise<{ success: boolean; error?: string }>;
+      stopLogReader: () => Promise<{ success: boolean }>;
       autoDetectPaths: () => Promise<{ steamPath: string | null; csgo2Path: string | null }>;
       getAppVersion: () => Promise<string>;
     };

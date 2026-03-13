@@ -273,12 +273,12 @@ const handleCancelExit = () => {
         gameStore.isJoinServerTrayVisible = true;
         return;
     }
-    
+
     //所有玩家的挤服动态
     gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length);
     //所有服务器的GIS动态
     gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length);
-    
+
     emit('update:showJoinServer', false);
     return;
 };
@@ -321,12 +321,8 @@ onBeforeUnmount(() => {
         :bordered="true" :closable="false" :onMaskClick="handleCancelExit" :mask-closable="false" :close-on-esc="false"
         content-style="padding:0px;">
         <div class="game-join-container">
-            <div class="game-join-close">
-                <NButton size="small" type="default" color="#2d2736" secondary strong ghost @click="handleCancelExit()">
-                    <template #icon>
-                        <SvgIcon icon="ic:baseline-close" />
-                    </template>
-                </NButton>
+            <div class="game-join-close" @click="handleCancelExit">
+                <SvgIcon icon="ic:baseline-close" />
             </div>
             <div class="game-join-option" v-if="!gameStore.isAutomatic">
                 <div class="title-container mb-10px">
@@ -351,7 +347,9 @@ onBeforeUnmount(() => {
                         </div>
                         <NTag type="info" ghost size="small" :bordered="false">
                             <div class="font-bold">
-                                {{ $t('serverJoin.personCount', { count: gameStore.automaticJoinConfig.joinServerPersonValue }) }}
+                                {{ $t('serverJoin.personCount', {
+                                    count:
+                                        gameStore.automaticJoinConfig.joinServerPersonValue }) }}
                             </div>
                         </NTag>
                     </NSpace>
@@ -378,7 +376,9 @@ onBeforeUnmount(() => {
                         </div>
                         <NTag type="info" ghost size="small" :bordered="false">
                             <div class="font-bold">
-                                {{ $t('serverJoin.threadCount', { count: gameStore.automaticJoinConfig.joinServerCountValue }) }}
+                                {{ $t('serverJoin.threadCount', {
+                                    count:
+                                        gameStore.automaticJoinConfig.joinServerCountValue }) }}
                             </div>
                         </NTag>
                     </NSpace>
@@ -529,7 +529,8 @@ onBeforeUnmount(() => {
                                         <div class="flex items-center gap-2">
                                             <NAvatar round size="small" :src="player.loginUser?.avatar"
                                                 fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
-                                            <span class="ml-2 font-bold">{{ player.loginUser?.nickName || $t('serverJoin.unknownPlayer')
+                                            <span class="ml-2 font-bold">{{ player.loginUser?.nickName ||
+                                                $t('serverJoin.unknownPlayer')
                                                 }}</span>
                                             <NTag size="small" :type="getTeamColor(player.team)" class="ml-2"
                                                 :bordered="false">
@@ -616,8 +617,10 @@ onBeforeUnmount(() => {
 
     .game-join-close {
         position: absolute;
-        top: 5px;
-        right: 5px;
+        font-size: 22px;
+        top: 8px;
+        right: 10px;
+        cursor: pointer;
     }
 
     .game-join-option {

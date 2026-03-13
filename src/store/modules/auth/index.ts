@@ -134,8 +134,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     type: number;
     redirect?: boolean;
   }) {
-    console.log(accessToken, openId, type);
-
     const { data: loginToken, error } = await fetchOAuthLogin(accessToken, openId, type);
 
     if (!error) {

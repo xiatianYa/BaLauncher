@@ -50,12 +50,10 @@ const GisWebsocket: GisWebsocketType = {
             if (Array.isArray(joinPlayers)) {
                 gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length, ...joinPlayers);
             }
-            console.log(gameStore.currentGisPlayerList, gameStore.currentAutomaticPlayerList);
           },
           '202': () => {
             if (data && typeof data === 'string') {
               gameStore.currentAutomaticPlayerDynamicList.push(data);
-              console.log("用户挤服动态", gameStore.currentAutomaticPlayerDynamicList);
             }
           }
         }

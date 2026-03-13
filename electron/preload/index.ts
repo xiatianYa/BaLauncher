@@ -54,6 +54,12 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   waitForCs2Launch(csgo2Path?: string, maxWaitMs: number = 90000) {
     return ipcRenderer.invoke('wait-for-cs2-launch', csgo2Path, maxWaitMs);
   },
+  startLogReader(csgo2Path: string) {
+    return ipcRenderer.invoke('start-log-reader', csgo2Path);
+  },
+  stopLogReader() {
+    return ipcRenderer.invoke('stop-log-reader');
+  },
   autoDetectPaths() {
     return ipcRenderer.invoke('auto-detect-paths');
   },

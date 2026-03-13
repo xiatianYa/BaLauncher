@@ -20,7 +20,7 @@ const handleRestore = () => {
 <template>
   <div v-if="gameStore.isJoinServerTrayVisible"
     class="fixed right-0 bottom-20px z-999 flex items-center transition-transform duration-300 ease-in-out will-change-transform"
-    :class="isTrayCollapsed ? 'translate-x-[calc(100%-5px)]' : 'translate-x-0px'">
+    :class="isTrayCollapsed ? 'translate-x-[calc(100%+20px)]' : 'translate-x-25px'">
     
     <!-- 折叠/展开按钮 -->
     <div 

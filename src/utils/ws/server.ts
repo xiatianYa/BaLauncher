@@ -72,7 +72,6 @@ const ServerWebsocket: ServerWebsocketType = {
           },
           '103': () => {
             gameStore.currentGisServerList.splice(0, gameStore.currentGisServerList.length, ...data);
-            console.log("GIS服务器数据",gameStore.currentGisServerList);
           }
         };
 

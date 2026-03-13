@@ -7,8 +7,6 @@ export async function preloadIcons(icons: string[]): Promise<void> {
   if (iconsToLoad.length === 0) {
     return
   }
-
-  console.log('[Icon] 预加载图标:', iconsToLoad)
   
   try {
     await new Promise<void>((resolve) => {

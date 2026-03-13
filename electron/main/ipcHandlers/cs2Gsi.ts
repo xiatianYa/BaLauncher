@@ -3,6 +3,7 @@ import { exec, spawn } from 'node:child_process'
 import { promisify } from 'node:util'
 import path from 'node:path'
 import fs from 'node:fs'
+import { startLogReader } from './logReader'
 
 // ========== 全局变量 ==========
 let mainWindow: BrowserWindow | null = null // 主窗口实例，用于发送数据到渲染进程
@@ -89,7 +90,6 @@ async function createGsiConfig(csgo2Path: string): Promise<boolean> {
             const targetPath = path.join(cfgDir, 'gamestate_integration_balauncher.cfg')
             // 如果文件已存在，则不重复创建
             if (fs.existsSync(targetPath)) {
-                console.log('GSI 配置文件已存在，跳过创建:', targetPath)
                 return true
             }
 
@@ -103,7 +103,6 @@ async function createGsiConfig(csgo2Path: string): Promise<boolean> {
                 if (configContent) {
                     // 直接将内容写入目标文件
                     fs.writeFileSync(targetPath, configContent, 'utf-8')
-                    console.log('GSI 配置文件已创建在:', targetPath)
                     return true
                 }
             } catch (error) {
@@ -164,11 +163,9 @@ async function launchCs2(
             let command = `${baseCommand}${steamId}`
 
             if (params.length > 0) {
-                command = `${baseCommand}${steamId}}`
+                command = `${baseCommand}${steamId}//${params.join(' ')}`
             }
-            console.log('Steam URL 启动命令:', command)
             shell.openExternal(command)
-            console.log('CS2 Steam URL 启动命令已成功发送')
         } else {
             if (!steamPath) {
                 return { success: false, error: 'Steam path not provided for steamexe mode' }
@@ -180,11 +177,11 @@ async function launchCs2(
             }
 
             const args = ['-applaunch', '730', ...params]
-            console.log('Steam.exe 启动命令:', steamExePath, args.join(' '))
 
             spawn(steamExePath, args, { detached: true, stdio: 'ignore' }).unref()
-            console.log('CS2 Steam.exe 启动命令已成功发送')
         }
+
+        startLogReader(csgo2Path)
 
         return { success: true }
     } catch (error) {
@@ -202,19 +199,15 @@ async function waitForCs2Launch(csgo2Path?: string, maxWaitMs: number = 60000) {
 
         const isRunning = await checkCsgo2Running()
         if (isRunning) {
-            console.log('检测到CS2进程已启动，等待进程稳定...')
             await new Promise(resolve => setTimeout(resolve, 3000))
             const stillRunning = await checkCsgo2Running()
             if (stillRunning) {
-                console.log('CS2进程已稳定运行')
                 await new Promise(resolve => setTimeout(resolve, 2000))
                 if (csgo2Path) {
-                    console.log('检查游戏是否完全加载...')
                     const loadCheckStart = Date.now()
                     const loadCheckEnd = loadCheckStart + 10000
                     while (Date.now() < loadCheckEnd) {
                         if (isGameFullyLoaded(csgo2Path)) {
-                            console.log('游戏已加载到主菜单')
                             return { success: true }
                         }
                     }
@@ -483,7 +476,6 @@ async function startGsiService() {
         })
         return { success: true }
     } catch (error) {
-        console.log('Failed to start GSI service:', error)
         isGsiConnected = false
         return { success: false, error: String(error) }
     }

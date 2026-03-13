@@ -54,12 +54,12 @@ const selectCommunity = async (id: number) => {
 };
 
 // 恢复挤服窗口
-  const restoreJoinServerWindow = () => {
-    gameStore.isJoinServerTrayVisible = false;
-    showJoinServerConfirm.value = true;
-  };
-  
-  // 根据地图名称获取地图信息
+const restoreJoinServerWindow = () => {
+  gameStore.isJoinServerTrayVisible = false;
+  showJoinServerConfirm.value = true;
+};
+
+// 根据地图名称获取地图信息
 const getMapByMapName = (mapName: string) => {
   return gameStore.mapList.find(map => map.mapName === mapName);
 };
@@ -192,7 +192,6 @@ const joinServer = async (server: Api.Game.InfoResponse) => {
   if (!gameStore.isGameRunning) {
     showOpenGameConfirm.value = true;
   } else {
-    console.log(t('server.directConnect'));
     gameStore.sendUserGisJoinAddr();
     // 连接服务器
     gameStore.connectServerUsingSteamUrl();
@@ -231,7 +230,6 @@ const refreshServerInfo = async (server: Api.Game.InfoResponse) => {
   if (gameStore.refreshingServerAddrs.includes(server.addr)) return;
   // 刷新服务器信息时，添加到刷新列表中
   gameStore.refreshingServerAddrs.push(server.addr);
-  console.log(gameStore.refreshingServerAddrs);
   await gameStore.queryServerInfoResponse(server);
   // 刷新服务器信息完成后，从刷新列表中移除
   const index = gameStore.refreshingServerAddrs.indexOf(server.addr);
@@ -348,7 +346,8 @@ onUnmounted(() => {
                 <div class="flex items-center justify-center">
                   <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
                   {{
-                    getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel : $t('server.noTranslation')
+                    getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel :
+                      $t('server.noTranslation')
                   }}
                 </div>
                 <div class="stat-chip chip-score mr-5px" v-show="server.mapPhase">
@@ -449,11 +448,11 @@ onUnmounted(() => {
         </div>
       </div>
     </NCard>
+    <OpenGameConfirm v-model:showGameConfirm="showOpenGameConfirm" />
+    <OpenGameJoin v-model:showJoinServer="showJoinServerConfirm" />
+    <!-- 挤服悬浮托盘 -->
+    <JoinServerTray @restore="restoreJoinServerWindow" />
   </NCard>
-  <OpenGameConfirm v-model:showGameConfirm="showOpenGameConfirm" />
-  <OpenGameJoin v-model:showJoinServer="showJoinServerConfirm" />
-  <!-- 挤服悬浮托盘 -->
-  <JoinServerTray @restore="restoreJoinServerWindow" />
 </template>
 
 <style scoped lang="scss">
