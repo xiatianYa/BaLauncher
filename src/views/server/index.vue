@@ -7,6 +7,7 @@ import { NEmpty } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
 import OpenGameConfirm from '@/views/server/modules/open-game-confirm.vue';
 import OpenGameJoin from '@/views/server/modules/open-game-join.vue';
+import JoinServerTray from '@/views/server/modules/join-server-tray.vue';
 
 defineOptions({
   name: 'server'
@@ -50,7 +51,13 @@ const selectCommunity = async (id: number) => {
   serverLoading.value = false;
 };
 
-// 根据地图名称获取地图信息
+// 恢复挤服窗口
+  const restoreJoinServerWindow = () => {
+    gameStore.isJoinServerTrayVisible = false;
+    showJoinServerConfirm.value = true;
+  };
+  
+  // 根据地图名称获取地图信息
 const getMapByMapName = (mapName: string) => {
   return gameStore.mapList.find(map => map.mapName === mapName);
 };
@@ -192,6 +199,11 @@ const joinServer = async (server: Api.Game.InfoResponse) => {
 
 // 打开自动连接服务器窗口
 const openAutoJoinServer = (server: Api.Game.InfoResponse) => {
+  //如果正在挤服 则不能打开其他挤服窗口
+  if (gameStore.isJoinServerTrayVisible) {
+    window.$message?.error('正在挤服中，不能打开其他挤服窗口');
+    return;
+  }
   gameStore.joinServerInfo = server;
   gameStore.sendUserGisAddr();
   showJoinServerConfirm.value = true;
@@ -435,9 +447,11 @@ onUnmounted(() => {
         </div>
       </div>
     </NCard>
-    <OpenGameConfirm v-model:showGameConfirm="showOpenGameConfirm" />
-    <OpenGameJoin v-model:showJoinServer="showJoinServerConfirm" />
   </NCard>
+  <OpenGameConfirm v-model:showGameConfirm="showOpenGameConfirm" />
+  <OpenGameJoin v-model:showJoinServer="showJoinServerConfirm" />
+  <!-- 挤服悬浮托盘 -->
+  <JoinServerTray @restore="restoreJoinServerWindow" />
 </template>
 
 <style scoped lang="scss">

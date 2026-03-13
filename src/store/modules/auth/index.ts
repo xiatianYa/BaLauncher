@@ -100,7 +100,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         window.$notification?.success({
           title: "登陆成功",
           content: `欢迎回来,${userInfo.userName}!`,
-          duration: 4500,
+          duration: 3000,
         });
 
         toHome();
@@ -109,7 +109,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
       window.$notification?.error({
         title: "登陆失败",
         content: error.message,
-        duration: 4500,
+        duration: 3000,
       });
       resetStore();
     }

@@ -139,6 +139,7 @@ npm run commit
 - <span style="color: green;">[✓]</span> 服务器信息统计
 - <span style="color: green;">[✓]</span> 服务器比分数据
 - <span style="color: green;">[✓]</span> 延迟显示
+- <span style="color: green;">[✓]</span> 挤服托盘
 
 ### 计划添加功能
 - [ ] 游戏状态托盘
@@ -153,7 +154,6 @@ npm run commit
 - [ ] 游戏直播
 - [ ] 直播OBS
 - [ ] 服务器热身状态
-- [ ] 挤服托盘
 - [ ] 服务器列表显示模式切换
 
 ### 迁移计划

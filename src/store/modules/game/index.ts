@@ -58,6 +58,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 是否自动挤服
   const isAutomatic = ref<boolean>(false);
 
+  // 挤服托盘是否可见
+  const isJoinServerTrayVisible = ref<boolean>(false);
+
   // 自动重试标识(用户是否切换到目标地图)
   const isAutomaticRetry = ref<boolean>(false);
 
@@ -586,7 +589,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
           window.$message?.success("连接成功")
         }
       } else if (result.stopped) {
-        window.$message?.info('停止自动挤服');
+        window.$message?.info('已停止自动挤服');
       } else if (!result.success) {
         window.$message?.error(result.error || '自动挤服失败');
       }
@@ -977,6 +980,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     currentGisPlayerList,
     currentAutomaticPlayerList,
     currentAutomaticPlayerDynamicList,
+    isJoinServerTrayVisible,
     initServerWebsocket,
     initGisWebsocket,
     initServerList,

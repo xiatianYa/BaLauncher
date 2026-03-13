@@ -263,12 +263,22 @@ const getOnLineColor = (players: number, maxPlayers: number) => {
 };
 
 const handleCancelExit = () => {
+    // 如果正在自动挤服
     if (gameStore.isAutomatic) {
-        return false
-    } else {
+        // 隐藏当前窗口
         emit('update:showJoinServer', false);
-        return true
+        // 显示悬浮球（托盘）
+        gameStore.isJoinServerTrayVisible = true;
+        return;
     }
+    
+    //所有玩家的挤服动态
+    gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length);
+    //所有服务器的GIS动态
+    gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length);
+    
+    emit('update:showJoinServer', false);
+    return;
 };
 
 //开始挤服
@@ -290,14 +300,6 @@ const handleConfirmOpen = async () => {
     await gameStore.startGame();
 };
 
-//清空数据
-const clearPlayerList = () => {
-    //所有玩家的挤服动态
-    gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length);
-    //所有服务器的GIS动态
-    gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length);
-}
-
 watch(
     () => props.showJoinServer && gameStore.isAutomatic,
     (active) => {
@@ -315,8 +317,15 @@ onBeforeUnmount(() => {
 <template>
     <NModal v-model:show="props.showJoinServer" preset="card" class="w-750px rounded-md flex" size="small"
         :bordered="true" :closable="false" :onMaskClick="handleCancelExit" :mask-closable="false" :close-on-esc="false"
-        content-style="padding:0px;" v-on:after-leave="clearPlayerList">
+        content-style="padding:0px;">
         <div class="game-join-container">
+            <div class="game-join-close">
+                <NButton size="small" type="default" color="#2d2736" secondary strong ghost @click="handleCancelExit()">
+                    <template #icon>
+                        <SvgIcon icon="ic:baseline-close" />
+                    </template>
+                </NButton>
+            </div>
             <div class="game-join-option" v-if="!gameStore.isAutomatic">
                 <div class="title-container mb-10px">
                     <div class="flex items-center font-size-20px">
@@ -598,10 +607,17 @@ onBeforeUnmount(() => {
 
 <style scoped lang="scss">
 .game-join-container {
+    position: relative;
     display: flex;
-    height: 360px;
-    padding: 20px;
+    height: 420px;
+    padding: 40px 20px 20px 20px;
     gap: 15px;
+
+    .game-join-close {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+    }
 
     .game-join-option {
         display: flex;
