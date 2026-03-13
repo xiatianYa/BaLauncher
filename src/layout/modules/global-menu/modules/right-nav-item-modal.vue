@@ -14,14 +14,14 @@ const useRoute = useRouteStore();
 
 const SideNavRoutes: Api.Route.SideNavItem[] = reactive([
     {
-        name: "工具箱",
+        name: "routes.tools",
         key: "tools",
         icon: "gg:toolbox",
         img: icon911476,
         isPersistent: true
     },
     {
-        name: "设置",
+        name: "routes.setting",
         key: "setting",
         icon: "tabler:settings",
         img: icon207977,
@@ -49,13 +49,13 @@ const AddOrRemoveSideNav = (navItem: Api.Route.SideNavItem) => {
 </script>
 
 <template>
-    <NModal v-model:show="visible" preset="card" title="菜单配置" class="w-520px" :closable="true">
+    <NModal v-model:show="visible" preset="card" :title="$t('layout.menuConfig')" class="w-520px" :closable="true">
         <NGrid x-gap="20" y-gap="20" :cols="3">
             <NGridItem v-for="navItem in SideNavRoutes" @click="AddOrRemoveSideNav(navItem)">
                 <NButton class="nav-item-button" secondary>
                     <div class="w-full h-full flex items-center cursor-pointer">
                         <SvgIcon :icon="navItem.icon" class="h-full flex items-center font-size-32px mr-5px" />
-                        <span class="w-full h-full flex items-center font-size-14px">{{ navItem.name }}</span>
+                        <span class="w-full h-full flex items-center font-size-14px">{{ $t(navItem.name) }}</span>
                         <SvgIcon :icon="existsInRoutes(navItem) ? 'ic:round-remove' : 'ic:round-plus'"
                             class="h-full flex items-center font-size-32px mr-5px" />
                     </div>

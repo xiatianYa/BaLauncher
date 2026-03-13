@@ -48,8 +48,9 @@ const GisWebsocket: GisWebsocketType = {
               const gisPlayer = gisPlayers.filter((item) => item.addr === gameStore.joinServerInfo?.addr);
               gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length, ...gisPlayer);
             }
-            if (Array.isArray(joinPlayers)) {
-              gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length, ...joinPlayers);
+            if (Array.isArray(joinPlayers) && gameStore.automaticInfo?.connectStr) {
+              const currentJoinPlayers = joinPlayers.filter((item) => item.addr === gameStore.automaticInfo.connectStr);
+              gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length, ...currentJoinPlayers);
             }
             console.log(gameStore.currentGisPlayerList, gameStore.currentAutomaticPlayerList);
           },

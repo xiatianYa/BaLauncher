@@ -2,6 +2,7 @@
 import { useGameStore } from '@/store/modules/game';
 import { NModal, NButton } from 'naive-ui';
 import { onUnmounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   showGameConfirm: boolean;
@@ -13,6 +14,7 @@ const emit = defineEmits<{
 }>();
 
 const gameStore = useGameStore();
+const { t } = useI18n();
 
 // 取消退出：关闭弹窗
 const handleCancelExit = () => {
@@ -42,7 +44,7 @@ onUnmounted(() => {
         <SvgIcon icon="streamline:desktop-game" />
       </div>
       <!-- 确认文字 -->
-      <p class="text-center mb-4 text-base">是否启动CounterStrike 2</p>
+      <p class="text-center mb-4 text-base">{{ $t('server.openGame.title') }}</p>
       <!-- 按钮 -->
       <div class="flex gap-4">
         <NButton @click="handleCancelExit" type="error" ghost strong class="rounded-6px"
@@ -50,14 +52,14 @@ onUnmounted(() => {
           <template #icon>
             <SvgIcon icon="ic:baseline-close" />
           </template>
-          取消
+          {{ $t('server.openGame.cancel') }}
         </NButton>
         <NButton type="success" ghost strong class="rounded-6px" @click="handleConfirmOpen"
           :loading="gameStore.isGameLaunching">
           <template #icon>
             <SvgIcon icon="hugeicons:start-up-02" />
           </template>
-          {{ gameStore.isGameLaunching ? '启动中...' : '启动游戏' }}
+          {{ gameStore.isGameLaunching ? t('server.openGame.launching') : t('server.openGame.start') }}
         </NButton>
       </div>
     </div>

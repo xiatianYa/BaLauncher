@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 
 const showCloseConfirm = ref<boolean>(false);
+const { t } = useI18n();
 
 
 const minimizeWindow = async () => {
@@ -24,7 +26,7 @@ const toggleNotifications = () => {
     class="rounded-none window-drag-area">
     <img src="@/assets/imgs/bluearchive.png" class="app-logo ml-10px" alt="Blue Archive" />
     <NSpace>
-      <button class="window-control-btn" @click="toggleNotifications" title="通知">
+      <button class="window-control-btn" @click="toggleNotifications" :title="$t('windowControls.notifications')">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="2"
             stroke-linecap="round" stroke-linejoin="round" />
@@ -32,12 +34,12 @@ const toggleNotifications = () => {
             stroke-linejoin="round" />
         </svg>
       </button>
-      <button class="window-control-btn" @click="minimizeWindow" title="最小化">
+      <button class="window-control-btn" @click="minimizeWindow" :title="$t('windowControls.minimize')">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M2 6H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
         </svg>
       </button>
-      <button class="window-control-btn close-btn" @click="closeWindow" title="关闭">
+      <button class="window-control-btn close-btn" @click="closeWindow" :title="$t('windowControls.close')">
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M10 2L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
           <path d="M2 2L10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />

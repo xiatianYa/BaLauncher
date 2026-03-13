@@ -7,13 +7,15 @@ import { animate } from 'animejs';
 import type { GamePlatform } from '@/constants/app';
 import { NGrid, NGridItem, NSelect } from 'naive-ui';
 import { setLocale } from '@/locales';
+import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 
 defineOptions({
   name: 'setting'
 });
 
-const { locale } = useI18n();
+const router = useRouter();
+const { locale, t } = useI18n();
 const gameStore = useGameStore();
 const appStore = useAppStore();
 
@@ -21,10 +23,10 @@ const themes = computed(() => appStore.themes);
 
 const currentTheme = computed(() => appStore.currentTheme);
 
-const langOptions = [
-  { label: '简体中文', value: 'zh-CN' },
-  { label: 'English', value: 'en-US' }
-];
+const langOptions = computed(() => [
+  { label: t('settings.langOptions.zhCN'), value: 'zh-CN' },
+  { label: t('settings.langOptions.enUS'), value: 'en-US' }
+]);
 
 const handleLangChange = (val: App.I18n.LangType) => {
   setLocale(val);
@@ -58,7 +60,7 @@ const getAppVersion = async () => {
     const version = await window.ipcRenderer.getAppVersion();
     appVersion.value = version;
   } catch (error) {
-    console.error('获取版本号失败', error);
+    console.error(t('settings.messages.versionFetchFailed'), error);
   }
 };
 
@@ -78,10 +80,10 @@ const steamPath = computed({
 });
 
 const selectCsgo2Path = async () => {
-  const result = await window.ipcRenderer.invoke('select-directory', '选择CSGO2安装目录');
+  const result = await window.ipcRenderer.invoke('select-directory', t('settings.messages.selectCsgoPath'));
   if (result) {
     csgo2Path.value = result;
-    window.$message?.success('CSGO2安装目录已保存');
+    window.$message?.success(t('settings.messages.csgoPathSaved'));
   }
 };
 
@@ -98,15 +100,15 @@ const clearCache = () => {
       window.location.reload();
     }, 1000);
   } catch (error) {
-    window.$message?.error('菜单缓存清理失败');
+    window.$message?.error(t('settings.messages.cacheClearFailed'));
   }
 };
 
 const selectSteamPath = async () => {
-  const result = await window.ipcRenderer.invoke('select-directory', '选择Steam安装目录');
+  const result = await window.ipcRenderer.invoke('select-directory', t('settings.messages.selectSteamPath'));
   if (result) {
     steamPath.value = result;
-    window.$message?.success('Steam安装目录已保存');
+    window.$message?.success(t('settings.messages.steamPathSaved'));
   }
 };
 
@@ -116,12 +118,12 @@ const autoDetectSteamPath = async () => {
     const result = await window.ipcRenderer.invoke('auto-detect-paths');
     if (result.steamPath) {
       steamPath.value = result.steamPath;
-      window.$message?.success('已自动配置Steam安装目录');
+      window.$message?.success(t('settings.messages.autoDetectSteamSuccess'));
     } else {
-      window.$message?.warning('未检测到Steam安装目录，请手动选择');
+      window.$message?.warning(t('settings.messages.autoDetectSteamMissing'));
     }
   } catch (error) {
-    window.$message?.error('自动检测失败，请手动选择');
+    window.$message?.error(t('settings.messages.autoDetectFailed'));
   } finally {
     isDetectingSteam.value = false;
   }
@@ -133,12 +135,12 @@ const autoDetectCsgo2Path = async () => {
     const result = await window.ipcRenderer.invoke('auto-detect-paths');
     if (result.csgo2Path) {
       csgo2Path.value = result.csgo2Path;
-      window.$message?.success('已自动配置CSGO2安装目录');
+      window.$message?.success(t('settings.messages.autoDetectCsgoSuccess'));
     } else {
-      window.$message?.warning('未检测到CSGO2安装目录，请先设置Steam目录或手动选择');
+      window.$message?.warning(t('settings.messages.autoDetectCsgoMissing'));
     }
   } catch (error) {
-    window.$message?.error('自动检测失败，请手动选择');
+    window.$message?.error(t('settings.messages.autoDetectFailed'));
   } finally {
     isDetectingCsgo.value = false;
   }
@@ -203,9 +205,9 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="w-full h-full">
-    <NCard class="w-full h-full rounded-20px" content-class="w-full h-full overflow-y-auto"
-      content-style="padding:10px 20px 10px 20px;" header-style="padding: 10px 20px 10px 20px;" :segmented="{
+  <NCard class="w-full h-full" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
+    <NCard class="m-10px rounded-10px" content-style="padding:10px;"
+      content-class="h-full flex flex-col flex-1 overflow-y-auto" header-style="padding:10px 20px 10px 20px" :segmented="{
         content: true,
         footer: 'soft',
       }">
@@ -321,6 +323,28 @@ onMounted(() => {
           </div>
         </div>
       </div>
+      <div class="game-setting-box">
+        <div class="game-setting-title mb-10px">
+          <div class="flex font-size-24px">
+            <SvgIcon icon="gg:toolbox" />
+          </div>
+          <div class="ml-10px font-size-16px font-semibold">
+            <NText>
+              {{ $t('tools.title') }}
+            </NText>
+          </div>
+        </div>
+        <div class="game-setting-item mt-10px" style="border-bottom: none; padding-bottom: 0;">
+          <div class="flex-1">
+            <NButton type="primary" ghost block @click="router.push('/tools')">
+              <template #icon>
+                <SvgIcon icon="material-symbols:arrow-forward" />
+              </template>
+              {{ $t('settings.openTools') }}
+            </NButton>
+          </div>
+        </div>
+      </div>
       <div class="game-cache-box">
         <div class="game-cache-title mb-10px">
           <div class="flex font-size-24px">
@@ -362,8 +386,8 @@ onMounted(() => {
               <SvgIcon icon="material-symbols:account-circle" />
             </div>
             <div class="auth-text">
-              <div class="license">开发者</div>
-              <div class="auth">夏天</div>
+              <div class="license">{{ $t('settings.aboutInfo.developer') }}</div>
+              <div class="auth">{{ $t('settings.aboutInfo.author') }}</div>
             </div>
           </div>
         </div>
@@ -384,14 +408,14 @@ onMounted(() => {
               <SvgIcon icon="mingcute:safe-shield-line" />
             </div>
             <div class="copyright-text">
-              <div class="license">MIT License</div>
-              <div class="copyright">Copyright © 2024-2026 夏天</div>
+              <div class="license">{{ $t('settings.aboutInfo.license') }}</div>
+              <div class="copyright">{{ $t('settings.aboutInfo.copyright') }}</div>
             </div>
           </div>
         </div>
       </div>
     </NCard>
-  </div>
+  </NCard>
 </template>
 
 <style scoped lang="scss">

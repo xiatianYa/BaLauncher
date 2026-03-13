@@ -4,12 +4,14 @@ import { useThemeStore } from '@/store/modules/theme';
 import { useSvgIcon } from '@/hooks/common/icon';
 import { useRouterPush } from '@/hooks/common/router';
 import { useAuthStore } from '@/store/modules/auth';
+import { useI18n } from 'vue-i18n';
 
 const { SvgIconVNode } = useSvgIcon();
 
 const themeStore = useThemeStore();
 
 const authStore = useAuthStore();
+const { t } = useI18n();
 
 const { toHome } = useRouterPush();
 
@@ -45,10 +47,10 @@ type DropdownOption =
 
 function logout() {
   window.$dialog?.info({
-    title: "提示",
-    content: "确认退出登录吗？",
-    positiveText: "确认",
-    negativeText: "取消",
+    title: t('layout.footer.logout.title'),
+    content: t('layout.footer.logout.content'),
+    positiveText: t('layout.footer.logout.confirm'),
+    negativeText: t('layout.footer.logout.cancel'),
     onPositiveClick: () => {
       authStore.resetStore();
     }
@@ -70,14 +72,14 @@ const options = computed<DropdownOption[]>(() => {
   if (authStore.isLogin) {
     // 已登录：显示退出登录选项
     opts.push({
-      label: "退出登陆",
+      label: t('layout.footer.logoutAction'),
       key: 'logout',
       icon: SvgIconVNode({ icon: 'ph:sign-out', fontSize: 18 }),
     });
   } else {
     // 未登录：显示登录选项
     opts.push({
-      label: "登录",
+      label: t('layout.footer.loginAction'),
       key: 'login',
       icon: SvgIconVNode({ icon: 'ph:sign-in', fontSize: 18 }),
     });

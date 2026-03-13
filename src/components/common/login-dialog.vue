@@ -2,8 +2,10 @@
 import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '@/store/modules/auth';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
+import { useI18n } from 'vue-i18n';
 
 const authStore = useAuthStore();
+const { t } = useI18n();
 
 const { formRef, validate } = useNaiveForm();
 
@@ -25,12 +27,12 @@ interface Account {
 
 const accounts = computed<Account[]>(() => [
   {
-    label: "QQ登陆",
+    label: t('login.oauth.qq'),
     icon: 'basil:qq-outline',
     type: 'qq'
   },
   {
-    label: "Steam登陆",
+    label: t('login.oauth.steam'),
     icon: 'mdi:steam',
     type: 'steam'
   },
@@ -138,22 +140,23 @@ function handleLogin(type: 'qq' | 'steam') {
           src="@/assets/imgs/login_bg.jpg">
       </div>
       <div class="w-40% h-full p-15px">
-        <span class="flex justify-center mb-10px font-size-22px font-bold">蔚蓝档案登录器</span>
+        <span class="flex justify-center mb-10px font-size-22px font-bold">{{ $t('system.title') }}</span>
         <NForm ref="formRef" :model="model" :rules="rules">
-          <NFormItem path="userName" label="用户名">
-            <NInput v-model:value="model.userName" placeholder="请输入用户名" />
+          <NFormItem path="userName" :label="$t('login.form.userName.label')">
+            <NInput v-model:value="model.userName" :placeholder="$t('login.form.userName.placeholder')" />
           </NFormItem>
-          <NFormItem path="password" label="密码">
-            <NInput v-model:value="model.password" type="password" show-password-on="click" placeholder="请输入密码" />
+          <NFormItem path="password" :label="$t('login.form.password.label')">
+            <NInput v-model:value="model.password" type="password" show-password-on="click"
+              :placeholder="$t('login.form.password.placeholder')" />
           </NFormItem>
           <NSpace vertical :size="15">
             <NButton type="primary" size="large" :loading="loginLoading" block @click="handleSubmit">
-              登陆
+              {{ $t('login.actions.login') }}
             </NButton>
             <NButton block>
-              注册账号
+              {{ $t('login.actions.register') }}
             </NButton>
-            <NDivider class="text-14px text-#666 !m-0">其他方式登陆</NDivider>
+            <NDivider class="text-14px text-#666 !m-0">{{ $t('login.actions.otherMethods') }}</NDivider>
             <div class="flex justify-center gap-12px">
               <NButton v-for="item in accounts" :key="item.label" strong secondary circle type="default"
                 @click="handleLogin(item.type)">

@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useAuthStore } from '@/store/modules/auth';
 import { ThemeColor } from '@/constants/app';
+import { useI18n } from 'vue-i18n';
 
 const authStore = useAuthStore();
+const { t } = useI18n();
 
 interface RoleInfo {
   label: string;
@@ -13,16 +15,16 @@ const getRoleInfo = (role: string) : RoleInfo => {
   switch (role) {
     case 'R_SUPER':
       //返回RoleInfo
-      return { label: '超级管理员', type: 'error' };
+      return { label: t('layout.header.roles.superAdmin'), type: 'error' };
     case 'R_ADMIN':
       //返回RoleInfo
-      return { label: '管理员', type: 'warning' };
+      return { label: t('layout.header.roles.admin'), type: 'warning' };
     case 'R_USER':
       //返回RoleInfo
-      return { label: 'LV 1', type: 'info' };
+      return { label: t('layout.header.roles.user'), type: 'info' };
     default:
       //返回RoleInfo
-      return { label: role || 'LV 0', type: 'default' };
+      return { label: role || t('layout.header.roles.guest'), type: 'default' };
   }
 };
 </script>
@@ -40,7 +42,7 @@ const getRoleInfo = (role: string) : RoleInfo => {
     </div>
   </div>
   <div class="golobal-header-login mb-5px cursor-pointer" v-else>
-    <NText class="text-sm font-bold">登陆</NText>
+    <NText class="text-sm font-bold">{{ $t('layout.header.login') }}</NText>
   </div>
 </template>
 

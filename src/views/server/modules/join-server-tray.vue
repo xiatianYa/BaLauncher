@@ -42,8 +42,8 @@ const handleRestore = () => {
         <div class="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
       </div>
       <div class="flex flex-col pr-2 whitespace-nowrap">
-        <span class="text-xs font-bold text-gray-700">正在挤服中...</span>
-        <span class="text-xs text-gray-500">点击恢复窗口</span>
+        <span class="text-xs font-bold text-gray-700">{{ $t('serverJoin.trayRunning') }}</span>
+        <span class="text-xs text-gray-500">{{ $t('serverJoin.trayRestore') }}</span>
       </div>
     </div>
   </div>

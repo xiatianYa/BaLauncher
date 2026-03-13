@@ -18,31 +18,47 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
 
   const routerBack = router.back;
 
+  const normalizeNavItemName = (name: string) => {
+    const map: Record<string, string> = {
+      '首页': 'routes.home',
+      '服务器': 'routes.server',
+      '工具箱': 'routes.tools',
+      '设置': 'routes.setting',
+      '系统设置': 'routes.setting',
+    };
+    return map[name] ?? name;
+  };
+
+  const normalizeNavItem = (item: Api.Route.SideNavItem) => ({
+    ...item,
+    name: normalizeNavItemName(item.name),
+  });
+
   // 默认导航配置
   const DEFAULT_SIDE_NAV_ROUTES: Api.Route.SideNavItem[] = [
     {
-      name: "首页",
+      name: "routes.home",
       key: "home",
       icon: "material-symbols:home-outline-rounded",
       img: icon940326,
       isPersistent: true
     },
     {
-      name: "服务器列表",
+      name: "routes.server",
       key: "server",
       icon: "tabler:server",
       img: icon939940,
       isPersistent: true
     },
     {
-      name:"工具箱",
-      key:"tools",
-      icon:"gg:toolbox",
+      name: "routes.tools",
+      key: "tools",
+      icon: "gg:toolbox",
       img: icon911476,
-      isPersistent:true
+      isPersistent: true
     },
     {
-      name: "系统设置",
+      name: "routes.setting",
       key: "setting",
       icon: "tabler:settings",
       img: icon207977,
@@ -51,9 +67,8 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   ];
 
   const storedRoutes = localStg.get('sideNavRoutes');
-  const SideNavRoutes: Api.Route.SideNavItem[] = reactive(
-    storedRoutes !== null ? storedRoutes : DEFAULT_SIDE_NAV_ROUTES
-  );
+  const initialRoutes = Array.isArray(storedRoutes) ? storedRoutes : DEFAULT_SIDE_NAV_ROUTES;
+  const SideNavRoutes: Api.Route.SideNavItem[] = reactive(initialRoutes.map(normalizeNavItem));
 
   async function routerPushByKey(key: string, options?: App.Global.RouterPushOptions) {
     const { query, params } = options || {};

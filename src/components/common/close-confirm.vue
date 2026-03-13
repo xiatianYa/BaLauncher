@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useGameStore } from '@/store/modules/game';
 import { NModal, NButton } from 'naive-ui';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   showCloseConfirm: boolean;
@@ -12,6 +13,7 @@ const emit = defineEmits<{
 }>();
 
 const gameStore = useGameStore();
+const { t } = useI18n();
 
 // 取消退出：关闭弹窗
 const handleCancelExit = () => {
@@ -37,20 +39,20 @@ const handleConfirmExit = async () => {
         <SvgIcon icon="pepicons:leave" />
       </div>
       <!-- 确认文字 -->
-      <p class="text-center mb-6 text-base">确定要退出应用吗？</p>
+      <p class="text-center mb-6 text-base">{{ $t('closeConfirm.title') }}</p>
       <!-- 按钮 -->
       <div class="flex gap-4">
         <NButton @click="handleCancelExit" type="default" ghost strong class="rounded-6px">
           <template #icon>
             <SvgIcon icon="ic:baseline-close" />
           </template>
-          取消
+          {{ $t('closeConfirm.cancel') }}
         </NButton>
         <NButton @click="handleConfirmExit" type="error" ghost strong class="rounded-6px">
           <template #icon>
             <SvgIcon icon="majesticons:door-exit-line" />
           </template>
-          退出
+          {{ $t('closeConfirm.confirm') }}
         </NButton>
       </div>
     </div>

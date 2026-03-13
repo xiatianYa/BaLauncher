@@ -8,12 +8,14 @@ import { useDict } from '@/hooks/business/dict';
 import OpenGameConfirm from '@/views/server/modules/open-game-confirm.vue';
 import OpenGameJoin from '@/views/server/modules/open-game-join.vue';
 import JoinServerTray from '@/views/server/modules/join-server-tray.vue';
+import { useI18n } from 'vue-i18n';
 
 defineOptions({
   name: 'server'
 });
 
 const gameStore = useGameStore();
+const { t } = useI18n();
 
 const { dictOptions } = useDict();
 
@@ -190,7 +192,7 @@ const joinServer = async (server: Api.Game.InfoResponse) => {
   if (!gameStore.isGameRunning) {
     showOpenGameConfirm.value = true;
   } else {
-    console.log('游戏已启动，直接连接服务器');
+    console.log(t('server.directConnect'));
     gameStore.sendUserGisJoinAddr();
     // 连接服务器
     gameStore.connectServerUsingSteamUrl();
@@ -201,7 +203,7 @@ const joinServer = async (server: Api.Game.InfoResponse) => {
 const openAutoJoinServer = (server: Api.Game.InfoResponse) => {
   //如果正在挤服 则不能打开其他挤服窗口
   if (gameStore.isJoinServerTrayVisible) {
-    window.$message?.error('正在挤服中，不能打开其他挤服窗口');
+    window.$message?.error(t('server.joinBusy'));
     return;
   }
   gameStore.joinServerInfo = server;
@@ -213,7 +215,7 @@ const openAutoJoinServer = (server: Api.Game.InfoResponse) => {
 // 复制服务器地址
 const copyServerAddr = (server: Api.Game.InfoResponse) => {
   navigator.clipboard.writeText(`connect ${server.addr}`);
-  window.$message?.success('复制成功!');
+  window.$message?.success(t('server.copySuccess'));
 };
 
 // 获取源服务器信息
@@ -346,7 +348,7 @@ onUnmounted(() => {
                 <div class="flex items-center justify-center">
                   <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
                   {{
-                    getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel : '暂无译名'
+                    getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel : $t('server.noTranslation')
                   }}
                 </div>
                 <div class="stat-chip chip-score mr-5px" v-show="server.mapPhase">
@@ -391,10 +393,10 @@ onUnmounted(() => {
               </div>
               <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
                 <SvgIcon icon="mdi:server-off" class="mr-5px font-size-16px text-gray-400" />
-                服务器离线
+                {{ $t('server.offline') }}
               </div>
               <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#a0a0a0 font-bold">
-                等待服务器上线...
+                {{ $t('server.waiting') }}
               </div>
               <div class="server-card-button mt-6px">
                 <div class="two-btn h-30px" @click="copyServerAddr(server)">
@@ -409,13 +411,13 @@ onUnmounted(() => {
             </div>
           </NGridItem>
         </NGrid>
-        <NEmpty description="未查询到服务器信息..." v-else>
+        <NEmpty :description="$t('server.empty')" v-else>
           <template #extra>
             <NButton type="warning" ghost>
               <template #icon>
                 <SvgIcon icon="ic:round-refresh" />
               </template>
-              刷新
+              {{ $t('server.refresh') }}
             </NButton>
           </template>
         </NEmpty>
@@ -426,7 +428,7 @@ onUnmounted(() => {
     </NCard>
     <NCard class="m-10px w-40% rounded-10px" content-style="padding:10px;" content-class="h-full flex flex-col">
       <template header>
-        <h3 class="text-lg font-bold mb-10px">社区列表</h3>
+        <h3 class="text-lg font-bold mb-10px">{{ $t('server.communityList') }}</h3>
       </template>
       <div class="space-y-8px h-full overflow-auto pr-5px">
         <div v-for="community in gameStore.communityList" :key="community.id" class="community-box"
@@ -437,11 +439,11 @@ onUnmounted(() => {
           </div>
           <div class="community-info">
             <div class="community-name">{{ community.communityName }}</div>
-            <div class="community-stats">{{ community.serverNumber }}个服务器</div>
+            <div class="community-stats">{{ $t('server.serverCount', { count: community.serverNumber }) }}</div>
           </div>
           <div class="community-online">
             <NTag :type="getCommunityTagType(community.playerNumber)" class="rounded-md" size="small">
-              {{ community.playerNumber }}个玩家
+              {{ $t('server.playerCount', { count: community.playerNumber }) }}
             </NTag>
           </div>
         </div>

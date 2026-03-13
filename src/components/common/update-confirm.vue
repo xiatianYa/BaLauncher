@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { NModal, NButton, NProgress } from 'naive-ui';
+import { useI18n } from 'vue-i18n';
 
 interface UpdateState {
   show: boolean;
@@ -19,6 +20,7 @@ const state = ref<UpdateState>({
   speed: '0 KB/s',
   percent: '0%'
 });
+const { t } = useI18n();
 
 const showUpdateConfirm = () => {
   state.value.show = true;
@@ -90,14 +92,14 @@ onUnmounted(() => {
   <NModal v-model:show="state.show" preset="card" size="medium" :bordered="false" :show-icon="false" class="w-300px"
     header-style="padding:10px;" :closable="false">
     <template #header>
-      发现新版本(建议打开加速器更新)
+      {{ $t('update.title') }}
     </template>
     <div class="flex flex-col items-center w-full p-10px">
       <div class="dowload-icon">
         <SvgIcon icon="material-symbols:download" />
       </div>
       <p class="text-center mb-4 text-lg font-medium">
-        {{ state.downloading ? '正在下载更新...' : state.downloaded ? '更新已下载完成' : '是否更新?' }}
+        {{ state.downloading ? t('update.downloading') : state.downloaded ? t('update.downloaded') : t('update.confirm') }}
       </p>
       <div v-if="state.downloading || state.downloaded" class="w-full mb-4">
         <NProgress type="line" :percentage="state.progress" :show-indicator="false" class="mb-2 h-8px rounded-4px" />
@@ -111,20 +113,20 @@ onUnmounted(() => {
           <template #icon>
             <SvgIcon icon="ic:baseline-close" />
           </template>
-          取消
+          {{ $t('update.cancel') }}
         </NButton>
         <NButton v-if="!state.downloading && !state.downloaded" @click="handleConfirmUpdate" type="success" ghost
           strong>
           <template #icon>
             <SvgIcon icon="material-symbols:download" />
           </template>
-          立即更新
+          {{ $t('update.updateNow') }}
         </NButton>
         <NButton v-if="state.downloaded" @click="handleInstallUpdate" type="success" ghost strong>
           <template #icon>
             <SvgIcon icon="material-symbols:deployed-code-update-outline" />
           </template>
-          立即安装
+          {{ $t('update.installNow') }}
         </NButton>
       </div>
     </div>

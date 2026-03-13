@@ -3,6 +3,7 @@ import { useGameStore } from '@/store/modules/game';
 import { NModal, NText, NSpace, NTag, NButton, NSwitch, NSlider, NCollapse, NCollapseItem, NAvatar } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
     showJoinServer: boolean;
@@ -14,6 +15,7 @@ const emit = defineEmits<{
 
 const gameStore = useGameStore();
 const { dictOptions } = useDict();
+const { t } = useI18n();
 
 type BounceState = {
     x: number;
@@ -239,11 +241,11 @@ const getTeamColor = (team: string) => {
 };
 
 const getTeamLabel = (team: string) => {
-    if (!team) return '未知';
+    if (!team) return t('serverJoin.team.unknown');
     switch (team.toLowerCase()) {
-        case 'ct': return 'CT';
-        case 't': return 'T';
-        case 'spectator': return '观察者';
+        case 'ct': return t('serverJoin.team.ct');
+        case 't': return t('serverJoin.team.t');
+        case 'spectator': return t('serverJoin.team.spectator');
         default: return team;
     }
 };
@@ -283,13 +285,13 @@ const handleCancelExit = () => {
 
 //开始挤服
 const startJoinServer = () => {
-    gameStore.sendAutomaticDynamic("正在挤服中...");
+    gameStore.sendAutomaticDynamic(t('serverJoin.dynamicJoining'));
     gameStore.startAutomaticJoinServer();
 };
 
 //暂停挤服
 const stopJoinServer = () => {
-    gameStore.sendAutomaticDynamic("已暂停挤服...");
+    gameStore.sendAutomaticDynamic(t('serverJoin.dynamicPaused'));
     //清空记录
     gameStore.currentAutomaticPlayerDynamicList.splice(0, gameStore.currentAutomaticPlayerDynamicList.length);
     gameStore.stopAutomaticJoinServer();
@@ -333,7 +335,7 @@ onBeforeUnmount(() => {
                     </div>
                     <h1 class="title-text text-16px font-bold bg-gradient-to-r bg-clip-text text-transparent ml-5px">
                         <NText>
-                            挤服设置
+                            {{ $t('serverJoin.title') }}
                         </NText>
                     </h1>
                 </div>
@@ -344,12 +346,12 @@ onBeforeUnmount(() => {
                                 <SvgIcon icon="ic:baseline-accessible-forward"></SvgIcon>
                             </div>
                             <div class="font-size-14px font-bold">
-                                服务器多少人时加入
+                                {{ $t('serverJoin.joinWhenPlayers') }}
                             </div>
                         </div>
                         <NTag type="info" ghost size="small" :bordered="false">
                             <div class="font-bold">
-                                {{ gameStore.automaticJoinConfig.joinServerPersonValue }}人
+                                {{ $t('serverJoin.personCount', { count: gameStore.automaticJoinConfig.joinServerPersonValue }) }}
                             </div>
                         </NTag>
                     </NSpace>
@@ -357,10 +359,10 @@ onBeforeUnmount(() => {
                         :max="63" :tooltip="false" />
                     <NSpace justify="space-between">
                         <div class="font-bold font-size-10px">
-                            1人
+                            {{ $t('serverJoin.personCount', { count: 1 }) }}
                         </div>
                         <div class="font-bold font-size-10px">
-                            63人
+                            {{ $t('serverJoin.personCount', { count: 63 }) }}
                         </div>
                     </NSpace>
                 </div>
@@ -371,12 +373,12 @@ onBeforeUnmount(() => {
                                 <SvgIcon icon="heroicons:cpu-chip"></SvgIcon>
                             </div>
                             <div class="font-size-14px font-bold">
-                                线程数量(推荐设置2)
+                                {{ $t('serverJoin.threadCountLabel') }}
                             </div>
                         </div>
                         <NTag type="info" ghost size="small" :bordered="false">
                             <div class="font-bold">
-                                {{ gameStore.automaticJoinConfig.joinServerCountValue }}个
+                                {{ $t('serverJoin.threadCount', { count: gameStore.automaticJoinConfig.joinServerCountValue }) }}
                             </div>
                         </NTag>
                     </NSpace>
@@ -384,10 +386,10 @@ onBeforeUnmount(() => {
                         :max="6" :tooltip="false" />
                     <NSpace justify="space-between">
                         <div class="font-bold font-size-10px">
-                            1个
+                            {{ $t('serverJoin.threadCount', { count: 1 }) }}
                         </div>
                         <div class="font-bold font-size-10px">
-                            6个
+                            {{ $t('serverJoin.threadCount', { count: 6 }) }}
                         </div>
                     </NSpace>
                 </div>
@@ -398,7 +400,7 @@ onBeforeUnmount(() => {
                                 <SvgIcon icon="material-symbols:refresh"></SvgIcon>
                             </div>
                             <div class="font-size-14px font-bold">
-                                自动重试
+                                {{ $t('serverJoin.autoRetry') }}
                             </div>
                         </div>
                         <NSwitch v-model:value="gameStore.automaticJoinConfig.joinServerAutoRetryValue"
@@ -408,7 +410,7 @@ onBeforeUnmount(() => {
                         <div class="font-size-16px mr-5px">
                             <SvgIcon icon="material-symbols:info-outline"></SvgIcon>
                         </div>
-                        如果未使用应用启动CS2，可能会导致自动重试失效
+                        {{ $t('serverJoin.autoRetryTip') }}
                     </div>
                 </div>
                 <NSpace justify="space-between">
@@ -417,20 +419,20 @@ onBeforeUnmount(() => {
                         <template #icon>
                             <SvgIcon icon="hugeicons:start-up-02" />
                         </template>
-                        {{ gameStore.isGameLaunching ? '启动中...' : '启动游戏' }}
+                        {{ gameStore.isGameLaunching ? t('serverJoin.launching') : t('serverJoin.startGame') }}
                     </NButton>
                     <NButton type="success" ghost class="rounded-6px" v-if="gameStore.isGameRunning" :disabled="true">
                         <template #icon>
                             <SvgIcon icon="ix:success-filled" />
                         </template>
-                        游戏已启动
+                        {{ $t('serverJoin.gameStarted') }}
                     </NButton>
                     <NButton type="success" ghost strong @click="startJoinServer" class="w-130px rounded-md"
                         :disabled="!gameStore.isGameRunning">
                         <template #icon>
                             <SvgIcon icon="solar:gamepad-broken"></SvgIcon>
                         </template>
-                        {{ gameStore.isGameRunning ? '开始挤服' : '请启动游戏' }}
+                        {{ gameStore.isGameRunning ? t('serverJoin.startJoin') : t('serverJoin.pleaseStartGame') }}
                     </NButton>
                 </NSpace>
             </div>
@@ -448,7 +450,7 @@ onBeforeUnmount(() => {
                     <div class="dynamic-header">
                         <div class="dynamic-title">
                             <SvgIcon icon="material-symbols:bolt" class="dynamic-icon" />
-                            <span>挤服动态</span>
+                            <span>{{ $t('serverJoin.dynamicTitle') }}</span>
                         </div>
                         <div class="dynamic-count">{{ gameStore.currentAutomaticPlayerDynamicList.length }}</div>
                     </div>
@@ -467,13 +469,13 @@ onBeforeUnmount(() => {
                         <template #icon>
                             <SvgIcon icon="ix:success-filled" />
                         </template>
-                        游戏已启动
+                        {{ $t('serverJoin.gameStarted') }}
                     </NButton>
                     <NButton type="warning" ghost strong @click="stopJoinServer" class="w-130px rounded-md">
                         <template #icon>
                             <SvgIcon icon="lets-icons:stop"></SvgIcon>
                         </template>
-                        暂停挤服
+                        {{ $t('serverJoin.pauseJoin') }}
                     </NButton>
                 </NSpace>
             </div>
@@ -490,7 +492,7 @@ onBeforeUnmount(() => {
                     </div>
                     <div class="mt-6px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
                         <SvgIcon icon="tdesign:translate" class="mr-5px font-size-16px" />
-                        {{ getMapByMapName(gameStore.joinServerInfo.map)?.mapLabel || '暂无译名' }}
+                        {{ getMapByMapName(gameStore.joinServerInfo.map)?.mapLabel || $t('server.noTranslation') }}
                     </div>
                     <div class="mt-6px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
                         <SvgIcon icon="mdi:map-legend" class="mr-5px font-size-16px" />
@@ -527,7 +529,7 @@ onBeforeUnmount(() => {
                                         <div class="flex items-center gap-2">
                                             <NAvatar round size="small" :src="player.loginUser?.avatar"
                                                 fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
-                                            <span class="ml-2 font-bold">{{ player.loginUser?.nickName || '未知玩家'
+                                            <span class="ml-2 font-bold">{{ player.loginUser?.nickName || $t('serverJoin.unknownPlayer')
                                                 }}</span>
                                             <NTag size="small" :type="getTeamColor(player.team)" class="ml-2"
                                                 :bordered="false">
@@ -541,7 +543,7 @@ onBeforeUnmount(() => {
                                                 <SvgIcon icon="solar:health-broken" class="mr-5px" />
                                             </div>
                                             <NText>
-                                                {{ player.health }} 生命值
+                                                {{ $t('serverJoin.stats.health', { value: player.health }) }}
                                             </NText>
                                         </div>
                                         <div class="flex items-center">
@@ -549,8 +551,7 @@ onBeforeUnmount(() => {
                                                 <SvgIcon icon="hugeicons:body-armor" class="mr-5px" />
                                             </div>
                                             <NText>
-                                                {{
-                                                    player.armor }} 护甲
+                                                {{ $t('serverJoin.stats.armor', { value: player.armor }) }}
                                             </NText>
                                         </div>
                                         <div class="flex items-center">
@@ -558,7 +559,7 @@ onBeforeUnmount(() => {
                                                 <SvgIcon icon="material-symbols:price-change-outline" class="mr-5px" />
                                             </div>
                                             <NText>
-                                                {{ player.money }} 金币
+                                                {{ $t('serverJoin.stats.money', { value: player.money }) }}
                                             </NText>
                                         </div>
 
@@ -567,7 +568,7 @@ onBeforeUnmount(() => {
                                                 <SvgIcon icon="ph:knife" class="mr-5px" />
                                             </div>
                                             <NText>
-                                                {{ player.kills }} 击杀
+                                                {{ $t('serverJoin.stats.kills', { value: player.kills }) }}
                                             </NText>
                                         </div>
                                         <div class="flex items-center">
@@ -575,7 +576,7 @@ onBeforeUnmount(() => {
                                                 <SvgIcon icon="mdi:scoreboard-outline" class="mr-5px" />
                                             </div>
                                             <NText>
-                                                {{ player.score }} 分
+                                                {{ $t('serverJoin.stats.score', { value: player.score }) }}
                                             </NText>
                                         </div>
                                         <div class="flex items-center">
@@ -583,7 +584,7 @@ onBeforeUnmount(() => {
                                                 <SvgIcon icon="solar:tag-price-broken" class="mr-5px" />
                                             </div>
                                             <NText>
-                                                {{ player.equipValue }} 装备价值
+                                                {{ $t('serverJoin.stats.equipValue', { value: player.equipValue }) }}
                                             </NText>
                                         </div>
                                         <div class="flex items-center">
@@ -591,7 +592,7 @@ onBeforeUnmount(() => {
                                                 <SvgIcon icon="hugeicons:gun" class="mr-5px" />
                                             </div>
                                             <NText>
-                                                {{ player.weapon?.name || '无' }}
+                                                {{ player.weapon?.name || $t('serverJoin.weapon.none') }}
                                             </NText>
                                         </div>
                                     </div>

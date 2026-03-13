@@ -9,7 +9,7 @@ const authStore = useAuthStore();
     <NAvatar round size="small" :src="authStore.userInfo.avatar" />
   </div>
   <div class="golobal-header-logo mb-5px p-10px" v-else>
-    <NText class="text-sm font-bold">请登陆</NText>
+    <NText class="text-sm font-bold">{{ $t('layout.header.loginPrompt') }}</NText>
   </div>
 </template>
 
