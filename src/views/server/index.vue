@@ -259,7 +259,7 @@ onUnmounted(() => {
         footer: 'soft',
       }">
       <template #header>
-        <h3 class="text-lg font-bold flex align-center">服务器列表</h3>
+        <h3 class="text-lg font-bold flex align-center">{{ $t('server.list') }}</h3>
       </template>
       <template #header-extra>
         <div class="countdown-container cursor-pointer" @click="queryServerInfos(true, false)" v-if="!isRefreshing">

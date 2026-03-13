@@ -60,7 +60,8 @@
     "vite-plugin-electron-renderer": "^0.14.5",
     "vue": "^3.4.21",
     "vue-router": "4.5.1",
-    "vue-tsc": "^2.0.6"
+    "vue-tsc": "^2.0.6",
+    "vue-i18n": "11.1.7"
   },
   "dependencies": {
     "animate.css": "^4.1.1",

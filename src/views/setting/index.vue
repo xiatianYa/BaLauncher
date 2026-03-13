@@ -5,18 +5,30 @@ import { useAppStore } from '@/store/modules/app';
 import { localStg } from '@/utils/storage';
 import { animate } from 'animejs';
 import type { GamePlatform } from '@/constants/app';
-import { NGrid, NGridItem } from 'naive-ui';
+import { NGrid, NGridItem, NSelect } from 'naive-ui';
+import { setLocale } from '@/locales';
+import { useI18n } from 'vue-i18n';
 
 defineOptions({
   name: 'setting'
 });
 
+const { locale } = useI18n();
 const gameStore = useGameStore();
 const appStore = useAppStore();
 
 const themes = computed(() => appStore.themes);
 
 const currentTheme = computed(() => appStore.currentTheme);
+
+const langOptions = [
+  { label: '简体中文', value: 'zh-CN' },
+  { label: 'English', value: 'en-US' }
+];
+
+const handleLangChange = (val: App.I18n.LangType) => {
+  setLocale(val);
+};
 
 const themeAudio = ref<HTMLAudioElement | null>(null);
 
@@ -204,20 +216,25 @@ onMounted(() => {
           </div>
           <h1 class="title-text text-20px font-bold bg-gradient-to-r bg-clip-text text-transparent ml-5px">
             <NText>
-              系统设置
+              {{ $t('routes.setting') }}
             </NText>
           </h1>
         </div>
       </template>
       <div class="game-theme-box">
-        <div class="game-theme-title mb-10px">
-          <div class="flex font-size-24px">
-            <SvgIcon icon="unjs:theme-colors" />
+        <div class="game-theme-title mb-10px justify-between">
+          <div class="flex items-center">
+            <div class="flex font-size-24px">
+              <SvgIcon icon="unjs:theme-colors" />
+            </div>
+            <div class="ml-10px font-size-16px font-semibold">
+              <NText>
+                {{ $t('settings.theme') }}
+              </NText>
+            </div>
           </div>
-          <div class="ml-10px font-size-16px font-semibold">
-            <NText>
-              主题设置
-            </NText>
+          <div class="w-120px">
+            <NSelect v-model:value="locale" :options="langOptions" @update:value="handleLangChange" size="small" />
           </div>
         </div>
         <div class="theme-list">
@@ -240,14 +257,14 @@ onMounted(() => {
           </div>
           <div class="ml-10px font-size-16px font-semibold">
             <NText>
-              游戏设置
+              {{ $t('settings.general') }}
             </NText>
           </div>
         </div>
         <div class="game-setting-item mt-10px">
           <div class="font-size-14px font-semibold">
             <NText>
-              启动平台
+              {{ $t('settings.platform') }}
             </NText>
           </div>
           <div class="flex-1 ml-10px">
@@ -256,50 +273,50 @@ onMounted(() => {
               <template #icon>
                 <SvgIcon icon="mdi:steam" />
               </template>
-              国际服
+              {{ $t('settings.international') }}
             </NButton>
             <NButton class="rounded-8px" :color="GamePlatform === 'perfect' ? '#18a058' : '#a5aaa3'" ghost size="large"
               @click="selectPlatform('perfect')">
               <template #icon>
                 <SvgIcon icon="mdi:earth" />
               </template>
-              完美平台
+              {{ $t('settings.perfect') }}
             </NButton>
           </div>
         </div>
         <div class="game-setting-item mt-10px">
           <div class="font-size-14px font-semibold">
             <NText>
-              游戏安装目录
+              {{ $t('settings.gamePath') }}
             </NText>
           </div>
           <div class="flex-1 ml-10px">
-            <NInput v-model:value="csgo2Path" placeholder="请输入CSGO2安装目录" :disabled="true" />
+            <NInput v-model:value="csgo2Path" :placeholder="$t('settings.inputCsgoPath')" :disabled="true" />
           </div>
           <div class="ml-10px">
             <NButton class="rounded-8px mr-10px" ghost @click="selectCsgo2Path">
-              选择路径
+              {{ $t('settings.selectPath') }}
             </NButton>
             <NButton class="rounded-8px" ghost @click="autoDetectCsgo2Path">
-              自动检测
+              {{ $t('settings.autoDetect') }}
             </NButton>
           </div>
         </div>
         <div class="game-setting-item mt-10px">
           <div class="font-size-14px font-semibold">
             <NText>
-              游戏安装目录
+              {{ $t('settings.steamPath') }}
             </NText>
           </div>
           <div class="flex-1 ml-10px">
-            <NInput v-model:value="steamPath" placeholder="请输入Steam安装目录" :disabled="true" />
+            <NInput v-model:value="steamPath" :placeholder="$t('settings.inputSteamPath')" :disabled="true" />
           </div>
           <div class="ml-10px">
             <NButton class="rounded-8px mr-10px" ghost @click="selectSteamPath">
-              选择路径
+              {{ $t('settings.selectPath') }}
             </NButton>
             <NButton class="rounded-8px" ghost @click="autoDetectSteamPath">
-              自动检测
+              {{ $t('settings.autoDetect') }}
             </NButton>
           </div>
         </div>
@@ -311,20 +328,20 @@ onMounted(() => {
           </div>
           <div class="ml-10px font-size-16px font-semibold">
             <NText>
-              缓存管理
+              {{ $t('settings.cache.title') }}
             </NText>
           </div>
         </div>
         <div class="game-cache-item justify-between">
           <div class="flex flex-col">
-            <div class="text-gray-600 font-bold">本地数据缓存占用</div>
-            <div class="text-12px text-gray-400 mt-2px">缓存大小 ({{ cacheSize }})</div>
+            <div class="text-gray-600 font-bold">{{ $t('settings.cache.size') }}</div>
+            <div class="text-12px text-gray-400 mt-2px">{{ $t('settings.cache.size') }} ({{ cacheSize }})</div>
           </div>
           <NButton type="error" ghost @click="clearCache">
             <template #icon>
               <SvgIcon icon="material-symbols:delete-outline" />
             </template>
-            立即清理
+            {{ $t('settings.cache.clear') }}
           </NButton>
         </div>
       </div>
@@ -335,7 +352,7 @@ onMounted(() => {
           </div>
           <div class="ml-10px font-size-16px font-semibold">
             <NText>
-              关于
+              {{ $t('settings.about') }}
             </NText>
           </div>
         </div>
@@ -356,7 +373,7 @@ onMounted(() => {
               <SvgIcon icon="mdi:tag-multiple-outline" />
             </div>
             <div class="version-text">
-              <div class="license">当前版本号</div>
+              <div class="license">{{ $t('settings.version') }}</div>
               <div class="version">{{ appVersion }}</div>
             </div>
           </div>

@@ -3,6 +3,7 @@ import './plugins/assets';
 import 'animate.css';
 import { setupRouter } from './router';
 import { setupStore } from './store';
+import { setupI18n } from './locales';
 import App from './App.vue';
 import { preloadIcons, commonIcons } from './utils/icon';
 
@@ -18,6 +19,8 @@ async function setupApp() {
   });
 
   setupStore(app);
+  
+  setupI18n(app);
 
   await setupRouter(app);
 
