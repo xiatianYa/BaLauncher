@@ -9,11 +9,8 @@
   },
   files: ["dist", "dist-electron"],
   publish: {
-    provider: "github",
-    owner: "xiatianYa",
-    repo: "BaLauncher",
-    releaseType: "release",
-    token: "",
+    provider: "generic",
+    url: "https://www.bluearchive.top/statics/soft/",
   },
   mac: {
     target: ["dmg"],
