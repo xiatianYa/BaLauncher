@@ -14,18 +14,22 @@ import { useAppStore } from '../app';
 export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   const logPatterns = {
-    mainMenuToLoading: /ChangeGameUIState:.*MAINMENU\s*->\s*CSGO_GAME_UI_STATE_LOADINGSCREEN/,
     loadingToIngame: /ChangeGameUIState:.*LOADINGSCREEN\s*->\s*CSGO_GAME_UI_STATE_INGAME/,
-    mainMenuToIngame: /ChangeGameUIState:.*MAINMENU\s*->\s*CSGO_GAME_UI_STATE_INGAME/,
     mapInfo: /\[Client\] Map:\s*"([^"]+)"/,
-    connected: /\[Client\] CL:\s*Connected to/
+    connected: /\[Client\] CL:\s*Connected to/,
+    serverFull: /\[Client\] Disconnected from server: NETWORK_DISCONNECT_REJECT_SERVERFULL/,
+    switchingToLevelload: /switching to "levelload" loopmode/,
+    queueNewRequest: /\[HostStateManager\] CHostStateMgr::QueueNewRequest/
   };
 
   // 检测游戏是否启动的定时器
   let gameCheckTimer: ReturnType<typeof setInterval> | null = null;
 
-  // 检测用户是否连接成功的定时器
+  // 连接成功检测定时器
   let connectionCheckTimer: ReturnType<typeof setTimeout> | null = null;
+
+  // 防止 connection_failed 重复触发重试的标志
+  let hasRetriedForThisConnection = false;
 
   // 社区列表
   const communityList: Api.Game.Community[] = reactive([]);
@@ -220,14 +224,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       if (isGameRunning.value) {
         //检查 GIS 服文件是否安装
         const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2Path.value);
-        if (!exists) {
-          return;
-        } else {
-        };
+        if (!exists) return;
         // 检查 GSI 服务是否已启动
         const { isConnected } = await window.ipcRenderer.checkGsiConnected();
         if (!isConnected) {
           await window.ipcRenderer.startGsiService();
+          console.log('GSI 服务已启动');
           // 开始监听数据
           listenToGsiData();
         }
@@ -556,12 +558,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     if (!ready) return;
     isAutomatic.value = true;
     automaticCount.value = 0;
-
-    // 清除之前的检测定时器
-    if (connectionCheckTimer) {
-      clearTimeout(connectionCheckTimer);
-      connectionCheckTimer = null;
-    }
+    hasRetriedForThisConnection = false;
 
     try {
       const result = await window.ipcRenderer.invoke('start-automatic-join', {
@@ -576,12 +573,20 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
         // 检测用户是否成功连接到服务器
         if (automaticJoinConfig.value.joinServerAutoRetryValue) {
           connectServerUsingSteamUrl();
+          
+          // 清除之前的定时器
+          if (connectionCheckTimer) {
+            clearTimeout(connectionCheckTimer);
+            connectionCheckTimer = null;
+          }
+          
+          // 启动连接检测定时器，30秒后如果还没连接成功则重试
           connectionCheckTimer = setTimeout(() => {
-            if (isAutomaticRetry.value) {
-              // 用户没有成功连接，继续自动挤服
+            if (isAutomaticRetry.value && isAutomatic.value) {
+              console.log('⏰ 连接超时，重新尝试连接...');
               startAutomaticJoinServer();
             }
-          }, 60000); // 60秒超时检测
+          }, 60000);
         } else {
           isAutomatic.value = false;
           isAutomaticRetry.value = false;
@@ -601,14 +606,17 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // 停止自动挤服
   async function stopAutomaticJoinServer() {
+    // 重置自动重试标志
+    isAutomaticRetry.value = false;
+    
+    // 重置重复重试标志
+    hasRetriedForThisConnection = false;
+
     // 清除连接检测定时器
     if (connectionCheckTimer) {
       clearTimeout(connectionCheckTimer);
       connectionCheckTimer = null;
     }
-
-    // 重置自动重试标志
-    isAutomaticRetry.value = false;
 
     if (!isAutomatic.value) {
       return;
@@ -648,29 +656,33 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             '当前地图': data.current,
             '目标服务器地图': joinServerInfo.value?.map || '未设置'
           });
-          // 记录客户端地图切换事件
+          console.log(data.current, data.previous);
+
+          // 只有接收到 map:nameChanged 事件才确认用户成功连接
           if (joinServerInfo.value?.map === data.current) {
+            safeLog('✅ 用户已成功连接到目标服务器');
             isAutomaticRetry.value = false;
             isAutomatic.value = false;
-            // 用户成功连接，清除定时器
+            
+            // 清除连接检测定时器
             if (connectionCheckTimer) {
               clearTimeout(connectionCheckTimer);
               connectionCheckTimer = null;
-              safeLog('✅ 用户已成功连接到目标服务器');
-              //发送地址
-              sendUserGisJoinAddr();
-              //GIS清空挤服
-              pauseAutomaticJoinServer();
-              sendAutomaticDynamic("已连接进服务器...");
-              //播放音频
-              const appStore = useAppStore();
-              const currentTheme = appStore.currentTheme;
-              const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜'];
-              const audio = new Audio(audioSrc);
-              audio.volume = 0.5;
-              audio.play();
-              window.$message?.success("连接成功")
             }
+            
+            //发送地址
+            sendUserGisJoinAddr();
+            //GIS清空挤服
+            pauseAutomaticJoinServer();
+            sendAutomaticDynamic("已连接进服务器...");
+            //播放音频
+            const appStore = useAppStore();
+            const currentTheme = appStore.currentTheme;
+            const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜'];
+            const audio = new Audio(audioSrc);
+            audio.volume = 0.5;
+            audio.play();
+            window.$message?.success("连接成功")
           }
           break;
         case 'map:phaseChanged':
@@ -831,10 +843,17 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // 解析单行日志
   function parseLogLine(logLine: string): any {
-    if (logPatterns.mainMenuToLoading.test(logLine)) {
+    if (logPatterns.connected.test(logLine)) {
+      return {
+        status: 'connecting',
+        message: '正在连接服务器'
+      };
+    }
+
+    if (logPatterns.switchingToLevelload.test(logLine)) {
       return {
         status: 'map_loading',
-        message: '玩家进入加载界面'
+        message: '开始加载地图'
       };
     }
 
@@ -845,10 +864,10 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       };
     }
 
-    if (logPatterns.mainMenuToIngame.test(logLine)) {
+    if (logPatterns.serverFull.test(logLine)) {
       return {
         status: 'connection_failed',
-        message: '从主菜单直接进入游戏界面，连接可能失败'
+        message: '服务器已满员'
       };
     }
 
@@ -858,13 +877,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
         status: 'map_loading',
         mapName: mapMatch[1],
         message: `正在加载地图: ${mapMatch[1]}`
-      };
-    }
-
-    if (logPatterns.connected.test(logLine)) {
-      return {
-        status: 'connecting',
-        message: '正在连接服务器'
       };
     }
 
@@ -888,6 +900,16 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 监听控制台日志数据
   function listenToConsoleLog() {
     window.ipcRenderer.on('cs2-console-log', (_event, logData) => {
+      const lines = logData.split('\n');
+      
+      // 检测是否有新的连接请求，如果有则重置重试标志
+      for (const line of lines) {
+        if (logPatterns.queueNewRequest.test(line)) {
+          hasRetriedForThisConnection = false;
+          break;
+        }
+      }
+      
       const logContent = parseLogContent(logData);
 
       if (logContent) {
@@ -896,9 +918,14 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
         switch (logContent.status) {
           case 'in_game':
             console.log('✅ 用户已成功进入游戏');
+            hasRetriedForThisConnection = false;
             break;
           case 'connection_failed':
-            console.log('❌ 用户连接失败');
+            console.log('❌ 服务器已满员，连接被拒绝');
+            if (isAutomatic.value && automaticJoinConfig.value.joinServerAutoRetryValue && !hasRetriedForThisConnection) {
+              hasRetriedForThisConnection = true;
+              startAutomaticJoinServer();
+            }
             break;
           case 'map_loading':
             console.log('📦 用户正在加载地图');
