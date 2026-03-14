@@ -5,7 +5,7 @@ import { useAppStore } from '@/store/modules/app';
 import { localStg } from '@/utils/storage';
 import { animate } from 'animejs';
 import type { GamePlatform } from '@/constants/app';
-import { NGrid, NGridItem, NSelect, NButton } from 'naive-ui';
+import { NGrid, NGridItem, NSelect } from 'naive-ui';
 import { setLocale } from '@/locales';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -53,23 +53,7 @@ const selectTheme = (themeId: string) => {
 const titleRef = ref<HTMLElement | null>(null);
 const isDetectingSteam = ref(false);
 const isDetectingCsgo = ref(false);
-const isCheckingUpdate = ref(false);
 const appVersion = ref('1.0.0');
-
-const handleCheckUpdate = async () => {
-  isCheckingUpdate.value = true;
-  try {
-    const hasUpdate = await window.ipcRenderer.invoke('check-for-updates');
-    if (!hasUpdate) {
-      window.$message?.success(t('settings.messages.alreadyLatest'));
-    }
-  } catch (error) {
-    console.error(t('settings.messages.checkUpdateFailed'), error);
-    window.$message?.error(t('settings.messages.checkUpdateFailed'));
-  } finally {
-    isCheckingUpdate.value = false;
-  }
-};
 
 const getAppVersion = async () => {
   try {
@@ -223,7 +207,7 @@ onMounted(() => {
 <template>
   <NCard class="w-full h-full" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
     <NCard class="m-10px rounded-10px" content-style="padding:10px;"
-      content-class="h-full flex flex-col flex-1 overflow-y-auto" header-style="padding:10px 20px 10px 20px" :segmented="{
+           content-class="h-full flex flex-col flex-1 overflow-y-auto" header-style="padding:10px 20px 10px 20px" :segmented="{
         content: true,
         footer: 'soft',
       }">
@@ -287,14 +271,14 @@ onMounted(() => {
           </div>
           <div class="flex-1 ml-10px">
             <NButton class="mr-10px rounded-8px" :color="GamePlatform === 'international' ? '#18a058' : '#a5aaa3'" ghost
-              size="large" @click="selectPlatform('international')">
+                     size="large" @click="selectPlatform('international')">
               <template #icon>
                 <SvgIcon icon="mdi:steam" />
               </template>
               {{ $t('settings.international') }}
             </NButton>
             <NButton class="rounded-8px" :color="GamePlatform === 'perfect' ? '#18a058' : '#a5aaa3'" ghost size="large"
-              @click="selectPlatform('perfect')">
+                     @click="selectPlatform('perfect')">
               <template #icon>
                 <SvgIcon icon="mdi:earth" />
               </template>
@@ -412,15 +396,10 @@ onMounted(() => {
             <div class="version-icon">
               <SvgIcon icon="mdi:tag-multiple-outline" />
             </div>
-            <div class="version-text flex-1">
+            <div class="version-text">
               <div class="license">{{ $t('settings.version') }}</div>
               <div class="version">{{ appVersion }}</div>
             </div>
-            <NButton :loading="isCheckingUpdate" @click="handleCheckUpdate" quaternary circle size="medium">
-              <template #icon>
-                <SvgIcon icon="mdi:refresh" />
-              </template>
-            </NButton>
           </div>
         </div>
         <div class="game-info-content mt-15px">
