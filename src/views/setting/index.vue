@@ -5,7 +5,7 @@ import { useAppStore } from '@/store/modules/app';
 import { localStg } from '@/utils/storage';
 import { animate } from 'animejs';
 import type { GamePlatform } from '@/constants/app';
-import { NGrid, NGridItem, NSelect } from 'naive-ui';
+import { NGrid, NGridItem, NSelect, NButton } from 'naive-ui';
 import { setLocale } from '@/locales';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
@@ -53,7 +53,23 @@ const selectTheme = (themeId: string) => {
 const titleRef = ref<HTMLElement | null>(null);
 const isDetectingSteam = ref(false);
 const isDetectingCsgo = ref(false);
+const isCheckingUpdate = ref(false);
 const appVersion = ref('1.0.0');
+
+const handleCheckUpdate = async () => {
+  isCheckingUpdate.value = true;
+  try {
+    const hasUpdate = await window.ipcRenderer.invoke('check-for-updates');
+    if (!hasUpdate) {
+      window.$message?.success(t('settings.messages.alreadyLatest'));
+    }
+  } catch (error) {
+    console.error(t('settings.messages.checkUpdateFailed'), error);
+    window.$message?.error(t('settings.messages.checkUpdateFailed'));
+  } finally {
+    isCheckingUpdate.value = false;
+  }
+};
 
 const getAppVersion = async () => {
   try {
@@ -396,10 +412,15 @@ onMounted(() => {
             <div class="version-icon">
               <SvgIcon icon="mdi:tag-multiple-outline" />
             </div>
-            <div class="version-text">
+            <div class="version-text flex-1">
               <div class="license">{{ $t('settings.version') }}</div>
               <div class="version">{{ appVersion }}</div>
             </div>
+            <NButton :loading="isCheckingUpdate" @click="handleCheckUpdate" quaternary circle size="medium">
+              <template #icon>
+                <SvgIcon icon="mdi:refresh" />
+              </template>
+            </NButton>
           </div>
         </div>
         <div class="game-info-content mt-15px">

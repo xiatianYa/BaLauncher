@@ -3,9 +3,22 @@ import { computed, reactive, ref } from 'vue';
 import { useAuthStore } from '@/store/modules/auth';
 import { useFormRules, useNaiveForm } from '@/hooks/common/form';
 import { useI18n } from 'vue-i18n';
+import { setLocale } from '@/locales';
 
 const authStore = useAuthStore();
-const { t } = useI18n();
+const { locale, t } = useI18n();
+
+const langOptions = computed(() => [
+  { label: t('settings.langOptions.zhCN'), key: 'zh-CN' },
+  { label: t('settings.langOptions.enUS'), key: 'en-US' }
+]);
+
+const showLangDropdown = ref(false);
+
+const handleLangChange = (val: App.I18n.LangType) => {
+  setLocale(val);
+  showLangDropdown.value = false;
+};
 
 const { formRef, validate } = useNaiveForm();
 
@@ -134,13 +147,20 @@ function handleLogin(type: 'qq' | 'steam') {
 <template>
   <NModal v-model:show="authStore.loginModalVisibel" preset="card" class="w-750px h-420px rounded-20px overflow-hidden"
     content-style="padding:0px;" :closable="false" :close-on-esc="false" :mask-closable="false">
-    <div class="flex h-full">
+    <div class="flex h-full relative">
       <div class="w-full h-full">
         <img class="w-full h-full object-cover brightness-80 bg-center bg-cover bg-no-repeat"
           src="@/assets/imgs/login_bg.jpg">
       </div>
-      <div class="w-40% h-full p-15px">
-        <span class="flex justify-center mb-10px font-size-22px font-bold">{{ $t('system.title') }}</span>
+      <div class="w-50% h-full p-15px">
+        <div class="absolute top-15px right-15px z-10">
+          <NDropdown :options="langOptions" @select="(key) => handleLangChange(key as App.I18n.LangType)">
+            <NButton quaternary ghost size="medium">
+              <SvgIcon icon="lucide:languages" class="w-20px h-20px" />
+            </NButton>
+          </NDropdown>
+        </div>
+        <span class="flex justify-center mb-10px font-size-22px font-bold mr-10px">{{ $t('system.title') }}</span>
         <NForm ref="formRef" :model="model" :rules="rules">
           <NFormItem path="userName" :label="$t('login.form.userName.label')">
             <NInput v-model:value="model.userName" :placeholder="$t('login.form.userName.placeholder')" />

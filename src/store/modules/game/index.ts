@@ -573,13 +573,13 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
         // 检测用户是否成功连接到服务器
         if (automaticJoinConfig.value.joinServerAutoRetryValue) {
           connectServerUsingSteamUrl();
-          
+
           // 清除之前的定时器
           if (connectionCheckTimer) {
             clearTimeout(connectionCheckTimer);
             connectionCheckTimer = null;
           }
-          
+
           // 启动连接检测定时器，30秒后如果还没连接成功则重试
           connectionCheckTimer = setTimeout(() => {
             if (isAutomaticRetry.value && isAutomatic.value) {
@@ -608,7 +608,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   async function stopAutomaticJoinServer() {
     // 重置自动重试标志
     isAutomaticRetry.value = false;
-    
+
     // 重置重复重试标志
     hasRetriedForThisConnection = false;
 
@@ -633,11 +633,11 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // 安全打印日志的函数
   function safeLog(message: string, ...args: any[]) {
-    // try {
-    //   console.log(message, ...args);
-    // } catch (error) {
-    //   console.log(message, '[日志打印失败，原始数据:]', args);
-    // }
+    try {
+      console.log(message, ...args);
+    } catch (error) {
+      console.log(message, '[日志打印失败，原始数据:]', args);
+    }
   }
 
   // 监听 GSI 数据的函数
@@ -663,17 +663,19 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             safeLog('✅ 用户已成功连接到目标服务器');
             isAutomaticRetry.value = false;
             isAutomatic.value = false;
-            
+
             // 清除连接检测定时器
             if (connectionCheckTimer) {
               clearTimeout(connectionCheckTimer);
               connectionCheckTimer = null;
             }
-            
+
             //发送地址
             sendUserGisJoinAddr();
             //GIS清空挤服
             pauseAutomaticJoinServer();
+            //清空连接动态
+            currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length);
             sendAutomaticDynamic("已连接进服务器...");
             //播放音频
             const appStore = useAppStore();
@@ -901,7 +903,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   function listenToConsoleLog() {
     window.ipcRenderer.on('cs2-console-log', (_event, logData) => {
       const lines = logData.split('\n');
-      
+
       // 检测是否有新的连接请求，如果有则重置重试标志
       for (const line of lines) {
         if (logPatterns.queueNewRequest.test(line)) {
@@ -909,7 +911,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
           break;
         }
       }
-      
+
       const logContent = parseLogContent(logData);
 
       if (logContent) {

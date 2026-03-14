@@ -83,6 +83,12 @@ export default {
   tools: {
     title: '工具箱',
     subtitle: 'CS2 工具库',
+    keyBind: '按键绑定',
+    keyBindTitle: '按键绑定',
+    keyBindDesc: '自定义游戏按键配置',
+    mapOrder: '地图订阅',
+    mapOrderTitle: '地图订阅',
+    mapOrderDesc: '一键订阅和管理游戏地图',
   },
   settings: {
     general: '常规设置',
@@ -113,6 +119,9 @@ export default {
     },
     messages: {
       versionFetchFailed: '获取版本号失败',
+      checkingUpdate: '正在检查更新...',
+      checkUpdateFailed: '检查更新失败',
+      alreadyLatest: '当前已是最新版本',
       selectCsgoPath: '选择CSGO2安装目录',
       csgoPathSaved: 'CSGO2安装目录已保存',
       cacheClearFailed: '菜单缓存清理失败',

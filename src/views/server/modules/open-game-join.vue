@@ -273,11 +273,14 @@ const handleCancelExit = () => {
         gameStore.isJoinServerTrayVisible = true;
         return;
     }
-
     //所有玩家的挤服动态
     gameStore.currentAutomaticPlayerList.splice(0, gameStore.currentAutomaticPlayerList.length);
     //所有服务器的GIS动态
     gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length);
+    //清空记录
+    gameStore.currentAutomaticPlayerDynamicList.splice(0, gameStore.currentAutomaticPlayerDynamicList.length);
+    //清空连接动态
+    gameStore.stopAutomaticJoinServer();
 
     emit('update:showJoinServer', false);
     return;
@@ -349,7 +352,8 @@ onBeforeUnmount(() => {
                             <div class="font-bold">
                                 {{ $t('serverJoin.personCount', {
                                     count:
-                                        gameStore.automaticJoinConfig.joinServerPersonValue }) }}
+                                        gameStore.automaticJoinConfig.joinServerPersonValue
+                                }) }}
                             </div>
                         </NTag>
                     </NSpace>
@@ -378,7 +382,8 @@ onBeforeUnmount(() => {
                             <div class="font-bold">
                                 {{ $t('serverJoin.threadCount', {
                                     count:
-                                        gameStore.automaticJoinConfig.joinServerCountValue }) }}
+                                        gameStore.automaticJoinConfig.joinServerCountValue
+                                }) }}
                             </div>
                         </NTag>
                     </NSpace>
@@ -427,7 +432,7 @@ onBeforeUnmount(() => {
                         </template>
                         {{ $t('serverJoin.gameStarted') }}
                     </NButton>
-                    <NButton type="success" ghost strong @click="startJoinServer" class="w-130px rounded-md"
+                    <NButton type="success" ghost strong @click="startJoinServer" class="rounded-md"
                         :disabled="!gameStore.isGameRunning">
                         <template #icon>
                             <SvgIcon icon="solar:gamepad-broken"></SvgIcon>
@@ -471,7 +476,7 @@ onBeforeUnmount(() => {
                         </template>
                         {{ $t('serverJoin.gameStarted') }}
                     </NButton>
-                    <NButton type="warning" ghost strong @click="stopJoinServer" class="w-130px rounded-md">
+                    <NButton type="warning" ghost strong @click="stopJoinServer" class="rounded-md">
                         <template #icon>
                             <SvgIcon icon="lets-icons:stop"></SvgIcon>
                         </template>
@@ -531,7 +536,7 @@ onBeforeUnmount(() => {
                                                 fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
                                             <span class="ml-2 font-bold">{{ player.loginUser?.nickName ||
                                                 $t('serverJoin.unknownPlayer')
-                                                }}</span>
+                                            }}</span>
                                             <NTag size="small" :type="getTeamColor(player.team)" class="ml-2"
                                                 :bordered="false">
                                                 {{ getTeamLabel(player.team) }}

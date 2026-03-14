@@ -83,6 +83,12 @@ export default {
   tools: {
     title: 'Tools',
     subtitle: 'CS2 Toolkit',
+    keyBind: 'Key Bind',
+    keyBindTitle: 'Key Bind',
+    keyBindDesc: 'Customize game key bindings',
+    mapOrder: 'Map Subscription',
+    mapOrderTitle: 'Map Subscription',
+    mapOrderDesc: 'One-click subscribe and manage game maps',
   },
   settings: {
     general: 'General',
@@ -113,6 +119,9 @@ export default {
     },
     messages: {
       versionFetchFailed: 'Failed to get version',
+      checkingUpdate: 'Checking for updates...',
+      checkUpdateFailed: 'Failed to check for updates',
+      alreadyLatest: 'You are already on the latest version',
       selectCsgoPath: 'Select CSGO2 install directory',
       csgoPathSaved: 'CSGO2 directory saved',
       cacheClearFailed: 'Failed to clear menu cache',

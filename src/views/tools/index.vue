@@ -30,8 +30,6 @@ const activeModule = computed(() => activeModuleKey.value ? moduleMap[activeModu
 interface ToolItem {
   id: UnionKey.ToolModule;
   icon: string;
-  title: string;
-  description: string;
   gradient: string;
   color: string;
   delay: number;
@@ -41,8 +39,6 @@ const tools = ref<ToolItem[]>([
   {
     id: 'keyBind',
     icon: 'material-symbols:keyboard-alt-outline',
-    title: '按键绑定',
-    description: '自定义游戏按键配置',
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: '#667eea',
     delay: 0
@@ -50,13 +46,27 @@ const tools = ref<ToolItem[]>([
   {
     id: 'mapOrder',
     icon: 'material-symbols:map-outline',
-    title: '地图订阅',
-    description: '一键订阅和管理游戏地图',
     gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
     color: '#f5576c',
     delay: 0.1
   }
 ]);
+
+const getToolTitle = (id: UnionKey.ToolModule) => {
+  const keyMap: Record<UnionKey.ToolModule, string> = {
+    'keyBind': 'tools.keyBindTitle',
+    'mapOrder': 'tools.mapOrderTitle'
+  };
+  return $t(keyMap[id]);
+};
+
+const getToolDescription = (id: UnionKey.ToolModule) => {
+  const keyMap: Record<UnionKey.ToolModule, string> = {
+    'keyBind': 'tools.keyBindDesc',
+    'mapOrder': 'tools.mapOrderDesc'
+  };
+  return $t(keyMap[id]);
+};
 
 const handleToolClick = (tool: ToolItem) => {
   activeModuleKey.value = tool.id;
@@ -83,7 +93,7 @@ const handleToolClick = (tool: ToolItem) => {
       <div class="relative px-4 pb-4 overflow-y-auto flex-1">
         <!-- 工具卡片列表 -->
         <div class="tools-grid">
-          <NGrid :x-gap="24" :y-gap="24" :cols="4" responsive="screen" item-responsive>
+          <NGrid :x-gap="24" :y-gap="24" :cols="3" responsive="screen" item-responsive>
             <NGridItem v-for="tool in tools" :key="tool.id" span="4 s:2 m:1 l:1">
               <div class="tool-card" :class="{ 'light-mode': !isDarkMode }" :style="{
                 '--gradient': tool.gradient,
@@ -95,8 +105,8 @@ const handleToolClick = (tool: ToolItem) => {
                     <SvgIcon :icon="tool.icon" class="tool-icon" />
                   </div>
                   <div class="card-info">
-                    <h3 class="tool-title">{{ tool.title }}</h3>
-                    <p class="tool-description">{{ tool.description }}</p>
+                    <h3 class="tool-title">{{ getToolTitle(tool.id) }}</h3>
+                    <p class="tool-description">{{ getToolDescription(tool.id) }}</p>
                   </div>
                   <div class="card-arrow">
                     <SvgIcon icon="mdi:arrow-right" />
@@ -236,6 +246,10 @@ const handleToolClick = (tool: ToolItem) => {
 
     .tool-description {
       color: rgba(0, 0, 0, 0.6);
+      //超出1行就省略
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .card-arrow {

@@ -4,6 +4,7 @@ import { useThemeStore } from '@/store/modules/theme';
 import { useAuthStore } from '@/store/modules/auth';
 import WindowControls from '@/components/common/window-controls.vue';
 import LoginDialog from '@/components/common/login-dialog.vue';
+import UpdateConfirm from '@/components/common/update-confirm.vue';
 
 const themeStore = useThemeStore();
 const authStore = useAuthStore();
@@ -31,6 +32,7 @@ onMounted(() => {
       </NCard>
     </div>
     <LoginDialog />
+    <UpdateConfirm />
   </div>
 </template>
 

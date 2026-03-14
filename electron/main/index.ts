@@ -6,9 +6,9 @@ import { setMainWindowForCs2Gsi } from './ipcHandlers/cs2Gsi'
 import { setMainWindowForLogReader } from './ipcHandlers/logReader'
 
 initializeApp()
-setupAutoUpdaterIpc()
 setupAllIpcHandlers()
 setupWindowEvents((win) => {
+  setupAutoUpdaterIpc(win)
   checkForUpdates(win)
   setMainWindowForCs2Gsi(win)
   setMainWindowForLogReader(win)
