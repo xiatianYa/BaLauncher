@@ -50,6 +50,7 @@ const handleInstallUpdate = async () => {
 };
 
 const updateAvailableHandler = () => {
+  console.log("检测到新版本了!");
   showUpdateConfirm();
 };
 

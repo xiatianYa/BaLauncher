@@ -32,7 +32,6 @@ onMounted(() => {
       </NCard>
     </div>
     <LoginDialog />
-    <UpdateConfirm />
   </div>
 </template>
 

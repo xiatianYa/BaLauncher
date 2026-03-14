@@ -5,8 +5,13 @@ const { autoUpdater } = electronUpdate
 export function checkForUpdates(win: BrowserWindow) {
   if (app.isPackaged) {
     autoUpdater.autoDownload = false
-    autoUpdater.checkForUpdates()
-
+    // 强制启用开发环境更新配置
+    autoUpdater.forceDevUpdateConfig = true;
+    autoUpdater.setFeedURL({
+      provider: 'generic',
+      url: 'https://www.bluearchive.top/statics/soft/',
+    })
+    const updateInfo = autoUpdater.checkForUpdates()
     autoUpdater.on('update-available', () => {
       win.webContents.send('update-available')
     })
