@@ -796,6 +796,11 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
           // 发送数据给服务器
           sendUserGisData(gamePlayerInfo.value);
           break;
+        case 'provider:timestampChanged':
+          safeLog('⏰ [Provider:时间戳变更] - 更新服务器时间戳', data.current, data.previous);
+          // 发送数据给服务器
+          sendServerGisData(gameServerInfo.value);
+          break;
         default:
           safeLog('❓ [未知事件]', { eventName, data });
       }

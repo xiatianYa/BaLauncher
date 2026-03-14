@@ -250,6 +250,76 @@ const getTeamLabel = (team: string) => {
     }
 };
 
+// CSGO2 武器名称中文映射
+const getWeaponName = (weaponName: string) => {
+    const weaponMap: Record<string, string> = {
+        // 步枪
+        'weapon_ak47': 'AK-47',
+        'weapon_m4a1_silencer': 'M4A1-S',
+        'weapon_m4a4': 'M4A4',
+        'weapon_aug': 'AUG',
+        'weapon_sg556': 'SG 553',
+        'weapon_famas': '法玛斯',
+        'weapon_galilar': '加利尔 AR',
+        
+        // 狙击枪
+        'weapon_awp': 'AWP',
+        'weapon_g3sg1': 'G3SG1',
+        'weapon_scar20': 'SCAR-20',
+        'weapon_ssg08': '鸟狙',
+        
+        // 手枪
+        'weapon_glock': '格洛克',
+        'weapon_usp_silencer': 'USP-S',
+        'weapon_hkp2000': 'P2000',
+        'weapon_p250': 'P250',
+        'weapon_fiveseven': 'FN57',
+        'weapon_deagle': '沙漠之鹰',
+        'weapon_revolver': 'R8左轮',
+        'weapon_cz75a': 'CZ75',
+        
+        // 冲锋枪
+        'weapon_mp7': 'MP7',
+        'weapon_mp9': 'MP9',
+        'weapon_bizon': '野牛',
+        'weapon_mac10': 'MAC-10',
+        'weapon_ump45': 'UMP-45',
+        'weapon_p90': 'P90',
+        'weapon_mp5sd': 'MP5-SD',
+        'weapon_mp5': 'MP5',
+        
+        // 霰弹枪
+        'weapon_nova': '新星',
+        'weapon_xm1014': 'XM1014',
+        'weapon_sawedoff': '截短霰弹枪',
+        'weapon_mag7': 'MAG-7',
+        'weapon_m1014': 'M1014',
+        
+        // 机枪
+        'weapon_m249': 'M249',
+        'weapon_negev': '内格夫',
+        
+        // 装备
+        'weapon_c4': 'C4',
+        'weapon_taser': '电击枪',
+        'weapon_knife': '匕首',
+        'weapon_shield': '防暴盾',
+        'weapon_zeus': '宙斯',
+        
+        // 投掷物
+        'weapon_molotov': '燃烧瓶',
+        'weapon_incgrenade': '燃烧弹',
+        'weapon_flashbang': '闪光弹',
+        'weapon_hegrenade': '高爆手雷',
+        'weapon_smokegrenade': '烟雾弹',
+        'weapon_decoy': '诱饵弹',
+        'weapon_tagrenade': '闪光震撼弹',
+        'weapon_snowball': '雪球',
+        'weapon_bumpmine': '冲击地雷'
+    };
+    return weaponMap[weaponName] || weaponName;
+};
+
 const getOnLineColor = (players: number, maxPlayers: number) => {
     if (!players || !maxPlayers) return 'background-color: #00f91a;';
     if (players <= 20) {
@@ -598,7 +668,7 @@ onBeforeUnmount(() => {
                                                 <SvgIcon icon="hugeicons:gun" class="mr-5px" />
                                             </div>
                                             <NText>
-                                                {{ player.weapon?.name || $t('serverJoin.weapon.none') }}
+                                                {{ player.weapon?.name ? getWeaponName(player.weapon.name) : $t('serverJoin.weapon.none') }}
                                             </NText>
                                         </div>
                                     </div>

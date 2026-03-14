@@ -92,6 +92,18 @@ const getPlayersChipBg = (server: Api.Game.InfoResponse): string | undefined => 
   return match?.[1];
 };
 
+// 服务器状态中文映射
+const getMapPhaseText = (phase: string) => {
+  const phaseMap: Record<string, string> = {
+    'warmup': '热身',
+    'intermission': '中场休息',
+    'gameover': '游戏结束',
+    'live': '对局中',
+    'unknown': '未知'
+  };
+  return phaseMap[phase] || phase;
+};
+
 // 计算社区标签颜色
 const getCommunityTagType = (playerNumber: number) => {
   if (playerNumber < 300) {
@@ -352,7 +364,7 @@ onUnmounted(() => {
                 </div>
                 <div class="stat-chip chip-score mr-5px" v-show="server.mapPhase">
                   <span class="team team-ct">CT {{ server.CTScore || '0' }}</span>
-                  <SvgIcon icon="mdi:scoreboard-outline" class="chip-icon" />
+                  <span>{{ getMapPhaseText(server.mapPhase) }}</span>
                   <span class="team team-t">T {{ server.TScore || '0' }}</span>
                 </div>
               </div>
