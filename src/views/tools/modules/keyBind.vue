@@ -310,7 +310,7 @@ const handleEditorChange = (value: string) => {
 const parseEditorValue = () => {
     const content = editorValue.value;
     console.log('parseEditorValue called with content:', content);
-    const keyPattern = /\[(?:键)?(\d+)\]/g;
+    const keyPattern = /\[(?:按键)?(\d+)\]/g;
     const matches = [...content.matchAll(keyPattern)];
     console.log('matches:', matches);
 
@@ -343,7 +343,7 @@ const parseEditorValue = () => {
 const applyKeyBinds = async () => {
     const emptyKeyItem = keyBindItems.value.find(item => !item.key || item.key.trim() === '');
     if (emptyKeyItem) {
-        window.$message?.warning(`请先设置 [键${emptyKeyItem.id}] 的按键`);
+        window.$message?.warning(`请先设置 [按键${emptyKeyItem.id}] 的按键`);
         return;
     }
 
@@ -479,7 +479,7 @@ onMounted(() => {
                                                     <div class="config-meta-item">
                                                         <SvgIcon icon="material-symbols:schedule" class="meta-icon" />
                                                         <span>{{ dayjs(item.updateTime).format('MM-DD HH:mm:ss')
-                                                        }}</span>
+                                                            }}</span>
                                                     </div>
                                                     <div class="config-meta-item">
                                                         <SvgIcon icon="material-symbols:download" class="meta-icon" />
@@ -501,7 +501,8 @@ onMounted(() => {
                 </NCard>
             </div>
             <div class="right-panel">
-                <NCard class="panel-card editor-card" content-style="padding: 20px;" :bordered="false">
+                <NCard class="panel-card editor-card" content-style="padding: 20px;" content-class="overflow-y-auto"
+                    :bordered="false">
                     <div class="editor-header">
                         <div class="editor-title font-size-20px">
                             <SvgIcon icon="material-symbols:edit-square-outline" class="editor-icon" />
@@ -552,14 +553,14 @@ onMounted(() => {
                         </div>
                         <div class="editor-active" v-else>
                             <div v-show="!showPreview" class="key-bind-section">
-                                <NGrid x-gap="12" :cols="3">
+                                <NGrid x-gap="12" y-gap="12" :cols="3">
                                     <NGridItem v-for="item in keyBindItems" :key="item.id">
                                         <div class="key-bind-card">
                                             <div class="key-bind-card-header">
                                                 <div class="key-label">
                                                     <SvgIcon icon="material-symbols:keyboard-alt-outline"
                                                         class="key-label-icon" />
-                                                    <span>键{{ item.id }}</span>
+                                                    <span>按键{{ item.id }}</span>
                                                 </div>
                                             </div>
                                             <div class="key-bind-card-body">
@@ -1071,7 +1072,6 @@ onMounted(() => {
 .editor-content {
     height: 100%;
     flex: 1;
-    overflow-y: auto;
 }
 
 .editor-placeholder {
