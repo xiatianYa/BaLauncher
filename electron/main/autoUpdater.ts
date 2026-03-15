@@ -5,17 +5,40 @@ const { autoUpdater } = electronUpdate
 export function checkForUpdates(win: BrowserWindow) {
   if (app.isPackaged) {
     autoUpdater.autoDownload = false
-    autoUpdater.checkForUpdates()
-    autoUpdater.on('update-available', () => {
-      win.webContents.send('update-available')
+    autoUpdater.setFeedURL({
+      provider: 'generic',
+      url: 'https://www.bluearchive.top/statics/soft/',
+    })
+
+    autoUpdater.on('checking-for-update', () => {
+      console.log('检查更新中...')
+    })
+
+    autoUpdater.on('update-available', (info) => {
+      console.log('发现更新:', info)
+      win.webContents.send('update-available', info)
+    })
+
+    autoUpdater.on('update-not-available', (info) => {
+      console.log('没有可用更新:', info)
+      win.webContents.send('update-not-available', info)
+    })
+
+    autoUpdater.on('error', (err) => {
+      console.error('更新错误:', err)
+      win.webContents.send('update-error', err.message)
     })
 
     autoUpdater.on('download-progress', (progressObj) => {
       win.webContents.send('update-downloading', progressObj)
     })
 
-    autoUpdater.on('update-downloaded', () => {
-      win.webContents.send('update-downloaded')
+    autoUpdater.on('update-downloaded', (info) => {
+      win.webContents.send('update-downloaded', info)
+    })
+
+    autoUpdater.checkForUpdates().catch((err) => {
+      console.error('检查更新失败:', err)
     })
   }
 }
@@ -27,5 +50,12 @@ export function setupAutoUpdaterIpc() {
 
   ipcMain.handle('download-update', () => {
     autoUpdater.downloadUpdate()
+  })
+
+  ipcMain.handle('check-update', (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    if (win) {
+      checkForUpdates(win)
+    }
   })
 }

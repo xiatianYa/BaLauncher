@@ -127,7 +127,7 @@ const handleToolClick = (tool: ToolItem) => {
         content: true,
         footer: 'soft',
       }" v-else-if="activeModule">
-      <component :is="activeModule.component" />
+      <component :is="activeModule.component" @back="activeModuleKey = null" />
     </NCard>
   </NCard>
 </template>
@@ -170,6 +170,7 @@ const handleToolClick = (tool: ToolItem) => {
 }
 
 .tool-card {
+  height: 200px;
   position: relative;
   background: rgba(255, 255, 255, 0.05);
   border-radius: 16px;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
 import { useGameStore } from '@/store/modules/game';
 import { useAppStore } from '@/store/modules/app';
 import { localStg } from '@/utils/storage';
@@ -53,7 +53,21 @@ const selectTheme = (themeId: string) => {
 const titleRef = ref<HTMLElement | null>(null);
 const isDetectingSteam = ref(false);
 const isDetectingCsgo = ref(false);
+const isCheckingUpdate = ref(false);
 const appVersion = ref('1.0.0');
+
+const checkForUpdates = async () => {
+  isCheckingUpdate.value = true;
+  try {
+    window.$message?.info('正在检查更新...');
+    await window.ipcRenderer.invoke('check-update');
+  } catch (error) {
+    console.error('检查更新失败:', error);
+    window.$message?.error('检查更新失败');
+  } finally {
+    isCheckingUpdate.value = false;
+  }
+};
 
 const getAppVersion = async () => {
   try {
@@ -202,12 +216,13 @@ onMounted(() => {
     }
   });
 });
+
 </script>
 
 <template>
   <NCard class="w-full h-full" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
     <NCard class="m-10px rounded-10px" content-style="padding:10px;"
-           content-class="h-full flex flex-col flex-1 overflow-y-auto" header-style="padding:10px 20px 10px 20px" :segmented="{
+      content-class="h-full flex flex-col flex-1 overflow-y-auto" header-style="padding:10px 20px 10px 20px" :segmented="{
         content: true,
         footer: 'soft',
       }">
@@ -271,14 +286,14 @@ onMounted(() => {
           </div>
           <div class="flex-1 ml-10px">
             <NButton class="mr-10px rounded-8px" :color="GamePlatform === 'international' ? '#18a058' : '#a5aaa3'" ghost
-                     size="large" @click="selectPlatform('international')">
+              size="large" @click="selectPlatform('international')">
               <template #icon>
                 <SvgIcon icon="mdi:steam" />
               </template>
               {{ $t('settings.international') }}
             </NButton>
             <NButton class="rounded-8px" :color="GamePlatform === 'perfect' ? '#18a058' : '#a5aaa3'" ghost size="large"
-                     @click="selectPlatform('perfect')">
+              @click="selectPlatform('perfect')">
               <template #icon>
                 <SvgIcon icon="mdi:earth" />
               </template>
@@ -400,6 +415,12 @@ onMounted(() => {
               <div class="license">{{ $t('settings.version') }}</div>
               <div class="version">{{ appVersion }}</div>
             </div>
+            <NButton type="primary" ghost @click="checkForUpdates" :loading="isCheckingUpdate">
+              <template #icon>
+                <SvgIcon icon="material-symbols:refresh" />
+              </template>
+              {{ isCheckingUpdate ? '检查中...' : '检查更新' }}
+            </NButton>
           </div>
         </div>
         <div class="game-info-content mt-15px">

@@ -1,11 +1,5 @@
 import { ipcMain } from 'electron'
 import { queryGameServerInfo } from 'steam-server-query'
-import { Worker, isMainThread } from 'worker_threads'
-import path from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
 
 export async function executeSingleQuery(serverAddr: string, maxPlayers: number) {
   try {
@@ -25,42 +19,6 @@ export async function executeSingleQuery(serverAddr: string, maxPlayers: number)
       error: (error as Error).message
     }
   }
-}
-
-function executeSingleQueryInWorker(serverAddr: string, maxPlayers: number) {
-  if (!isMainThread) {
-    return executeSingleQuery(serverAddr, maxPlayers)
-  }
-
-  const workerPath = path.join(__dirname, 'serverQuery.js')
-
-  return new Promise((resolve, reject) => {
-    const worker = new Worker(workerPath, {
-      workerData: { serverAddr, maxPlayers },
-    })
-
-    const cleanup = () => {
-      worker.removeAllListeners()
-    }
-
-    worker.on('message', (message) => {
-      cleanup()
-      resolve(message)
-      worker.terminate()
-    })
-
-    worker.on('error', (error) => {
-      cleanup()
-      reject(error)
-    })
-
-    worker.on('exit', (code) => {
-      if (code !== 0) {
-        cleanup()
-        reject(new Error(`Worker stopped with exit code ${code}`))
-      }
-    })
-  })
 }
 
 export function setupGameServerIpc() {

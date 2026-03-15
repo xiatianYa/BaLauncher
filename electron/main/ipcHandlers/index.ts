@@ -6,6 +6,7 @@ import { setupGamePathIpc } from './gamePath'
 import { setupCs2GsiIpc } from './cs2Gsi'
 import { setupLogReaderIpc } from './logReader'
 import { setupAutomaticJoinIpc } from './automaticJoin'
+import { setupCs2CfgIpc } from './cs2Cfg'
 
 export function setupAllIpcHandlers() {
   setupWindowControlIpc()
@@ -16,4 +17,5 @@ export function setupAllIpcHandlers() {
   setupCs2GsiIpc()
   setupLogReaderIpc()
   setupAutomaticJoinIpc()
+  setupCs2CfgIpc()
 }
