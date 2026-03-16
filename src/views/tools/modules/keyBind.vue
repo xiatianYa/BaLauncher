@@ -11,7 +11,6 @@ import {
     NModal,
     NForm,
     NFormItem,
-    NInputGroup,
     NGrid,
     NGridItem
 } from 'naive-ui';
@@ -51,6 +50,7 @@ const activeTab = ref<'library' | 'local' | 'user'>('library');
 const showPreview = ref(false);
 const showKeyCaptureModal = ref(false);
 const showNewConfigModal = ref(false);
+const showTutorialModal = ref(false);
 
 /** 编辑器相关 */
 const editorRef = ref();
@@ -141,6 +141,13 @@ const replaceKeyPlaceholders = (content: string): string => {
 const openNewConfigModalFn = () => {
     newConfig.value = { configName: '', configDesc: '', keyConfigJson: '', shareStatus: 0 };
     showNewConfigModal.value = true;
+};
+
+/**
+ * 打开教程弹窗
+ */
+const openTutorialModalFn = () => {
+    showTutorialModal.value = true;
 };
 
 /**
@@ -289,7 +296,7 @@ const updateConfigFn = async () => {
 
     const { error } = await fetchUpdateKeyBind({
         id: selectedConfig.value.id,
-        keyConfigJson: getReplacedConfigFn()
+        keyConfigJson: editorValue.value
     });
 
     if (!error) {
@@ -429,8 +436,15 @@ const getReplacedConfigFn = (): string => {
     const content = replaceKeyPlaceholders(editorValue.value);
     const logHeader = buildLogHeader();
 
-    return originalConfigContent.value
-        ? originalConfigContent.value + '\n' + logHeader + content
+    let cleanOriginalContent = originalConfigContent.value || '';
+
+    if (cleanOriginalContent) {
+        const logPattern = /\/\/ ========================================[\s\S]*?\/\/ ========================================\s*/;
+        cleanOriginalContent = cleanOriginalContent.replace(logPattern, '').trim();
+    }
+
+    return cleanOriginalContent
+        ? logHeader + content + '\n\n' + cleanOriginalContent
         : logHeader + content;
 };
 
@@ -536,6 +550,9 @@ onMounted(() => {
             <div class="title-section">
                 <SvgIcon icon="material-symbols:keyboard-alt-outline" class="title-icon" />
                 <h1 class="page-title">按键绑定配置</h1>
+                <div class="cursor-pointer help-icon" @click="openTutorialModalFn">
+                    <SvgIcon icon="line-md:question-circle" />
+                </div>
             </div>
             <div class="back-btn" @click="handleBackFn">
                 <SvgIcon icon="material-symbols:arrow-back" class="back-icon" />
@@ -597,12 +614,13 @@ onMounted(() => {
                                             <div class="config-info">
                                                 <div class="config-name">{{ item.configName }}</div>
                                                 <div class="config-meta-row">
-                                                    <div class="config-meta-item">
-                                                        <SvgIcon icon="material-symbols:schedule" class="meta-icon" />
+                                                    <div class="config-meta-item flex items-center">
+                                                        <SvgIcon icon="material-symbols:schedule-outline"
+                                                            class="meta-icon" />
                                                         <span>{{ dayjs(item.updateTime).format('MM-DD HH:mm:ss')
-                                                            }}</span>
+                                                        }}</span>
                                                     </div>
-                                                    <div class="config-meta-item">
+                                                    <div class="config-meta-item flex items-center">
                                                         <SvgIcon icon="material-symbols:download" class="meta-icon" />
                                                         <span>{{ item.shareCount }}</span>
                                                     </div>
@@ -744,6 +762,52 @@ onMounted(() => {
             <template #footer>
                 <NButton class="mr-20px rounded-10px" ghost @click="closeNewConfigModalFn">取消</NButton>
                 <NButton class="rounded-10px" type="info" @click="createNewConfigFn">创建</NButton>
+            </template>
+        </NModal>
+
+        <NModal v-model:show="showTutorialModal" preset="card" class="w-600px rounded-10px" :bordered="false">
+            <template #header>
+                <div class="flex items-center font-size-18px">
+                    <SvgIcon icon="material-symbols:help-outline" class="mr-5px" />
+                    <div class="font-size-16px">使用教程</div>
+                </div>
+            </template>
+            <div class="tutorial-content">
+                <div class="tutorial-section">
+                    <div class="tutorial-title">
+                        <SvgIcon icon="material-symbols:edit-square-outline" class="tutorial-icon mr-5px" />
+                        1. 编写配置
+                    </div>
+                    <div class="tutorial-text">在编辑器中编写 CS2 的配置文件，可以使用按键占位符。</div>
+                </div>
+
+                <div class="tutorial-section">
+                    <div class="tutorial-title">
+                        <SvgIcon icon="material-symbols:keyboard-alt-outline" class="tutorial-icon mr-5px" />
+                        2. 使用占位符
+                    </div>
+                    <div class="tutorial-text">在配置中使用格式 <code>[按键序号:描述]</code> 来定义按键绑定，例如：</div>
+                    <div class="tutorial-code">bind [按键1:笑声] "say !he"</div>
+                </div>
+
+                <div class="tutorial-section">
+                    <div class="tutorial-title">
+                        <SvgIcon icon="material-symbols:touch-double-outline" class="tutorial-icon mr-5px" />
+                        3. 设置按键
+                    </div>
+                    <div class="tutorial-text">点击下方的按键卡片，按下你想要绑定的按键即可。支持组合键（Ctrl+、Shift+、Alt+）。</div>
+                </div>
+
+                <div class="tutorial-section">
+                    <div class="tutorial-title">
+                        <SvgIcon icon="ic:outline-check-circle" class="tutorial-icon mr-5px" />
+                        4. 应用配置
+                    </div>
+                    <div class="tutorial-text">点击「应用」按钮，配置将写入 autoexec.cfg 文件。日志会自动添加在文件开头。</div>
+                </div>
+            </div>
+            <template #footer>
+                <NButton type="info" @click="showTutorialModal = false">我知道了</NButton>
             </template>
         </NModal>
     </div>
@@ -1422,6 +1486,55 @@ onMounted(() => {
 
     100% {
         transform: scale(1);
+    }
+}
+
+.help-icon {
+    transition: transform 0.2s;
+
+    &:hover {
+        transform: rotate(10deg) scale(1.1);
+    }
+}
+
+.tutorial-content {
+    .tutorial-section {
+        margin-bottom: 20px;
+
+        .tutorial-title {
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+
+            .tutorial-icon {
+                margin-right: 8px;
+                font-size: 20px;
+            }
+        }
+
+        .tutorial-text {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 8px;
+
+            code {
+                background: var(--bg-content);
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-family: 'Consolas', 'Monaco', monospace;
+            }
+        }
+
+        .tutorial-code {
+            background: var(--bg-content);
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: var(--text-secondary);
+            margin-top: 8px;
+        }
     }
 }
 </style>
