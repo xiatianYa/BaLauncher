@@ -61,10 +61,11 @@ declare namespace Api {
     }>;
 
     /** KeyBind item */
-    type KeyBindItem = {
+    type LocalKeyBindItem = {
       id: number;
       key: string;
-    }
+      description: string;
+    };
 
     /** KeyBind list */
     type KeyBindList = KeyBindVO[];

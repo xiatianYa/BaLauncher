@@ -1,48 +1,83 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted } from 'vue';
-import { NButton, NCard, NTabPane, NTabs, NList, NListItem, NInput, NModal, NForm, NFormItem, NInputGroup } from 'naive-ui';
+import { ref, computed, nextTick, onMounted, watch } from 'vue';
+import {
+    NButton,
+    NCard,
+    NTabPane,
+    NTabs,
+    NList,
+    NListItem,
+    NInput,
+    NModal,
+    NForm,
+    NFormItem,
+    NInputGroup,
+    NGrid,
+    NGridItem
+} from 'naive-ui';
 import { useThemeStore } from '@/store/modules/theme';
 import { EditorRuntimeOptions, MonacoEditor } from '@lascyb/monaco-editor-vue3';
 import * as monaco from 'monaco-editor';
-import { fetchAddKeyBind, fetchDeleteKeyBind, fetchGetAllSharedKeyBinds, fetchGetMyKeyBinds, fetchIncrementUseCount, fetchUpdateKeyBind } from '@/service/api/game/keyBind';
+import {
+    fetchAddKeyBind,
+    fetchDeleteKeyBind,
+    fetchGetAllSharedKeyBinds,
+    fetchGetMyKeyBinds,
+    fetchIncrementUseCount,
+    fetchUpdateKeyBind
+} from '@/service/api/game/keyBind';
 import dayjs from 'dayjs';
 
-defineOptions({
-    name: 'keyBind'
-});
+/**
+ * 组件配置
+ */
+defineOptions({ name: 'keyBind' });
 
-const emit = defineEmits<{
-    back: [];
-}>();
+/**
+ * 事件定义
+ */
+const emit = defineEmits<{ back: []; }>();
 
+// ============================================================================
+// 状态管理
+// ============================================================================
+
+/** 主题相关 */
 const themeStore = useThemeStore();
 const isDarkMode = computed(() => themeStore.darkMode);
 
-// 活动标签页
+/** UI 状态 */
 const activeTab = ref<'library' | 'local' | 'user'>('library');
-// 显示预览弹窗
 const showPreview = ref(false);
-// 编辑器实例
-const editorRef = ref();
-
-// 按键绑定列表
-const keyBindItems = ref<Api.Game.KeyBindItem[]>([]);
-// 显示按键捕获弹窗
 const showKeyCaptureModal = ref(false);
-// 当前编辑的按键绑定ID
-const currentEditItemId = ref<number | null>(null);
-// 捕获的按键
-const capturedKey = ref('');
-//公共分享的按键库
-const configLibraryItems = ref<Api.Game.KeyBindList>([]);
-//个人分享的按键库
-const localConfigItems = ref<Api.Game.KeyBindList>([]);
-// 选中的配置
-const selectedConfig = ref<Api.Game.KeyBindVO | null>(null);
-// 编辑器内容
-const editorValue = ref(``);
+const showNewConfigModal = ref(false);
 
-// 编辑器选项
+/** 编辑器相关 */
+const editorRef = ref();
+const monacoEditorInstance = ref<monaco.editor.IStandaloneCodeEditor | null>(null);
+const editorValue = ref('');
+
+/** 按键绑定相关 */
+type LocalKeyBindItem = { id: number; key: string; description: string; };
+const keyBindItems = ref<LocalKeyBindItem[]>([]);
+const currentEditItemId = ref<number | null>(null);
+const capturedKey = ref('');
+
+/** 配置库相关 */
+const configLibraryItems = ref<Api.Game.KeyBindList>([]);
+const localConfigItems = ref<Api.Game.KeyBindList>([]);
+const selectedConfig = ref<Api.Game.KeyBindVO | null>(null);
+const originalConfigContent = ref('');
+
+/** 新建配置 */
+const newConfig = ref<Api.Game.KeyBindAddParams>({
+    configName: '',
+    configDesc: '',
+    keyConfigJson: '',
+    shareStatus: 0
+});
+
+/** 编辑器选项 */
 const editorOptions = ref<EditorRuntimeOptions>({
     theme: isDarkMode.value ? 'vs-dark' : 'vs',
     fontSize: 12,
@@ -56,59 +91,287 @@ const editorOptions = ref<EditorRuntimeOptions>({
     readOnly: false,
     folding: false,
     cursorStyle: 'line',
-    quickSuggestions: {
-        other: true,
-        comments: true,
-        strings: true
-    },
+    quickSuggestions: { other: true, comments: true, strings: true },
     overviewRulerBorder: false,
     renderLineHighlight: 'none',
-    domReadOnly: false,
+    domReadOnly: false
 });
 
-// 新建配置相关
-const newConfig = ref<Api.Game.KeyBindAddParams>({
-    configName: '',
-    configDesc: '',
-    keyConfigJson: '',
-    shareStatus: 0,
-});
+// ============================================================================
+// 工具函数
+// ============================================================================
 
-// 显示新建配置弹窗
-const showNewConfigModal = ref(false);
+/**
+ * 构建配置写入日志头部
+ */
+const buildLogHeader = (): string => {
+    const writeTime = dayjs().format('YYYY-MM-DD HH:mm:ss');
+    return `// ========================================
+// BaLauncher 按键绑定配置
+// 写入时间: ${writeTime}
+// ========================================
 
-// 打开新建配置弹窗
-const openNewConfigModal = () => {
-    newConfig.value.configName = '';
-    newConfig.value.configDesc = '';
+`;
+};
+
+/**
+ * 替换编辑器中的按键占位符
+ */
+const replaceKeyPlaceholders = (content: string): string => {
+    let result = content;
+    const sortedItems = [...keyBindItems.value].sort((a, b) => b.id - a.id);
+
+    sortedItems.forEach(item => {
+        if (item.key) {
+            const regex = new RegExp(`\\[按键(${item.id}):[^\\]]+\\]`, 'g');
+            result = result.replace(regex, item.key);
+        }
+    });
+
+    return result;
+};
+
+// ============================================================================
+// 配置管理
+// ============================================================================
+
+/**
+ * 打开新建配置弹窗
+ */
+const openNewConfigModalFn = () => {
+    newConfig.value = { configName: '', configDesc: '', keyConfigJson: '', shareStatus: 0 };
     showNewConfigModal.value = true;
 };
 
-// 关闭新建配置弹窗
-const closeNewConfigModal = () => {
+/**
+ * 关闭新建配置弹窗
+ */
+const closeNewConfigModalFn = () => {
     showNewConfigModal.value = false;
-    newConfig.value.configName = '';
-    newConfig.value.configDesc = '';
+    newConfig.value = { configName: '', configDesc: '', keyConfigJson: '', shareStatus: 0 };
 };
 
-// 创建新配置
-const createNewConfig = async () => {
+/**
+ * 创建新配置
+ */
+const createNewConfigFn = async () => {
     if (!newConfig.value.configName.trim()) {
         window.$message?.warning('请输入配置名称');
         return;
     }
+
     newConfig.value.keyConfigJson = editorValue.value;
     const { error } = await fetchAddKeyBind(newConfig.value);
+
     if (!error) {
         window.$message?.success('创建成功');
-        fetchLocalConfigLibrary();
-        fetchConfigLibrary();
+        await Promise.all([fetchLocalConfigLibrary(), fetchConfigLibrary()]);
     }
-    closeNewConfigModal();
+
+    closeNewConfigModalFn();
 };
 
-//处理按键事件
-const handleKeyDown = (e: KeyboardEvent) => {
+/**
+ * 切换标签页
+ */
+const handleTabChangeFn = async (value: 'library' | 'local' | 'user') => {
+    activeTab.value = value;
+    selectedConfig.value = null;
+    showPreview.value = false;
+    editorValue.value = '';
+    keyBindItems.value = [];
+    originalConfigContent.value = '';
+
+    if (value === 'local') {
+        try {
+            const paths = await window.ipcRenderer.invoke('auto-detect-paths');
+            if (paths.csgo2Path) {
+                const result = await window.ipcRenderer.invoke('read-autoexec-cfg', paths.csgo2Path);
+                if (result.success) {
+                    editorValue.value = result.content;
+                    showPreview.value = true;
+                    selectedConfig.value = {
+                        id: 0,
+                        nickName: '',
+                        avatar: '',
+                        configName: '',
+                        configDesc: '',
+                        keyConfigJson: '',
+                        shareStatus: 0,
+                        shareCount: 0,
+                        createBy: '',
+                        createTime: '',
+                        updateBy: '',
+                        updateTime: '',
+                        status: null
+                    };
+                }
+            }
+        } catch {
+            // 静默处理错误
+        }
+    }
+};
+
+/**
+ * 选择配置
+ */
+const handleConfigSelectFn = (config: Api.Game.KeyBindVO) => {
+    selectedConfig.value = config;
+    editorValue.value = config.keyConfigJson || '';
+    showPreview.value = false;
+    keyBindItems.value = [];
+    nextTick(() => parseEditorValueFn());
+};
+
+/**
+ * 删除配置
+ */
+const handleDeleteFn = (item: Api.Game.KeyBindVO) => {
+    window.$dialog?.warning({
+        title: '确认删除',
+        content: `确定删除 ${item.configName} 吗？`,
+        positiveText: '确认',
+        negativeText: '取消',
+        onPositiveClick: async () => {
+            if (activeTab.value === 'library') {
+                window.$message?.warning('公共配置库中的配置不能删除');
+                return;
+            }
+
+            const { error } = await fetchDeleteKeyBind(item.id);
+            if (!error) {
+                window.$message?.success('删除成功');
+                selectedConfig.value = null;
+                editorValue.value = '';
+                keyBindItems.value = [];
+                showPreview.value = false;
+                await fetchLocalConfigLibrary();
+            }
+        }
+    });
+};
+
+/**
+ * 分享配置
+ */
+const handleShareFn = async () => {
+    if (!selectedConfig.value) {
+        window.$message?.warning('请先选择配置');
+        return;
+    }
+
+    if (keyBindItems.value.length === 0) {
+        window.$message?.warning('请必须编写一个[按键序号:按键描述]绑定按键');
+        return;
+    }
+
+    const { error } = await fetchUpdateKeyBind({
+        id: selectedConfig.value.id,
+        shareStatus: 1
+    });
+
+    if (!error) {
+        selectedConfig.value.shareStatus = 1;
+        window.$message?.success('分享成功');
+        await Promise.all([fetchConfigLibrary(), fetchLocalConfigLibrary()]);
+    }
+};
+
+/**
+ * 保存配置
+ */
+const updateConfigFn = async () => {
+    if (!selectedConfig.value) {
+        window.$message?.warning('请选择要保存的配置');
+        return;
+    }
+
+    const { error } = await fetchUpdateKeyBind({
+        id: selectedConfig.value.id,
+        keyConfigJson: getReplacedConfigFn()
+    });
+
+    if (!error) {
+        window.$message?.success('保存成功');
+        await Promise.all([fetchLocalConfigLibrary(), fetchConfigLibrary()]);
+    }
+};
+
+// ============================================================================
+// 编辑器管理
+// ============================================================================
+
+/**
+ * 编辑器挂载回调
+ */
+const handleEditorMountFn = (editor: monaco.editor.IStandaloneCodeEditor) => {
+    monacoEditorInstance.value = editor;
+    nextTick(() => editor.layout());
+};
+
+/**
+ * 编辑器内容变更回调
+ */
+const handleEditorChangeFn = (value: string) => {
+    editorValue.value = value;
+    parseEditorValueFn();
+};
+
+/**
+ * 解析编辑器内容，提取按键绑定项
+ */
+const parseEditorValueFn = () => {
+    const content = editorValue.value;
+    const keyPattern = /\[(?:按键)?(\d+)(?::([^\]]+))?\]/g;
+    const matches = [...content.matchAll(keyPattern)];
+
+    const newKeyBindItems: LocalKeyBindItem[] = [];
+    const usedIds = new Set<number>();
+
+    matches.forEach((match) => {
+        const keyNum = parseInt(match[1]);
+        const description = match[2] || '';
+        if (!usedIds.has(keyNum)) {
+            usedIds.add(keyNum);
+            newKeyBindItems.push({ id: keyNum, key: '', description });
+        }
+    });
+
+    newKeyBindItems.sort((a, b) => a.id - b.id);
+
+    const existingKeys = new Map(
+        keyBindItems.value.map(item => [item.id, { key: item.key, description: item.description }])
+    );
+
+    newKeyBindItems.forEach(item => {
+        const existing = existingKeys.get(item.id);
+        if (existing) {
+            item.key = existing.key;
+            if (!item.description && existing.description) {
+                item.description = existing.description;
+            }
+        }
+    });
+
+    keyBindItems.value = newKeyBindItems;
+};
+
+/**
+ * 切换预览/编辑状态
+ */
+const handlePreviewToggleFn = () => {
+    showPreview.value = !showPreview.value;
+};
+
+// ============================================================================
+// 按键捕获
+// ============================================================================
+
+/**
+ * 处理按键按下事件
+ */
+const handleKeyDownFn = (e: KeyboardEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -127,223 +390,58 @@ const handleKeyDown = (e: KeyboardEvent) => {
                 item.key = capturedKey.value;
             }
         }
-        closeKeyCapture();
+
+        closeKeyCaptureFn();
     }
 };
-//打开按键捕获弹窗
-const openKeyCapture = (item: Api.Game.KeyBindItem) => {
+
+/**
+ * 打开按键捕获弹窗
+ */
+const openKeyCaptureFn = (item: Api.Game.LocalKeyBindItem) => {
     currentEditItemId.value = item.id;
     capturedKey.value = item.key;
     showKeyCaptureModal.value = true;
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDownFn);
 };
 
-//关闭按键捕获弹窗
-const closeKeyCapture = () => {
+/**
+ * 关闭按键捕获弹窗
+ */
+const closeKeyCaptureFn = () => {
     showKeyCaptureModal.value = false;
     currentEditItemId.value = null;
-    window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('keydown', handleKeyDownFn);
 };
 
-//返回工具箱
-const handleBack = () => {
-    emit('back');
-};
+// ============================================================================
+// 配置应用
+// ============================================================================
 
-// 切换配置库
-const handleTabChange = async (value: 'library' | 'local' | 'user') => {
-    activeTab.value = value;
-    selectedConfig.value = null;
-    showPreview.value = false;
-    editorValue.value = '';
-    keyBindItems.value = [];
-
-    if (value === 'local') {
-        try {
-            const paths = await window.ipcRenderer.invoke('auto-detect-paths');
-            if (paths.csgo2Path) {
-                const result = await window.ipcRenderer.invoke('read-autoexec-cfg', paths.csgo2Path);
-                if (result.success) {
-                    editorValue.value = result.content;
-                    showPreview.value = true;
-                    selectedConfig.value = {
-                        id: 0,
-                        /** 发布人名称 */
-                        nickName: '',
-                        /** 发布人头像 */
-                        avatar: '',
-                        /** 配置名称（便于用户区分） */
-                        configName: '',
-                        /** 配置描述（可选） */
-                        configDesc: '',
-                        /** 按键配置JSON字符串 */
-                        keyConfigJson: '',
-                        /** 分享状态(0:未分享,1:已分享,2:已取消) */
-                        shareStatus: 0,
-                        /** 配置被分享/使用次数 */
-                        shareCount: 0,
-                        /** record creator */
-                        createBy: '',
-                        /** record create time */
-                        createTime: '',
-                        /** record updater */
-                        updateBy: '',
-                        /** record update time */
-                        updateTime: '',
-                        /** record status */
-                        status: null,
-                    }
-                    nextTick(() => {
-                        parseEditorValue();
-                    });
-                }
-            }
-        } catch (error) {
-            console.error('读取本地配置失败:', error);
-        }
-    }
-};
-
-// 选择配置
-const handleConfigSelect = (config: Api.Game.KeyBindVO) => {
-    selectedConfig.value = config;
-    editorValue.value = config.keyConfigJson || '';
-    showPreview.value = false;
-    keyBindItems.value = [];
-    nextTick(() => {
-        parseEditorValue();
-    });
-};
-
-// 切换预览状态
-const handlePreviewToggle = () => {
-    showPreview.value = !showPreview.value;
-};
-
-// 分享配置
-const handleShare = async () => {
-    if (!selectedConfig.value) {
-        window.$message?.warning('请先选择配置');
-        return;
+/**
+ * 生成替换后的最终配置
+ */
+const getReplacedConfigFn = (): string => {
+    if (activeTab.value === 'local') {
+        return editorValue.value;
     }
 
-    const emptyKeyItem = keyBindItems.value.find(item => !item.key || item.key.trim() === '');
-    if (emptyKeyItem || keyBindItems.value.length === 0) {
-        window.$message?.warning(`请编辑配置如 [键1] 设置绑定按键`);
-        return;
-    }
+    const content = replaceKeyPlaceholders(editorValue.value);
+    const logHeader = buildLogHeader();
 
-    const { error } = await fetchUpdateKeyBind({
-        id: selectedConfig.value.id,
-        shareStatus: 1,
-    });
-
-    if (!error) {
-        selectedConfig.value.shareStatus = 1;
-        window.$message?.success('分享成功');
-        await fetchConfigLibrary();
-        await fetchLocalConfigLibrary();
-    }
+    return originalConfigContent.value
+        ? originalConfigContent.value + '\n' + logHeader + content
+        : logHeader + content;
 };
 
-// 编辑器挂载时布局
-const handleEditorMount = (editor: monaco.editor.IStandaloneCodeEditor) => {
-    nextTick(() => {
-        editor.layout();
-    });
-};
-
-// 获取公共配置库
-const fetchConfigLibrary = async () => {
-    const { error, data } = await fetchGetAllSharedKeyBinds();
-    if (!error) {
-        configLibraryItems.value = data || [];
-    }
-    console.log('configLibraryItems.value:', configLibraryItems.value);
-};
-
-// 获取个人配置库
-const fetchLocalConfigLibrary = async () => {
-    const { error, data } = await fetchGetMyKeyBinds();
-    if (!error) {
-        localConfigItems.value = data || [];
-    }
-    console.log('localConfigItems.value:', localConfigItems.value);
-};
-
-// 删除配置
-const handleDelete = async (item: Api.Game.KeyBindVO) => {
-    // 添加一个确认删除提升
-    window.$dialog?.warning({
-        title: '确认删除',
-        content: `确定删除 ${item.configName} 吗？`,
-        positiveText: '确认',
-        negativeText: '取消',
-        onPositiveClick: async () => {
-            if (activeTab.value === 'library') {
-                window.$message?.warning('公共配置库中的配置不能删除');
-                return;
-            }
-            const { error } = await fetchDeleteKeyBind(item.id);
-            if (!error) {
-                window.$message?.success('删除成功');
-                selectedConfig.value = null;
-                editorValue.value = '';
-                keyBindItems.value = [];
-                showPreview.value = false;
-                nextTick(() => {
-                    parseEditorValue();
-                });
-                fetchLocalConfigLibrary();
-            }
-        }
-    });
-};
-
-// 编辑器内容改变时触发
-const handleEditorChange = (value: string) => {
-    editorValue.value = value;
-    parseEditorValue();
-};
-
-// 解析编辑器内容
-const parseEditorValue = () => {
-    const content = editorValue.value;
-    console.log('parseEditorValue called with content:', content);
-    const keyPattern = /\[(?:按键)?(\d+)\]/g;
-    const matches = [...content.matchAll(keyPattern)];
-    console.log('matches:', matches);
-
-    const newKeyBindItems: Api.Game.KeyBindItem[] = [];
-    const usedIds = new Set<number>();
-
-    matches.forEach((match) => {
-        const keyNum = parseInt(match[1]);
-        if (!usedIds.has(keyNum)) {
-            usedIds.add(keyNum);
-            newKeyBindItems.push({
-                id: keyNum,
-                key: '',
-            });
-        }
-    });
-
-    newKeyBindItems.sort((a, b) => a.id - b.id);
-
-    const existingKeys = new Map(keyBindItems.value.map(item => [item.id, item.key]));
-    newKeyBindItems.forEach(item => {
-        if (existingKeys.has(item.id)) {
-            item.key = existingKeys.get(item.id)!;
-        }
-    });
-    keyBindItems.value = newKeyBindItems;
-};
-
-// 应用按键绑定
-const applyKeyBinds = async () => {
+/**
+ * 应用按键绑定配置
+ */
+const applyKeyBindsFn = async () => {
     const emptyKeyItem = keyBindItems.value.find(item => !item.key || item.key.trim() === '');
     if (emptyKeyItem) {
-        window.$message?.warning(`请先设置 [按键${emptyKeyItem.id}] 的按键`);
+        const label = emptyKeyItem.description || `按键${emptyKeyItem.id}`;
+        window.$message?.warning(`请先设置 [${label}] 的按键`);
         return;
     }
 
@@ -354,60 +452,81 @@ const applyKeyBinds = async () => {
             return;
         }
 
-        const content = getReplacedConfig();
+        originalConfigContent.value = '';
+        if (activeTab.value !== 'local') {
+            const readResult = await window.ipcRenderer.invoke('read-autoexec-cfg', paths.csgo2Path);
+            if (readResult.success) {
+                originalConfigContent.value = readResult.content;
+            }
+        }
+
+        const content = getReplacedConfigFn();
         const result = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, content);
 
         if (result.success) {
             if (activeTab.value === 'library' && selectedConfig.value) {
                 await fetchIncrementUseCount(selectedConfig.value.id);
-                await fetchConfigLibrary();
-                await fetchLocalConfigLibrary();
+                await Promise.all([fetchConfigLibrary(), fetchLocalConfigLibrary()]);
             }
-            window.$message?.success(`保存成功`);
+            window.$message?.success('保存成功');
         } else {
-            window.$message?.error(`保存失败`);
+            window.$message?.error('保存失败');
         }
-    } catch (error) {
+    } catch {
         window.$message?.error('配置写入失败');
     }
 };
 
-// 生成替换后的配置
-const getReplacedConfig = () => {
-    let content = editorValue.value;
-    keyBindItems.value.forEach(item => {
-        if (item.key) {
-            const keyPattern1 = new RegExp(`\\[键${item.id}\\]`, 'g');
-            const keyPattern2 = new RegExp(`\\[${item.id}\\]`, 'g');
-            content = content.replace(keyPattern1, item.key);
-            content = content.replace(keyPattern2, item.key);
-        }
-    });
-    return content;
-};
+// ============================================================================
+// 数据获取
+// ============================================================================
 
-// 保存配置
-const updateConfig = async () => {
-    if (!selectedConfig.value) {
-        window.$message?.warning('请选择要保存的配置');
-        return;
-    }
-
-    const { error } = await fetchUpdateKeyBind({
-        id: selectedConfig.value.id,
-        keyConfigJson: getReplacedConfig(),
-    });
-
+/**
+ * 获取公共配置库
+ */
+const fetchConfigLibrary = async () => {
+    const { error, data } = await fetchGetAllSharedKeyBinds();
     if (!error) {
-        window.$message?.success('保存成功');
-        fetchLocalConfigLibrary();
-        fetchConfigLibrary();
+        configLibraryItems.value = data || [];
     }
 };
 
+/**
+ * 获取个人配置库
+ */
+const fetchLocalConfigLibrary = async () => {
+    const { error, data } = await fetchGetMyKeyBinds();
+    if (!error) {
+        localConfigItems.value = data || [];
+    }
+};
+
+/**
+ * 返回工具箱
+ */
+const handleBackFn = () => emit('back');
+
+// ============================================================================
+// 监听与生命周期
+// ============================================================================
+
+/**
+ * 监听编辑器内容变化，同步到编辑器实例
+ */
+watch(editorValue, (newValue) => {
+    if (monacoEditorInstance.value) {
+        const currentValue = monacoEditorInstance.value.getValue();
+        if (currentValue !== newValue) {
+            monacoEditorInstance.value.setValue(newValue);
+        }
+    }
+});
+
+/**
+ * 组件挂载时初始化
+ */
 onMounted(() => {
-    fetchConfigLibrary();
-    fetchLocalConfigLibrary();
+    Promise.all([fetchConfigLibrary(), fetchLocalConfigLibrary()]);
 });
 </script>
 
@@ -418,21 +537,22 @@ onMounted(() => {
                 <SvgIcon icon="material-symbols:keyboard-alt-outline" class="title-icon" />
                 <h1 class="page-title">按键绑定配置</h1>
             </div>
-            <div class="back-btn" @click="handleBack">
+            <div class="back-btn" @click="handleBackFn">
                 <SvgIcon icon="material-symbols:arrow-back" class="back-icon" />
                 <span>返回工具箱</span>
             </div>
         </div>
+
         <div class="main-content">
             <div class="left-panel">
                 <NCard class="panel-card" content-style="padding: 0;" content-class="overflow-y-auto" :bordered="false">
-                    <NTabs v-model:value="activeTab" type="line" @update:value="handleTabChange">
+                    <NTabs v-model:value="activeTab" type="line" @update:value="handleTabChangeFn">
                         <NTabPane name="library" tab="配置库">
                             <div class="config-list">
                                 <NList>
                                     <NListItem v-for="item in configLibraryItems" :key="item.id"
                                         :class="{ 'config-item': true, 'active': selectedConfig?.id === item.id }"
-                                        @click="handleConfigSelect(item)">
+                                        @click="handleConfigSelectFn(item)">
                                         <div class="config-item-content">
                                             <div class="config-avatar">
                                                 <img :src="item.avatar" :alt="item.nickName" />
@@ -455,10 +575,11 @@ onMounted(() => {
                                 </NList>
                             </div>
                         </NTabPane>
+
                         <NTabPane name="user" tab="个人配置">
                             <div class="config-list">
                                 <div class="add-config-btn">
-                                    <NButton type="primary" ghost block @click="openNewConfigModal">
+                                    <NButton type="primary" ghost block @click="openNewConfigModalFn">
                                         <template #icon>
                                             <SvgIcon icon="material-symbols:add" />
                                         </template>
@@ -468,7 +589,7 @@ onMounted(() => {
                                 <NList>
                                     <NListItem v-for="item in localConfigItems" :key="item.id"
                                         :class="{ 'config-item': true, 'active': selectedConfig?.id === item.id }"
-                                        @click="handleConfigSelect(item)">
+                                        @click="handleConfigSelectFn(item)">
                                         <div class="config-item-content">
                                             <div class="config-avatar">
                                                 <img :src="item.avatar" :alt="item.nickName" />
@@ -487,7 +608,7 @@ onMounted(() => {
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="config-actions" @click="handleDelete(item)">
+                                            <div class="config-actions" @click.stop="handleDeleteFn(item)">
                                                 <SvgIcon icon="material-symbols:delete-outline" class="more-icon" />
                                             </div>
                                         </div>
@@ -495,11 +616,12 @@ onMounted(() => {
                                 </NList>
                             </div>
                         </NTabPane>
-                        <NTabPane name="local" tab="本地预览">
-                        </NTabPane>
+
+                        <NTabPane name="local" tab="本地预览" />
                     </NTabs>
                 </NCard>
             </div>
+
             <div class="right-panel">
                 <NCard class="panel-card editor-card" content-style="padding: 20px;" content-class="overflow-y-auto"
                     :bordered="false">
@@ -508,37 +630,42 @@ onMounted(() => {
                             <SvgIcon icon="material-symbols:edit-square-outline" class="editor-icon" />
                             <span class="font-size-16px">配置编辑器</span>
                         </div>
+
                         <div class="flex" v-if="selectedConfig">
-                            <NButton class="mr-5px" size="small" ghost @click="handlePreviewToggle"
+                            <NButton class="mr-5px" size="small" ghost @click="handlePreviewToggleFn"
                                 v-show="showPreview">
                                 <template #icon>
                                     <SvgIcon icon="material-symbols:visibility" />
                                 </template>
                                 预览
                             </NButton>
-                            <NButton class="mr-5px" size="small" ghost @click="handlePreviewToggle"
+
+                            <NButton class="mr-5px" size="small" ghost @click="handlePreviewToggleFn"
                                 v-show="!showPreview">
                                 <template #icon>
                                     <SvgIcon icon="material-symbols:edit-square-outline" />
                                 </template>
                                 编辑
                             </NButton>
-                            <NButton class="mr-5px" size="small" ghost @click="handleShare"
+
+                            <NButton class="mr-5px" size="small" ghost @click="handleShareFn"
                                 v-show="!showPreview && selectedConfig && activeTab === 'user' && selectedConfig.shareStatus === 0">
                                 <template #icon>
                                     <SvgIcon icon="material-symbols:share" />
                                 </template>
                                 分享
                             </NButton>
-                            <NButton class="mr-5px" type="info" size="small" ghost @click="updateConfig"
+
+                            <NButton class="mr-5px" type="info" size="small" ghost @click="updateConfigFn"
                                 v-show="activeTab === 'user' && selectedConfig">
                                 <template #icon>
                                     <SvgIcon icon="material-symbols:save" />
                                 </template>
                                 保存
                             </NButton>
+
                             <NButton v-show="selectedConfig || activeTab === 'local'" class="mr-5px" type="primary"
-                                size="small" ghost @click="applyKeyBinds">
+                                size="small" ghost @click="applyKeyBindsFn">
                                 <template #icon>
                                     <SvgIcon icon="material-symbols:check-circle-outline" />
                                 </template>
@@ -546,13 +673,15 @@ onMounted(() => {
                             </NButton>
                         </div>
                     </div>
+
                     <div class="editor-content">
-                        <div class="editor-placeholder" v-if="!selectedConfig">
+                        <div class="editor-placeholder" v-if="!selectedConfig && activeTab !== 'local'">
                             <SvgIcon icon="material-symbols:arrow-downward" class="placeholder-icon" />
                             <p>请从左侧选择一个配置进行编辑</p>
                         </div>
+
                         <div class="editor-active" v-else>
-                            <div v-show="!showPreview" class="key-bind-section">
+                            <div v-show="!showPreview && activeTab !== 'local'" class="key-bind-section">
                                 <NGrid x-gap="12" y-gap="12" :cols="3">
                                     <NGridItem v-for="item in keyBindItems" :key="item.id">
                                         <div class="key-bind-card">
@@ -560,32 +689,30 @@ onMounted(() => {
                                                 <div class="key-label">
                                                     <SvgIcon icon="material-symbols:keyboard-alt-outline"
                                                         class="key-label-icon" />
-                                                    <span>按键{{ item.id }}</span>
+                                                    <span>{{ item.description || `按键${item.id}` }}</span>
                                                 </div>
                                             </div>
-                                            <div class="key-bind-card-body">
-                                                <NButton class="key-set-btn" @click="openKeyCapture(item)">
-                                                    <template #icon>
-                                                        <SvgIcon icon="material-symbols:edit" />
-                                                    </template>
+                                            <div class="key-bind-card-body ">
+                                                <NButton ghost type="info" class="rounded-5px"
+                                                    @click="openKeyCaptureFn(item)">
                                                     <span>{{ item.key || '点击设置' }}</span>
                                                 </NButton>
                                             </div>
                                         </div>
-
                                     </NGridItem>
                                 </NGrid>
                             </div>
                             <div v-if="showPreview" class="monaco-editor">
-                                <MonacoEditor ref="editorRef" style="height: 100%;width: 100%;" :options="editorOptions"
-                                    :model-value="editorValue" @mount="handleEditorMount"
-                                    @update:model-value="handleEditorChange" />
+                                <MonacoEditor ref="editorRef" style="height: 100%; width: 100%;"
+                                    :options="editorOptions" :model-value="editorValue" @mount="handleEditorMountFn"
+                                    @update:model-value="handleEditorChangeFn" />
                             </div>
                         </div>
                     </div>
                 </NCard>
             </div>
         </div>
+
         <NModal v-model:show="showKeyCaptureModal" preset="card" class="w-420px rounded-20px" :bordered="false"
             :closable="false" size="small">
             <div class="key-capture-modal">
@@ -597,6 +724,7 @@ onMounted(() => {
                 <div class="capture-hint">支持组合键：Ctrl+、Shift+、Alt+</div>
             </div>
         </NModal>
+
         <NModal v-model:show="showNewConfigModal" preset="card" class="w-460px rounded-10px" :bordered="false"
             :closable="false" size="small">
             <template #header>
@@ -614,8 +742,8 @@ onMounted(() => {
                 </NFormItem>
             </NForm>
             <template #footer>
-                <NButton class="mr-20px rounded-10px" ghost @click="closeNewConfigModal">取消</NButton>
-                <NButton class="rounded-10px" type="info" @click="createNewConfig">创建</NButton>
+                <NButton class="mr-20px rounded-10px" ghost @click="closeNewConfigModalFn">取消</NButton>
+                <NButton class="rounded-10px" type="info" @click="createNewConfigFn">创建</NButton>
             </template>
         </NModal>
     </div>
@@ -649,7 +777,6 @@ onMounted(() => {
 
         .panel-card {
             background: #ffffff;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
 
         .config-item {
@@ -726,12 +853,10 @@ onMounted(() => {
             &:hover {
                 background: #f8f9ff;
                 border-color: #667eea;
-                box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
             }
 
             &.deleting {
                 border-color: #f5576c;
-                box-shadow: 0 0 15px rgba(245, 87, 108, 0.5);
             }
         }
 
@@ -742,17 +867,6 @@ onMounted(() => {
 
         .key-label {
             color: #1a1a1a;
-        }
-
-        .key-set-btn {
-            background: rgba(0, 0, 0, 0.02);
-            border-color: rgba(0, 0, 0, 0.1);
-            color: #1a1a1a;
-
-            &:hover {
-                background: rgba(102, 126, 234, 0.1);
-                border-color: #667eea;
-            }
         }
 
         .key-capture-modal {
@@ -857,7 +971,6 @@ onMounted(() => {
     flex-direction: column;
     background: rgba(255, 255, 255, 0.03);
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     backdrop-filter: blur(10px);
     overflow: hidden;
 
@@ -931,7 +1044,6 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 
     .n-icon {
         font-size: 24px;
@@ -1123,12 +1235,10 @@ onMounted(() => {
     &:hover {
         background: rgba(102, 126, 234, 0.08);
         border-color: rgba(102, 126, 234, 0.3);
-        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
     }
 
     &.deleting {
         border-color: #f5576c !important;
-        box-shadow: 0 0 20px rgba(245, 87, 108, 0.6);
         animation: deletePulse 0.3s ease-in-out;
     }
 }
@@ -1175,27 +1285,9 @@ onMounted(() => {
 }
 
 .key-bind-card-body {
+    display: flex;
+    justify-content: center;
     padding: 20px;
-}
-
-.key-set-btn {
-    width: 100%;
-    padding: 14px 20px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    font-size: 15px;
-    font-weight: 500;
-    color: #ffffff;
-    transition: all 0.3s ease;
-    gap: 10px;
-
-    &:hover {
-        background: rgba(102, 126, 234, 0.15);
-        border-color: #667eea;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
-    }
 }
 
 .delete-icon {
@@ -1210,20 +1302,17 @@ onMounted(() => {
     border-radius: 12px;
     overflow: hidden;
 
-    /* 1. 屏蔽编辑器容器所有状态的阴影和边框（核心） */
     :deep(.custom-monaco-editor) {
         outline: none !important;
         border: none !important;
         box-shadow: none !important;
     }
 
-    /* 2. 屏蔽 Monaco 编辑器内部所有焦点/激活状态的阴影 */
     :deep(.monaco-editor) {
         outline: none !important;
         box-shadow: none !important;
     }
 
-    /* 3. 屏蔽聚焦/激活状态的阴影（最关键，针对点击触发的阴影） */
     :deep(.monaco-editor:focus),
     :deep(.monaco-editor:focus-within),
     :deep(.custom-monaco-editor:focus),
@@ -1232,10 +1321,8 @@ onMounted(() => {
         border: none !important;
         box-shadow: none !important;
         -webkit-box-shadow: none !important;
-        /* 兼容webkit内核浏览器（Chrome/Safari） */
     }
 
-    /* 4. 兜底：屏蔽编辑器内部所有子元素的阴影 */
     :deep(.monaco-editor *) {
         box-shadow: none !important;
         outline: none !important;
@@ -1267,7 +1354,6 @@ onMounted(() => {
 
     &.capturing {
         border-color: #667eea;
-        box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
         animation: pulse 1.5s infinite;
     }
 }
@@ -1293,11 +1379,11 @@ onMounted(() => {
 
     0%,
     100% {
-        box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        opacity: 1;
     }
 
     50% {
-        box-shadow: 0 0 40px rgba(102, 126, 234, 0.6);
+        opacity: 0.7;
     }
 }
 
