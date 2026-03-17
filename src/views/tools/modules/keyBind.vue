@@ -47,23 +47,205 @@ const isDarkMode = computed(() => themeStore.darkMode);
 
 /** UI 状态 */
 const activeTab = ref<'library' | 'local' | 'user'>('library');
-const showPreview = ref(false);
-const showKeyCaptureModal = ref(false);
-const showNewConfigModal = ref(false);
-const showTutorialModal = ref(false);
+const selectedSystemConfig = ref<string | null>(null);
+const showKeyCaptureModal = ref<boolean>(false);
+const showNewConfigModal = ref<boolean>(false);
+const showTutorialModal = ref<boolean>(false);
 
 /** 编辑器相关 */
 const editorRef = ref();
 const monacoEditorInstance = ref<monaco.editor.IStandaloneCodeEditor | null>(null);
-const editorValue = ref('');
+const editorValue = ref<string>('');
 
 /** 按键绑定相关 */
 type LocalKeyBindItem = { id: number; key: string; description: string; };
 const keyBindItems = ref<LocalKeyBindItem[]>([]);
 const currentEditItemId = ref<number | null>(null);
-const capturedKey = ref('');
+const capturedKey = ref<string>('');
+
+import Gun from '@/assets/imgs/tool/gun.png';
+import Grenade from '@/assets/imgs/tool/grenade.png';
+import AK47 from '@/assets/imgs/weapon/AK47.png';
+import AUG from '@/assets/imgs/weapon/AUG.png';
+import CZ75 from '@/assets/imgs/weapon/CZ75.png';
+import FAMAS from '@/assets/imgs/weapon/FAMAS.png';
+import G3SG1 from '@/assets/imgs/weapon/G3SG1.png';
+import M249 from '@/assets/imgs/weapon/M249.png';
+import M4A4 from '@/assets/imgs/weapon/M4A4.png';
+import MAC10 from '@/assets/imgs/weapon/MAC-10.png';
+import MP7 from '@/assets/imgs/weapon/MP7.png';
+import P250 from '@/assets/imgs/weapon/P250.png';
+import R8 from '@/assets/imgs/weapon/R8.png';
+import SCAR20 from '@/assets/imgs/weapon/SCAR-20.png';
+import SG553 from '@/assets/imgs/weapon/SG553.png';
+import USP from '@/assets/imgs/weapon/USP.png';
+import MP5 from '@/assets/imgs/weapon/mp5.png';
+import Negev from '@/assets/imgs/weapon/内格夫.png';
+import DualBerettas from '@/assets/imgs/weapon/双枪.png';
+import Glock from '@/assets/imgs/weapon/格洛克.png';
+import Deagle from '@/assets/imgs/weapon/沙鹰.png';
+import Scout from '@/assets/imgs/weapon/鸟狙.png';
+import MP9 from '@/assets/imgs/weapon/MP9.png';
+import AWP from '@/assets/imgs/weapon/AWP.png';
+
+
 
 /** 配置库相关 */
+const systemLibraryItems = ref<Api.Game.SystemBindVO[]>([
+    {
+        systemName: '武器类',
+        systemIcon: Gun,
+        configName: '武器类',
+        configDesc: 'CSGO2 通用武器配置cfg',
+    },
+    {
+        systemName: '道具类',
+        systemIcon: Grenade,
+        configName: '道具类',
+        configDesc: 'CSGO2 通用道具配置cfg',
+    }
+]);
+//系统武器配置库
+const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
+    {
+        systemName: 'MP9',
+        systemIcon: MP9,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'MP7',
+        systemIcon: MP7,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'MP5',
+        systemIcon: MP5,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'MAC10',
+        systemIcon: MAC10,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'M249',
+        systemIcon: M249,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: '内格夫',
+        systemIcon: Negev,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'AK47',
+        systemIcon: AK47,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'M4A1',
+        systemIcon: M4A4,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: '法玛斯',
+        systemIcon: FAMAS,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'SG553',
+        systemIcon: SG553,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'AUG',
+        systemIcon: AUG,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: '鸟狙',
+        systemIcon: Scout,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'AWP',
+        systemIcon: AWP,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'G3SG1',
+        systemIcon: G3SG1,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'SCAR20',
+        systemIcon: SCAR20,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: '沙鹰',
+        systemIcon: Deagle,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'R8',
+        systemIcon: R8,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: '格洛克',
+        systemIcon: Glock,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: '双枪',
+        systemIcon: DualBerettas,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'USP',
+        systemIcon: USP,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: '格洛克',
+        systemIcon: Glock,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'P250',
+        systemIcon: P250,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+    {
+        systemName: 'CZ-75',
+        systemIcon: CZ75,
+        keyConfigJson: '',
+        keyReplaceJson: '',
+    },
+]);
 const configLibraryItems = ref<Api.Game.KeyBindList>([]);
 const localConfigItems = ref<Api.Game.KeyBindList>([]);
 const selectedConfig = ref<Api.Game.KeyBindVO | null>(null);
@@ -79,22 +261,39 @@ const newConfig = ref<Api.Game.KeyBindAddParams>({
 
 /** 编辑器选项 */
 const editorOptions = ref<EditorRuntimeOptions>({
+    // 主题适配暗黑/亮色模式
     theme: isDarkMode.value ? 'vs-dark' : 'vs',
-    fontSize: 12,
-    lineNumbers: 'off',
+    // 字体大小调大一点，长时间编辑更舒适
+    fontSize: 14,
+    // 显示行号（cfg文件调试时行号很重要）
+    lineNumbers: 'on',
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
     automaticLayout: true,
-    wordWrap: 'on',
-    tabSize: 2,
+    // cfg文件通常是单行命令，关闭自动换行
+    wordWrap: 'off',
+    // CS2 cfg标准缩进为4个空格
+    tabSize: 4,
     insertSpaces: true,
     readOnly: false,
-    folding: false,
+    // 开启代码折叠（cfg文件可以按区块折叠）
+    folding: true,
     cursorStyle: 'line',
+    // 增强自动提示（对cfg命令补全很有用）
     quickSuggestions: { other: true, comments: true, strings: true },
     overviewRulerBorder: false,
-    renderLineHighlight: 'none',
-    domReadOnly: false
+    // 高亮当前行（方便定位）
+    renderLineHighlight: 'line',
+    domReadOnly: false,
+    // ========== CS2 CFG 专属配置 ==========
+    // 优化行高，提升可读性
+    lineHeight: 20,
+    // 触发字符时显示建议（如输入bind时）
+    suggestOnTriggerCharacters: true,
+    // 匹配括号高亮（cfg中的{} []）
+    matchBrackets: 'always',
+    // 括号对颜色区分
+    bracketPairColorization: { enabled: true },
 });
 
 // ============================================================================
@@ -134,15 +333,6 @@ const replaceKeyPlaceholders = (content: string): string => {
 // ============================================================================
 // 配置管理
 // ============================================================================
-
-/**
- * 打开新建配置弹窗
- */
-const openNewConfigModalFn = () => {
-    newConfig.value = { configName: '', configDesc: '', keyConfigJson: '', shareStatus: 0 };
-    showNewConfigModal.value = true;
-};
-
 /**
  * 打开教程弹窗
  */
@@ -183,146 +373,6 @@ const createNewConfigFn = async () => {
  */
 const handleTabChangeFn = async (value: 'library' | 'local' | 'user') => {
     activeTab.value = value;
-    selectedConfig.value = null;
-    showPreview.value = false;
-    editorValue.value = '';
-    keyBindItems.value = [];
-    originalConfigContent.value = '';
-
-    if (value === 'local') {
-        try {
-            const paths = await window.ipcRenderer.invoke('auto-detect-paths');
-            if (paths.csgo2Path) {
-                const result = await window.ipcRenderer.invoke('read-autoexec-cfg', paths.csgo2Path);
-                if (result.success) {
-                    editorValue.value = result.content;
-                    showPreview.value = true;
-                    selectedConfig.value = {
-                        id: 0,
-                        nickName: '',
-                        avatar: '',
-                        configName: '',
-                        configDesc: '',
-                        keyConfigJson: '',
-                        shareStatus: 0,
-                        shareCount: 0,
-                        createBy: '',
-                        createTime: '',
-                        updateBy: '',
-                        updateTime: '',
-                        status: null
-                    };
-                }
-            }
-        } catch {
-            // 静默处理错误
-        }
-    }
-};
-
-/**
- * 选择配置
- */
-const handleConfigSelectFn = (config: Api.Game.KeyBindVO) => {
-    selectedConfig.value = config;
-    editorValue.value = config.keyConfigJson || '';
-    showPreview.value = false;
-    keyBindItems.value = [];
-    nextTick(() => parseEditorValueFn());
-};
-
-/**
- * 删除配置
- */
-const handleDeleteFn = (item: Api.Game.KeyBindVO) => {
-    window.$dialog?.warning({
-        title: '确认删除',
-        content: `确定删除 ${item.configName} 吗？`,
-        positiveText: '确认',
-        negativeText: '取消',
-        onPositiveClick: async () => {
-            if (activeTab.value === 'library') {
-                window.$message?.warning('公共配置库中的配置不能删除');
-                return;
-            }
-
-            const { error } = await fetchDeleteKeyBind(item.id);
-            if (!error) {
-                window.$message?.success('删除成功');
-                selectedConfig.value = null;
-                editorValue.value = '';
-                keyBindItems.value = [];
-                showPreview.value = false;
-                await fetchLocalConfigLibrary();
-            }
-        }
-    });
-};
-
-/**
- * 分享配置
- */
-const handleShareFn = async () => {
-    if (!selectedConfig.value) {
-        window.$message?.warning('请先选择配置');
-        return;
-    }
-
-    if (keyBindItems.value.length === 0) {
-        window.$message?.warning('请必须编写一个[按键序号:按键描述]绑定按键');
-        return;
-    }
-
-    const { error } = await fetchUpdateKeyBind({
-        id: selectedConfig.value.id,
-        shareStatus: 1
-    });
-
-    if (!error) {
-        selectedConfig.value.shareStatus = 1;
-        window.$message?.success('分享成功');
-        await Promise.all([fetchConfigLibrary(), fetchLocalConfigLibrary()]);
-    }
-};
-
-/**
- * 保存配置
- */
-const updateConfigFn = async () => {
-    if (!selectedConfig.value) {
-        window.$message?.warning('请选择要保存的配置');
-        return;
-    }
-
-    const { error } = await fetchUpdateKeyBind({
-        id: selectedConfig.value.id,
-        keyConfigJson: editorValue.value
-    });
-
-    if (!error) {
-        window.$message?.success('保存成功');
-        await Promise.all([fetchLocalConfigLibrary(), fetchConfigLibrary()]);
-    }
-};
-
-// ============================================================================
-// 编辑器管理
-// ============================================================================
-
-/**
- * 编辑器挂载回调
- */
-const handleEditorMountFn = (editor: monaco.editor.IStandaloneCodeEditor) => {
-    monacoEditorInstance.value = editor;
-    nextTick(() => editor.layout());
-};
-
-/**
- * 编辑器内容变更回调
- */
-const handleEditorChangeFn = (value: string) => {
-    editorValue.value = value;
-    parseEditorValueFn();
 };
 
 /**
@@ -362,13 +412,6 @@ const parseEditorValueFn = () => {
     });
 
     keyBindItems.value = newKeyBindItems;
-};
-
-/**
- * 切换预览/编辑状态
- */
-const handlePreviewToggleFn = () => {
-    showPreview.value = !showPreview.value;
 };
 
 // ============================================================================
@@ -548,9 +591,9 @@ onMounted(() => {
     <div class="key-bind-container" :class="{ 'light-mode': !isDarkMode }">
         <div class="header-section">
             <div class="title-section">
-                <SvgIcon icon="material-symbols:keyboard-alt-outline" class="title-icon" />
+                <SvgIcon icon="material-symbols:keyboard-alt-outline" />
                 <h1 class="page-title">按键绑定配置</h1>
-                <div class="cursor-pointer help-icon" @click="openTutorialModalFn">
+                <div class="cursor-pointer font-size-24px" @click="openTutorialModalFn">
                     <SvgIcon icon="line-md:question-circle" />
                 </div>
             </div>
@@ -561,174 +604,63 @@ onMounted(() => {
         </div>
 
         <div class="main-content">
-            <div class="left-panel">
-                <NCard class="panel-card" content-style="padding: 0;" content-class="overflow-y-auto" :bordered="false">
-                    <NTabs v-model:value="activeTab" type="line" @update:value="handleTabChangeFn">
-                        <NTabPane name="library" tab="配置库">
-                            <div class="config-list">
-                                <NList>
-                                    <NListItem v-for="item in configLibraryItems" :key="item.id"
-                                        :class="{ 'config-item': true, 'active': selectedConfig?.id === item.id }"
-                                        @click="handleConfigSelectFn(item)">
-                                        <div class="config-item-content">
-                                            <div class="config-avatar">
-                                                <img :src="item.avatar" :alt="item.nickName" />
-                                            </div>
-                                            <div class="config-info">
-                                                <div class="config-name">{{ item.configName }}</div>
-                                                <div class="config-meta-row">
-                                                    <div class="config-meta-item">
-                                                        <SvgIcon icon="material-symbols:person" class="meta-icon" />
-                                                        <span>{{ item.nickName }}</span>
-                                                    </div>
-                                                    <div class="config-meta-item">
-                                                        <SvgIcon icon="material-symbols:download" class="meta-icon" />
-                                                        <span>{{ item.shareCount }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </NListItem>
-                                </NList>
-                            </div>
-                        </NTabPane>
-
-                        <NTabPane name="user" tab="个人配置">
-                            <div class="config-list">
-                                <div class="add-config-btn">
-                                    <NButton type="primary" ghost block @click="openNewConfigModalFn">
-                                        <template #icon>
-                                            <SvgIcon icon="material-symbols:add" />
-                                        </template>
-                                        新建配置
-                                    </NButton>
-                                </div>
-                                <NList>
-                                    <NListItem v-for="item in localConfigItems" :key="item.id"
-                                        :class="{ 'config-item': true, 'active': selectedConfig?.id === item.id }"
-                                        @click="handleConfigSelectFn(item)">
-                                        <div class="config-item-content">
-                                            <div class="config-avatar">
-                                                <img :src="item.avatar" :alt="item.nickName" />
-                                            </div>
-                                            <div class="config-info">
-                                                <div class="config-name">{{ item.configName }}</div>
-                                                <div class="config-meta-row">
-                                                    <div class="config-meta-item flex items-center">
-                                                        <SvgIcon icon="material-symbols:schedule-outline"
-                                                            class="meta-icon" />
-                                                        <span>{{ dayjs(item.updateTime).format('MM-DD HH:mm:ss')
-                                                        }}</span>
-                                                    </div>
-                                                    <div class="config-meta-item flex items-center">
-                                                        <SvgIcon icon="material-symbols:download" class="meta-icon" />
-                                                        <span>{{ item.shareCount }}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="config-actions" @click.stop="handleDeleteFn(item)">
-                                                <SvgIcon icon="material-symbols:delete-outline" class="more-icon" />
-                                            </div>
-                                        </div>
-                                    </NListItem>
-                                </NList>
-                            </div>
-                        </NTabPane>
-
-                        <NTabPane name="local" tab="本地预览" />
-                    </NTabs>
-                </NCard>
-            </div>
-
-            <div class="right-panel">
-                <NCard class="panel-card editor-card" content-style="padding: 20px;" content-class="overflow-y-auto"
-                    :bordered="false">
-                    <div class="editor-header">
-                        <div class="editor-title font-size-20px">
-                            <SvgIcon icon="material-symbols:edit-square-outline" class="editor-icon" />
-                            <span class="font-size-16px">配置编辑器</span>
-                        </div>
-
-                        <div class="flex" v-if="selectedConfig">
-                            <NButton class="mr-5px" size="small" ghost @click="handlePreviewToggleFn"
-                                v-show="showPreview">
-                                <template #icon>
-                                    <SvgIcon icon="material-symbols:visibility" />
-                                </template>
-                                预览
-                            </NButton>
-
-                            <NButton class="mr-5px" size="small" ghost @click="handlePreviewToggleFn"
-                                v-show="!showPreview">
-                                <template #icon>
-                                    <SvgIcon icon="material-symbols:edit-square-outline" />
-                                </template>
-                                编辑
-                            </NButton>
-
-                            <NButton class="mr-5px" size="small" ghost @click="handleShareFn"
-                                v-show="!showPreview && selectedConfig && activeTab === 'user' && selectedConfig.shareStatus === 0">
-                                <template #icon>
-                                    <SvgIcon icon="material-symbols:share" />
-                                </template>
-                                分享
-                            </NButton>
-
-                            <NButton class="mr-5px" type="info" size="small" ghost @click="updateConfigFn"
-                                v-show="activeTab === 'user' && selectedConfig">
-                                <template #icon>
-                                    <SvgIcon icon="material-symbols:save" />
-                                </template>
-                                保存
-                            </NButton>
-
-                            <NButton v-show="selectedConfig || activeTab === 'local'" class="mr-5px" type="primary"
-                                size="small" ghost @click="applyKeyBindsFn">
-                                <template #icon>
-                                    <SvgIcon icon="material-symbols:check-circle-outline" />
-                                </template>
-                                应用
-                            </NButton>
-                        </div>
+            <NCard class="left-panel" content-style="padding:0px;">
+                <div class="flex flex-col gap-10px">
+                    <div class="flex justify-center gap-5px">
+                        <NButton :type="activeTab === 'library' ? 'primary' : 'default'"
+                            @click="activeTab = 'library'; handleTabChangeFn('library')">
+                            <span class="text-12px">配置库</span>
+                        </NButton>
+                        <NButton :type="activeTab === 'user' ? 'primary' : 'default'"
+                            @click="activeTab = 'user'; handleTabChangeFn('user')">
+                            <span class="text-12px">个人配置</span>
+                        </NButton>
+                        <NButton :type="activeTab === 'local' ? 'primary' : 'default'"
+                            @click="activeTab = 'local'; handleTabChangeFn('local')">
+                            <span class="text-12px">本地预览</span>
+                        </NButton>
                     </div>
 
-                    <div class="editor-content">
-                        <div class="editor-placeholder" v-if="!selectedConfig && activeTab !== 'local'">
-                            <SvgIcon icon="material-symbols:arrow-downward" class="placeholder-icon" />
-                            <p>请从左侧选择一个配置进行编辑</p>
-                        </div>
-
-                        <div class="editor-active" v-else>
-                            <div v-show="!showPreview && activeTab !== 'local'" class="key-bind-section">
-                                <NGrid x-gap="12" y-gap="12" :cols="3">
-                                    <NGridItem v-for="item in keyBindItems" :key="item.id">
-                                        <div class="key-bind-card">
-                                            <div class="key-bind-card-header">
-                                                <div class="key-label">
-                                                    <SvgIcon icon="material-symbols:keyboard-alt-outline"
-                                                        class="key-label-icon" />
-                                                    <span>{{ item.description || `按键${item.id}` }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="key-bind-card-body ">
-                                                <NButton ghost type="info" class="rounded-5px"
-                                                    @click="openKeyCaptureFn(item)">
-                                                    <span>{{ item.key || '点击设置' }}</span>
-                                                </NButton>
-                                            </div>
+                    <div v-show="activeTab === 'library'">
+                        <NGrid :y-gap="10" :cols="1">
+                            <NGridItem v-for="systemConfig in systemLibraryItems" :key="systemConfig.systemName">
+                                <NCard class="config-card" content-style="padding:10px;"
+                                    :class="{ 'selected': selectedSystemConfig === systemConfig.systemName }"
+                                    @click="selectedSystemConfig = systemConfig.systemName">
+                                    <div class="config-card-content">
+                                        <div class="w-64px h-64px config-card-content-img">
+                                            <img class="w-48px h-48px" :src="systemConfig.systemIcon">
                                         </div>
-                                    </NGridItem>
-                                </NGrid>
-                            </div>
-                            <div v-if="showPreview" class="monaco-editor">
-                                <MonacoEditor ref="editorRef" style="height: 100%; width: 100%;"
-                                    :options="editorOptions" :model-value="editorValue" @mount="handleEditorMountFn"
-                                    @update:model-value="handleEditorChangeFn" />
-                            </div>
-                        </div>
+                                        <div class="flex-1">
+                                            <div class="font-size-16px font-bold">{{ systemConfig.systemName }}
+                                            </div>
+                                            <div class="font-size-12px">{{ systemConfig.configDesc }}</div>
+                                        </div>
+                                    </div>
+                                </NCard>
+                            </NGridItem>
+                        </NGrid>
                     </div>
-                </NCard>
-            </div>
+
+                    <div v-show="activeTab === 'user'">
+                        <!-- 个人配置内容 -->
+                    </div>
+
+                    <div v-show="activeTab === 'local'">
+                        <!-- 本地预览内容 -->
+                    </div>
+                </div>
+            </NCard>
+            <NCard class="right-panel" content-class="overflow-auto" content-style="padding:10px;">
+                <NGrid x-gap="10" y-gap="10" :cols="4">
+                    <NGridItem v-for="gun in GunLibaryCfgOption" :key="gun.systemName">
+                        <div class="flex flex-col items-center p-10px rounded-8px bg-#f8fafc border-1px border-solid border-#e2e8f0 hover:border-#667eea hover:shadow-md transition-all-200 cursor-pointer">
+                            <img :src="gun.systemIcon" class="w-48px h-48px object-contain mb-8px" />
+                            <span class="text-12px text-gray-700">{{ gun.systemName }}</span>
+                        </div>
+                    </NGridItem>
+                </NGrid>
+            </NCard>
         </div>
 
         <NModal v-model:show="showKeyCaptureModal" preset="card" class="w-420px rounded-20px" :bordered="false"
@@ -822,678 +754,113 @@ onMounted(() => {
     gap: 16px;
     animation: fadeIn 0.4s ease-out;
 
-    &.light-mode {
-        .page-title {
-            color: #1a1a1a;
-            font-size: 20px;
+    .header-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+
+        .title-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 24px;
         }
 
         .back-btn {
-            color: #666;
-            background: rgba(0, 0, 0, 0.03);
-            border: 1px solid rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
 
             &:hover {
                 color: #667eea;
-                background: rgba(102, 126, 234, 0.08);
+                background: rgba(102, 126, 234, 0.3);
+            }
+
+            .back-icon {
+                font-size: 20px;
             }
         }
 
-        .panel-card {
-            background: #ffffff;
-        }
 
-        .config-item {
-            background: rgba(0, 0, 0, 0.02);
-            border-color: rgba(0, 0, 0, 0.06);
-
-            &:hover {
-                background: rgba(102, 126, 234, 0.05);
-            }
-
-            &.active {
-                background: rgba(102, 126, 234, 0.1);
-                border-color: #667eea;
-            }
-
-            .config-name {
-                color: #1a1a1a;
-            }
-
-            .config-desc {
-                color: #666;
-            }
-
-            .config-meta {
-                color: #888;
-            }
-
-            .config-meta-item {
-                color: #666;
-            }
-
-            .meta-icon {
-                color: #999;
-            }
-        }
-
-        .editor-title {
-            span {
-                color: #1a1a1a;
-            }
-        }
-
-        .editor-placeholder {
-            font-size: 18px;
-
-            p {
-                color: #888;
-            }
-        }
-
-        .placeholder-icon {
-            color: #ccc;
-        }
-
-        .key-label {
-            color: #1a1a1a;
-        }
-
-        .key-btn {
-            background: rgba(0, 0, 0, 0.03);
-            border-color: rgba(0, 0, 0, 0.1);
-            color: #1a1a1a;
-
-            &:hover {
-                background: rgba(102, 126, 234, 0.1);
-                border-color: #667eea;
-            }
-        }
-
-        .key-bind-card {
-            background: #ffffff;
-            border-color: rgba(0, 0, 0, 0.08);
-
-            &:hover {
-                background: #f8f9ff;
-                border-color: #667eea;
-            }
-
-            &.deleting {
-                border-color: #f5576c;
-            }
-        }
-
-        .key-bind-card-header {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-        }
-
-        .key-label {
-            color: #1a1a1a;
-        }
-
-        .key-capture-modal {
-            .capture-instruction {
-                color: #333;
-            }
-
-            .capture-display {
-                background: #f5f5f5;
-                border-color: rgba(0, 0, 0, 0.1);
-            }
-
-            .capture-key {
-                color: #1a1a1a;
-            }
-
-            .capture-hint {
-                color: #888;
-            }
+        .page-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
     }
-}
 
-.header-section {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 0;
-}
-
-.back-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    border-radius: 10px;
-    cursor: pointer;
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-
-    &:hover {
-        color: #667eea;
-        background: rgba(102, 126, 234, 0.15);
-        transform: translateX(-4px);
-    }
-
-    .back-icon {
-        font-size: 20px;
-    }
-}
-
-.title-section {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 24px;
-}
-
-.title-icon {
-    font-size: 32px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.page-title {
-    font-size: 24px;
-    font-weight: 700;
-    margin: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
-.main-content {
-    display: flex;
-    flex: 1;
-    gap: 16px;
-    min-height: 0;
-}
-
-.left-panel {
-    width: 300px;
-    display: flex;
-    flex-direction: column;
-}
-
-.right-panel {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-}
-
-.panel-card {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 16px;
-    backdrop-filter: blur(10px);
-    overflow: hidden;
-
-    :deep(.n-tabs) {
-        height: 100%;
+    .main-content {
         display: flex;
-        flex-direction: column;
-    }
-
-    :deep(.n-tabs-nav) {
-        padding: 16px 20px 8px;
-    }
-
-    :deep(.n-tab-pane) {
         flex: 1;
-        overflow: hidden;
-        padding: 0 !important;
-    }
-}
+        gap: 16px;
+        min-height: 0;
 
-.config-list {
-    height: 100%;
-    overflow-y: auto;
-    padding: 10px;
+        .left-panel {
+            width: 300px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
 
-    :deep(.n-list) {
-        padding: 0;
-        background: transparent !important;
-    }
+            .config-card {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                height: 84px;
+                border-radius: 8px;
+                cursor: pointer;
+                transition: all 0.2s ease;
 
-    :deep(.n-list-item) {
-        padding: 0;
-        margin-bottom: 10px;
-    }
+                .config-card-content {
+                    display: flex;
+                    align-items: center;
 
-    :deep(.n-list-item__divider) {
-        display: none;
-    }
-}
+                    .config-card-content-img {
+                        padding: 8px;
+                        border-radius: 6px;
+                        margin-right: 12px;
+                    }
+                }
 
-.config-item {
-    border-radius: 12px;
-    padding: 14px 16px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-    background: rgba(255, 255, 255, 0.03);
+                &:hover {
+                    border-color: #667eea;
+                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+                    transform: translateY(-1px);
+                }
 
-    &:hover {
-        background: rgba(102, 126, 234, 0.1);
-    }
-
-    &.active {
-        background: rgba(102, 126, 234, 0.15);
-        border-color: #667eea;
-    }
-}
-
-.config-item-content {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px;
-}
-
-.config-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-
-    .n-icon {
-        font-size: 24px;
-        color: white;
-    }
-}
-
-.config-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    overflow: hidden;
-
-    img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-}
-
-.config-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.config-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 18px;
-}
-
-.config-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 4px;
-}
-
-.config-desc {
-    font-size: 13px;
-    margin-bottom: 4px;
-    color: rgba(255, 255, 255, 0.8);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-}
-
-.config-meta {
-    display: flex;
-    gap: 12px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.config-meta-row {
-    display: flex;
-    gap: 16px;
-    align-items: center;
-}
-
-.config-meta-item {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.meta-icon {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.favorite-icon {
-    font-size: 22px;
-    color: rgba(255, 255, 255, 0.4);
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:hover {
-        transform: scale(1.2);
-    }
-
-    &.active {
-        color: #fbbf24;
-    }
-}
-
-.more-icon {
-    font-size: 22px;
-    color: rgba(255, 255, 255, 0.4);
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    &:hover {
-        color: rgba(255, 255, 255, 0.7);
-    }
-}
-
-.add-config-btn {
-    padding: 0px 5px 10px 5px;
-}
-
-.editor-card {
-    display: flex;
-    flex-direction: column;
-}
-
-.editor-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-.editor-title {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-
-    .editor-icon {
-        font-size: 24px;
-        color: #667eea;
-    }
-
-    span {
-        font-size: 18px;
-        font-weight: 600;
-        color: #ffffff;
-    }
-}
-
-.editor-content {
-    height: 100%;
-    flex: 1;
-}
-
-.editor-placeholder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    min-height: 300px;
-    gap: 16px;
-
-    .placeholder-icon {
-        font-size: 64px;
-        color: rgba(255, 255, 255, 0.15);
-        animation: bounce 2s infinite;
-    }
-
-    p {
-        font-size: 14px;
-        color: rgba(255, 255, 255, 0.5);
-        margin: 0;
-    }
-}
-
-.editor-active {
-    width: 100%;
-    height: 100%;
-}
-
-.key-bind-section {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-}
-
-.key-bind-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.key-bind-card {
-    background: rgba(255, 255, 255, 0.03);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.3s ease;
-    overflow: hidden;
-
-    &:hover {
-        background: rgba(102, 126, 234, 0.08);
-        border-color: rgba(102, 126, 234, 0.3);
-    }
-
-    &.deleting {
-        border-color: #f5576c !important;
-        animation: deletePulse 0.3s ease-in-out;
-    }
-}
-
-.key-bind-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.key-label {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 15px;
-    font-weight: 600;
-    color: #ffffff;
-}
-
-.key-label-icon {
-    font-size: 20px;
-    color: #667eea;
-}
-
-.key-delete {
-    display: flex;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    padding: 6px;
-    border-radius: 8px;
-
-    &:hover {
-        background: rgba(245, 87, 108, 0.15);
-
-        .delete-icon {
-            color: #f5576c;
-            transform: scale(1.1);
+                &.selected {
+                    border-color: #667eea;
+                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+                    background: rgba(102, 126, 234, 0.05);
+                }
+            }
         }
-    }
-}
 
-.key-bind-card-body {
-    display: flex;
-    justify-content: center;
-    padding: 20px;
-}
-
-.delete-icon {
-    font-size: 22px;
-    color: rgba(255, 255, 255, 0.4);
-    transition: all 0.3s ease;
-}
-
-.monaco-editor {
-    width: 100%;
-    height: 400px;
-    border-radius: 12px;
-    overflow: hidden;
-
-    :deep(.custom-monaco-editor) {
-        outline: none !important;
-        border: none !important;
-        box-shadow: none !important;
-    }
-
-    :deep(.monaco-editor) {
-        outline: none !important;
-        box-shadow: none !important;
-    }
-
-    :deep(.monaco-editor:focus),
-    :deep(.monaco-editor:focus-within),
-    :deep(.custom-monaco-editor:focus),
-    :deep(.custom-monaco-editor:focus-within) {
-        outline: none !important;
-        border: none !important;
-        box-shadow: none !important;
-        -webkit-box-shadow: none !important;
-    }
-
-    :deep(.monaco-editor *) {
-        box-shadow: none !important;
-        outline: none !important;
-    }
-}
-
-.key-capture-modal {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    padding: 20px 0;
-}
-
-.capture-instruction {
-    font-size: 15px;
-    font-weight: 500;
-}
-
-.capture-display {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 24px 48px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-    transition: all 0.3s ease;
-
-    &.capturing {
-        border-color: #667eea;
-        animation: pulse 1.5s infinite;
-    }
-}
-
-.capture-icon {
-    font-size: 28px;
-    color: #667eea;
-}
-
-.capture-key {
-    font-size: 20px;
-    font-weight: 600;
-    min-width: 120px;
-    text-align: center;
-}
-
-.capture-hint {
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.5);
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.7;
-    }
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes bounce {
-
-    0%,
-    100% {
-        transform: translateY(0);
-    }
-
-    50% {
-        transform: translateY(-10px);
-    }
-}
-
-@keyframes deletePulse {
-    0% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.02);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-}
-
-.help-icon {
-    transition: transform 0.2s;
-
-    &:hover {
-        transform: rotate(10deg) scale(1.1);
+        .right-panel {
+            flex: 1;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            border-radius: 5px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
     }
 }
 

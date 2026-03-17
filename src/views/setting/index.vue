@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, nextTick, computed } from 'vue';
+import { ref, onMounted, nextTick, computed, onUnmounted } from 'vue';
 import { useGameStore } from '@/store/modules/game';
 import { useAppStore } from '@/store/modules/app';
 import { localStg } from '@/utils/storage';
@@ -61,12 +61,25 @@ const checkForUpdates = async () => {
   try {
     window.$message?.info('正在检查更新...');
     await window.ipcRenderer.invoke('check-update');
+    await window.ipcRenderer.on('update-not-available', updateNotAvailableHandler);
+    await window.ipcRenderer.on('update-error', updateErrorHandler);
   } catch (error) {
     console.error('检查更新失败:', error);
     window.$message?.error('检查更新失败');
   } finally {
     isCheckingUpdate.value = false;
+    window.ipcRenderer.off('update-not-available', updateNotAvailableHandler);
+    window.ipcRenderer.off('update-error', updateErrorHandler);
   }
+};
+
+const updateNotAvailableHandler = () => {
+  window.$message?.success('当前已是最新版本');
+  isCheckingUpdate.value = false;
+};
+
+const updateErrorHandler = () => {
+  isCheckingUpdate.value = false;
 };
 
 const getAppVersion = async () => {
@@ -190,6 +203,7 @@ const calculateCacheSize = () => {
 onMounted(() => {
   calculateCacheSize();
   getAppVersion();
+
   nextTick(() => {
     if (titleRef.value) {
       const text = titleRef.value.textContent || '';

@@ -54,11 +54,37 @@ declare namespace Api {
       configDesc?: string;
       /** 按键配置JSON字符串 */
       keyConfigJson: string;
-      /** 分享状态(0:未分享,1:已分享,2:已取消) */
+      /** 配置类型 */
+      gameModelType: string;
+      /** 分享状态(0:未分享,1:已分享) */
       shareStatus: number;
       /** 配置被分享/使用次数 */
       shareCount: number;
     }>;
+
+    /** SystemBind Vo */
+    type SystemBindVO = {
+      /** 系统库名称 */
+      systemName: string;
+      /** 系统配置图标 */
+      systemIcon: string;
+      /** 配置名称（便于用户区分） */
+      configName: string;
+      /** 配置描述（可选） */
+      configDesc?: string;
+    };
+
+    /** SystemBind Cfg Vo */
+    type SystemBindCfgVO = {
+      /** 系统库名称 */
+      systemName: string;
+      /** 系统配置图标 */
+      systemIcon: string;
+      /** 按键配置JSON字符串 */
+      keyConfigJson: string;
+      /** 按键替换的JSON字符串 */
+      keyReplaceJson: string;
+    };
 
     /** KeyBind item */
     type LocalKeyBindItem = {

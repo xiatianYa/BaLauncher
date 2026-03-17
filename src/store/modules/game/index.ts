@@ -14,11 +14,17 @@ import { useAppStore } from '../app';
 export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   const logPatterns = {
+    // 游戏启动加载界面到游戏界面的日志匹配模式
     loadingToIngame: /ChangeGameUIState:.*LOADINGSCREEN\s*->\s*CSGO_GAME_UI_STATE_INGAME/,
+    // 地图信息日志匹配模式
     mapInfo: /\[Client\] Map:\s*"([^"]+)"/,
+    // 连接成功日志匹配模式
     connected: /\[Client\] CL:\s*Connected to/,
+    // 服务器已满日志匹配模式
     serverFull: /\[Client\] Disconnected from server: NETWORK_DISCONNECT_REJECT_SERVERFULL/,
+    // 切换到levelload循环模式日志匹配模式
     switchingToLevelload: /switching to "levelload" loopmode/,
+    // 队列新请求日志匹配模式
     queueNewRequest: /\[HostStateManager\] CHostStateMgr::QueueNewRequest/
   };
 
@@ -956,7 +962,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   let userGisSendTimer: ReturnType<typeof setTimeout> | null = null;
   let pendingUserGisData: Api.Game.CsgoPlayer | null = null;
 
-  // GIS发送用户接搜连接地址消息
+  // GIS发送用户搜索连接地址消息
   function sendUserGisAddr() {
     if (!joinServerInfo.value?.addr) return;
     if (!GisWebsocket.GisWebsocket) return;
