@@ -65,6 +65,7 @@ const capturedKey = ref<string>('');
 
 import Gun from '@/assets/imgs/tool/gun.png';
 import Grenade from '@/assets/imgs/tool/grenade.png';
+import ZE from '@/assets/imgs/weapon/ZE.png';
 import AK47 from '@/assets/imgs/weapon/AK47.png';
 import AUG from '@/assets/imgs/weapon/AUG.png';
 import CZ75 from '@/assets/imgs/weapon/CZ75.png';
@@ -103,6 +104,12 @@ const systemLibraryItems = ref<Api.Game.SystemBindVO[]>([
         systemIcon: Grenade,
         configName: '道具类',
         configDesc: 'CSGO2 通用道具配置cfg',
+    },
+    {
+        systemName: 'ZE常用',
+        systemIcon: ZE,
+        configName: 'ZE常用',
+        configDesc: 'CSGO2 通用ZE配置cfg',
     }
 ]);
 //系统武器配置库
