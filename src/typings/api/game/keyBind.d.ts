@@ -82,8 +82,8 @@ declare namespace Api {
       systemIcon: string;
       /** 按键配置JSON字符串 */
       keyConfigJson: string;
-      /** 按键替换的JSON字符串 */
-      keyReplaceJson: string;
+      /** 配置描述 */
+      configDesc?: string;
     };
 
     /** KeyBind item */
@@ -91,6 +91,22 @@ declare namespace Api {
       id: number;
       key: string;
       description: string;
+    };
+
+    /** Apply KeyBind item */
+    type ApplyKeyBindItem = {
+      /** 系统绑定VO */
+      systemBindCfgVO?: SystemBindCfgVO;
+      /** 按键绑定VO */
+      keyBindVO?: KeyBindVO;
+      /** 按键 */
+      key: string;
+      /** 按键配置原始zic */
+      keyConfigJson: string;
+      /** 按键配置解析后的字符串 */
+      renderKeyConfigJson: string;
+      /** 配置库类型(系统 | 自定义) */
+      configType: string;
     };
 
     /** KeyBind list */

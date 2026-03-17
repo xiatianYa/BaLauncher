@@ -27,45 +27,10 @@ import {
 } from '@/service/api/game/keyBind';
 import dayjs from 'dayjs';
 
-/**
- * 组件配置
- */
-defineOptions({ name: 'keyBind' });
-
-/**
- * 事件定义
- */
-const emit = defineEmits<{ back: []; }>();
-
-// ============================================================================
-// 状态管理
-// ============================================================================
-
-/** 主题相关 */
-const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
-
-/** UI 状态 */
-const activeTab = ref<'library' | 'local' | 'user'>('library');
-const selectedSystemConfig = ref<string | null>(null);
-const showKeyCaptureModal = ref<boolean>(false);
-const showNewConfigModal = ref<boolean>(false);
-const showTutorialModal = ref<boolean>(false);
-
-/** 编辑器相关 */
-const editorRef = ref();
-const monacoEditorInstance = ref<monaco.editor.IStandaloneCodeEditor | null>(null);
-const editorValue = ref<string>('');
-
-/** 按键绑定相关 */
-type LocalKeyBindItem = { id: number; key: string; description: string; };
-const keyBindItems = ref<LocalKeyBindItem[]>([]);
-const currentEditItemId = ref<number | null>(null);
-const capturedKey = ref<string>('');
-
-import Gun from '@/assets/imgs/tool/gun.png';
-import Grenade from '@/assets/imgs/tool/grenade.png';
-import ZE from '@/assets/imgs/weapon/ZE.png';
+import Gun from '@/assets/imgs/tool/Gun.png';
+import Prop from '@/assets/imgs/tool/Prop.png';
+import ZE from '@/assets/imgs/tool/ZE.png';
+import Command from '@/assets/imgs/tool/Command.png';
 import AK47 from '@/assets/imgs/weapon/AK47.png';
 import AUG from '@/assets/imgs/weapon/AUG.png';
 import CZ75 from '@/assets/imgs/weapon/CZ75.png';
@@ -88,9 +53,50 @@ import Deagle from '@/assets/imgs/weapon/沙鹰.png';
 import Scout from '@/assets/imgs/weapon/鸟狙.png';
 import MP9 from '@/assets/imgs/weapon/MP9.png';
 import AWP from '@/assets/imgs/weapon/AWP.png';
+import Smoke from '@/assets/imgs/weapon/Smoke.png';
+import Fire from '@/assets/imgs/weapon/Fire.png';
+import Grenade from '@/assets/imgs/weapon/Grenade.png';
+import Flash from '@/assets/imgs/weapon/Flash.png';
+import NightVision from '@/assets/imgs/weapon/NightVision.png';
+import Needle from '@/assets/imgs/weapon/Needle.png';
+import Armor from '@/assets/imgs/weapon/Armor.png';
 
 
+/**
+ * 组件配置
+ */
+defineOptions({ name: 'keyBind' });
 
+/**
+ * 事件定义
+ */
+const emit = defineEmits<{ back: []; }>();
+
+// ============================================================================
+// 状态管理
+// ============================================================================
+
+/** 主题相关 */
+const themeStore = useThemeStore();
+const isDarkMode = computed(() => themeStore.darkMode);
+
+/** UI 状态 */
+const activeTab = ref<'library' | 'local' | 'user'>('library');
+const selectedSystemConfig = ref<string | null>(null);
+const showKeyCaptureModal = ref<boolean>(false);
+const showTutorialModal = ref<boolean>(false);
+const isEditMode = ref<boolean>(false);
+const localAutoexecCfg = ref<string>('');
+
+/** 编辑器相关 */
+const editorRef = ref();
+// 编辑器实例
+const monacoEditorInstance = ref<monaco.editor.IStandaloneCodeEditor | null>(null);
+// 编辑器值
+const editorValue = ref<string>('');
+
+/** 按键绑定相关 */
+const capturedKey = ref<string>('');
 /** 配置库相关 */
 const systemLibraryItems = ref<Api.Game.SystemBindVO[]>([
     {
@@ -101,7 +107,7 @@ const systemLibraryItems = ref<Api.Game.SystemBindVO[]>([
     },
     {
         systemName: '道具类',
-        systemIcon: Grenade,
+        systemIcon: Prop,
         configName: '道具类',
         configDesc: 'CSGO2 通用道具配置cfg',
     },
@@ -117,190 +123,268 @@ const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
     {
         systemName: 'MP9',
         systemIcon: MP9,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买MP9]" "buy mp9"',
+        configDesc: '购买MP9冲锋枪',
     },
     {
         systemName: 'MP7',
         systemIcon: MP7,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买MP7]" "buy mp7"',
+        configDesc: '购买MP7冲锋枪',
     },
     {
         systemName: 'MP5',
         systemIcon: MP5,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买MP5]" "buy mp5"',
+        configDesc: '购买MP5冲锋枪',
     },
     {
         systemName: 'MAC10',
         systemIcon: MAC10,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买MAC10]" "buy mac10"',
+        configDesc: '购买MAC-10冲锋枪',
     },
     {
         systemName: 'M249',
         systemIcon: M249,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买M249]" "buy m249"',
+        configDesc: '购买M249机枪',
     },
     {
         systemName: '内格夫',
         systemIcon: Negev,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买内格夫]" "buy negev"',
+        configDesc: '购买内格夫机枪',
     },
     {
         systemName: 'AK47',
         systemIcon: AK47,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买AK47]" "buy ak47"',
+        configDesc: '购买AK-47步枪',
     },
     {
         systemName: 'M4A1',
         systemIcon: M4A4,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买M4A4]" "buy m4a4"',
+        configDesc: '购买M4A4步枪',
     },
     {
         systemName: '法玛斯',
         systemIcon: FAMAS,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买法玛斯]" "buy famas"',
+        configDesc: '购买法玛斯步枪',
     },
     {
         systemName: 'SG553',
         systemIcon: SG553,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买SG553]" "buy sg553"',
+        configDesc: '购买SG553步枪',
     },
     {
         systemName: 'AUG',
         systemIcon: AUG,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买AUG]" "buy aug"',
+        configDesc: '购买AUG步枪',
     },
     {
         systemName: '鸟狙',
         systemIcon: Scout,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买鸟狙]" "buy scout"',
+        configDesc: '购买SSG08鸟狙',
     },
     {
         systemName: 'AWP',
         systemIcon: AWP,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买AWP]" "buy awp"',
+        configDesc: '购买AWP狙击枪',
     },
     {
         systemName: 'G3SG1',
         systemIcon: G3SG1,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买G3SG1]" "buy g3sg1"',
+        configDesc: '购买G3SG1自动狙击枪',
     },
     {
         systemName: 'SCAR20',
         systemIcon: SCAR20,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买SCAR20]" "buy scar20"',
+        configDesc: '购买SCAR-20自动狙击枪',
     },
     {
         systemName: '沙鹰',
         systemIcon: Deagle,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买沙鹰]" "buy deagle"',
+        configDesc: '购买沙漠之鹰手枪',
     },
     {
         systemName: 'R8',
         systemIcon: R8,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买R8]" "buy r8"',
+        configDesc: '购买R8左轮手枪',
     },
     {
         systemName: '格洛克',
         systemIcon: Glock,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买格洛克]" "buy glock"',
+        configDesc: '购买格洛克手枪',
     },
     {
         systemName: '双枪',
         systemIcon: DualBerettas,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买双枪]" "buy dualberettas"',
+        configDesc: '购买双持贝瑞塔手枪',
     },
     {
         systemName: 'USP',
         systemIcon: USP,
-        keyConfigJson: '',
-        keyReplaceJson: '',
-    },
-    {
-        systemName: '格洛克',
-        systemIcon: Glock,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买USP]" "buy usp"',
+        configDesc: '购买USP-S手枪',
     },
     {
         systemName: 'P250',
         systemIcon: P250,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买P250]" "buy p250"',
+        configDesc: '购买P250手枪',
     },
     {
         systemName: 'CZ-75',
         systemIcon: CZ75,
-        keyConfigJson: '',
-        keyReplaceJson: '',
+        keyConfigJson: 'bind "[按键:购买CZ-75]" "buy cz75"',
+        configDesc: '购买CZ75自动手枪',
     },
 ]);
-const configLibraryItems = ref<Api.Game.KeyBindList>([]);
-const localConfigItems = ref<Api.Game.KeyBindList>([]);
-const selectedConfig = ref<Api.Game.KeyBindVO | null>(null);
-const originalConfigContent = ref('');
+//系统道具配置库
+const PropLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
+    {
+        systemName: '烟雾弹',
+        systemIcon: Smoke,
+        keyConfigJson: 'bind "[按键:购买烟雾弹]" "buy !smokegrenade"',
 
-/** 新建配置 */
-const newConfig = ref<Api.Game.KeyBindAddParams>({
-    configName: '',
-    configDesc: '',
-    keyConfigJson: '',
-    shareStatus: 0
+    },
+    {
+        systemName: '手雷',
+        systemIcon: Grenade,
+        keyConfigJson: 'bind [按键:购买手雷] "say !he"',
+    },
+    {
+        systemName: '燃烧瓶',
+        systemIcon: Fire,
+        keyConfigJson: 'bind [按键:购买烟雾弹] "say !molotov"',
+
+    },
+    {
+        systemName: '闪光弹',
+        systemIcon: Flash,
+        keyConfigJson: 'bind "[按键:购买闪光弹]" "buy !flashbang',
+
+    },
+    {
+        systemName: '夜视仪',
+        systemIcon: NightVision,
+        keyConfigJson: 'bind  [按键:开关夜视仪]  toggle mat_fullbright 0 1',
+
+    },
+    {
+        systemName: '血针',
+        systemIcon: Needle,
+        keyConfigJson: 'bind [按键:购买血针] "say !xz"',
+
+    },
+    {
+        systemName: '护甲',
+        systemIcon: Armor,
+        keyConfigJson: 'bind [按键:购买护甲] "say !kevlar"',
+
+    },
+]);
+// ZE配置库
+const ZELibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
+    {
+        systemName: '第三人称',
+        systemIcon: Command,
+        keyConfigJson: `//freecam and tp 
+//alias cam_setting_freecam "cam_idealyaw 0;cam_idealpitch 0;c_thirdpersonshoulder 0;c_thirdpersonshoulderheight 6;c_thirdpersonshoulderoffset 0;c_thirdpersonshoulderaimdist 0;cam_idealdist 0;"
+alias cam_setting_tp "c_thirdpersonshoulder 1;c_thirdpersonshoulderheight 30;c_thirdpersonshoulderoffset 0;c_thirdpersonshoulderaimdist 999;cam_idealdist 180;cam_collision 0"
+
+//freecam --> +tp
+alias "cs_chasecam_freecam" "cs_aliasthird_freecam"
+alias "cs_aliasthird_freecam" "thirdperson; cam_setting_tp; alias cs_chasecam_freecam ccs_aliasfirst_freecam"
+alias "ccs_aliasfirst_freecam" "firstperson; alias cs_chasecam_freecam cs_aliasthird_freecam"
+
+alias +tp_magnifier "cs_chasecam_freecam; _freecamup; _freecamdn; cam_collision 0"
+alias -tp_magnifier "cs_chasecam_freecam; -keys_mouse"
+
+//tp --> -tp
+alias cs_chasecam_tp "cs_aliasthird_tp"
+alias cs_aliasthird_tp "thirdperson;cam_setting_tp;alias cs_chasecam_tp cs_aliasfirst_tp"
+alias cs_aliasfirst_tp "firstperson;alias cs_chasecam_tp cs_aliasthird_tp"
+
+alias "+tp" "+tp_magnifier"
+alias "-tp" "cs_chasecam_tp;-keys_mouse"
+alias _freecamup "bind MWHEELUP incrementvar cam_idealdist -999999 999999 -100"
+alias _freecamdn "bind MWHEELDOWN incrementvar cam_idealdist -999999 999999 100"
+alias -keys_mouse  "bind "mwheelup" "+jump";bind mwheeldown "+jump""
+
+bind [按键:开启第三人称] "+tp"
+c_thirdpersonshoulder 1; cam_idealyaw 0; cam_idealpitch 0; cam_collision 0
+c_mindistance -999999; c_maxdistance 999999`,
+
+    },
+    {
+        systemName: '传送',
+        systemIcon: Command,
+        keyConfigJson: 'bind [按键:传送到复活点] "say !ztele"',
+
+    },
+    {
+        systemName: '地图滤镜',
+        systemIcon: Command,
+        keyConfigJson: 'bind  [按键:开关地图滤镜]  toggle r_csgo_postprocess_enable 0 1',
+    },
+    {
+        systemName: '地图特效',
+        systemIcon: Command,
+        keyConfigJson: 'bind  [按键:开关地图特效]  toggle r_drawparticles 0 1',
+    },
+]);
+// 根据选中的系统配置返回对应的配置选项
+const currentCfgOptions = computed(() => {
+    switch (selectedSystemConfig.value) {
+        case '武器类':
+            return GunLibaryCfgOption.value;
+        case '道具类':
+            return PropLibaryCfgOption.value;
+        case 'ZE常用':
+            return ZELibaryCfgOption.value;
+        default:
+            return [];
+    }
 });
+// 公共数据库库配置
+const configLibraryItems = ref<Api.Game.KeyBindList>([]);
+// 引用的数据库配置
+const localConfigItems = ref<Api.Game.KeyBindList>([]);
+// 用户应用的按键绑定项
+const applyKeyBindItems = ref<Api.Game.ApplyKeyBindItem[]>([]);
 
 /** 编辑器选项 */
 const editorOptions = ref<EditorRuntimeOptions>({
-    // 主题适配暗黑/亮色模式
     theme: isDarkMode.value ? 'vs-dark' : 'vs',
-    // 字体大小调大一点，长时间编辑更舒适
-    fontSize: 14,
-    // 显示行号（cfg文件调试时行号很重要）
-    lineNumbers: 'on',
+    fontSize: 12,
+    lineNumbers: 'off',
     minimap: { enabled: false },
     scrollBeyondLastLine: false,
     automaticLayout: true,
-    // cfg文件通常是单行命令，关闭自动换行
-    wordWrap: 'off',
-    // CS2 cfg标准缩进为4个空格
-    tabSize: 4,
+    wordWrap: 'on',
+    tabSize: 2,
     insertSpaces: true,
     readOnly: false,
-    // 开启代码折叠（cfg文件可以按区块折叠）
-    folding: true,
+    folding: false,
     cursorStyle: 'line',
-    // 增强自动提示（对cfg命令补全很有用）
     quickSuggestions: { other: true, comments: true, strings: true },
     overviewRulerBorder: false,
-    // 高亮当前行（方便定位）
-    renderLineHighlight: 'line',
-    domReadOnly: false,
-    // ========== CS2 CFG 专属配置 ==========
-    // 优化行高，提升可读性
-    lineHeight: 20,
-    // 触发字符时显示建议（如输入bind时）
-    suggestOnTriggerCharacters: true,
-    // 匹配括号高亮（cfg中的{} []）
-    matchBrackets: 'always',
-    // 括号对颜色区分
-    bracketPairColorization: { enabled: true },
+    renderLineHighlight: 'none',
+    domReadOnly: false
 });
 
 // ============================================================================
@@ -308,126 +392,84 @@ const editorOptions = ref<EditorRuntimeOptions>({
 // ============================================================================
 
 /**
- * 构建配置写入日志头部
+ * 替换编辑器中的按键占位符
  */
-const buildLogHeader = (): string => {
-    const writeTime = dayjs().format('YYYY-MM-DD HH:mm:ss');
-    return `// ========================================
-// BaLauncher 按键绑定配置
-// 写入时间: ${writeTime}
-// ========================================
-
-`;
+const replaceKeyPlaceholders = (content: string, bindKey: string): string => {
+    let result = content;
+    const regex = new RegExp(`\\[按键:[^\\]]+\\]`, 'g');
+    result = result.replace(regex, bindKey);
+    return result;
 };
 
 /**
- * 替换编辑器中的按键占位符
+ * 构建配置写入日志头部
  */
-const replaceKeyPlaceholders = (content: string): string => {
-    let result = content;
-    const sortedItems = [...keyBindItems.value].sort((a, b) => b.id - a.id);
-
-    sortedItems.forEach(item => {
-        if (item.key) {
-            const regex = new RegExp(`\\[按键(${item.id}):[^\\]]+\\]`, 'g');
-            result = result.replace(regex, item.key);
-        }
-    });
-
-    return result;
+const buildLogHeader = (desc: string, key: string): string => {
+    const writeTime = dayjs().format('YYYY-MM-DD HH:mm:ss');
+    return `// ========================================
+// BaLauncher 按键绑定配置
+// ${desc} - 绑定至 ${key}
+// 生成时间: ${writeTime}
+// ========================================`;
 };
+
 
 // ============================================================================
 // 配置管理
 // ============================================================================
-/**
- * 打开教程弹窗
- */
+
+// 打开教程弹窗
 const openTutorialModalFn = () => {
     showTutorialModal.value = true;
 };
 
-/**
- * 关闭新建配置弹窗
- */
-const closeNewConfigModalFn = () => {
-    showNewConfigModal.value = false;
-    newConfig.value = { configName: '', configDesc: '', keyConfigJson: '', shareStatus: 0 };
-};
 
-/**
- * 创建新配置
- */
-const createNewConfigFn = async () => {
-    if (!newConfig.value.configName.trim()) {
-        window.$message?.warning('请输入配置名称');
-        return;
-    }
-
-    newConfig.value.keyConfigJson = editorValue.value;
-    const { error } = await fetchAddKeyBind(newConfig.value);
-
-    if (!error) {
-        window.$message?.success('创建成功');
-        await Promise.all([fetchLocalConfigLibrary(), fetchConfigLibrary()]);
-    }
-
-    closeNewConfigModalFn();
-};
-
-/**
- * 切换标签页
- */
+// 切换标签页
 const handleTabChangeFn = async (value: 'library' | 'local' | 'user') => {
     activeTab.value = value;
+    isEditMode.value = false;
+    selectedSystemConfig.value = null;
+    selectedSystemConfig.value = '';
 };
 
-/**
- * 解析编辑器内容，提取按键绑定项
- */
-const parseEditorValueFn = () => {
-    const content = editorValue.value;
-    const keyPattern = /\[(?:按键)?(\d+)(?::([^\]]+))?\]/g;
-    const matches = [...content.matchAll(keyPattern)];
+// 检查配置项是否已应用
+const isItemApplied = (systemName: string): boolean => {
+    return applyKeyBindItems.value.some(item => item.systemBindCfgVO?.systemName === systemName);
+};
 
-    const newKeyBindItems: LocalKeyBindItem[] = [];
-    const usedIds = new Set<number>();
+// 处理个人配置项点击
+const handleUserConfigClickFn = (systemName: string | undefined) => {
+    console.log('点击了个人配置项:', systemName);
+    if (!systemName) return;
+    selectedSystemConfig.value = systemName;
+};
 
-    matches.forEach((match) => {
-        const keyNum = parseInt(match[1]);
-        const description = match[2] || '';
-        if (!usedIds.has(keyNum)) {
-            usedIds.add(keyNum);
-            newKeyBindItems.push({ id: keyNum, key: '', description });
-        }
-    });
+// 移除已应用的绑定
+const removeAppliedBinding = async (systemName: string | undefined) => {
+    if (!systemName) return;
+    const index = applyKeyBindItems.value.findIndex(item => item.systemBindCfgVO?.systemName === systemName);
+    if (index !== -1) {
+        const item = applyKeyBindItems.value[index];
 
-    newKeyBindItems.sort((a, b) => a.id - b.id);
-
-    const existingKeys = new Map(
-        keyBindItems.value.map(item => [item.id, { key: item.key, description: item.description }])
-    );
-
-    newKeyBindItems.forEach(item => {
-        const existing = existingKeys.get(item.id);
-        if (existing) {
-            item.key = existing.key;
-            if (!item.description && existing.description) {
-                item.description = existing.description;
+        // 从cfg文件中移除配置
+        const paths = await window.ipcRenderer.invoke('auto-detect-paths');
+        if (paths.csgo2Path && item.renderKeyConfigJson) {
+            const { success } = await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, item.renderKeyConfigJson);
+            if (!success) {
+                window.$message?.error('从配置文件移除失败');
+                return;
             }
         }
-    });
-
-    keyBindItems.value = newKeyBindItems;
+        applyKeyBindItems.value.splice(index, 1);
+        window.$message?.success('已移除绑定');
+    }
 };
 
 // ============================================================================
 // 按键捕获
 // ============================================================================
 
-/**
- * 处理按键按下事件
- */
+// 处理按键按下事件
 const handleKeyDownFn = (e: KeyboardEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -440,35 +482,127 @@ const handleKeyDownFn = (e: KeyboardEvent) => {
     if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
         key += e.key.toUpperCase();
         capturedKey.value = key;
-
-        if (currentEditItemId.value !== null) {
-            const item = keyBindItems.value.find(i => i.id === currentEditItemId.value);
-            if (item) {
-                item.key = capturedKey.value;
-            }
-        }
-
-        closeKeyCaptureFn();
+        saveAndCloseCaptureFn();
     }
 };
 
-/**
- * 打开按键捕获弹窗
- */
-const openKeyCaptureFn = (item: Api.Game.LocalKeyBindItem) => {
-    currentEditItemId.value = item.id;
-    capturedKey.value = item.key;
+// 处理鼠标按下事件
+const handleMouseDownFn = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    let key = '';
+    if (e.ctrlKey) key += 'Ctrl+';
+    if (e.shiftKey) key += 'Shift+';
+    if (e.altKey) key += 'Alt+';
+
+    switch (e.button) {
+        case 0:
+            key += 'MOUSE1';
+            break;
+        case 1:
+            key += 'MOUSE3';
+            break;
+        case 2:
+            key += 'MOUSE2';
+            break;
+        case 3:
+            key += 'MOUSE4';
+            break;
+        case 4:
+            key += 'MOUSE5';
+            break;
+        default:
+            return;
+    }
+
+    capturedKey.value = key;
+    saveAndCloseCaptureFn();
+};
+
+// 当前选中的配置项
+const currentSelectedItem = ref<Api.Game.SystemBindCfgVO | null>(null);
+
+// 打开按键捕获弹窗
+const openKeyCaptureFn = (item: Api.Game.SystemBindCfgVO) => {
+    currentSelectedItem.value = item;
+    capturedKey.value = '';
     showKeyCaptureModal.value = true;
     window.addEventListener('keydown', handleKeyDownFn);
+    window.addEventListener('mousedown', handleMouseDownFn);
+};
+
+// 关闭按键捕获弹窗
+const closeKeyCaptureFn = () => {
+    showKeyCaptureModal.value = false;
+    capturedKey.value = '';
+    currentSelectedItem.value = null;
+    window.removeEventListener('keydown', handleKeyDownFn);
+    window.removeEventListener('mousedown', handleMouseDownFn);
 };
 
 /**
- * 关闭按键捕获弹窗
+ * 处理鼠标滚轮事件
  */
-const closeKeyCaptureFn = () => {
-    showKeyCaptureModal.value = false;
-    currentEditItemId.value = null;
-    window.removeEventListener('keydown', handleKeyDownFn);
+const handleWheelFn = (e: WheelEvent) => {
+    e.preventDefault();
+    if (e.deltaY < 0) {
+        capturedKey.value = 'MWHEELUP';
+    } else if (e.deltaY > 0) {
+        capturedKey.value = 'MWHEELDOWN';
+    }
+    saveAndCloseCaptureFn();
+};
+
+/**
+ * 保存按键并关闭弹窗
+ */
+const saveAndCloseCaptureFn = () => {
+    if (currentSelectedItem.value && capturedKey.value) {
+        //保存系统配置
+        if (selectedSystemConfig.value === '武器类' || selectedSystemConfig.value === '道具累' || selectedSystemConfig.value === 'ZE常用') {
+            // 检查是否已存在相同配置项的绑定
+            const existingIndex = applyKeyBindItems.value.findIndex(
+                item => item.systemBindCfgVO?.systemName === currentSelectedItem.value?.systemName
+            );
+            if (existingIndex != -1) return;
+
+            // 检查按键是否已被其他配置使用
+            const keyExistsIndex = applyKeyBindItems.value.findIndex(
+                item => item.key === capturedKey.value
+            );
+            if (keyExistsIndex !== -1) {
+                const existingItem = applyKeyBindItems.value[keyExistsIndex];
+                window.$message?.warning(`按键 ${capturedKey.value} 已被 ${existingItem.systemBindCfgVO?.systemName} 使用，请更换按键`);
+                return;
+            }
+
+            const renderKeyConfigJson = replaceKeyPlaceholders(currentSelectedItem.value.keyConfigJson, capturedKey.value);
+
+            const newBindItem: Api.Game.ApplyKeyBindItem = {
+                key: capturedKey.value,
+                keyConfigJson: currentSelectedItem.value.keyConfigJson,
+                renderKeyConfigJson: renderKeyConfigJson,
+                configType: 'system',
+                systemBindCfgVO: {
+                    systemName: currentSelectedItem.value.systemName,
+                    systemIcon: currentSelectedItem.value.systemIcon,
+                    keyConfigJson: currentSelectedItem.value.keyConfigJson
+                }
+            };
+
+            applyKeyBindItems.value.push(newBindItem);
+
+            // 构建cfg内容：头部 + 渲染后的配置
+            const header = buildLogHeader(currentSelectedItem.value.configDesc || currentSelectedItem.value.systemName, capturedKey.value);
+            const cfgContent = header + '\n' + renderKeyConfigJson;
+            applyKeyBindsFn(cfgContent);
+        }
+    } else {
+        //使用自定义配置
+        applyKeyBindsFn("");
+    }
+    closeKeyCaptureFn();
 };
 
 // ============================================================================
@@ -476,68 +610,19 @@ const closeKeyCaptureFn = () => {
 // ============================================================================
 
 /**
- * 生成替换后的最终配置
+ * 写入Cfg文件
  */
-const getReplacedConfigFn = (): string => {
-    if (activeTab.value === 'local') {
-        return editorValue.value;
-    }
-
-    const content = replaceKeyPlaceholders(editorValue.value);
-    const logHeader = buildLogHeader();
-
-    let cleanOriginalContent = originalConfigContent.value || '';
-
-    if (cleanOriginalContent) {
-        const logPattern = /\/\/ ========================================[\s\S]*?\/\/ ========================================\s*/;
-        cleanOriginalContent = cleanOriginalContent.replace(logPattern, '').trim();
-    }
-
-    return cleanOriginalContent
-        ? logHeader + content + '\n\n' + cleanOriginalContent
-        : logHeader + content;
-};
-
-/**
- * 应用按键绑定配置
- */
-const applyKeyBindsFn = async () => {
-    const emptyKeyItem = keyBindItems.value.find(item => !item.key || item.key.trim() === '');
-    if (emptyKeyItem) {
-        const label = emptyKeyItem.description || `按键${emptyKeyItem.id}`;
-        window.$message?.warning(`请先设置 [${label}] 的按键`);
+const applyKeyBindsFn = async (content: string) => {
+    const paths = await window.ipcRenderer.invoke('auto-detect-paths');
+    if (!paths.csgo2Path) {
+        window.$message?.error('未找到 CS2 路径，请先在设置中配置');
         return;
     }
-
-    try {
-        const paths = await window.ipcRenderer.invoke('auto-detect-paths');
-        if (!paths.csgo2Path) {
-            window.$message?.error('未找到 CS2 路径，请先在设置中配置');
-            return;
-        }
-
-        originalConfigContent.value = '';
-        if (activeTab.value !== 'local') {
-            const readResult = await window.ipcRenderer.invoke('read-autoexec-cfg', paths.csgo2Path);
-            if (readResult.success) {
-                originalConfigContent.value = readResult.content;
-            }
-        }
-
-        const content = getReplacedConfigFn();
-        const result = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, content);
-
-        if (result.success) {
-            if (activeTab.value === 'library' && selectedConfig.value) {
-                await fetchIncrementUseCount(selectedConfig.value.id);
-                await Promise.all([fetchConfigLibrary(), fetchLocalConfigLibrary()]);
-            }
-            window.$message?.success('保存成功');
-        } else {
-            window.$message?.error('保存失败');
-        }
-    } catch {
-        window.$message?.error('配置写入失败');
+    const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, content);
+    if (success) {
+        window.$message?.success('应用成功');
+    } else {
+        window.$message?.error('应用失败');
     }
 };
 
@@ -622,12 +707,7 @@ onMounted(() => {
                             @click="activeTab = 'user'; handleTabChangeFn('user')">
                             <span class="text-12px">个人配置</span>
                         </NButton>
-                        <NButton :type="activeTab === 'local' ? 'primary' : 'default'"
-                            @click="activeTab = 'local'; handleTabChangeFn('local')">
-                            <span class="text-12px">本地预览</span>
-                        </NButton>
                     </div>
-
                     <div v-show="activeTab === 'library'">
                         <NGrid :y-gap="10" :cols="1">
                             <NGridItem v-for="systemConfig in systemLibraryItems" :key="systemConfig.systemName">
@@ -650,61 +730,148 @@ onMounted(() => {
                     </div>
 
                     <div v-show="activeTab === 'user'">
-                        <!-- 个人配置内容 -->
-                    </div>
-
-                    <div v-show="activeTab === 'local'">
-                        <!-- 本地预览内容 -->
+                        <NGrid x-gap="10" y-gap="10" :cols="1">
+                            <NGridItem v-for="item in applyKeyBindItems" :key="item.systemBindCfgVO?.systemName"
+                                @click="handleUserConfigClickFn(item.systemBindCfgVO?.systemName)">
+                                <NCard class="applied-binding-item rounded-10px cursor-pointer"
+                                    :class="{ 'selected': selectedSystemConfig === item.systemBindCfgVO?.systemName }"
+                                    content-style="padding:10px">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-10px">
+                                            <img :src="item.systemBindCfgVO?.systemIcon"
+                                                class="w-48px h-48px object-contain" />
+                                            <div class="flex flex-col">
+                                                <span class="text-14px font-bold">{{ item.systemBindCfgVO?.systemName
+                                                }}</span>
+                                                <span class="text-12px text-gray-500">绑定按键: {{ item.key }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </NCard>
+                            </NGridItem>
+                        </NGrid>
                     </div>
                 </div>
             </NCard>
-            <NCard class="right-panel" content-class="overflow-auto" content-style="padding:10px;">
-                <NGrid x-gap="10" y-gap="10" :cols="4">
-                    <NGridItem v-for="gun in GunLibaryCfgOption" :key="gun.systemName">
-                        <div class="flex flex-col items-center p-10px rounded-8px bg-#f8fafc border-1px border-solid border-#e2e8f0 hover:border-#667eea hover:shadow-md transition-all-200 cursor-pointer">
-                            <img :src="gun.systemIcon" class="w-48px h-48px object-contain mb-8px" />
-                            <span class="text-12px text-gray-700">{{ gun.systemName }}</span>
+            <NCard class="right-panel" content-style="padding:10px;"
+                content-class="h-full flex flex-col flex-1 overflow-hidden" header-style="padding:0px" :segmented="{
+                    content: true,
+                    footer: 'soft',
+                }">
+                <template #header v-if="activeTab === 'user'">
+                    <div class="mb-10px pl-20px pr-20px pb-5px flex justify-between">
+                        <div class="flex items-center">
+                            <div class="font-size-24px">
+                                <SvgIcon icon="material-symbols:folder-code-outline" class="w-24px h-24px mr-10px" />
+                            </div>
+                            <div class="font-size-14px font-bold">
+                                autoexec.cfg
+                            </div>
                         </div>
+                        <div class="flex items-center">
+                            <NSwitch class="mr-15px" size="large" :round="false" v-model:value="isEditMode">
+                                <template #checked-icon>
+                                    <SvgIcon icon="akar-icons:shipping-box-01" />
+                                </template>
+                                <template #unchecked-icon>
+                                    <SvgIcon icon="akar-icons:file" />
+                                </template>
+                            </NSwitch>
+                            <div class="font-size-22px cursor-pointer mr-15px cursor-pointer">
+                                <SvgIcon icon="material-symbols:content-copy-outline" />
+                            </div>
+                            <div class="font-size-22px cursor-pointer cursor-pointer">
+                                <SvgIcon icon="material-symbols:folder-copy-outline" />
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                <NGrid x-gap="10" y-gap="10" :cols="4" v-if="activeTab === 'library'">
+                    <NGridItem v-for="item in currentCfgOptions" :key="item.systemName"
+                        @click="!isItemApplied(item.systemName) && openKeyCaptureFn(item)">
+                        <NCard class="rounded-10px"
+                            :class="{ 'applied': isItemApplied(item.systemName), 'selected': selectedSystemConfig === item.systemName }"
+                            content-style="padding:15px"
+                            :content-class="isItemApplied(item.systemName) ? 'flex flex-col items-center justify-center' : 'cursor-pointer flex flex-col items-center justify-center'">
+                            <img :src="item.systemIcon" class="w-48px h-48px object-contain mb-8px" />
+                            <span class="text-12px">{{ item.systemName }}</span>
+                        </NCard>
                     </NGridItem>
                 </NGrid>
+                <div v-if="activeTab === 'user' && !isEditMode">
+                    <NCollapse>
+                        <NCollapseItem v-for="(item, index) in applyKeyBindItems"
+                            :key="item.systemBindCfgVO?.systemName" :name="index">
+                            <template #header>
+                                <NCard class="rounded-10px" content-class="flex" content-style="padding:10px;">
+                                    <div class="w-200px">
+                                        <img :src="item.systemBindCfgVO?.systemIcon" class="h-75px mr-20px" />
+                                    </div>
+                                    <div class="flex flex-col align-center justify-between">
+                                        <span class="text-14px font-bold">配置库名称 : {{ item.systemBindCfgVO?.systemName
+                                            }}</span>
+                                        <span class="text-12px text-gray-500">绑定按键 : {{ item.key }}</span>
+                                    </div>
+                                </NCard>
+                            </template>
+                            <div v-if="item.systemBindCfgVO?.keyConfigJson"
+                                class="rounded-10px overflow-hidden max-h-500px">
+                                <MonacoEditor ref="editorRef" class="w-full h-full" :options="editorOptions"
+                                    :model-value="item.systemBindCfgVO?.keyConfigJson" />
+                            </div>
+                        </NCollapseItem>
+                    </NCollapse>
+                </div>
+                <div v-if="activeTab === 'user' && isEditMode" class="w-full h-full">
+                    <MonacoEditor ref="editorRef" class="w-full min-h-full max-h-full" :options="editorOptions"
+                        :model-value="localAutoexecCfg" />
+                </div>
             </NCard>
         </div>
 
-        <NModal v-model:show="showKeyCaptureModal" preset="card" class="w-420px rounded-20px" :bordered="false"
-            :closable="false" size="small">
-            <div class="key-capture-modal">
-                <div class="capture-instruction">请按下要设置的按键</div>
-                <div class="capture-display font-size-24px" :class="{ 'capturing': showKeyCaptureModal }">
-                    <SvgIcon icon="material-symbols:keyboard-alt-outline" class="capture-icon" />
-                    <span class="capture-key font-size-12px">{{ capturedKey || '等待按键...' }}</span>
+        <NModal v-model:show="showKeyCaptureModal" :bordered="true" preset="card"
+            class="w-400px rounded-20px key-capture-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
+            size="small">
+            <div class="key-capture-modal-new" @wheel="handleWheelFn">
+                <!-- 顶部装饰区域 -->
+                <div class="capture-header">
+                    <div class="character-image">
+                        <img src="@/assets/imgs/menu/942302.png" alt="character" />
+                    </div>
+                    <div class="header-glow"></div>
                 </div>
-                <div class="capture-hint">支持组合键：Ctrl+、Shift+、Alt+</div>
+                <!-- 按键显示区域 -->
+                <div class="capture-display-area" :class="{ 'has-key': capturedKey }">
+                    <div class="key-display-box">
+                        <span v-if="capturedKey" class="captured-key-text">{{ capturedKey }}</span>
+                        <span v-else class="waiting-text">
+                            <span class="dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </span>
+                        </span>
+                    </div>
+                </div>
+                <!-- 提示信息 -->
+                <div class="capture-tips">
+                    <div class="tip-item">
+                        <SvgIcon icon="material-symbols:keyboard" class="tip-icon" />
+                        <span class="tip-text">键盘按键</span>
+                    </div>
+                    <div class="tip-item">
+                        <SvgIcon icon="material-symbols:mouse" class="tip-icon" />
+                        <span class="tip-text">鼠标按键</span>
+                    </div>
+                    <div class="tip-item">
+                        <SvgIcon icon="material-symbols:swap-vert" class="tip-icon" />
+                        <span class="tip-text">滚轮</span>
+                    </div>
+                </div>
             </div>
         </NModal>
 
-        <NModal v-model:show="showNewConfigModal" preset="card" class="w-460px rounded-10px" :bordered="false"
-            :closable="false" size="small">
-            <template #header>
-                <div class="flex items-center font-size-18px">
-                    <svg-icon icon="material-symbols:add" class="mr-5px" />
-                    <div class="font-size-16px">新建配置</div>
-                </div>
-            </template>
-            <NForm>
-                <NFormItem label="配置名称" required>
-                    <NInput v-model:value="newConfig.configName" placeholder="请输入配置名称" />
-                </NFormItem>
-                <NFormItem label="配置描述">
-                    <NInput v-model:value="newConfig.configDesc" type="textarea" placeholder="请输入配置描述（可选）" :rows="3" />
-                </NFormItem>
-            </NForm>
-            <template #footer>
-                <NButton class="mr-20px rounded-10px" ghost @click="closeNewConfigModalFn">取消</NButton>
-                <NButton class="rounded-10px" type="info" @click="createNewConfigFn">创建</NButton>
-            </template>
-        </NModal>
-
-        <NModal v-model:show="showTutorialModal" preset="card" class="w-600px rounded-10px" :bordered="false">
+        <NModal v-model:show="showTutorialModal" :bordered="true" preset="card" class="w-600px rounded-10px">
             <template #header>
                 <div class="flex items-center font-size-18px">
                     <SvgIcon icon="material-symbols:help-outline" class="mr-5px" />
@@ -856,6 +1023,22 @@ onMounted(() => {
                     background: rgba(102, 126, 234, 0.05);
                 }
             }
+
+            .applied-binding-item {
+                transition: all 0.2s ease;
+
+                &:hover {
+                    border-color: #667eea;
+                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+                    background: rgba(102, 126, 234, 0.05);
+                }
+
+                &.selected {
+                    border-color: #667eea;
+                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+                    background: rgba(102, 126, 234, 0.05);
+                }
+            }
         }
 
         .right-panel {
@@ -867,6 +1050,37 @@ onMounted(() => {
             border-radius: 5px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             transition: all 0.3s ease;
+
+            :deep(.n-card) {
+                &.applied {
+                    border: 2px solid #667eea;
+                    box-shadow: 0 0 10px rgba(102, 126, 234, 0.4);
+                }
+
+                &.selected {
+                    border-color: #667eea;
+                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+                    background: rgba(102, 126, 234, 0.05);
+                }
+            }
+
+            .empty-bindings {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                padding: 40px 20px;
+                color: rgba(255, 255, 255, 0.5);
+
+                .empty-icon {
+                    font-size: 48px;
+                    margin-bottom: 12px;
+                }
+
+                .empty-text {
+                    font-size: 14px;
+                }
+            }
         }
     }
 }
@@ -909,6 +1123,270 @@ onMounted(() => {
             color: var(--text-secondary);
             margin-top: 8px;
         }
+    }
+}
+
+// 新的按键捕获弹窗样式 - 适配黑白主题
+.key-capture-wrapper {
+    :deep(.n-card) {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: none;
+        overflow: hidden;
+    }
+
+    &.light-mode {
+        :deep(.n-card) {
+            background: linear-gradient(135deg, #f8f9fc 0%, #eef0f5 100%);
+        }
+
+        .key-capture-modal-new {
+            color: #333;
+
+            .capture-header {
+                .character-image {
+                    border-color: rgba(102, 126, 234, 0.6);
+                    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+                }
+
+                .header-glow {
+                    background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+                }
+            }
+
+            .capture-display-area {
+                .key-display-box {
+                    background: rgba(102, 126, 234, 0.05);
+                    border-color: rgba(102, 126, 234, 0.3);
+
+                    .captured-key-text {
+                        color: #667eea;
+                        text-shadow: none;
+                    }
+
+                    .waiting-text .dots span {
+                        background: #667eea;
+                    }
+                }
+
+                &.has-key .key-display-box {
+                    background: rgba(102, 126, 234, 0.1);
+                    border-color: #667eea;
+                    box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+                }
+            }
+
+            .capture-tips {
+                .tip-item {
+                    background: rgba(102, 126, 234, 0.05);
+                    border-color: rgba(102, 126, 234, 0.15);
+
+                    .tip-icon {
+                        color: #667eea;
+                    }
+
+                    .tip-text {
+                        color: rgba(0, 0, 0, 0.6);
+                    }
+                }
+            }
+        }
+    }
+}
+
+.key-capture-modal-new {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 16px 0;
+    color: #fff;
+    position: relative;
+
+    .capture-header {
+        position: relative;
+        width: 100%;
+        height: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        margin-bottom: 12px;
+
+        .character-image {
+            position: relative;
+            z-index: 2;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+
+        .header-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+            z-index: 1;
+        }
+    }
+
+    .capture-display-area {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-bottom: 16px;
+
+        .key-display-box {
+            min-width: 160px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-radius: 12px;
+            padding: 0 20px;
+            transition: all 0.3s ease;
+
+            .captured-key-text {
+                font-size: 24px;
+                font-weight: 700;
+                color: #667eea;
+                text-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+            }
+
+            .waiting-text {
+                .dots {
+                    display: flex;
+                    gap: 6px;
+
+                    span {
+                        width: 10px;
+                        height: 10px;
+                        background: #667eea;
+                        border-radius: 50%;
+                        animation: dotPulse 1.4s ease-in-out infinite;
+
+                        &:nth-child(2) {
+                            animation-delay: 0.2s;
+                        }
+
+                        &:nth-child(3) {
+                            animation-delay: 0.4s;
+                        }
+                    }
+                }
+            }
+        }
+
+        &.has-key {
+            .key-display-box {
+                background: rgba(102, 126, 234, 0.1);
+                border-color: #667eea;
+                box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+            }
+        }
+    }
+
+    .capture-tips {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+
+        .tip-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 80px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+            gap: 4px;
+
+            &:hover {
+                background: rgba(102, 126, 234, 0.1);
+                border-color: rgba(102, 126, 234, 0.3);
+            }
+
+            .tip-icon {
+                font-size: 22px;
+                color: #667eea;
+            }
+
+            .tip-text {
+                font-size: 11px;
+                color: rgba(255, 255, 255, 0.6);
+            }
+        }
+    }
+
+    .capture-buttons {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+        margin-top: 8px;
+
+        .cancel-btn,
+        .apply-btn {
+            flex: 1;
+            height: 40px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .cancel-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+
+            &:hover {
+                background: rgba(255, 255, 255, 0.1);
+                border-color: rgba(255, 255, 255, 0.2);
+            }
+        }
+
+        .apply-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+
+            &:hover:not(:disabled) {
+                background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
+                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            }
+
+            &:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+        }
+    }
+}
+
+@keyframes dotPulse {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1);
     }
 }
 </style>
