@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import './plugins/assets';
+import 'md-editor-v3/lib/style.css';
 import 'animate.css';
 import { setupRouter } from './router';
 import { setupStore } from './store';

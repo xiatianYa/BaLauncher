@@ -1,30 +1,19 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, } from 'vue';
 import {
     NButton,
     NCard,
-    NTabPane,
-    NTabs,
-    NList,
-    NListItem,
-    NInput,
     NModal,
-    NForm,
-    NFormItem,
     NGrid,
     NGridItem
 } from 'naive-ui';
 import { useThemeStore } from '@/store/modules/theme';
-import { EditorRuntimeOptions, MonacoEditor } from '@lascyb/monaco-editor-vue3';
-import * as monaco from 'monaco-editor';
+import { useGameStore } from '@/store/modules/game';
 import {
-    fetchAddKeyBind,
-    fetchDeleteKeyBind,
     fetchGetAllSharedKeyBinds,
     fetchGetMyKeyBinds,
-    fetchIncrementUseCount,
-    fetchUpdateKeyBind
 } from '@/service/api/game/keyBind';
+import { MdEditor } from 'md-editor-v3';
 import dayjs from 'dayjs';
 
 import Gun from '@/assets/imgs/tool/Gun.png';
@@ -38,14 +27,15 @@ import FAMAS from '@/assets/imgs/weapon/FAMAS.png';
 import G3SG1 from '@/assets/imgs/weapon/G3SG1.png';
 import M249 from '@/assets/imgs/weapon/M249.png';
 import M4A4 from '@/assets/imgs/weapon/M4A4.png';
+import M4A1 from '@/assets/imgs/weapon/M4A1.png';
 import MAC10 from '@/assets/imgs/weapon/MAC-10.png';
 import MP7 from '@/assets/imgs/weapon/MP7.png';
 import P250 from '@/assets/imgs/weapon/P250.png';
 import R8 from '@/assets/imgs/weapon/R8.png';
 import SCAR20 from '@/assets/imgs/weapon/SCAR-20.png';
-import SG553 from '@/assets/imgs/weapon/SG553.png';
+import SG556 from '@/assets/imgs/weapon/SG556.png';
 import USP from '@/assets/imgs/weapon/USP.png';
-import MP5 from '@/assets/imgs/weapon/mp5.png';
+import MP5SD from '@/assets/imgs/weapon/MP5SD.png';
 import Negev from '@/assets/imgs/weapon/内格夫.png';
 import DualBerettas from '@/assets/imgs/weapon/双枪.png';
 import Glock from '@/assets/imgs/weapon/格洛克.png';
@@ -60,6 +50,11 @@ import Flash from '@/assets/imgs/weapon/Flash.png';
 import NightVision from '@/assets/imgs/weapon/NightVision.png';
 import Needle from '@/assets/imgs/weapon/Needle.png';
 import Armor from '@/assets/imgs/weapon/Armor.png';
+import Nova from '@/assets/imgs/weapon/Nova.png';
+import XM1014 from '@/assets/imgs/weapon/XM1014.png';
+import Sawed from '@/assets/imgs/weapon/Sawed.png';
+import CommonWeapon from '@/assets/imgs/weapon/CommonWeapon.png';
+import MAG7 from '@/assets/imgs/weapon/MAG-7.png';
 
 
 /**
@@ -80,21 +75,18 @@ const emit = defineEmits<{ back: []; }>();
 const themeStore = useThemeStore();
 const isDarkMode = computed(() => themeStore.darkMode);
 
+/** Game Store */
+const gameStore = useGameStore();
+
 /** UI 状态 */
 const activeTab = ref<'library' | 'local' | 'user'>('library');
 const selectedSystemConfig = ref<string | null>(null);
 const showKeyCaptureModal = ref<boolean>(false);
-const showTutorialModal = ref<boolean>(false);
-const isEditMode = ref<boolean>(false);
 const localAutoexecCfg = ref<string>('');
 
-/** 编辑器相关 */
-const editorRef = ref();
-// 编辑器实例
-const monacoEditorInstance = ref<monaco.editor.IStandaloneCodeEditor | null>(null);
-// 编辑器值
-const editorValue = ref<string>('');
-
+/**
+* 监听编辑器内容变化，同步到编辑器实例
+*/
 /** 按键绑定相关 */
 const capturedKey = ref<string>('');
 /** 配置库相关 */
@@ -133,16 +125,28 @@ const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
         configDesc: '购买MP7冲锋枪',
     },
     {
-        systemName: 'MP5',
-        systemIcon: MP5,
-        keyConfigJson: 'bind "[按键:购买MP5]" "buy mp5"',
-        configDesc: '购买MP5冲锋枪',
+        systemName: 'MP5SD',
+        systemIcon: MP5SD,
+        keyConfigJson: 'bind "[按键:购买MP5]" "buy mp5sd"',
+        configDesc: '购买MP5SD冲锋枪',
     },
     {
         systemName: 'MAC10',
         systemIcon: MAC10,
         keyConfigJson: 'bind "[按键:购买MAC10]" "buy mac10"',
         configDesc: '购买MAC-10冲锋枪',
+    },
+    {
+        systemName: 'P90',
+        systemIcon: CommonWeapon,
+        keyConfigJson: 'bind "[按键:购买P90]" "buy p90"',
+        configDesc: '购买P90冲锋枪',
+    },
+    {
+        systemName: '野牛(牛肉粉最爱)',
+        systemIcon: CommonWeapon,
+        keyConfigJson: 'bind "[按键:购买野牛]" "buy bizon"',
+        configDesc: '购买野牛冲锋枪',
     },
     {
         systemName: 'M249',
@@ -163,22 +167,28 @@ const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
         configDesc: '购买AK-47步枪',
     },
     {
-        systemName: 'M4A1',
+        systemName: 'M4A4',
         systemIcon: M4A4,
         keyConfigJson: 'bind "[按键:购买M4A4]" "buy m4a4"',
         configDesc: '购买M4A4步枪',
     },
     {
-        systemName: '法玛斯',
-        systemIcon: FAMAS,
-        keyConfigJson: 'bind "[按键:购买法玛斯]" "buy famas"',
-        configDesc: '购买法玛斯步枪',
+        systemName: 'M4A1-S',
+        systemIcon: M4A1,
+        keyConfigJson: 'bind "[按键:购买M4A1-S]" "buy m4a1_silencer"',
+        configDesc: '购买M4A1-S步枪',
     },
     {
-        systemName: 'SG553',
-        systemIcon: SG553,
-        keyConfigJson: 'bind "[按键:购买SG553]" "buy sg553"',
-        configDesc: '购买SG553步枪',
+        systemName: 'Famas',
+        systemIcon: FAMAS,
+        keyConfigJson: 'bind "[按键:购买Famas]" "buy famas"',
+        configDesc: '购买Famas步枪',
+    },
+    {
+        systemName: 'SG556',
+        systemIcon: SG556,
+        keyConfigJson: 'bind "[按键:购买SG553]" "buy sg556"',
+        configDesc: '购买SG556步枪',
     },
     {
         systemName: 'AUG',
@@ -187,10 +197,40 @@ const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
         configDesc: '购买AUG步枪',
     },
     {
-        systemName: '鸟狙',
+        systemName: 'Galilar',
+        systemIcon: CommonWeapon,
+        keyConfigJson: 'bind "[按键:购买Galilar]" "buy galilar"',
+        configDesc: '购买Galilar步枪',
+    },
+    {
+        systemName: 'Nova',
+        systemIcon: Nova,
+        keyConfigJson: 'bind "[按键:购买新星]" "buy nova"',
+        configDesc: '购买Nova喷子',
+    },
+    {
+        systemName: 'XM1014',
+        systemIcon: XM1014,
+        keyConfigJson: 'bind "[按键:购买XM1014]" "buy xm1014"',
+        configDesc: '购买XM1014连喷',
+    },
+    {
+        systemName: '匪喷',
+        systemIcon: Sawed,
+        keyConfigJson: 'bind "[按键:购买匪喷]" "buy sawedoff"',
+        configDesc: '购买匪喷',
+    },
+    {
+        systemName: '警喷',
+        systemIcon: MAG7,
+        keyConfigJson: 'bind "[按键:购买警喷]" "buy mag7"',
+        configDesc: '购买警喷',
+    },
+    {
+        systemName: 'SSG08',
         systemIcon: Scout,
-        keyConfigJson: 'bind "[按键:购买鸟狙]" "buy scout"',
-        configDesc: '购买SSG08鸟狙',
+        keyConfigJson: 'bind "[按键:购买SSG08]" "buy ssg08"',
+        configDesc: '购买SSG08狙击枪',
     },
     {
         systemName: 'AWP',
@@ -219,7 +259,7 @@ const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
     {
         systemName: 'R8',
         systemIcon: R8,
-        keyConfigJson: 'bind "[按键:购买R8]" "buy r8"',
+        keyConfigJson: 'bind "[按键:购买R8]" "buy revolver"',
         configDesc: '购买R8左轮手枪',
     },
     {
@@ -231,13 +271,13 @@ const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
     {
         systemName: '双枪',
         systemIcon: DualBerettas,
-        keyConfigJson: 'bind "[按键:购买双枪]" "buy dualberettas"',
+        keyConfigJson: 'bind "[按键:购买双枪]" "buy elite"',
         configDesc: '购买双持贝瑞塔手枪',
     },
     {
         systemName: 'USP',
         systemIcon: USP,
-        keyConfigJson: 'bind "[按键:购买USP]" "buy usp"',
+        keyConfigJson: 'bind "[按键:购买USP]" "buy usp_sliencer"',
         configDesc: '购买USP-S手枪',
     },
     {
@@ -249,7 +289,7 @@ const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
     {
         systemName: 'CZ-75',
         systemIcon: CZ75,
-        keyConfigJson: 'bind "[按键:购买CZ-75]" "buy cz75"',
+        keyConfigJson: 'bind "[按键:购买CZ-75]" "buy cz75a"',
         configDesc: '购买CZ75自动手枪',
     },
 ]);
@@ -364,27 +404,10 @@ const currentCfgOptions = computed(() => {
 const configLibraryItems = ref<Api.Game.KeyBindList>([]);
 // 引用的数据库配置
 const localConfigItems = ref<Api.Game.KeyBindList>([]);
-// 用户应用的按键绑定项
-const applyKeyBindItems = ref<Api.Game.ApplyKeyBindItem[]>([]);
-
-/** 编辑器选项 */
-const editorOptions = ref<EditorRuntimeOptions>({
-    theme: isDarkMode.value ? 'vs-dark' : 'vs',
-    fontSize: 12,
-    lineNumbers: 'off',
-    minimap: { enabled: false },
-    scrollBeyondLastLine: false,
-    automaticLayout: true,
-    wordWrap: 'on',
-    tabSize: 2,
-    insertSpaces: true,
-    readOnly: false,
-    folding: false,
-    cursorStyle: 'line',
-    quickSuggestions: { other: true, comments: true, strings: true },
-    overviewRulerBorder: false,
-    renderLineHighlight: 'none',
-    domReadOnly: false
+// 用户应用的按键绑定项 - 从 gameStore 获取
+const applyKeyBindItems = computed({
+    get: () => gameStore.applyKeyBindItems,
+    set: (items) => gameStore.setApplyKeyBindItems(items)
 });
 
 // ============================================================================
@@ -417,19 +440,30 @@ const buildLogHeader = (desc: string, key: string): string => {
 // ============================================================================
 // 配置管理
 // ============================================================================
-
-// 打开教程弹窗
-const openTutorialModalFn = () => {
-    showTutorialModal.value = true;
+// 读取本地配置文件
+const loadLocalAutoexecCfg = async () => {
+    try {
+        const paths = await window.ipcRenderer.invoke('auto-detect-paths');
+        if (paths.csgo2Path) {
+            const result = await window.ipcRenderer.invoke('read-autoexec-cfg', paths.csgo2Path);
+            if (result.success) {
+                localAutoexecCfg.value = result.content || '';
+            } else {
+                window.$message?.error('读取配置文件失败: ' + (result.error || '未知错误'));
+            }
+        }
+    } catch (error) {
+        console.error('读取本地配置失败:', error);
+        window.$message?.error('读取本地配置失败');
+    }
 };
-
 
 // 切换标签页
 const handleTabChangeFn = async (value: 'library' | 'local' | 'user') => {
     activeTab.value = value;
-    isEditMode.value = false;
     selectedSystemConfig.value = null;
     selectedSystemConfig.value = '';
+    await loadLocalAutoexecCfg();
 };
 
 // 检查配置项是否已应用
@@ -439,7 +473,6 @@ const isItemApplied = (systemName: string): boolean => {
 
 // 处理个人配置项点击
 const handleUserConfigClickFn = (systemName: string | undefined) => {
-    console.log('点击了个人配置项:', systemName);
     if (!systemName) return;
     selectedSystemConfig.value = systemName;
 };
@@ -460,10 +493,37 @@ const removeAppliedBinding = async (systemName: string | undefined) => {
                 return;
             }
         }
-        applyKeyBindItems.value.splice(index, 1);
+        // 使用 filter 创建新数组，触发计算属性 setter
+        applyKeyBindItems.value = applyKeyBindItems.value.filter((_, i) => i !== index);
         window.$message?.success('已移除绑定');
     }
 };
+
+// 当前要重置的绑定项
+const currentResetItem = ref<Api.Game.ApplyKeyBindItem | null>(null);
+
+// 是否正在捕获按键（防止重复触发）
+const isCapturing = ref<boolean>(false);
+
+// 重置已应用的绑定按键
+const resetAppliedBindingKey = async (systemName: string | undefined) => {
+    if (!systemName) return;
+
+    // 找到对应的绑定项
+    const item = applyKeyBindItems.value.find(i => i.systemBindCfgVO?.systemName === systemName);
+    if (!item) {
+        window.$message?.error('未找到该绑定项');
+        return;
+    }
+
+    // 保存当前要重置的项
+    currentResetItem.value = item;
+
+    // 打开重新绑定弹窗
+    openResetKeyCaptureFn();
+};
+
+
 
 // ============================================================================
 // 按键捕获
@@ -541,6 +601,160 @@ const closeKeyCaptureFn = () => {
     window.removeEventListener('mousedown', handleMouseDownFn);
 };
 
+// 打开重新绑定弹窗
+const openResetKeyCaptureFn = () => {
+    showKeyCaptureModal.value = true;
+    capturedKey.value = '';
+    isCapturing.value = false;
+    window.addEventListener('keydown', handleKeyDownResetFn);
+    window.addEventListener('mousedown', handleMouseDownResetFn);
+    window.addEventListener('wheel', handleWheelResetFn, { passive: false });
+};
+
+// 关闭重新绑定弹窗
+const closeResetKeyCaptureFn = () => {
+    showKeyCaptureModal.value = false;
+    capturedKey.value = '';
+    isCapturing.value = false;
+    currentResetItem.value = null;
+    window.removeEventListener('keydown', handleKeyDownResetFn);
+    window.removeEventListener('mousedown', handleMouseDownResetFn);
+    window.removeEventListener('wheel', handleWheelResetFn);
+};
+
+// 处理重置时的鼠标滚轮事件
+const handleWheelResetFn = (e: WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 防止重复触发
+    if (isCapturing.value) return;
+
+    // 检查滚轮按键是否已被其他配置使用
+    const wheelKey = e.deltaY < 0 ? 'MWHEELUP' : 'MWHEELDOWN';
+    const keyExistsIndex = applyKeyBindItems.value.findIndex(
+        item => item.key === wheelKey && item.systemBindCfgVO?.systemName !== currentResetItem.value?.systemBindCfgVO?.systemName
+    );
+    if (keyExistsIndex !== -1) {
+        const existingItem = applyKeyBindItems.value[keyExistsIndex];
+        window.$message?.warning(`按键 ${wheelKey} 已被 ${existingItem.systemBindCfgVO?.systemName} 使用，请更换按键`);
+        return;
+    }
+
+    if (e.deltaY < 0) {
+        capturedKey.value = 'MWHEELUP';
+    } else if (e.deltaY > 0) {
+        capturedKey.value = 'MWHEELDOWN';
+    }
+
+    isCapturing.value = true;
+    saveResetKeyAndCloseFn();
+};
+
+// 处理重置时的按键按下事件
+const handleKeyDownResetFn = (e: KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    let key = '';
+    if (e.ctrlKey) key += 'Ctrl+';
+    if (e.shiftKey) key += 'Shift+';
+    if (e.altKey) key += 'Alt+';
+
+    if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
+        key += e.key.toUpperCase();
+        capturedKey.value = key;
+        saveResetKeyAndCloseFn();
+    }
+};
+
+// 处理重置时的鼠标按下事件
+const handleMouseDownResetFn = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    let key = '';
+    if (e.ctrlKey) key += 'Ctrl+';
+    if (e.shiftKey) key += 'Shift+';
+    if (e.altKey) key += 'Alt+';
+
+    switch (e.button) {
+        case 0:
+            key += 'MOUSE1';
+            break;
+        case 1:
+            key += 'MOUSE3';
+            break;
+        case 2:
+            key += 'MOUSE2';
+            break;
+        case 3:
+            key += 'MOUSE4';
+            break;
+        case 4:
+            key += 'MOUSE5';
+            break;
+        default:
+            return;
+    }
+
+    capturedKey.value = key;
+    saveResetKeyAndCloseFn();
+};
+
+// 保存重置的按键并关闭弹窗
+const saveResetKeyAndCloseFn = async () => {
+    if (currentResetItem.value && capturedKey.value) {
+        // 检查按键是否已被其他配置使用
+        const keyExistsIndex = applyKeyBindItems.value.findIndex(
+            item => item.key === capturedKey.value && item.systemBindCfgVO?.systemName !== currentResetItem.value?.systemBindCfgVO?.systemName
+        );
+        if (keyExistsIndex !== -1) {
+            const existingItem = applyKeyBindItems.value[keyExistsIndex];
+            window.$message?.warning(`按键 ${capturedKey.value} 已被 ${existingItem.systemBindCfgVO?.systemName} 使用，请更换按键`);
+            return;
+        }
+
+        // 生成新的配置
+        const newRenderKeyConfigJson = replaceKeyPlaceholders(currentResetItem.value.keyConfigJson, capturedKey.value);
+
+        // 更新绑定项
+        const index = applyKeyBindItems.value.findIndex(
+            item => item.systemBindCfgVO?.systemName === currentResetItem.value?.systemBindCfgVO?.systemName
+        );
+        if (index !== -1) {
+            const oldItem = applyKeyBindItems.value[index];
+
+            applyKeyBindItems.value[index] = {
+                ...currentResetItem.value,
+                key: capturedKey.value,
+                renderKeyConfigJson: newRenderKeyConfigJson
+            };
+
+            // 将修改后的配置写入 cfg 文件
+            const paths = await window.ipcRenderer.invoke('auto-detect-paths');
+            if (paths.csgo2Path) {
+                // 先移除旧的配置
+                if (oldItem.renderKeyConfigJson) {
+                    await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, oldItem.renderKeyConfigJson);
+                }
+                // 写入新的配置
+                const header = buildLogHeader(currentResetItem.value.systemBindCfgVO?.systemName || '', capturedKey.value);
+                const cfgContent = header + '\n' + newRenderKeyConfigJson;
+                const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, cfgContent);
+                if (success) {
+                    window.$message?.success('按键重置成功并已写入配置');
+                } else {
+                    window.$message?.error('写入配置文件失败');
+                }
+            } else {
+                window.$message?.success('按键重置成功');
+            }
+        }
+    }
+    closeResetKeyCaptureFn();
+};
+
 /**
  * 处理鼠标滚轮事件
  */
@@ -591,7 +805,8 @@ const saveAndCloseCaptureFn = () => {
                 }
             };
 
-            applyKeyBindItems.value.push(newBindItem);
+            // 使用展开运算符创建新数组，触发计算属性 setter
+            applyKeyBindItems.value = [...applyKeyBindItems.value, newBindItem];
 
             // 构建cfg内容：头部 + 渲染后的配置
             const header = buildLogHeader(currentSelectedItem.value.configDesc || currentSelectedItem.value.systemName, capturedKey.value);
@@ -618,13 +833,33 @@ const applyKeyBindsFn = async (content: string) => {
         window.$message?.error('未找到 CS2 路径，请先在设置中配置');
         return;
     }
-    const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, content);
-    if (success) {
+    const { error } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, content);
+    if (!error) {
         window.$message?.success('应用成功');
     } else {
         window.$message?.error('应用失败');
     }
 };
+
+/**
+ * 保存本地配置
+ */
+const saveLocalAutoexecCfg = async () => {
+    const paths = await window.ipcRenderer.invoke('auto-detect-paths');
+    if (!paths.csgo2Path) {
+        window.$message?.error('未找到 CS2 路径，请先在设置中配置');
+        return;
+    }
+    // 传入 true 表示覆盖整个文件
+    const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, localAutoexecCfg.value, true);
+    if (success) {
+        window.$message?.success('保存成功');
+    } else {
+        window.$message?.error('保存失败');
+    }
+};
+
+
 
 // ============================================================================
 // 数据获取
@@ -660,18 +895,6 @@ const handleBackFn = () => emit('back');
 // ============================================================================
 
 /**
- * 监听编辑器内容变化，同步到编辑器实例
- */
-watch(editorValue, (newValue) => {
-    if (monacoEditorInstance.value) {
-        const currentValue = monacoEditorInstance.value.getValue();
-        if (currentValue !== newValue) {
-            monacoEditorInstance.value.setValue(newValue);
-        }
-    }
-});
-
-/**
  * 组件挂载时初始化
  */
 onMounted(() => {
@@ -685,9 +908,6 @@ onMounted(() => {
             <div class="title-section">
                 <SvgIcon icon="material-symbols:keyboard-alt-outline" />
                 <h1 class="page-title">按键绑定配置</h1>
-                <div class="cursor-pointer font-size-24px" @click="openTutorialModalFn">
-                    <SvgIcon icon="line-md:question-circle" />
-                </div>
             </div>
             <div class="back-btn" @click="handleBackFn">
                 <SvgIcon icon="material-symbols:arrow-back" class="back-icon" />
@@ -696,7 +916,7 @@ onMounted(() => {
         </div>
 
         <div class="main-content">
-            <NCard class="left-panel" content-style="padding:0px;">
+            <NCard class="left-panel" content-class="h-full overflow-auto" content-style="padding:10px;">
                 <div class="flex flex-col gap-10px">
                     <div class="flex justify-center gap-5px">
                         <NButton :type="activeTab === 'library' ? 'primary' : 'default'"
@@ -706,6 +926,10 @@ onMounted(() => {
                         <NButton :type="activeTab === 'user' ? 'primary' : 'default'"
                             @click="activeTab = 'user'; handleTabChangeFn('user')">
                             <span class="text-12px">个人配置</span>
+                        </NButton>
+                        <NButton :type="activeTab === 'local' ? 'primary' : 'default'"
+                            @click="activeTab = 'local'; handleTabChangeFn('local')">
+                            <span class="text-12px">本地配置</span>
                         </NButton>
                     </div>
                     <div v-show="activeTab === 'library'">
@@ -734,7 +958,6 @@ onMounted(() => {
                             <NGridItem v-for="item in applyKeyBindItems" :key="item.systemBindCfgVO?.systemName"
                                 @click="handleUserConfigClickFn(item.systemBindCfgVO?.systemName)">
                                 <NCard class="applied-binding-item rounded-10px cursor-pointer"
-                                    :class="{ 'selected': selectedSystemConfig === item.systemBindCfgVO?.systemName }"
                                     content-style="padding:10px">
                                     <div class="flex items-center justify-between">
                                         <div class="flex items-center gap-10px">
@@ -742,7 +965,7 @@ onMounted(() => {
                                                 class="w-48px h-48px object-contain" />
                                             <div class="flex flex-col">
                                                 <span class="text-14px font-bold">{{ item.systemBindCfgVO?.systemName
-                                                }}</span>
+                                                    }}</span>
                                                 <span class="text-12px text-gray-500">绑定按键: {{ item.key }}</span>
                                             </div>
                                         </div>
@@ -754,34 +977,15 @@ onMounted(() => {
                 </div>
             </NCard>
             <NCard class="right-panel" content-style="padding:10px;"
-                content-class="h-full flex flex-col flex-1 overflow-hidden" header-style="padding:0px" :segmented="{
-                    content: true,
-                    footer: 'soft',
-                }">
-                <template #header v-if="activeTab === 'user'">
-                    <div class="mb-10px pl-20px pr-20px pb-5px flex justify-between">
+                content-class="h-full flex flex-col flex-1 overflow-auto" header-style="padding:0px">
+                <template #header v-if="activeTab === 'local'">
+                    <div class="pl-20px pr-20px pb-5px flex justify-between">
                         <div class="flex items-center">
                             <div class="font-size-24px">
                                 <SvgIcon icon="material-symbols:folder-code-outline" class="w-24px h-24px mr-10px" />
                             </div>
                             <div class="font-size-14px font-bold">
                                 autoexec.cfg
-                            </div>
-                        </div>
-                        <div class="flex items-center">
-                            <NSwitch class="mr-15px" size="large" :round="false" v-model:value="isEditMode">
-                                <template #checked-icon>
-                                    <SvgIcon icon="akar-icons:shipping-box-01" />
-                                </template>
-                                <template #unchecked-icon>
-                                    <SvgIcon icon="akar-icons:file" />
-                                </template>
-                            </NSwitch>
-                            <div class="font-size-22px cursor-pointer mr-15px cursor-pointer">
-                                <SvgIcon icon="material-symbols:content-copy-outline" />
-                            </div>
-                            <div class="font-size-22px cursor-pointer cursor-pointer">
-                                <SvgIcon icon="material-symbols:folder-copy-outline" />
                             </div>
                         </div>
                     </div>
@@ -791,40 +995,46 @@ onMounted(() => {
                         @click="!isItemApplied(item.systemName) && openKeyCaptureFn(item)">
                         <NCard class="rounded-10px"
                             :class="{ 'applied': isItemApplied(item.systemName), 'selected': selectedSystemConfig === item.systemName }"
-                            content-style="padding:15px"
+                            content-style="padding:10px"
                             :content-class="isItemApplied(item.systemName) ? 'flex flex-col items-center justify-center' : 'cursor-pointer flex flex-col items-center justify-center'">
                             <img :src="item.systemIcon" class="w-48px h-48px object-contain mb-8px" />
                             <span class="text-12px">{{ item.systemName }}</span>
                         </NCard>
                     </NGridItem>
                 </NGrid>
-                <div v-if="activeTab === 'user' && !isEditMode">
+                <div v-show="activeTab === 'user'">
                     <NCollapse>
-                        <NCollapseItem v-for="(item, index) in applyKeyBindItems"
-                            :key="item.systemBindCfgVO?.systemName" :name="index">
+                        <NCollapseItem v-for="(item) in applyKeyBindItems" :key="item.systemBindCfgVO?.systemName"
+                            :name="item.systemBindCfgVO?.systemName">
                             <template #header>
                                 <NCard class="rounded-10px" content-class="flex" content-style="padding:10px;">
-                                    <div class="w-200px">
+                                    <div class="w-200px flex justify-center">
                                         <img :src="item.systemBindCfgVO?.systemIcon" class="h-75px mr-20px" />
                                     </div>
-                                    <div class="flex flex-col align-center justify-between">
+                                    <div class="flex-1 flex flex-col align-center justify-between">
                                         <span class="text-14px font-bold">配置库名称 : {{ item.systemBindCfgVO?.systemName
-                                            }}</span>
+                                        }}</span>
                                         <span class="text-12px text-gray-500">绑定按键 : {{ item.key }}</span>
+                                    </div>
+                                    <div class="flex flex-col items-center justify-center w-150px gap-10px">
+                                        <NButton class="rounded-10px" type="info" ghost
+                                            @click.stop="resetAppliedBindingKey(item.systemBindCfgVO?.systemName)">重置按键
+                                        </NButton>
+                                        <NButton class="rounded-10px" type="warning" ghost
+                                            @click.stop="removeAppliedBinding(item.systemBindCfgVO?.systemName)">取消应用
+                                        </NButton>
                                     </div>
                                 </NCard>
                             </template>
-                            <div v-if="item.systemBindCfgVO?.keyConfigJson"
-                                class="rounded-10px overflow-hidden max-h-500px">
-                                <MonacoEditor ref="editorRef" class="w-full h-full" :options="editorOptions"
-                                    :model-value="item.systemBindCfgVO?.keyConfigJson" />
+                            <div class="config-code-block" :class="{ 'dark': isDarkMode, 'light': !isDarkMode }">
+                                <pre><code>{{ item.systemBindCfgVO?.keyConfigJson }}</code></pre>
                             </div>
                         </NCollapseItem>
                     </NCollapse>
                 </div>
-                <div v-if="activeTab === 'user' && isEditMode" class="w-full h-full">
-                    <MonacoEditor ref="editorRef" class="w-full min-h-full max-h-full" :options="editorOptions"
-                        :model-value="localAutoexecCfg" />
+                <div v-show="activeTab === 'local'" class="h-full">
+                    <MdEditor v-model="localAutoexecCfg" :theme="isDarkMode ? 'dark' : 'light'" :preview="false"
+                        :toolbars="['revoke', 'next', 'save']" @onSave="saveLocalAutoexecCfg" />
                 </div>
             </NCard>
         </div>
@@ -869,52 +1079,6 @@ onMounted(() => {
                     </div>
                 </div>
             </div>
-        </NModal>
-
-        <NModal v-model:show="showTutorialModal" :bordered="true" preset="card" class="w-600px rounded-10px">
-            <template #header>
-                <div class="flex items-center font-size-18px">
-                    <SvgIcon icon="material-symbols:help-outline" class="mr-5px" />
-                    <div class="font-size-16px">使用教程</div>
-                </div>
-            </template>
-            <div class="tutorial-content">
-                <div class="tutorial-section">
-                    <div class="tutorial-title">
-                        <SvgIcon icon="material-symbols:edit-square-outline" class="tutorial-icon mr-5px" />
-                        1. 编写配置
-                    </div>
-                    <div class="tutorial-text">在编辑器中编写 CS2 的配置文件，可以使用按键占位符。</div>
-                </div>
-
-                <div class="tutorial-section">
-                    <div class="tutorial-title">
-                        <SvgIcon icon="material-symbols:keyboard-alt-outline" class="tutorial-icon mr-5px" />
-                        2. 使用占位符
-                    </div>
-                    <div class="tutorial-text">在配置中使用格式 <code>[按键序号:描述]</code> 来定义按键绑定，例如：</div>
-                    <div class="tutorial-code">bind [按键1:笑声] "say !he"</div>
-                </div>
-
-                <div class="tutorial-section">
-                    <div class="tutorial-title">
-                        <SvgIcon icon="material-symbols:touch-double-outline" class="tutorial-icon mr-5px" />
-                        3. 设置按键
-                    </div>
-                    <div class="tutorial-text">点击下方的按键卡片，按下你想要绑定的按键即可。支持组合键（Ctrl+、Shift+、Alt+）。</div>
-                </div>
-
-                <div class="tutorial-section">
-                    <div class="tutorial-title">
-                        <SvgIcon icon="ic:outline-check-circle" class="tutorial-icon mr-5px" />
-                        4. 应用配置
-                    </div>
-                    <div class="tutorial-text">点击「应用」按钮，配置将写入 autoexec.cfg 文件。日志会自动添加在文件开头。</div>
-                </div>
-            </div>
-            <template #footer>
-                <NButton type="info" @click="showTutorialModal = false">我知道了</NButton>
-            </template>
         </NModal>
     </div>
 </template>
@@ -1026,18 +1190,6 @@ onMounted(() => {
 
             .applied-binding-item {
                 transition: all 0.2s ease;
-
-                &:hover {
-                    border-color: #667eea;
-                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-                    background: rgba(102, 126, 234, 0.05);
-                }
-
-                &.selected {
-                    border-color: #667eea;
-                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-                    background: rgba(102, 126, 234, 0.05);
-                }
             }
         }
 
@@ -1081,47 +1233,6 @@ onMounted(() => {
                     font-size: 14px;
                 }
             }
-        }
-    }
-}
-
-.tutorial-content {
-    .tutorial-section {
-        margin-bottom: 20px;
-
-        .tutorial-title {
-            display: flex;
-            align-items: center;
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 8px;
-
-            .tutorial-icon {
-                margin-right: 8px;
-                font-size: 20px;
-            }
-        }
-
-        .tutorial-text {
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 8px;
-
-            code {
-                background: var(--bg-content);
-                padding: 2px 6px;
-                border-radius: 4px;
-                font-family: 'Consolas', 'Monaco', monospace;
-            }
-        }
-
-        .tutorial-code {
-            background: var(--bg-content);
-            padding: 12px;
-            border-radius: 6px;
-            font-family: 'Consolas', 'Monaco', monospace;
-            color: var(--text-secondary);
-            margin-top: 8px;
         }
     }
 }
@@ -1372,6 +1483,79 @@ onMounted(() => {
                 opacity: 0.5;
                 cursor: not-allowed;
             }
+        }
+    }
+}
+
+// 配置代码块样式
+.config-code-block {
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    max-height: 300px;
+    overflow: auto;
+    border: 1px solid;
+
+    pre {
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+
+    code {
+        font-family: inherit;
+        white-space: pre-wrap;
+    }
+
+    // 黑夜主题
+    &.dark {
+        background: #18181c;
+        border-color: #333;
+        color: #e0e0e0;
+
+        &::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: #18181c;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+    }
+
+    // 白天主题
+    &.light {
+        background: #f8f9fa;
+        border-color: #e2e8f0;
+        color: #333;
+
+        &::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: #f8f9fa;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
         }
     }
 }

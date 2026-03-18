@@ -53,7 +53,7 @@ const INJECT_HEADER_SCRIPT = `
     #ba-launcher-login-close svg {
       width: 10px;
       height: 10px;
-      fill: #000;
+      fill: #27272e;
     }
     #ba-launcher-login-close:hover svg {
       fill: #fff;

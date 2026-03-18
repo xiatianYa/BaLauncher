@@ -7,7 +7,7 @@ function getAutoexecPath(csgo2Path: string): string {
 }
 
 export function setupCs2CfgIpc() {
-  ipcMain.handle('write-autoexec-cfg', async (_event, csgo2Path: string, content: string) => {
+  ipcMain.handle('write-autoexec-cfg', async (_event, csgo2Path: string, content: string, overwrite: boolean = false) => {
     try {
       if (!csgo2Path) {
         return { success: false, error: 'CS2 path not provided' }
@@ -20,15 +20,18 @@ export function setupCs2CfgIpc() {
         fs.mkdirSync(cfgDir, { recursive: true })
       }
 
-      // 读取原有内容
-      let existingContent = ''
-      if (fs.existsSync(autoexecPath)) {
-        existingContent = fs.readFileSync(autoexecPath, 'utf-8')
+      if (overwrite) {
+        // 覆盖模式：直接写入新内容
+        fs.writeFileSync(autoexecPath, content, 'utf-8')
+      } else {
+        // 追加模式：读取原有内容并在下方追加
+        let existingContent = ''
+        if (fs.existsSync(autoexecPath)) {
+          existingContent = fs.readFileSync(autoexecPath, 'utf-8')
+        }
+        const newContent = existingContent ? existingContent + '\n\n' + content : content
+        fs.writeFileSync(autoexecPath, newContent, 'utf-8')
       }
-
-      // 在原文件内容下方追加新配置
-      const newContent = existingContent ? existingContent + '\n\n' + content : content
-      fs.writeFileSync(autoexecPath, newContent, 'utf-8')
 
       return { success: true, path: autoexecPath }
     } catch (error) {

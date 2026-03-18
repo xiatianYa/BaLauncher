@@ -36,6 +36,8 @@ declare namespace StorageType {
     steamPath: string;
     /** automatic join config */
     automaticJoinConfig: any;
+    /** The apply key bind items */
+    applyKeyBindItems: Api.Game.ApplyKeyBindItem[];
     /** The theme */
     theme: string;
     /**

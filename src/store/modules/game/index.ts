@@ -64,6 +64,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 所有玩家的挤服动态消息
   const currentAutomaticPlayerDynamicList: string[] = reactive([])
 
+  // 用户应用的按键绑定项
+  const applyKeyBindItems = ref<Api.Game.ApplyKeyBindItem[]>([])
+
   // 当前选择的社区
   const selectedCommunityId = ref<number | null>(null);
 
@@ -163,6 +166,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     const savedCsgo2Path = localStg.get('csgo2Path');
     const savedSteamPath = localStg.get('steamPath');
     const savedAutomaticJoinConfig = localStg.get('automaticJoinConfig');
+    const savedApplyKeyBindItems = localStg.get('applyKeyBindItems');
 
     if (savedPlatform) {
       GamePlatform.value = savedPlatform as 'international' | 'perfect';
@@ -176,6 +180,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     if (savedAutomaticJoinConfig) {
       Object.assign(automaticJoinConfig.value, savedAutomaticJoinConfig);
     }
+    if (savedApplyKeyBindItems) {
+      applyKeyBindItems.value = savedApplyKeyBindItems;
+    }
   }
 
   // 保存设置到存储
@@ -184,6 +191,13 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     localStg.set('csgo2Path', csgo2Path.value);
     localStg.set('steamPath', steamPath.value);
     localStg.set('automaticJoinConfig', automaticJoinConfig.value);
+    localStg.set('applyKeyBindItems', applyKeyBindItems.value);
+  }
+
+  // 设置用户应用的按键绑定项
+  function setApplyKeyBindItems(items: Api.Game.ApplyKeyBindItem[]) {
+    applyKeyBindItems.value = items;
+    localStg.set('applyKeyBindItems', items);
   }
 
   // 设置游戏平台
@@ -1164,6 +1178,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     setJoinServerPersonValue,
     setJoinServerCountValue,
     setJoinServerAutoRetryValue,
+    setApplyKeyBindItems,
     startGame,
     startAutomaticJoinServer,
     stopAutomaticJoinServer,
@@ -1176,6 +1191,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     sendUserGisJoinAddr,
     startLogReading,
     stopLogReading,
+    applyKeyBindItems,
   };
 });
 
