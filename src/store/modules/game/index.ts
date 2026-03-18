@@ -67,6 +67,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // 用户应用的按键绑定项
   const applyKeyBindItems = ref<Api.Game.ApplyKeyBindItem[]>([])
 
+  // 已勾选的启动项
+  const selectedStartItems = ref<string[]>([])
+
   // 当前选择的社区
   const selectedCommunityId = ref<number | null>(null);
 
@@ -167,6 +170,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     const savedSteamPath = localStg.get('steamPath');
     const savedAutomaticJoinConfig = localStg.get('automaticJoinConfig');
     const savedApplyKeyBindItems = localStg.get('applyKeyBindItems');
+    const savedSelectedStartItems = localStg.get('selectedStartItems');
 
     if (savedPlatform) {
       GamePlatform.value = savedPlatform as 'international' | 'perfect';
@@ -183,6 +187,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     if (savedApplyKeyBindItems) {
       applyKeyBindItems.value = savedApplyKeyBindItems;
     }
+    if (savedSelectedStartItems) {
+      selectedStartItems.value = savedSelectedStartItems;
+    }
   }
 
   // 保存设置到存储
@@ -198,6 +205,23 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   function setApplyKeyBindItems(items: Api.Game.ApplyKeyBindItem[]) {
     applyKeyBindItems.value = items;
     localStg.set('applyKeyBindItems', items);
+  }
+
+  // 设置已勾选的启动项
+  function setSelectedStartItems(items: string[]) {
+    selectedStartItems.value = items;
+    localStg.set('selectedStartItems', items);
+  }
+
+  // 切换启动项勾选状态
+  function toggleStartItem(value: string) {
+    const index = selectedStartItems.value.indexOf(value);
+    if (index > -1) {
+      selectedStartItems.value.splice(index, 1);
+    } else {
+      selectedStartItems.value.push(value);
+    }
+    localStg.set('selectedStartItems', selectedStartItems.value);
   }
 
   // 设置游戏平台
@@ -331,12 +355,14 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   async function queryServerInfosResponse() {
     // 使用 IPC 查询服务器信息
     if (serverDataList.length > 0) {
-      // 筛选当前社区要查询的服务器
-      const serverAddresses = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value).map(server => server.connectStr);
+      // 筛选当前社区要查询的服务器，并保持原始顺序
+      const targetServers = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value);
+      const serverAddresses = targetServers.map(server => server.connectStr);
       try {
         const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses);
         if (success) {
-          infoResponseList.forEach((item: any) => {
+          // 处理查询结果
+          const processedServers = infoResponseList.map((item: any) => {
             //查询服务器是否在线
             if (item.success === false) {
               item.isOnline = false;
@@ -359,12 +385,47 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
               item.mapStage = matchingServer.mapStage || '';
               item.mapPhase = matchingServer.mapPhase || '';
             }
+            return item;
           });
-          currentServerList.splice(0, currentServerList.length, ...infoResponseList);
+
+          // 按照 serverDataList 的原始顺序排序
+          const sortedServers = targetServers.map(server => {
+            const foundServer = processedServers.find((s: Api.Game.InfoResponse) => s.addr === server.connectStr);
+            if (foundServer) {
+              return foundServer;
+            }
+            // 如果查询结果中没有该服务器，返回离线数据
+            return {
+              protocol: 0,
+              name: server.serverName || '',
+              map: '',
+              folder: '',
+              game: '',
+              appId: 0,
+              players: 0,
+              maxPlayers: 0,
+              bots: 0,
+              serverType: '',
+              environment: '',
+              visibility: 0,
+              vac: 0,
+              version: '',
+              addr: server.connectStr || '',
+              isOnline: false,
+              round: '',
+              CTScore: '',
+              TScore: '',
+              mapStage: '',
+              mapPhase: '',
+              csgoPlayer: [],
+            };
+          });
+
+          currentServerList.splice(0, currentServerList.length, ...sortedServers);
 
           // 更新 joinServerInfo
           if (joinServerInfo.value) {
-            const matchingServer = infoResponseList.find(
+            const matchingServer = sortedServers.find(
               (server: Api.Game.InfoResponse) => server.addr === joinServerInfo.value?.addr
             );
             if (matchingServer) {
@@ -534,12 +595,17 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     isGameLaunching.value = true;
     // 根据 GamePlatform 动态计算 serverMode
     const serverMode = GamePlatform.value === 'perfect' ? 'perfectworld' : 'worldwide';
+    // 根据 isGameRunning 决定启动方式
+    const startType: 'steamurl' | 'steamexe' = isGameRunning.value ? 'steamurl' : 'steamexe';
+    
     // 启动游戏
+    console.log([...selectedStartItems.value])
     const launchResult = await window.ipcRenderer.launchCs2(
       csgo2Path.value,
       serverMode,
-      isGameRunning.value,
-      steamPath.value
+      startType,
+      steamPath.value,
+      [...selectedStartItems.value]
     );
     if (!launchResult.success) {
       window.$message?.error('启动游戏失败: ' + launchResult.error);
@@ -1179,6 +1245,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     setJoinServerCountValue,
     setJoinServerAutoRetryValue,
     setApplyKeyBindItems,
+    setSelectedStartItems,
+    toggleStartItem,
     startGame,
     startAutomaticJoinServer,
     stopAutomaticJoinServer,
@@ -1192,6 +1260,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     startLogReading,
     stopLogReading,
     applyKeyBindItems,
+    selectedStartItems,
   };
 });
 

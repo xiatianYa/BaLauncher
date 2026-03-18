@@ -26,7 +26,7 @@ declare global {
       startGsiService: () => Promise<{ success: boolean; alreadyRunning?: boolean; error?: string }>;
       stopGsiService: () => Promise<{ success: boolean }>;
       checkGsiConnected: () => Promise<{ isConnected: boolean }>;
-      launchCs2: (csgo2Path: string, serverMode?: 'perfectworld' | 'worldwide', startType?: boolean, steamPath?: string) => Promise<{ success: boolean; error?: string }>;
+      launchCs2: (csgo2Path: string, serverMode?: 'perfectworld' | 'worldwide', startType?: 'steamurl' | 'steamexe', steamPath?: string, startItems?: string[]) => Promise<{ success: boolean; error?: string }>;
       waitForCs2Launch: (csgo2Path?: string, maxWaitMs?: number) => Promise<{ success: boolean; error?: string }>;
       startLogReader: (csgo2Path: string) => Promise<{ success: boolean; error?: string }>;
       stopLogReader: () => Promise<{ success: boolean }>;

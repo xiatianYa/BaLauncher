@@ -66,7 +66,7 @@ const getMapByMapName = (mapName: string) => {
 
 // 获取 Ping 值对应的颜色类型
 const getPingType = (ping?: number) => {
-  if (ping === undefined || ping === null) return 'default';
+  if (ping === undefined || ping === null) return 'info';
   if (ping < 70) return 'success';
   if (ping < 100) return 'warning';
   return 'error';
@@ -274,57 +274,72 @@ onUnmounted(() => {
         <h3 class="text-lg font-bold flex align-center">{{ $t('server.list') }}</h3>
       </template>
       <template #header-extra>
-        <div class="countdown-container cursor-pointer" @click="queryServerInfos(true, false)" v-if="!isRefreshing">
-          <svg v-if="!isRefreshing" class="countdown-svg" width="40" height="40">
-            <defs>
-              <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#6366f1" />
-                <stop offset="50%" style="stop-color:#8b5cf6" />
-                <stop offset="100%" style="stop-color:#a855f7" />
-              </linearGradient>
-            </defs>
-            <circle class="countdown-bg" cx="20" cy="20" r="16" stroke-width="3" fill="none" />
-            <circle class="countdown-progress" ref="progressRingRef" cx="20" cy="20" r="16" stroke-width="3" fill="none"
-              stroke-dasharray="100.5" stroke-dashoffset="0" transform="rotate(-90 20 20)" />
-          </svg>
-          <svg v-else class="speed-svg" width="40" height="40" viewBox="0 0 40 40">
-            <defs>
-              <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#6366f1" />
-                <stop offset="50%" style="stop-color:#8b5cf6" />
-                <stop offset="100%" style="stop-color:#a855f7" />
-              </linearGradient>
-            </defs>
-            <g class="speed-group">
-              <path class="speed-line-1" d="M8 20 L32 20" stroke="url(#speedGradient)" stroke-width="3"
-                stroke-linecap="round" />
-              <path class="speed-line-2" d="M12 14 L32 14" stroke="url(#speedGradient)" stroke-width="2.5"
-                stroke-linecap="round" />
-              <path class="speed-line-3" d="M12 26 L32 26" stroke="url(#speedGradient)" stroke-width="2.5"
-                stroke-linecap="round" />
-              <path class="speed-line-4" d="M16 8 L32 8" stroke="url(#speedGradient)" stroke-width="2"
-                stroke-linecap="round" />
-              <path class="speed-line-5" d="M16 32 L32 32" stroke="url(#speedGradient)" stroke-width="2"
-                stroke-linecap="round" />
-            </g>
-          </svg>
-          <div class="countdown-text" ref="countdownTextRef">
-            <span v-if="!isRefreshing">{{ countdownValue }}</span>
+        <div class="flex items-center gap-10px">
+          <NButton v-if="!gameStore.isGameRunning" class="rounded-5px p-8px" type="tertiary" strong dashed
+            :loading="gameStore.isGameLaunching" @click="gameStore.startGame()">
+            <template #icon>
+              <SvgIcon icon="hugeicons:start-up-02" />
+            </template>
+            启动游戏
+          </NButton>
+          <NButton v-else class="rounded-5px p-8px" type="success" strong disabled dashed>
+            <template #icon>
+              <SvgIcon icon="ix:success" />
+            </template>
+            游戏已运行
+          </NButton>
+          <div class="countdown-container cursor-pointer" @click="queryServerInfos(true, false)" v-if="!isRefreshing">
+            <svg v-if="!isRefreshing" class="countdown-svg" width="40" height="40">
+              <defs>
+                <linearGradient id="countdownGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#6366f1" />
+                  <stop offset="50%" style="stop-color:#8b5cf6" />
+                  <stop offset="100%" style="stop-color:#a855f7" />
+                </linearGradient>
+              </defs>
+              <circle class="countdown-bg" cx="20" cy="20" r="16" stroke-width="3" fill="none" />
+              <circle class="countdown-progress" ref="progressRingRef" cx="20" cy="20" r="16" stroke-width="3"
+                fill="none" stroke-dasharray="100.5" stroke-dashoffset="0" transform="rotate(-90 20 20)" />
+            </svg>
+            <svg v-else class="speed-svg" width="40" height="40" viewBox="0 0 40 40">
+              <defs>
+                <linearGradient id="speedGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#6366f1" />
+                  <stop offset="50%" style="stop-color:#8b5cf6" />
+                  <stop offset="100%" style="stop-color:#a855f7" />
+                </linearGradient>
+              </defs>
+              <g class="speed-group">
+                <path class="speed-line-1" d="M8 20 L32 20" stroke="url(#speedGradient)" stroke-width="3"
+                  stroke-linecap="round" />
+                <path class="speed-line-2" d="M12 14 L32 14" stroke="url(#speedGradient)" stroke-width="2.5"
+                  stroke-linecap="round" />
+                <path class="speed-line-3" d="M12 26 L32 26" stroke="url(#speedGradient)" stroke-width="2.5"
+                  stroke-linecap="round" />
+                <path class="speed-line-4" d="M16 8 L32 8" stroke="url(#speedGradient)" stroke-width="2"
+                  stroke-linecap="round" />
+                <path class="speed-line-5" d="M16 32 L32 32" stroke="url(#speedGradient)" stroke-width="2"
+                  stroke-linecap="round" />
+              </g>
+            </svg>
+            <div class="countdown-text" ref="countdownTextRef">
+              <span v-if="!isRefreshing">{{ countdownValue }}</span>
+            </div>
           </div>
-        </div>
-        <div class="countdown-container cursor-pointer" v-else>
-          <svg class="spinner-svg" width="40" height="40" viewBox="0 0 40 40">
-            <defs>
-              <linearGradient id="spinnerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style="stop-color:#6366f1" />
-                <stop offset="50%" style="stop-color:#8b5cf6" />
-                <stop offset="100%" style="stop-color:#a855f7" />
-              </linearGradient>
-            </defs>
-            <circle class="spinner-bg" cx="20" cy="20" r="16" stroke-width="3" fill="none" />
-            <circle class="spinner-progress" cx="20" cy="20" r="16" stroke-width="3" fill="none"
-              stroke-dasharray="30 70" stroke-linecap="round" />
-          </svg>
+          <div class="countdown-container cursor-pointer" v-else>
+            <svg class="spinner-svg" width="40" height="40" viewBox="0 0 40 40">
+              <defs>
+                <linearGradient id="spinnerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#6366f1" />
+                  <stop offset="50%" style="stop-color:#8b5cf6" />
+                  <stop offset="100%" style="stop-color:#a855f7" />
+                </linearGradient>
+              </defs>
+              <circle class="spinner-bg" cx="20" cy="20" r="16" stroke-width="3" fill="none" />
+              <circle class="spinner-progress" cx="20" cy="20" r="16" stroke-width="3" fill="none"
+                stroke-dasharray="30 70" stroke-linecap="round" />
+            </svg>
+          </div>
         </div>
       </template>
       <div class="h-full overflow-auto p-5px relative">
@@ -336,14 +351,16 @@ onUnmounted(() => {
                 :src="getMapByMapName(server.map)?.mapUrl" />
               <div class="z-9 server-online" :style="`${getOnLineColor(server)}`"></div>
               <div class="server-card-mask"></div>
-              <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
+              <div
+                class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold whitespace-nowrap text-ellipsis overflow-hidden">
                 {{
                   server.name
                 }}
               </div>
               <div class="flex justify-between">
                 <NEllipsis
-                  class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
+                  class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold w-220px"
+                  :max-line="1">
                   {{
                     `${server.map}`
                   }}
@@ -378,8 +395,8 @@ onUnmounted(() => {
                   class="mr-3px" type="success" v-show="queryServerMapType(server.map)">
                   {{dictOptions('game_tag').find((item: any) => item.value === tag)?.label}}
                 </NTag>
-                <NTag size="small" round class="mr-3px" ghost :type="getPingType(server.ping)" v-show="server.ping">
-                  {{ server.ping }}ms
+                <NTag size="small" round class="mr-3px" ghost :type="getPingType(server.ping)">
+                  {{ server.ping ? `${server.ping}ms` : '???' }}
                 </NTag>
               </div>
               <div class="server-card-button mt-6px">

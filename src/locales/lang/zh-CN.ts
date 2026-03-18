@@ -28,7 +28,7 @@ export default {
     confirm: '退出',
   },
   update: {
-    title: '发现新版本(建议打开加速器更新)',
+    title: '发现新版本',
     downloading: '正在下载更新...',
     downloaded: '更新已下载完成',
     confirm: '是否更新?',

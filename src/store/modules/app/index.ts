@@ -43,6 +43,8 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     { name: '白子', img: themeShiroko, id: '白子' },
   ];
 
+    const locale = ref<App.I18n.LangType>(localStg.get('lang') || 'zh-CN');
+
   /**
    * 设置当前主题
    * @param theme 主题ID
@@ -56,6 +58,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     currentTheme,
     audioMap,
     themes,
+    locale,
     setTheme
   };
 });

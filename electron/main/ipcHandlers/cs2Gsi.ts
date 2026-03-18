@@ -75,7 +75,7 @@ function checkGsiConfigExists(csgo2Path: string): boolean {
 // ========== 创建GSI配置文件 ==========
 async function createGsiConfig(csgo2Path: string): Promise<boolean> {
     if (!csgo2Path) return false
-    
+
     // 确保 GSI 模块已加载
     await loadCs2Gsi()
     if (!GSIConfigWriter) return false
@@ -93,7 +93,7 @@ async function createGsiConfig(csgo2Path: string): Promise<boolean> {
                 return true
             }
 
-            try { 
+            try {
                 // GSIConfigWriter.generate 返回配置文件的内容字符串，而不是文件路径
                 const configContent = GSIConfigWriter.generate({
                     name: 'balauncher', // 这里的 name 可能只是用于注释或内部标识，实际文件名由我们写入决定
@@ -141,7 +141,8 @@ async function launchCs2(
     csgo2Path: string,
     serverMode: 'perfectworld' | 'worldwide' = 'worldwide',
     startType: 'steamurl' | 'steamexe' = 'steamurl',
-    steamPath?: string
+    steamPath?: string,
+    startItems?: string[]
 ) {
     if (!csgo2Path) return { success: false, error: 'CS2 path not provided' }
 
@@ -156,6 +157,12 @@ async function launchCs2(
 
         params.push('-vac')
         params.push('-condebug')
+
+        // 添加用户选择的启动项
+        console.log('startItems:', startItems)
+        if (startItems && startItems.length > 0) {
+            params.push(...startItems)
+        }
 
         if (startType === 'steamurl') {
             const steamId = '730'
@@ -177,7 +184,7 @@ async function launchCs2(
             }
 
             const args = ['-applaunch', '730', ...params]
-
+            console.log('Start Command:', args.join(' '))
             spawn(steamExePath, args, { detached: true, stdio: 'ignore' }).unref()
         }
 
@@ -524,8 +531,8 @@ export function setupCs2GsiIpc() {
         return { isConnected: isGsiConnected }
     })
 
-    ipcMain.handle('launch-cs2', async (_event, csgo2Path: string, serverMode: 'perfectworld' | 'worldwide' = 'worldwide', startType: 'steamurl' | 'steamexe' = 'steamurl', steamPath?: string) => {
-        return await launchCs2(csgo2Path, serverMode, startType, steamPath)
+    ipcMain.handle('launch-cs2', async (_event, csgo2Path: string, serverMode: 'perfectworld' | 'worldwide' = 'worldwide', startType: 'steamurl' | 'steamexe' = 'steamurl', steamPath?: string, startItems: string[] = []) => {
+        return await launchCs2(csgo2Path, serverMode, startType, steamPath, startItems)
     })
 
     ipcMain.handle('wait-for-cs2-launch', async (_event, csgo2Path?: string, maxWaitMs: number = 90000) => {

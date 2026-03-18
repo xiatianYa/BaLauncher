@@ -48,8 +48,8 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   launchCs2Cmd(csgo2Path: string, serverMode: 'perfectworld' | 'worldwide' = 'worldwide') {
     return ipcRenderer.invoke('launch-cs2-cmd', csgo2Path, serverMode);
   },
-  launchCs2(csgo2Path: string, serverMode: 'perfectworld' | 'worldwide' = 'worldwide', startType: 'steamurl' | 'steamexe' = 'steamurl', steamPath?: string) {
-    return ipcRenderer.invoke('launch-cs2', csgo2Path, serverMode, startType, steamPath);
+  launchCs2(csgo2Path: string, serverMode: 'perfectworld' | 'worldwide' = 'worldwide', startType: 'steamurl' | 'steamexe' = 'steamurl', steamPath?: string, startItems?: string[]) {
+    return ipcRenderer.invoke('launch-cs2', csgo2Path, serverMode, startType, steamPath, startItems);
   },
   waitForCs2Launch(csgo2Path?: string, maxWaitMs: number = 90000) {
     return ipcRenderer.invoke('wait-for-cs2-launch', csgo2Path, maxWaitMs);

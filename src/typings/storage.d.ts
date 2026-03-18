@@ -38,6 +38,8 @@ declare namespace StorageType {
     automaticJoinConfig: any;
     /** The apply key bind items */
     applyKeyBindItems: Api.Game.ApplyKeyBindItem[];
+    /** The selected start items */
+    selectedStartItems: string[];
     /** The theme */
     theme: string;
     /**

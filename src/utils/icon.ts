@@ -97,4 +97,6 @@ export const commonIcons = [
   'material-symbols:help-outline',
   'material-symbols:touch-double-outline',
   'ic:outline-check-circle',
+  'ic:sharp-clear',
+  'material-symbols:lightbulb-2-outline'
 ]

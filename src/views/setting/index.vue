@@ -9,6 +9,7 @@ import { NGrid, NGridItem, NSelect } from 'naive-ui';
 import { setLocale } from '@/locales';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { START_ITEMS } from '@/constants/startItems';
 
 defineOptions({
   name: 'setting'
@@ -105,6 +106,32 @@ const steamPath = computed({
   get: () => gameStore.steamPath,
   set: (val: string) => gameStore.setSteamPath(val)
 });
+
+const selectedStartItemsList = computed(() => {
+  const presetItems = START_ITEMS.filter(item => gameStore.selectedStartItems.includes(item.value));
+  const customValues = gameStore.selectedStartItems.filter(
+    value => !START_ITEMS.some(item => item.value === value)
+  );
+  const customItems = customValues.map(value => ({ label: value, value }));
+  return [...presetItems, ...customItems];
+});
+
+const customStartItem = ref('');
+
+const addCustomStartItem = () => {
+  const value = customStartItem.value.trim();
+  if (!value) {
+    window.$message?.warning('请输入启动选项');
+    return;
+  }
+  if (gameStore.selectedStartItems.includes(value)) {
+    window.$message?.warning('该启动选项已存在');
+    return;
+  }
+  gameStore.toggleStartItem(value);
+  customStartItem.value = '';
+  window.$message?.success('添加成功');
+};
 
 const selectCsgo2Path = async () => {
   const result = await window.ipcRenderer.invoke('select-directory', t('settings.messages.selectCsgoPath'));
@@ -351,27 +378,49 @@ onMounted(() => {
             </NButton>
           </div>
         </div>
-      </div>
-      <div class="game-setting-box">
-        <div class="game-setting-title mb-10px">
-          <div class="flex font-size-24px">
-            <SvgIcon icon="gg:toolbox" />
-          </div>
-          <div class="ml-10px font-size-16px font-semibold">
-            <NText>
-              {{ $t('tools.title') }}
+        <div class="game-setting-item mt-10px">
+          <div class="font-size-14px font-semibold mr-5px w-120px">
+            <NText class="w-150px">
+              自定义启动选项
             </NText>
           </div>
-        </div>
-        <div class="game-setting-item mt-10px" style="border-bottom: none; padding-bottom: 0;">
-          <div class="flex-1">
-            <NButton type="primary" ghost block @click="router.push('/tools')">
-              <template #icon>
-                <SvgIcon icon="material-symbols:arrow-forward" />
-              </template>
-              {{ $t('settings.openTools') }}
-            </NButton>
+          <div>
+            <NGrid :cols="3" :x-gap="12" :y-gap="12">
+              <NGridItem v-for="item in START_ITEMS" :key="item.value">
+                <NButton class="rounded-5px font-size-12px w-full" ghost
+                  :type="gameStore.selectedStartItems.includes(item.value) ? 'primary' : 'tertiary'"
+                  @click="gameStore.toggleStartItem(item.value)">
+                  <template #icon>
+                    <SvgIcon v-if="gameStore.selectedStartItems.includes(item.value)" icon="ic:sharp-clear" />
+                  </template>
+                  {{ item.label }}
+                </NButton>
+              </NGridItem>
+            </NGrid>
+            <div class="flex mt-10px">
+              <NInput v-model:value="customStartItem" class="rounded-5px mr-10px" placeholder="输入自定义启动选项"
+                @keyup.enter="addCustomStartItem" />
+              <NButton class="rounded-5px" type="info" @click="addCustomStartItem">添加</NButton>
+            </div>
+            <div class="flex items-center mt-5px font-size-12px">
+              <SvgIcon icon="material-symbols:lightbulb-2-outline" class="color-#f0a020 mr-5px" />
+              提示 : 可在上方输入框中自定义添加启动选项
+            </div>
           </div>
+        </div>
+        <div class="game-setting-item mt-10px">
+          <div class="font-size-14px font-semibold mr-5px w-120px">
+            <NText class="w-150px">
+              当前已选启动项
+            </NText>
+          </div>
+          <NGrid :cols="3" :x-gap="12" :y-gap="12">
+            <NGridItem v-for="item in selectedStartItemsList" :key="item.value">
+              <NButton class="rounded-5px font-size-12px w-full" ghost type="warning">
+                {{ item.label }}
+              </NButton>
+            </NGridItem>
+          </NGrid>
         </div>
       </div>
       <div class="game-cache-box">

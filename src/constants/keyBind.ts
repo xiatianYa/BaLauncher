@@ -331,11 +331,21 @@ c_mindistance -999999; c_maxdistance 999999`,
     {
         systemName: '地图滤镜',
         systemIcon: Command,
-        keyConfigJson: 'bind  [按键:开关地图滤镜]  toggle r_csgo_postprocess_enable 0 1',
+        keyConfigJson: 'bind [按键:开关地图滤镜]  toggle r_csgo_postprocess_enable 0 1',
     },
     {
         systemName: '地图特效',
         systemIcon: Command,
-        keyConfigJson: 'bind  [按键:开关地图特效]  toggle r_drawparticles 0 1',
+        keyConfigJson: 'bind [按键:开关地图特效]  toggle r_drawparticles 0 1',
+    },
+    {
+        systemName: '隐藏腿部模型',
+        systemIcon: Command,
+        keyConfigJson: 'bind [按键:隐藏腿部模型] "say !hidebody"',
+    },
+    {
+        systemName: '跳跃',
+        systemIcon: Command,
+        keyConfigJson: 'bind [按键:跳跃] "+jump"',
     },
 ];
