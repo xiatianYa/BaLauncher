@@ -15,46 +15,13 @@ import {
 } from '@/service/api/game/keyBind';
 import { MdEditor } from 'md-editor-v3';
 import dayjs from 'dayjs';
-
-import Gun from '@/assets/imgs/tool/Gun.png';
-import Prop from '@/assets/imgs/tool/Prop.png';
-import ZE from '@/assets/imgs/tool/ZE.png';
-import Command from '@/assets/imgs/tool/Command.png';
-import AK47 from '@/assets/imgs/weapon/AK47.png';
-import AUG from '@/assets/imgs/weapon/AUG.png';
-import CZ75 from '@/assets/imgs/weapon/CZ75.png';
-import FAMAS from '@/assets/imgs/weapon/FAMAS.png';
-import G3SG1 from '@/assets/imgs/weapon/G3SG1.png';
-import M249 from '@/assets/imgs/weapon/M249.png';
-import M4A4 from '@/assets/imgs/weapon/M4A4.png';
-import M4A1 from '@/assets/imgs/weapon/M4A1.png';
-import MAC10 from '@/assets/imgs/weapon/MAC-10.png';
-import MP7 from '@/assets/imgs/weapon/MP7.png';
-import P250 from '@/assets/imgs/weapon/P250.png';
-import R8 from '@/assets/imgs/weapon/R8.png';
-import SCAR20 from '@/assets/imgs/weapon/SCAR-20.png';
-import SG556 from '@/assets/imgs/weapon/SG556.png';
-import USP from '@/assets/imgs/weapon/USP.png';
-import MP5SD from '@/assets/imgs/weapon/MP5SD.png';
-import Negev from '@/assets/imgs/weapon/内格夫.png';
-import DualBerettas from '@/assets/imgs/weapon/双枪.png';
-import Glock from '@/assets/imgs/weapon/格洛克.png';
-import Deagle from '@/assets/imgs/weapon/沙鹰.png';
-import Scout from '@/assets/imgs/weapon/鸟狙.png';
-import MP9 from '@/assets/imgs/weapon/MP9.png';
-import AWP from '@/assets/imgs/weapon/AWP.png';
-import Smoke from '@/assets/imgs/weapon/Smoke.png';
-import Fire from '@/assets/imgs/weapon/Fire.png';
-import Grenade from '@/assets/imgs/weapon/Grenade.png';
-import Flash from '@/assets/imgs/weapon/Flash.png';
-import NightVision from '@/assets/imgs/weapon/NightVision.png';
-import Needle from '@/assets/imgs/weapon/Needle.png';
-import Armor from '@/assets/imgs/weapon/Armor.png';
-import Nova from '@/assets/imgs/weapon/Nova.png';
-import XM1014 from '@/assets/imgs/weapon/XM1014.png';
-import Sawed from '@/assets/imgs/weapon/Sawed.png';
-import CommonWeapon from '@/assets/imgs/weapon/CommonWeapon.png';
-import MAG7 from '@/assets/imgs/weapon/MAG-7.png';
+import {
+    systemLibraryItems as systemLibraryItemsConst,
+    GunLibaryCfgOption as GunLibaryCfgOptionConst,
+    PropLibaryCfgOption as PropLibaryCfgOptionConst,
+    ZELibaryCfgOption as ZELibaryCfgOptionConst
+} from '@/constants/keyBind';
+import { $t } from '@/locales';
 
 
 /**
@@ -90,303 +57,13 @@ const localAutoexecCfg = ref<string>('');
 /** 按键绑定相关 */
 const capturedKey = ref<string>('');
 /** 配置库相关 */
-const systemLibraryItems = ref<Api.Game.SystemBindVO[]>([
-    {
-        systemName: '武器类',
-        systemIcon: Gun,
-        configName: '武器类',
-        configDesc: 'CSGO2 通用武器配置cfg',
-    },
-    {
-        systemName: '道具类',
-        systemIcon: Prop,
-        configName: '道具类',
-        configDesc: 'CSGO2 通用道具配置cfg',
-    },
-    {
-        systemName: 'ZE常用',
-        systemIcon: ZE,
-        configName: 'ZE常用',
-        configDesc: 'CSGO2 通用ZE配置cfg',
-    }
-]);
+const systemLibraryItems = ref<Api.Game.SystemBindVO[]>(systemLibraryItemsConst);
 //系统武器配置库
-const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
-    {
-        systemName: 'MP9',
-        systemIcon: MP9,
-        keyConfigJson: 'bind "[按键:购买MP9]" "buy mp9"',
-        configDesc: '购买MP9冲锋枪',
-    },
-    {
-        systemName: 'MP7',
-        systemIcon: MP7,
-        keyConfigJson: 'bind "[按键:购买MP7]" "buy mp7"',
-        configDesc: '购买MP7冲锋枪',
-    },
-    {
-        systemName: 'MP5SD',
-        systemIcon: MP5SD,
-        keyConfigJson: 'bind "[按键:购买MP5]" "buy mp5sd"',
-        configDesc: '购买MP5SD冲锋枪',
-    },
-    {
-        systemName: 'MAC10',
-        systemIcon: MAC10,
-        keyConfigJson: 'bind "[按键:购买MAC10]" "buy mac10"',
-        configDesc: '购买MAC-10冲锋枪',
-    },
-    {
-        systemName: 'P90',
-        systemIcon: CommonWeapon,
-        keyConfigJson: 'bind "[按键:购买P90]" "buy p90"',
-        configDesc: '购买P90冲锋枪',
-    },
-    {
-        systemName: '野牛(牛肉粉最爱)',
-        systemIcon: CommonWeapon,
-        keyConfigJson: 'bind "[按键:购买野牛]" "buy bizon"',
-        configDesc: '购买野牛冲锋枪',
-    },
-    {
-        systemName: 'M249',
-        systemIcon: M249,
-        keyConfigJson: 'bind "[按键:购买M249]" "buy m249"',
-        configDesc: '购买M249机枪',
-    },
-    {
-        systemName: '内格夫',
-        systemIcon: Negev,
-        keyConfigJson: 'bind "[按键:购买内格夫]" "buy negev"',
-        configDesc: '购买内格夫机枪',
-    },
-    {
-        systemName: 'AK47',
-        systemIcon: AK47,
-        keyConfigJson: 'bind "[按键:购买AK47]" "buy ak47"',
-        configDesc: '购买AK-47步枪',
-    },
-    {
-        systemName: 'M4A4',
-        systemIcon: M4A4,
-        keyConfigJson: 'bind "[按键:购买M4A4]" "buy m4a4"',
-        configDesc: '购买M4A4步枪',
-    },
-    {
-        systemName: 'M4A1-S',
-        systemIcon: M4A1,
-        keyConfigJson: 'bind "[按键:购买M4A1-S]" "buy m4a1_silencer"',
-        configDesc: '购买M4A1-S步枪',
-    },
-    {
-        systemName: 'Famas',
-        systemIcon: FAMAS,
-        keyConfigJson: 'bind "[按键:购买Famas]" "buy famas"',
-        configDesc: '购买Famas步枪',
-    },
-    {
-        systemName: 'SG556',
-        systemIcon: SG556,
-        keyConfigJson: 'bind "[按键:购买SG553]" "buy sg556"',
-        configDesc: '购买SG556步枪',
-    },
-    {
-        systemName: 'AUG',
-        systemIcon: AUG,
-        keyConfigJson: 'bind "[按键:购买AUG]" "buy aug"',
-        configDesc: '购买AUG步枪',
-    },
-    {
-        systemName: 'Galilar',
-        systemIcon: CommonWeapon,
-        keyConfigJson: 'bind "[按键:购买Galilar]" "buy galilar"',
-        configDesc: '购买Galilar步枪',
-    },
-    {
-        systemName: 'Nova',
-        systemIcon: Nova,
-        keyConfigJson: 'bind "[按键:购买新星]" "buy nova"',
-        configDesc: '购买Nova喷子',
-    },
-    {
-        systemName: 'XM1014',
-        systemIcon: XM1014,
-        keyConfigJson: 'bind "[按键:购买XM1014]" "buy xm1014"',
-        configDesc: '购买XM1014连喷',
-    },
-    {
-        systemName: '匪喷',
-        systemIcon: Sawed,
-        keyConfigJson: 'bind "[按键:购买匪喷]" "buy sawedoff"',
-        configDesc: '购买匪喷',
-    },
-    {
-        systemName: '警喷',
-        systemIcon: MAG7,
-        keyConfigJson: 'bind "[按键:购买警喷]" "buy mag7"',
-        configDesc: '购买警喷',
-    },
-    {
-        systemName: 'SSG08',
-        systemIcon: Scout,
-        keyConfigJson: 'bind "[按键:购买SSG08]" "buy ssg08"',
-        configDesc: '购买SSG08狙击枪',
-    },
-    {
-        systemName: 'AWP',
-        systemIcon: AWP,
-        keyConfigJson: 'bind "[按键:购买AWP]" "buy awp"',
-        configDesc: '购买AWP狙击枪',
-    },
-    {
-        systemName: 'G3SG1',
-        systemIcon: G3SG1,
-        keyConfigJson: 'bind "[按键:购买G3SG1]" "buy g3sg1"',
-        configDesc: '购买G3SG1自动狙击枪',
-    },
-    {
-        systemName: 'SCAR20',
-        systemIcon: SCAR20,
-        keyConfigJson: 'bind "[按键:购买SCAR20]" "buy scar20"',
-        configDesc: '购买SCAR-20自动狙击枪',
-    },
-    {
-        systemName: '沙鹰',
-        systemIcon: Deagle,
-        keyConfigJson: 'bind "[按键:购买沙鹰]" "buy deagle"',
-        configDesc: '购买沙漠之鹰手枪',
-    },
-    {
-        systemName: 'R8',
-        systemIcon: R8,
-        keyConfigJson: 'bind "[按键:购买R8]" "buy revolver"',
-        configDesc: '购买R8左轮手枪',
-    },
-    {
-        systemName: '格洛克',
-        systemIcon: Glock,
-        keyConfigJson: 'bind "[按键:购买格洛克]" "buy glock"',
-        configDesc: '购买格洛克手枪',
-    },
-    {
-        systemName: '双枪',
-        systemIcon: DualBerettas,
-        keyConfigJson: 'bind "[按键:购买双枪]" "buy elite"',
-        configDesc: '购买双持贝瑞塔手枪',
-    },
-    {
-        systemName: 'USP',
-        systemIcon: USP,
-        keyConfigJson: 'bind "[按键:购买USP]" "buy usp_sliencer"',
-        configDesc: '购买USP-S手枪',
-    },
-    {
-        systemName: 'P250',
-        systemIcon: P250,
-        keyConfigJson: 'bind "[按键:购买P250]" "buy p250"',
-        configDesc: '购买P250手枪',
-    },
-    {
-        systemName: 'CZ-75',
-        systemIcon: CZ75,
-        keyConfigJson: 'bind "[按键:购买CZ-75]" "buy cz75a"',
-        configDesc: '购买CZ75自动手枪',
-    },
-]);
+const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>(GunLibaryCfgOptionConst);
 //系统道具配置库
-const PropLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
-    {
-        systemName: '烟雾弹',
-        systemIcon: Smoke,
-        keyConfigJson: 'bind "[按键:购买烟雾弹]" "buy !smokegrenade"',
-
-    },
-    {
-        systemName: '手雷',
-        systemIcon: Grenade,
-        keyConfigJson: 'bind [按键:购买手雷] "say !he"',
-    },
-    {
-        systemName: '燃烧瓶',
-        systemIcon: Fire,
-        keyConfigJson: 'bind [按键:购买烟雾弹] "say !molotov"',
-
-    },
-    {
-        systemName: '闪光弹',
-        systemIcon: Flash,
-        keyConfigJson: 'bind "[按键:购买闪光弹]" "buy !flashbang',
-
-    },
-    {
-        systemName: '夜视仪',
-        systemIcon: NightVision,
-        keyConfigJson: 'bind  [按键:开关夜视仪]  toggle mat_fullbright 0 1',
-
-    },
-    {
-        systemName: '血针',
-        systemIcon: Needle,
-        keyConfigJson: 'bind [按键:购买血针] "say !xz"',
-
-    },
-    {
-        systemName: '护甲',
-        systemIcon: Armor,
-        keyConfigJson: 'bind [按键:购买护甲] "say !kevlar"',
-
-    },
-]);
+const PropLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>(PropLibaryCfgOptionConst);
 // ZE配置库
-const ZELibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>([
-    {
-        systemName: '第三人称',
-        systemIcon: Command,
-        keyConfigJson: `//freecam and tp 
-//alias cam_setting_freecam "cam_idealyaw 0;cam_idealpitch 0;c_thirdpersonshoulder 0;c_thirdpersonshoulderheight 6;c_thirdpersonshoulderoffset 0;c_thirdpersonshoulderaimdist 0;cam_idealdist 0;"
-alias cam_setting_tp "c_thirdpersonshoulder 1;c_thirdpersonshoulderheight 30;c_thirdpersonshoulderoffset 0;c_thirdpersonshoulderaimdist 999;cam_idealdist 180;cam_collision 0"
-
-//freecam --> +tp
-alias "cs_chasecam_freecam" "cs_aliasthird_freecam"
-alias "cs_aliasthird_freecam" "thirdperson; cam_setting_tp; alias cs_chasecam_freecam ccs_aliasfirst_freecam"
-alias "ccs_aliasfirst_freecam" "firstperson; alias cs_chasecam_freecam cs_aliasthird_freecam"
-
-alias +tp_magnifier "cs_chasecam_freecam; _freecamup; _freecamdn; cam_collision 0"
-alias -tp_magnifier "cs_chasecam_freecam; -keys_mouse"
-
-//tp --> -tp
-alias cs_chasecam_tp "cs_aliasthird_tp"
-alias cs_aliasthird_tp "thirdperson;cam_setting_tp;alias cs_chasecam_tp cs_aliasfirst_tp"
-alias cs_aliasfirst_tp "firstperson;alias cs_chasecam_tp cs_aliasthird_tp"
-
-alias "+tp" "+tp_magnifier"
-alias "-tp" "cs_chasecam_tp;-keys_mouse"
-alias _freecamup "bind MWHEELUP incrementvar cam_idealdist -999999 999999 -100"
-alias _freecamdn "bind MWHEELDOWN incrementvar cam_idealdist -999999 999999 100"
-alias -keys_mouse  "bind "mwheelup" "+jump";bind mwheeldown "+jump""
-
-bind [按键:开启第三人称] "+tp"
-c_thirdpersonshoulder 1; cam_idealyaw 0; cam_idealpitch 0; cam_collision 0
-c_mindistance -999999; c_maxdistance 999999`,
-
-    },
-    {
-        systemName: '传送',
-        systemIcon: Command,
-        keyConfigJson: 'bind [按键:传送到复活点] "say !ztele"',
-
-    },
-    {
-        systemName: '地图滤镜',
-        systemIcon: Command,
-        keyConfigJson: 'bind  [按键:开关地图滤镜]  toggle r_csgo_postprocess_enable 0 1',
-    },
-    {
-        systemName: '地图特效',
-        systemIcon: Command,
-        keyConfigJson: 'bind  [按键:开关地图特效]  toggle r_drawparticles 0 1',
-    },
-]);
+const ZELibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>(ZELibaryCfgOptionConst);
 // 根据选中的系统配置返回对应的配置选项
 const currentCfgOptions = computed(() => {
     switch (selectedSystemConfig.value) {
@@ -449,12 +126,12 @@ const loadLocalAutoexecCfg = async () => {
             if (result.success) {
                 localAutoexecCfg.value = result.content || '';
             } else {
-                window.$message?.error('读取配置文件失败: ' + (result.error || '未知错误'));
+                window.$message?.error($t('keyBind.messages.readFailed') + ': ' + (result.error || 'Unknown error'));
             }
         }
     } catch (error) {
-        console.error('读取本地配置失败:', error);
-        window.$message?.error('读取本地配置失败');
+        console.error('Failed to read local config:', error);
+        window.$message?.error($t('keyBind.messages.readLocalFailed'));
     }
 };
 
@@ -489,13 +166,13 @@ const removeAppliedBinding = async (systemName: string | undefined) => {
         if (paths.csgo2Path && item.renderKeyConfigJson) {
             const { success } = await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, item.renderKeyConfigJson);
             if (!success) {
-                window.$message?.error('从配置文件移除失败');
+                window.$message?.error($t('keyBind.messages.removeFromCfgFailed'));
                 return;
             }
         }
         // 使用 filter 创建新数组，触发计算属性 setter
         applyKeyBindItems.value = applyKeyBindItems.value.filter((_, i) => i !== index);
-        window.$message?.success('已移除绑定');
+        window.$message?.success($t('keyBind.messages.bindingRemoved'));
     }
 };
 
@@ -512,7 +189,7 @@ const resetAppliedBindingKey = async (systemName: string | undefined) => {
     // 找到对应的绑定项
     const item = applyKeyBindItems.value.find(i => i.systemBindCfgVO?.systemName === systemName);
     if (!item) {
-        window.$message?.error('未找到该绑定项');
+        window.$message?.error($t('keyBind.messages.itemNotFound'));
         return;
     }
 
@@ -637,7 +314,7 @@ const handleWheelResetFn = (e: WheelEvent) => {
     );
     if (keyExistsIndex !== -1) {
         const existingItem = applyKeyBindItems.value[keyExistsIndex];
-        window.$message?.warning(`按键 ${wheelKey} 已被 ${existingItem.systemBindCfgVO?.systemName} 使用，请更换按键`);
+        window.$message?.warning($t('keyBind.messages.keyInUse', { key: wheelKey, name: existingItem.systemBindCfgVO?.systemName || '' }));
         return;
     }
 
@@ -711,7 +388,7 @@ const saveResetKeyAndCloseFn = async () => {
         );
         if (keyExistsIndex !== -1) {
             const existingItem = applyKeyBindItems.value[keyExistsIndex];
-            window.$message?.warning(`按键 ${capturedKey.value} 已被 ${existingItem.systemBindCfgVO?.systemName} 使用，请更换按键`);
+            window.$message?.warning($t('keyBind.messages.keyInUse', { key: capturedKey.value, name: existingItem.systemBindCfgVO?.systemName || '' }));
             return;
         }
 
@@ -743,12 +420,12 @@ const saveResetKeyAndCloseFn = async () => {
                 const cfgContent = header + '\n' + newRenderKeyConfigJson;
                 const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, cfgContent);
                 if (success) {
-                    window.$message?.success('按键重置成功并已写入配置');
+                    window.$message?.success($t('keyBind.messages.resetSuccessWithCfg'));
                 } else {
-                    window.$message?.error('写入配置文件失败');
+                    window.$message?.error($t('keyBind.messages.writeCfgFailed'));
                 }
             } else {
-                window.$message?.success('按键重置成功');
+                window.$message?.success($t('keyBind.messages.resetSuccess'));
             }
         }
     }
@@ -787,7 +464,7 @@ const saveAndCloseCaptureFn = () => {
             );
             if (keyExistsIndex !== -1) {
                 const existingItem = applyKeyBindItems.value[keyExistsIndex];
-                window.$message?.warning(`按键 ${capturedKey.value} 已被 ${existingItem.systemBindCfgVO?.systemName} 使用，请更换按键`);
+                window.$message?.warning($t('keyBind.messages.keyInUse', { key: capturedKey.value, name: existingItem.systemBindCfgVO?.systemName || '' }));
                 return;
             }
 
@@ -830,14 +507,14 @@ const saveAndCloseCaptureFn = () => {
 const applyKeyBindsFn = async (content: string) => {
     const paths = await window.ipcRenderer.invoke('auto-detect-paths');
     if (!paths.csgo2Path) {
-        window.$message?.error('未找到 CS2 路径，请先在设置中配置');
+        window.$message?.error($t('keyBind.messages.csgoPathNotFound'));
         return;
     }
     const { error } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, content);
     if (!error) {
-        window.$message?.success('应用成功');
+        window.$message?.success($t('keyBind.messages.applySuccess'));
     } else {
-        window.$message?.error('应用失败');
+        window.$message?.error($t('keyBind.messages.applyFailed'));
     }
 };
 
@@ -847,15 +524,15 @@ const applyKeyBindsFn = async (content: string) => {
 const saveLocalAutoexecCfg = async () => {
     const paths = await window.ipcRenderer.invoke('auto-detect-paths');
     if (!paths.csgo2Path) {
-        window.$message?.error('未找到 CS2 路径，请先在设置中配置');
+        window.$message?.error($t('keyBind.messages.csgoPathNotFound'));
         return;
     }
     // 传入 true 表示覆盖整个文件
     const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, localAutoexecCfg.value, true);
     if (success) {
-        window.$message?.success('保存成功');
+        window.$message?.success($t('keyBind.messages.saveSuccess'));
     } else {
-        window.$message?.error('保存失败');
+        window.$message?.error($t('keyBind.messages.saveFailed'));
     }
 };
 
@@ -907,11 +584,11 @@ onMounted(() => {
         <div class="header-section">
             <div class="title-section">
                 <SvgIcon icon="material-symbols:keyboard-alt-outline" />
-                <h1 class="page-title">按键绑定配置</h1>
+                <h1 class="page-title">{{ $t('keyBind.title') }}</h1>
             </div>
             <div class="back-btn" @click="handleBackFn">
                 <SvgIcon icon="material-symbols:arrow-back" class="back-icon" />
-                <span>返回工具箱</span>
+                <span>{{ $t('keyBind.back') }}</span>
             </div>
         </div>
 
@@ -921,15 +598,15 @@ onMounted(() => {
                     <div class="flex justify-center gap-5px">
                         <NButton :type="activeTab === 'library' ? 'primary' : 'default'"
                             @click="activeTab = 'library'; handleTabChangeFn('library')">
-                            <span class="text-12px">配置库</span>
+                            <span class="text-12px">{{ $t('keyBind.tabs.library') }}</span>
                         </NButton>
                         <NButton :type="activeTab === 'user' ? 'primary' : 'default'"
                             @click="activeTab = 'user'; handleTabChangeFn('user')">
-                            <span class="text-12px">个人配置</span>
+                            <span class="text-12px">{{ $t('keyBind.tabs.user') }}</span>
                         </NButton>
                         <NButton :type="activeTab === 'local' ? 'primary' : 'default'"
                             @click="activeTab = 'local'; handleTabChangeFn('local')">
-                            <span class="text-12px">本地配置</span>
+                            <span class="text-12px">{{ $t('keyBind.tabs.local') }}</span>
                         </NButton>
                     </div>
                     <div v-show="activeTab === 'library'">
@@ -966,7 +643,7 @@ onMounted(() => {
                                             <div class="flex flex-col">
                                                 <span class="text-14px font-bold">{{ item.systemBindCfgVO?.systemName
                                                     }}</span>
-                                                <span class="text-12px text-gray-500">绑定按键: {{ item.key }}</span>
+                                                <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }}: {{ item.key }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -985,7 +662,7 @@ onMounted(() => {
                                 <SvgIcon icon="material-symbols:folder-code-outline" class="w-24px h-24px mr-10px" />
                             </div>
                             <div class="font-size-14px font-bold">
-                                autoexec.cfg
+                                {{ $t('keyBind.cfgFileName') }}
                             </div>
                         </div>
                     </div>
@@ -1012,16 +689,16 @@ onMounted(() => {
                                         <img :src="item.systemBindCfgVO?.systemIcon" class="h-75px mr-20px" />
                                     </div>
                                     <div class="flex-1 flex flex-col align-center justify-between">
-                                        <span class="text-14px font-bold">配置库名称 : {{ item.systemBindCfgVO?.systemName
+                                        <span class="text-14px font-bold">{{ $t('keyBind.configName') }} : {{ item.systemBindCfgVO?.systemName
                                         }}</span>
-                                        <span class="text-12px text-gray-500">绑定按键 : {{ item.key }}</span>
+                                        <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }} : {{ item.key }}</span>
                                     </div>
                                     <div class="flex flex-col items-center justify-center w-150px gap-10px">
                                         <NButton class="rounded-10px" type="info" ghost
-                                            @click.stop="resetAppliedBindingKey(item.systemBindCfgVO?.systemName)">重置按键
+                                            @click.stop="resetAppliedBindingKey(item.systemBindCfgVO?.systemName)">{{ $t('keyBind.resetKey') }}
                                         </NButton>
                                         <NButton class="rounded-10px" type="warning" ghost
-                                            @click.stop="removeAppliedBinding(item.systemBindCfgVO?.systemName)">取消应用
+                                            @click.stop="removeAppliedBinding(item.systemBindCfgVO?.systemName)">{{ $t('keyBind.removeBinding') }}
                                         </NButton>
                                     </div>
                                 </NCard>
@@ -1042,6 +719,12 @@ onMounted(() => {
         <NModal v-model:show="showKeyCaptureModal" :bordered="true" preset="card"
             class="w-400px rounded-20px key-capture-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
             size="small">
+            <template #header>
+                <div class="flex items-center font-size-18px">
+                    <SvgIcon icon="material-symbols:help-outline" class="mr-5px" />
+                    <div class="font-size-16px">{{ $t('keyBind.tutorial.title') }}</div>
+                </div>
+            </template>
             <div class="key-capture-modal-new" @wheel="handleWheelFn">
                 <!-- 顶部装饰区域 -->
                 <div class="capture-header">
@@ -1067,15 +750,15 @@ onMounted(() => {
                 <div class="capture-tips">
                     <div class="tip-item">
                         <SvgIcon icon="material-symbols:keyboard" class="tip-icon" />
-                        <span class="tip-text">键盘按键</span>
+                        <span class="tip-text">{{ $t('keyBind.capture.keyboard') }}</span>
                     </div>
                     <div class="tip-item">
                         <SvgIcon icon="material-symbols:mouse" class="tip-icon" />
-                        <span class="tip-text">鼠标按键</span>
+                        <span class="tip-text">{{ $t('keyBind.capture.mouse') }}</span>
                     </div>
                     <div class="tip-item">
                         <SvgIcon icon="material-symbols:swap-vert" class="tip-icon" />
-                        <span class="tip-text">滚轮</span>
+                        <span class="tip-text">{{ $t('keyBind.capture.wheel') }}</span>
                     </div>
                 </div>
             </div>
