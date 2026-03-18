@@ -110,7 +110,7 @@ export default {
       waiting: 'Waiting for key input...',
     },
     tutorial: {
-      title: 'Tutorial',
+      title: 'Please press a key to bind',
       configLibrary: {
         title: '1. Config Library',
         desc: 'The system config library provides preset key bindings, including weapon purchases, equipment purchases, and ZE common functions. Select items from the library to quickly apply them.',

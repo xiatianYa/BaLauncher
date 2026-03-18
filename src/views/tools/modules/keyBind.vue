@@ -90,7 +90,6 @@ const applyKeyBindItems = computed({
 // ============================================================================
 // 工具函数
 // ============================================================================
-
 /**
  * 替换编辑器中的按键占位符
  */
@@ -228,20 +227,19 @@ const handleMouseDownFn = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
+    // 不记录鼠标左键(0)和右键(2)点击
+    if (e.button === 0 || e.button === 2) {
+        return;
+    }
+
     let key = '';
     if (e.ctrlKey) key += 'Ctrl+';
     if (e.shiftKey) key += 'Shift+';
     if (e.altKey) key += 'Alt+';
 
     switch (e.button) {
-        case 0:
-            key += 'MOUSE1';
-            break;
         case 1:
             key += 'MOUSE3';
-            break;
-        case 2:
-            key += 'MOUSE2';
             break;
         case 3:
             key += 'MOUSE4';
@@ -350,20 +348,19 @@ const handleMouseDownResetFn = (e: MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
+    // 不记录鼠标左键(0)和右键(2)点击
+    if (e.button === 0 || e.button === 2) {
+        return;
+    }
+
     let key = '';
     if (e.ctrlKey) key += 'Ctrl+';
     if (e.shiftKey) key += 'Shift+';
     if (e.altKey) key += 'Alt+';
 
     switch (e.button) {
-        case 0:
-            key += 'MOUSE1';
-            break;
         case 1:
             key += 'MOUSE3';
-            break;
-        case 2:
-            key += 'MOUSE2';
             break;
         case 3:
             key += 'MOUSE4';
@@ -448,10 +445,10 @@ const handleWheelFn = (e: WheelEvent) => {
 /**
  * 保存按键并关闭弹窗
  */
-const saveAndCloseCaptureFn = () => {
+const saveAndCloseCaptureFn = () => { 
     if (currentSelectedItem.value && capturedKey.value) {
         //保存系统配置
-        if (selectedSystemConfig.value === '武器类' || selectedSystemConfig.value === '道具累' || selectedSystemConfig.value === 'ZE常用') {
+        if (selectedSystemConfig.value === '武器类' || selectedSystemConfig.value === '道具类' || selectedSystemConfig.value === 'ZE常用') {
             // 检查是否已存在相同配置项的绑定
             const existingIndex = applyKeyBindItems.value.findIndex(
                 item => item.systemBindCfgVO?.systemName === currentSelectedItem.value?.systemName
@@ -721,11 +718,10 @@ onMounted(() => {
             size="small">
             <template #header>
                 <div class="flex items-center font-size-18px">
-                    <SvgIcon icon="material-symbols:help-outline" class="mr-5px" />
                     <div class="font-size-16px">{{ $t('keyBind.tutorial.title') }}</div>
                 </div>
             </template>
-            <div class="key-capture-modal-new" @wheel="handleWheelFn">
+            <div class="key-capture-modal-new" @wheel="handleWheelFn" @mousedown="handleMouseDownFn">
                 <!-- 顶部装饰区域 -->
                 <div class="capture-header">
                     <div class="character-image">

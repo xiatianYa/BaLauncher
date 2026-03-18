@@ -110,7 +110,7 @@ export default {
       waiting: '等待按键输入...',
     },
     tutorial: {
-      title: '使用教程',
+      title: '请按下一个按键进行绑定',
       configLibrary: {
         title: '1. 配置库说明',
         desc: '系统配置库提供预设的常用按键绑定，包括武器购买、道具购买、ZE常用功能等。选择配置库中的项目即可快速应用。',

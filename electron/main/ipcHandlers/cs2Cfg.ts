@@ -76,8 +76,9 @@ export function setupCs2CfgIpc() {
       const trimmedContent = contentToRemove.trim()
 
       // 查找并删除包含指定内容的 BaLauncher 配置块
-      // 匹配模式: // ======== ... // BaLauncher ... // ======== ... bind ...
-      const blockPattern = /(\/\/ ={40}\n\/\/ BaLauncher 按键绑定配置[\s\S]*?\/\/ ={40}\nbind[^\n]*)/g
+      // 匹配模式: // ======== ... // BaLauncher ... // ======== ...
+      // 支持不同数量的等号（8个或40个），匹配从头部到下一个头部或文件结束
+      const blockPattern = /(\/\/ ={8,40}\n\/\/ BaLauncher 按键绑定配置[\s\S]*?)(?=\n\/\/ ={8,40}\n\/\/ BaLauncher|$)/g
 
       content = content.replace(blockPattern, (match) => {
         // 如果这个块包含要删除的内容，则返回空字符串（删除）
