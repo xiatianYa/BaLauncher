@@ -1,3 +1,4 @@
+import { useAppStore } from '@/store/modules/app';
 import { useAuthStore } from '@/store/modules/auth';
 import { useGameStore } from '@/store/modules/game';
 
@@ -27,6 +28,7 @@ const ServerWebsocket: ServerWebsocketType = {
 
     const authStore = useAuthStore();
     const gameStore = useGameStore();
+    const appStore = useAppStore();
 
     if (!authStore.isLogin) return;
 
@@ -65,9 +67,27 @@ const ServerWebsocket: ServerWebsocketType = {
             aLink.href = `steam://rungame/730/76561198977557298/+connect ${gameStore.automaticInfo?.connectStr}`;
             aLink.click();
           },
+          '203': () => {
+            // 在线用户数据
+            appStore.onlineUserList = data;
+          },
           '205': () => {
             if (Array.isArray(data)) {
               gameStore.currentServerWsList.splice(0, gameStore.currentServerWsList.length, ...data);
+            }
+          },
+          '206': () => {
+            // 地图订阅通知
+            if (data && window.ipcRenderer) {
+              window.ipcRenderer.showMapOrderNotification({
+                title: '地图订阅提醒',
+                message: `您订阅的服务器地图已更新`,
+                serverName: data.serverName,
+                connectStr: data.connectStr,
+                mapName: data.gameMap?.name || data.gameMap?.mapName,
+                mapChineseName: data.gameMap?.mapLabel,
+                mapImage: data.gameMap?.mapUrl
+              });
             }
           },
           '103': () => {

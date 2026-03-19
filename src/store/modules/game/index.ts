@@ -599,7 +599,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     const startType: 'steamurl' | 'steamexe' = isGameRunning.value ? 'steamurl' : 'steamexe';
     
     // 启动游戏
-    console.log([...selectedStartItems.value])
     const launchResult = await window.ipcRenderer.launchCs2(
       csgo2Path.value,
       serverMode,

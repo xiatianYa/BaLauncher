@@ -23,6 +23,9 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   // 当前主题，默认为 '阿罗娜'
   const currentTheme = ref<string>(localStg.get('theme') || '阿罗娜');
 
+    // 在线用户列表
+  const onlineUserList = ref<Array<Api.System.OnLineUser>>([]);
+
   // 音频映射
   const audioMap: Record<string, string> = {
     '优香': audioYuuka,
@@ -59,6 +62,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     audioMap,
     themes,
     locale,
+    onlineUserList,
     setTheme
   };
 });

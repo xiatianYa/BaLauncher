@@ -66,6 +66,12 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   getAppVersion() {
     return ipcRenderer.invoke('electron:get-app-version');
   },
+  showMapOrderNotification(data: { title: string; message: string; serverName?: string; connectStr?: string; mapName?: string; mapChineseName?: string; mapImage?: string }) {
+    return ipcRenderer.invoke('show-notification', { ...data, type: 'map-subscription' });
+  },
+  closeMapOrderNotification() {
+    return ipcRenderer.invoke('close-notification');
+  },
 });
 
 // --------- Preload scripts loading ---------

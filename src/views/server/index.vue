@@ -99,6 +99,7 @@ const getMapPhaseText = (phase: string) => {
     'intermission': '中场休息',
     'gameover': '游戏结束',
     'live': '对局中',
+    'over': '已结束',
     'unknown': '未知'
   };
   return phaseMap[phase] || phase;
@@ -348,7 +349,7 @@ onUnmounted(() => {
             <div class="sercer-card overflow-hidden flex flex-col"
               v-if="server.isOnline && getSourceServerInfo(server)?.serverName">
               <img v-if="getMapByMapName(server.map)" class="server-card-bg"
-                :src="getMapByMapName(server.map)?.mapUrl" />
+                v-lazy="getMapByMapName(server.map)?.mapUrl" />
               <div class="z-9 server-online" :style="`${getOnLineColor(server)}`"></div>
               <div class="server-card-mask"></div>
               <div
@@ -463,7 +464,7 @@ onUnmounted(() => {
           :class="{ 'community-box-selected': gameStore.selectedCommunityId === community.id }"
           @click="selectCommunity(community.id)">
           <div class="community-image">
-            <img :src="community.logo" :alt="community.communityName" v-if="community.logo" />
+            <img v-lazy="community.logo" :alt="community.communityName" v-if="community.logo" />
           </div>
           <div class="community-info">
             <div class="community-name">{{ community.communityName }}</div>

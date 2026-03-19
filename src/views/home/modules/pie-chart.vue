@@ -87,7 +87,6 @@ const { domRef, updateOptions } = useEcharts(() => ({
   },
   series: [
     {
-      name: $t('page.home.pieChart'),
       type: 'pie' as const,
       radius: ['45%', '75%'],
       center: ['35%', '50%'],
@@ -149,9 +148,6 @@ async function mockData() {
 
 function updateLocale() {
   updateOptions((opts) => {
-    if (opts.series && opts.series[0]) {
-      opts.series[0].name = $t('page.home.pieChart');
-    }
     return opts;
   });
 }
@@ -214,7 +210,7 @@ init();
 </script>
 
 <template>
-  <NCard :bordered="false" class="card-wrapper chart-card">
+  <NCard :bordered="true" class="card-wrapper chart-card">
     <div ref="domRef" class="h-360px overflow-hidden"></div>
   </NCard>
 </template>

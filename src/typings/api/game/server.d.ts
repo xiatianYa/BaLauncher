@@ -216,5 +216,22 @@ declare namespace Api {
             /** 自动重试 */
             joinServerAutoRetryValue: boolean;
         }
+
+        /** 地图订阅数据 */
+        type ServerDetail = {
+            communityId: number;
+            connectStr: string;
+            createTime: string;
+            gameMap: Api.Game.Map;
+            id: number;
+            ip: string;
+            isQuery: string;
+            isStatistics: string;
+            port: string;
+            serverName: string;
+            sort: number;
+            sourceServer: SourceServer;
+            updateTime: string;
+        }
     }
 }

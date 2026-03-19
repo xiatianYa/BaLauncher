@@ -64,6 +64,8 @@ declare namespace Api {
       mapCd: string;
       /** 地图称号 */
       mapAchievement: string;
+      /** 是否可订阅 */
+      isOrder: string;
       /** 扩展地图 */
       exgMap: {
         /** 地图名称 */

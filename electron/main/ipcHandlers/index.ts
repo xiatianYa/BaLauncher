@@ -1,3 +1,4 @@
+import { ipcMain } from 'electron'
 import { setupWindowControlIpc } from './windowControl'
 import { setupQqLoginIpc } from './qqLogin'
 import { setupSteamLoginIpc } from './steamLogin'
@@ -7,6 +8,7 @@ import { setupCs2GsiIpc } from './cs2Gsi'
 import { setupLogReaderIpc } from './logReader'
 import { setupAutomaticJoinIpc } from './automaticJoin'
 import { setupCs2CfgIpc } from './cs2Cfg'
+import { setupNotificationIpc } from '../notificationWindow'
 
 export function setupAllIpcHandlers() {
   setupWindowControlIpc()
@@ -18,4 +20,5 @@ export function setupAllIpcHandlers() {
   setupLogReaderIpc()
   setupAutomaticJoinIpc()
   setupCs2CfgIpc()
+  setupNotificationIpc(ipcMain)
 }

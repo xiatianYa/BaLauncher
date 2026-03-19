@@ -177,7 +177,7 @@ export const GunLibaryCfgOption: Api.Game.SystemBindCfgVO[] = [
         configDesc: '购买警喷',
     },
     {
-        systemName: 'SSG08',
+        systemName: 'SSG08(86137用)',
         systemIcon: Scout,
         keyConfigJson: 'bind "[按键:购买SSG08]" "buy ssg08"',
         configDesc: '购买SSG08狙击枪',
@@ -207,7 +207,7 @@ export const GunLibaryCfgOption: Api.Game.SystemBindCfgVO[] = [
         configDesc: '购买沙漠之鹰手枪',
     },
     {
-        systemName: 'R8',
+        systemName: 'R8(阿伟的最爱)',
         systemIcon: R8,
         keyConfigJson: 'bind "[按键:购买R8]" "buy revolver"',
         configDesc: '购买R8左轮手枪',
@@ -323,6 +323,25 @@ c_mindistance -999999; c_maxdistance 999999`,
 
     },
     {
+        systemName: '灵魂出窍',
+        systemIcon: Command,
+        keyConfigJson: `c_thirdpersonshoulder 0; cam_idealyaw 0; cam_idealpitch 0; cam_collision 1
+c_mindistance -999999; c_maxdistance 999999
+alias cam_settings “cam_idealyaw 0;cam_idealpitch 0;c_thirdpersonshoulder 0;c_thirdpersonshoulderheight 6;c_thirdpersonshoulderoffset 0;c_thirdpersonshoulderaimdist 0;cam_idealdist 0;”
+
+alias “cs_aliasthird” “thirdperson; cam_settings; alias cs_chasecam cs_aliasfirst”
+alias “cs_aliasfirst” “firstperson; alias cs_chasecam cs_aliasthird”
+alias “cs_chasecam” “cs_aliasthird”
+
+bind [按键:开启灵魂出窍] “+tp_magnifier” 
+alias +tp_magnifier “cs_chasecam; bind_zoomin; bind_zoomout; cam_collision 0”
+alias -tp_magnifier “cs_chasecam; bind_normal1; bind_normal2”
+alias bind_zoomin “bind MWHEELUP incrementvar cam_idealdist -999999 999999 -100”
+alias bind_zoomout “bind MWHEELDOWN incrementvar cam_idealdist -999999 999999 100”
+alias bind_normal1 “bind MWHEELUP +jump” // 此处替换你自己原来的指令
+alias bind_normal2 “bind MWHEELDOWN +jump” // 此处替换你自己原来的指令`,
+    },
+    {
         systemName: '传送',
         systemIcon: Command,
         keyConfigJson: 'bind [按键:传送到复活点] "say !ztele"',
@@ -337,6 +356,11 @@ c_mindistance -999999; c_maxdistance 999999`,
         systemName: '地图特效',
         systemIcon: Command,
         keyConfigJson: 'bind [按键:开关地图特效]  toggle r_drawparticles 0 1',
+    },
+    {
+        systemName: '画面亮度调整',
+        systemIcon: Command,
+        keyConfigJson: 'bind [按键:画面亮度调整] “toggle r_fullscreen_gamma 1 1.5 2 2.5 3”',
     },
     {
         systemName: '隐藏腿部模型',

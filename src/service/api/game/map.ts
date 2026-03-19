@@ -53,3 +53,34 @@ export function fetchGetMapNames() {
     method: 'get'
   });
 }
+
+/**
+ * 获取用户订阅列表
+ */
+export function fetchGetUserSubscribeList() {
+  return request<Api.Game.Map[]>({
+    url: '/gameMapOrder/listMy',
+    method: 'get'
+  });
+}
+
+/**
+ * 添加地图订阅
+ */
+export function fetchAddMapSubscribe(mapId: number) {
+  return request({
+    url: `/gameMapOrder/save`,
+    method: 'post',
+    data: { mapId }
+  });
+}
+
+/**
+ * 删除地图订阅
+ */
+export function fetchDeleteMapSubscribe(mapId: number) {
+  return request({
+    url: `/gameMapOrder/removeByMapId/${mapId}`,
+    method: 'delete'
+  });
+}

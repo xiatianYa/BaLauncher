@@ -212,6 +212,7 @@ export default {
   home: {
     greeting: '今天又是充满活力的一天!',
     welcome: '欢迎光临蔚蓝档案登录器！🌈',
+    onlineUser: '在线玩家',
   },
   server: {
     list: '服务器列表',
@@ -275,5 +276,21 @@ export default {
     weapon: {
       none: '无',
     },
+  },
+  mapOrder: {
+    title: '地图订阅',
+    back: '返回工具箱',
+    searchPlaceholder: '搜索地图名称，译名，或标签',
+    subscribe: '订阅',
+    unsubscribe: '取消订阅',
+    notSubscribable: '不可订阅',
+    subscribeSuccess: '订阅成功',
+    subscribeFailed: '订阅失败',
+    unsubscribeSuccess: '取消订阅成功',
+    unsubscribeFailed: '取消订阅失败',
+    subscribeList: '订阅列表',
+    noSubscribeData: '暂无订阅地图',
+    searchFailed: '搜索地图失败',
+    fetchSubscribeListFailed: '获取订阅列表失败',
   },
 };

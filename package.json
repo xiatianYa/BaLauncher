@@ -61,7 +61,8 @@
     "vue": "^3.4.21",
     "vue-i18n": "11.1.7",
     "vue-router": "4.5.1",
-    "vue-tsc": "^2.0.6"
+    "vue-tsc": "^2.0.6",
+    "vue3-lazyload": "0.3.8"
   },
   "dependencies": {
     "@lascyb/monaco-editor-vue3": "^0.3.2",

@@ -257,7 +257,7 @@ init();
 </script>
 
 <template>
-  <NCard :bordered="false" class="card-wrapper chart-card">
+  <NCard :bordered="true" class="card-wrapper chart-card">
     <div ref="domRef" class="h-360px overflow-hidden"></div>
   </NCard>
 </template>

@@ -212,6 +212,7 @@ export default {
   home: {
     greeting: 'Today is another energetic day!',
     welcome: 'Welcome to BaLauncher! 🌈',
+    onlineUser: 'Online Users',
   },
   server: {
     list: 'Server List',
@@ -275,5 +276,21 @@ export default {
     weapon: {
       none: 'None',
     },
+  },
+  mapOrder: {
+    title: 'Map Subscription',
+    back: 'Back to Tools',
+    searchPlaceholder: 'Search map name, translation, or tags',
+    subscribe: 'Subscribe',
+    unsubscribe: 'Unsubscribe',
+    notSubscribable: 'Not Subscribable',
+    subscribeSuccess: 'Subscribed successfully',
+    subscribeFailed: 'Subscription failed',
+    unsubscribeSuccess: 'Unsubscribed successfully',
+    unsubscribeFailed: 'Unsubscription failed',
+    subscribeList: 'Subscription List',
+    noSubscribeData: 'No subscribed maps',
+    searchFailed: 'Failed to search maps',
+    fetchSubscribeListFailed: 'Failed to fetch subscription list',
   },
 };
