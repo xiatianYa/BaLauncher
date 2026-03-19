@@ -48,6 +48,16 @@ async function createWindow(onDidFinishLoad?: (win: BrowserWindow) => void) {
     }
   });
 
+  // 锁定屏幕缩放率为 100%
+  win.webContents.on('dom-ready', () => {
+    win?.webContents.setZoomFactor(1.0)
+  })
+
+  // 监听缩放变化，强制重置为 100%
+  win.webContents.on('zoom-changed', (event, zoomDirection) => {
+    win?.webContents.setZoomFactor(1.0)
+  })
+
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https:')) shell.openExternal(url)
     return { action: 'deny' }

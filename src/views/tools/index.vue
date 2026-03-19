@@ -7,6 +7,9 @@ import KeyBind from './modules/keyBind.vue';
 import MapOrder from './modules/mapOrder.vue';
 import { $t } from '@/locales';
 
+import KeyBindIcon from '@/assets/imgs/tool/keyBind.png';
+import MapOrderIcon from '@/assets/imgs/tool/mapOrder.png';
+
 defineOptions({
   name: 'tools'
 });
@@ -38,14 +41,14 @@ interface ToolItem {
 const tools = ref<ToolItem[]>([
   {
     id: 'keyBind',
-    icon: 'material-symbols:keyboard-alt-outline',
+    icon: KeyBindIcon,
     gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: '#667eea',
     delay: 0
   },
   {
     id: 'mapOrder',
-    icon: 'material-symbols:map-outline',
+    icon: MapOrderIcon,
     gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
     color: '#f5576c',
     delay: 0.1
@@ -102,7 +105,7 @@ const handleToolClick = (tool: ToolItem) => {
               }" @click="handleToolClick(tool)">
                 <div class="card-content">
                   <div class="icon-wrapper font-size-18px">
-                    <SvgIcon :icon="tool.icon" class="tool-icon" />
+                    <img :src="tool.icon" class="tool-icon" />
                   </div>
                   <div class="card-info">
                     <h3 class="tool-title">{{ getToolTitle(tool.id) }}</h3>
@@ -194,6 +197,8 @@ const handleToolClick = (tool: ToolItem) => {
     }
 
     .icon-wrapper {
+      border-radius: 10px;
+      overflow: hidden;
       transform: scale(1.1) rotate(5deg);
       box-shadow: 0 0 30px var(--color);
     }
@@ -271,7 +276,8 @@ const handleToolClick = (tool: ToolItem) => {
 .icon-wrapper {
   width: 64px;
   height: 64px;
-  border-radius: 16px;
+  border-radius: 10px;
+  overflow: hidden;
   background: var(--gradient);
   display: flex;
   align-items: center;

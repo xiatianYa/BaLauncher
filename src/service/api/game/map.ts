@@ -1,11 +1,14 @@
 import { request } from '@/service/request';
 
 // 获取游戏地图列表(分页)
-export function fetchGetMapPage(params?: Api.Game.MapSearchParams) {
+export function fetchGetMapPage(params?: Api.Common.CommonSearchParams, content?: string) {
   return request<Api.Game.MapList>({
     url: '/gameMap/page',
     method: 'get',
-    params
+    params: {
+      ...params,
+      content: content || ''
+    }
   });
 }
 

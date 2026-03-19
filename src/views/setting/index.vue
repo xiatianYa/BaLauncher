@@ -296,7 +296,7 @@ onMounted(() => {
           </div>
         </div>
         <div class="theme-list">
-          <NGrid :cols="4" :x-gap="12" :y-gap="12">
+          <NGrid :cols="5" :x-gap="12" :y-gap="12">
             <NGridItem v-for="theme in themes" :key="theme.id">
               <div class="theme-item" :class="{ active: currentTheme === theme.id }" @click="selectTheme(theme.id)">
                 <div class="theme-img-wrapper">
@@ -744,7 +744,7 @@ onMounted(() => {
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
   border: 2px solid rgba(139, 92, 246, 0.3);
   border-radius: 10px;
-  padding: 20px;
+  padding: 10px;
   margin-bottom: 20px;
   transition: all 0.3s ease;
   box-shadow: 0 4px 15px rgba(139, 92, 246, 0.1);

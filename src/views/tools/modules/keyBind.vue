@@ -56,6 +56,9 @@ const localAutoexecCfg = ref<string>('');
 */
 /** 按键绑定相关 */
 const capturedKey = ref<string>('');
+/** 滚轮事件节流 */
+const wheelThrottleTimer = ref<number | null>(null);
+const WHEEL_THROTTLE_MS = 300; // 滚轮事件节流时间（毫秒）
 /** 配置库相关 */
 const systemLibraryItems = ref<Api.Game.SystemBindVO[]>(systemLibraryItemsConst);
 //系统武器配置库
@@ -216,7 +219,13 @@ const handleKeyDownFn = (e: KeyboardEvent) => {
     if (e.altKey) key += 'Alt+';
 
     if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
-        key += e.key.toUpperCase();
+        // 区分小键盘按键，CS2配置格式为 KP_1, KP_2 等
+        if (e.code.startsWith('Numpad')) {
+            const numpadKey = e.code.replace('Numpad', 'kp_');
+            key += numpadKey.toUpperCase();
+        } else {
+            key += e.key.toUpperCase();
+        }
         capturedKey.value = key;
         saveAndCloseCaptureFn();
     }
@@ -272,6 +281,11 @@ const closeKeyCaptureFn = () => {
     showKeyCaptureModal.value = false;
     capturedKey.value = '';
     currentSelectedItem.value = null;
+    // 清理滚轮节流定时器
+    if (wheelThrottleTimer.value) {
+        clearTimeout(wheelThrottleTimer.value);
+        wheelThrottleTimer.value = null;
+    }
     window.removeEventListener('keydown', handleKeyDownFn);
     window.removeEventListener('mousedown', handleMouseDownFn);
 };
@@ -292,18 +306,28 @@ const closeResetKeyCaptureFn = () => {
     capturedKey.value = '';
     isCapturing.value = false;
     currentResetItem.value = null;
+    // 清理滚轮节流定时器
+    if (wheelThrottleTimer.value) {
+        clearTimeout(wheelThrottleTimer.value);
+        wheelThrottleTimer.value = null;
+    }
     window.removeEventListener('keydown', handleKeyDownResetFn);
     window.removeEventListener('mousedown', handleMouseDownResetFn);
     window.removeEventListener('wheel', handleWheelResetFn);
 };
 
-// 处理重置时的鼠标滚轮事件
+// 处理重置时的鼠标滚轮事件（带节流）
 const handleWheelResetFn = (e: WheelEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     // 防止重复触发
     if (isCapturing.value) return;
+
+    // 节流检查
+    if (wheelThrottleTimer.value) {
+        return;
+    }
 
     // 检查滚轮按键是否已被其他配置使用
     const wheelKey = e.deltaY < 0 ? 'MWHEELUP' : 'MWHEELDOWN';
@@ -322,6 +346,11 @@ const handleWheelResetFn = (e: WheelEvent) => {
         capturedKey.value = 'MWHEELDOWN';
     }
 
+    // 设置节流定时器
+    wheelThrottleTimer.value = window.setTimeout(() => {
+        wheelThrottleTimer.value = null;
+    }, WHEEL_THROTTLE_MS);
+
     isCapturing.value = true;
     saveResetKeyAndCloseFn();
 };
@@ -337,7 +366,13 @@ const handleKeyDownResetFn = (e: KeyboardEvent) => {
     if (e.altKey) key += 'Alt+';
 
     if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
-        key += e.key.toUpperCase();
+        // 区分小键盘按键，CS2配置格式为 KP_1, KP_2 等
+        if (e.code.startsWith('Numpad')) {
+            const numpadKey = e.code.replace('Numpad', 'kp_');
+            key += numpadKey.toUpperCase();
+        } else {
+            key += e.key.toUpperCase();
+        }
         capturedKey.value = key;
         saveResetKeyAndCloseFn();
     }
@@ -417,12 +452,12 @@ const saveResetKeyAndCloseFn = async () => {
                 const cfgContent = header + '\n' + newRenderKeyConfigJson;
                 const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, cfgContent);
                 if (success) {
-                    window.$message?.success($t('keyBind.messages.resetSuccessWithCfg'));
+                    window.$message?.success($t('keyBind.messages.resetSuccess'));
                 } else {
                     window.$message?.error($t('keyBind.messages.writeCfgFailed'));
                 }
             } else {
-                window.$message?.success($t('keyBind.messages.resetSuccess'));
+                window.$message?.error('未配置 CS2 路径，请在设置中配置');
             }
         }
     }
@@ -430,22 +465,34 @@ const saveResetKeyAndCloseFn = async () => {
 };
 
 /**
- * 处理鼠标滚轮事件
+ * 处理鼠标滚轮事件（带节流）
  */
 const handleWheelFn = (e: WheelEvent) => {
     e.preventDefault();
+
+    // 节流检查
+    if (wheelThrottleTimer.value) {
+        return;
+    }
+
     if (e.deltaY < 0) {
         capturedKey.value = 'MWHEELUP';
     } else if (e.deltaY > 0) {
         capturedKey.value = 'MWHEELDOWN';
     }
+
+    // 设置节流定时器
+    wheelThrottleTimer.value = window.setTimeout(() => {
+        wheelThrottleTimer.value = null;
+    }, WHEEL_THROTTLE_MS);
+
     saveAndCloseCaptureFn();
 };
 
 /**
  * 保存按键并关闭弹窗
  */
-const saveAndCloseCaptureFn = () => { 
+const saveAndCloseCaptureFn = () => {
     if (currentSelectedItem.value && capturedKey.value) {
         //保存系统配置
         if (selectedSystemConfig.value === '武器类' || selectedSystemConfig.value === '道具类' || selectedSystemConfig.value === 'ZE常用') {
@@ -639,8 +686,9 @@ onMounted(() => {
                                                 class="w-48px h-48px object-contain" />
                                             <div class="flex flex-col">
                                                 <span class="text-14px font-bold">{{ item.systemBindCfgVO?.systemName
-                                                    }}</span>
-                                                <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }}: {{ item.key }}</span>
+                                                }}</span>
+                                                <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }}: {{
+                                                    item.key }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -686,16 +734,20 @@ onMounted(() => {
                                         <img :src="item.systemBindCfgVO?.systemIcon" class="h-75px mr-20px" />
                                     </div>
                                     <div class="flex-1 flex flex-col align-center justify-between">
-                                        <span class="text-14px font-bold">{{ $t('keyBind.configName') }} : {{ item.systemBindCfgVO?.systemName
-                                        }}</span>
-                                        <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }} : {{ item.key }}</span>
+                                        <span class="text-14px font-bold">{{ $t('keyBind.configName') }} : {{
+                                            item.systemBindCfgVO?.systemName
+                                            }}</span>
+                                        <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }} : {{
+                                            item.key }}</span>
                                     </div>
                                     <div class="flex flex-col items-center justify-center w-150px gap-10px">
                                         <NButton class="rounded-10px" type="info" ghost
-                                            @click.stop="resetAppliedBindingKey(item.systemBindCfgVO?.systemName)">{{ $t('keyBind.resetKey') }}
+                                            @click.stop="resetAppliedBindingKey(item.systemBindCfgVO?.systemName)">{{
+                                            $t('keyBind.resetKey') }}
                                         </NButton>
                                         <NButton class="rounded-10px" type="warning" ghost
-                                            @click.stop="removeAppliedBinding(item.systemBindCfgVO?.systemName)">{{ $t('keyBind.removeBinding') }}
+                                            @click.stop="removeAppliedBinding(item.systemBindCfgVO?.systemName)">{{
+                                            $t('keyBind.removeBinding') }}
                                         </NButton>
                                     </div>
                                 </NCard>
