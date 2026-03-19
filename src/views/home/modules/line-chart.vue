@@ -139,7 +139,10 @@ async function mockData() {
 
   updateOptions((opts) => {
     if (opts.legend) {
-      opts.legend.data = data.communityNames || [];
+      const legend = opts.legend;
+      if (legend && !Array.isArray(legend)) {
+        legend.data = data.communityNames || [];
+      }
     }
     const xAxis = opts.xAxis;
     if (xAxis && !Array.isArray(xAxis) && 'data' in xAxis) {
@@ -155,9 +158,12 @@ function updateLocale() {
     const originOpts = factory();
 
     if (opts.legend && originOpts.legend) {
-      opts.legend.data = originOpts.legend.data;
+      const legend = opts.legend;
+      if (legend && !Array.isArray(legend) && 'data' in legend) {
+        legend.data = (originOpts.legend as { data?: (string | { name?: string; icon?: string; textStyle?: object })[] })?.data;
+      }
     }
-    if (opts.series && originOpts.series && opts.series.length >= 2 && originOpts.series.length >= 2) {
+    if (opts.series && originOpts.series && Array.isArray(opts.series) && Array.isArray(originOpts.series) && opts.series.length >= 2 && originOpts.series.length >= 2) {
       const series0 = opts.series[0];
       const originSeries0 = originOpts.series[0];
       const series1 = opts.series[1];

@@ -129,7 +129,7 @@ export function useEcharts<T extends ECOption>(optionsFactory: () => T, hooks: C
    *
    * @param callback callback function
    */
-  async function updateOptions(callback: (opts: T, optsFactory: () => T) => ECOption = () => chartOptions, any: any) {
+  async function updateOptions(callback: (opts: T, optsFactory: () => T) => ECOption = () => chartOptions, delay: number = 2000) {
     if (!isRendered()) return;
 
     const updatedOpts = callback(chartOptions, optionsFactory);
