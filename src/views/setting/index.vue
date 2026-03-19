@@ -57,30 +57,59 @@ const isDetectingCsgo = ref(false);
 const isCheckingUpdate = ref(false);
 const appVersion = ref('1.0.0');
 
+// 标记是否正在检查更新，防止重复点击
+let isUpdateChecking = false;
+
+const updateNotAvailableHandler = () => {
+  if (!isUpdateChecking) return;
+  window.$message?.success('当前已是最新版本');
+  isUpdateChecking = false;
+  isCheckingUpdate.value = false;
+  // 清理监听器
+  window.ipcRenderer.off('update-not-available', updateNotAvailableHandler);
+  window.ipcRenderer.off('update-error', updateErrorHandler);
+};
+
+const updateErrorHandler = (_event: any, errorMsg?: string) => {
+  if (!isUpdateChecking) return;
+  if (errorMsg) {
+    window.$message?.error(errorMsg);
+  }
+  isUpdateChecking = false;
+  isCheckingUpdate.value = false;
+  // 清理监听器
+  window.ipcRenderer.off('update-not-available', updateNotAvailableHandler);
+  window.ipcRenderer.off('update-error', updateErrorHandler);
+};
+
 const checkForUpdates = async () => {
+  // 防止重复点击
+  if (isUpdateChecking || isCheckingUpdate.value) {
+    window.$message?.warning('正在检查更新中，请稍候...');
+    return;
+  }
+
+  isUpdateChecking = true;
   isCheckingUpdate.value = true;
+
   try {
     window.$message?.info('正在检查更新...');
+
+    // 先注册监听器
+    window.ipcRenderer.on('update-not-available', updateNotAvailableHandler);
+    window.ipcRenderer.on('update-error', updateErrorHandler);
+
+    // 调用检查更新
     await window.ipcRenderer.invoke('check-update');
-    await window.ipcRenderer.on('update-not-available', updateNotAvailableHandler);
-    await window.ipcRenderer.on('update-error', updateErrorHandler);
   } catch (error) {
     console.error('检查更新失败:', error);
     window.$message?.error('检查更新失败');
-  } finally {
+    isUpdateChecking = false;
     isCheckingUpdate.value = false;
+    // 清理监听器
     window.ipcRenderer.off('update-not-available', updateNotAvailableHandler);
     window.ipcRenderer.off('update-error', updateErrorHandler);
   }
-};
-
-const updateNotAvailableHandler = () => {
-  window.$message?.success('当前已是最新版本');
-  isCheckingUpdate.value = false;
-};
-
-const updateErrorHandler = () => {
-  isCheckingUpdate.value = false;
 };
 
 const getAppVersion = async () => {
