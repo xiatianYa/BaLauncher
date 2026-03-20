@@ -11,7 +11,8 @@ defineOptions({
 </script>
 
 <template>
-  <NCard :title="$t('home.onlineUser')" :bordered="true" size="small" class="h-full card-wrapper" content-style="padding:5px 10px 10px 10px"
+  <NCard :bordered="true" size="small" class="card-wrapper h-400px"
+    content-class="flex overflow-auto" content-style="padding:10px 10px 10px 10px"
     header-style="padding:5px 10px 5px 10px;">
     <NGrid cols="4 s:6 m:8 l:10 xl:12 2xl:14" responsive="screen">
       <NGridItem v-for="(user, index) in appStore.onlineUserList" :key="index">

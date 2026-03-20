@@ -11,7 +11,7 @@ defineOptions({
 </script>
 
 <template>
-  <NCard class="w-full h-full" content-class="flex flex-col h-full" content-style="padding:0px;" :bordered="false">
+  <NCard class="w-full h-full" content-class="flex flex-col" content-style="padding:0px;" :bordered="false">
     <NCard class="mb-20px">
       <HeaderBanner />
     </NCard>
