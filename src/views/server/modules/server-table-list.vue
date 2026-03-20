@@ -74,7 +74,11 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
   {
     title: $t('server.playerCountColumn'),
     key: 'players',
-    sorter: (row1, row2) => row1.players - row2.players,
+    sorter: (row1, row2) => {
+      const p1 = row1.players ?? -1;
+      const p2 = row2.players ?? -1;
+      return p1 - p2;
+    },
     render: (row) => (
       <div class="flex items-center gap-6px">
         <div class="w-60px h-6px bg-gray-200 rounded-3px overflow-hidden">
