@@ -754,9 +754,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             const currentTheme = appStore.currentTheme
             const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜']
             const audio = new Audio(audioSrc)
-            audio.volume = 0.5
+            audio.volume = appStore.volume
             audio.play()
-            window.$message?.success('连接成功')
+            window.$message?.success('连接成功');
           }
           break
 

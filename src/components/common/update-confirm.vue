@@ -90,7 +90,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <NModal v-model:show="state.show" preset="card" size="medium" :bordered="false" :show-icon="false" class="w-300px"
+  <NModal v-model:show="state.show" preset="card" size="medium" :bordered="false" :show-icon="false" class="w-300px rounded-10px"
     header-style="padding:10px;" :closable="false">
     <template #header>
       {{ $t('update.title') }}

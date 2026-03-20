@@ -47,7 +47,7 @@ const selectTheme = (themeId: string) => {
       themeAudio.value.currentTime = 0;
       themeAudio.value.src = audioSrc;
     }
-    themeAudio.value.volume = 0.5;
+    themeAudio.value.volume = appStore.volume;
     themeAudio.value.play();
   }
 };
@@ -57,6 +57,21 @@ const isDetectingSteam = ref(false);
 const isDetectingCsgo = ref(false);
 const isCheckingUpdate = ref(false);
 const appVersion = ref('1.0.0');
+
+const previewAudio = () => {
+  const audioSrc = appStore.audioMap[currentTheme.value] || appStore.audioMap['阿罗娜'];
+  if (audioSrc) {
+    if (!themeAudio.value) {
+      themeAudio.value = new Audio(audioSrc);
+    } else {
+      themeAudio.value.pause();
+      themeAudio.value.currentTime = 0;
+      themeAudio.value.src = audioSrc;
+    }
+    themeAudio.value.volume = appStore.volume;
+    themeAudio.value.play();
+  }
+};
 
 // 标记是否正在检查更新，防止重复点击
 let isUpdateChecking = false;
@@ -339,11 +354,14 @@ onMounted(() => {
         </div>
         <div class="flex items-center pl-20px pr-20px">
           <NText class="w-80px font-bold">
-            音量调节
+            {{ $t('settings.volumeControl') }}
           </NText>
-          <NSlider :value="appStore.volume" :min="0" :max="1" :step="0.1"
+          <NSlider class="flex-1" :value="appStore.volume" :min="0" :max="1" :step="0.1"
             :marks="{ 0: '0', 0.1: '0.1', 0.2: '0.2', 0.3: '0.3', 0.4: '0.4', 0.5: '0.5', 0.6: '0.6', 0.7: '0.7', 0.8: '0.8', 0.9: '0.9', 1: '1' }"
             @update:value="appStore.setVolume" />
+          <NButton class="ml-10px rounded-5px" size="small" type="info" ghost @click="previewAudio">
+            {{ $t('settings.preview') }}
+          </NButton>
         </div>
       </div>
       <div class="game-setting-box">

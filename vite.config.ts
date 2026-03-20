@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import vueJsx from '@vitejs/plugin-vue-jsx'
 import electron from 'vite-plugin-electron/simple'
 import pkg from './package.json'
 import { setupUnplugin } from './build/plugins/unplugin';
@@ -18,6 +19,7 @@ export default defineConfig(({ command }) => {
   return {
     plugins: [
       vue(),
+      vueJsx(),
       electron({
         main: {
           // Shortcut of `build.lib.entry`

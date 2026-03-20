@@ -17,6 +17,9 @@ declare namespace UnionKey {
   /** The tool module */
   type ToolModule = 'keyBind' | 'mapOrder';
 
+  /** The server layout module */
+  type ServerLayoutModule = 'cardModel' | 'tableModal';
+
   /**
    * The layout mode
    *
