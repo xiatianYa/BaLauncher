@@ -73,15 +73,15 @@ declare namespace Api {
         /** 地图名称(翻译) */
         CnName: string;
         /** 地图名称(最后运行时间) */
-        LastRun: string;
+        lastRun: string;
         /** 冷却时间(分钟) */
-        CooldownMinute: number;
+        cooldownMinute: number;
         /** 冷却截止 */
         deadline: string;
         /** 是否可预定 */
         isOrder: boolean;
         /** 称号 */
-        Achievement10: string;
+        achievement10: string;
       };
     }>;
   }

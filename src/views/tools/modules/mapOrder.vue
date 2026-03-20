@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue';
-import { NInput } from 'naive-ui';
+import { NInput, NCollapse, NCollapseItem } from 'naive-ui';
 import { useDebounceFn } from '@vueuse/core';
 import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
 import { useDict } from '@/hooks/business/dict';
 import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList } from '@/service/api/game/map';
 import { $t } from '@/locales';
+import dayjs from 'dayjs';
 
 defineOptions({
     name: 'MapOrder'
@@ -173,8 +174,8 @@ onMounted(() => {
                 footer-style="padding:10px">
                 <template #header>
                     <div class="search-container">
-                        <NInput v-model:value="searchKeyword" type="text" :placeholder="$t('mapOrder.searchPlaceholder')" clearable
-                            class="search-input">
+                        <NInput v-model:value="searchKeyword" type="text"
+                            :placeholder="$t('mapOrder.searchPlaceholder')" clearable class="search-input">
                             <template #prefix>
                                 <SvgIcon icon="material-symbols:search" class="search-icon" />
                             </template>
@@ -183,7 +184,7 @@ onMounted(() => {
                 </template>
                 <NGrid :cols="2" x-gap="10px" y-gap="10px" v-if="!mapLoading">
                     <NGridItem v-for="map in mapList" :key="map.id">
-                        <NCard class="map-card" content-style="padding:10px" footer-style="padding:10px">
+                        <NCard class="map-card" content-style="padding:10px" footer-style="padding: 0px 10px 10px 10px">
                             <div class="map-card-img">
                                 <img class="w-full h-full" v-lazy="map.mapUrl" alt="map" />
                             </div>
@@ -202,6 +203,41 @@ onMounted(() => {
                                     {{ getGameTagOption(tag)?.label }}
                                 </NTag>
                             </div>
+                            <NCollapse v-if="map.exgMap" class="mt-5px">
+                                <NCollapseItem :title="$t('mapOrder.mapCD')">
+                                    <div class="text-12px">
+                                        <div class="flex justify-between">
+                                            <span class="color-#999">称号:</span>
+                                            <NTag size="small" class="rounded-5px" type="info">
+                                                {{ map.exgMap.achievement10 || '-' }}
+                                            </NTag>
+                                        </div>
+                                        <div class="flex justify-between mt-5px">
+                                            <span class="color-#999">{{ $t('mapOrder.lastRun') }}:</span>
+                                            <NTag size="small" class="rounded-5px" type="info">
+                                                {{ dayjs(map.exgMap.lastRun).format('YYYY-MM-DD HH:mm:ss') || '-'
+                                                }}</NTag>
+                                        </div>
+                                        <div class="flex justify-between mt-5px">
+                                            <span class="color-#999">{{ $t('mapOrder.cooldown') }}:</span>
+                                            <NTag size="small" class="rounded-5px" type="info">
+                                                {{ map.exgMap.cooldownMinute }} {{ $t('mapOrder.minutes') }}</NTag>
+                                        </div>
+                                        <div class="flex justify-between mt-5px">
+                                            <span class="color-#999">{{ $t('mapOrder.deadline') }}:</span>
+                                            <NTag size="small" class="rounded-5px" type="info">
+                                                {{ dayjs(map.exgMap.deadline).format('YYYY-MM-DD HH:mm:ss') || '-'
+                                                }}</NTag>
+                                        </div>
+                                        <div class="flex justify-between mt-5px">
+                                            <span class="color-#999">是否可预定:</span>
+                                            <NTag v-if="map.exgMap.isOrder" type="success" size="small"
+                                                class="rounded-5px">是</NTag>
+                                            <NTag v-else type="error" size="small" class="rounded-5px">否</NTag>
+                                        </div>
+                                    </div>
+                                </NCollapseItem>
+                            </NCollapse>
                             <template #footer>
                                 <div class="flex mt-5px">
                                     <NButton v-if="map.isOrder === '1'"
@@ -210,9 +246,11 @@ onMounted(() => {
                                         <SvgIcon
                                             :icon="isSubscribed(map.id) ? 'material-symbols:close' : 'material-symbols:add'"
                                             class="mr-3px" />
-                                        {{ isSubscribed(map.id) ? $t('mapOrder.unsubscribe') : $t('mapOrder.subscribe') }}
+                                        {{ isSubscribed(map.id) ? $t('mapOrder.unsubscribe') : $t('mapOrder.subscribe')
+                                        }}
                                     </NButton>
-                                    <NButton v-else type="error" ghost size="small" class="w-full rounded-5px" :disabled="true">
+                                    <NButton v-else type="error" ghost size="small" class="w-full rounded-5px"
+                                        :disabled="true">
                                         {{ $t('mapOrder.notSubscribable') }}
                                     </NButton>
                                 </div>
@@ -339,7 +377,6 @@ onMounted(() => {
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
-                height: 280px;
                 border-radius: 5px;
                 overflow: hidden;
 

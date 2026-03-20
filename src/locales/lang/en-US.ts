@@ -305,5 +305,10 @@ export default {
     noSubscribeData: 'No subscribed maps',
     searchFailed: 'Failed to search maps',
     fetchSubscribeListFailed: 'Failed to fetch subscription list',
+    mapCD: 'Map CD(EXG)',
+    lastRun: 'Last Run',
+    cooldown: 'Cooldown',
+    deadline: 'Deadline',
+    minutes: 'minutes',
   },
 };

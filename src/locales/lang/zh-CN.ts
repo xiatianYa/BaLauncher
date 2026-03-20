@@ -305,5 +305,10 @@ export default {
     noSubscribeData: '暂无订阅地图',
     searchFailed: '搜索地图失败',
     fetchSubscribeListFailed: '获取订阅列表失败',
+    mapCD: '地图CD(EXG)',
+    lastRun: '最后运行时间',
+    cooldown: '冷却时间',
+    deadline: '冷却截止',
+    minutes: '分钟',
   },
 };
