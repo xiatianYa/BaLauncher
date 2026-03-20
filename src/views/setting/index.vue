@@ -7,7 +7,6 @@ import { animate } from 'animejs';
 import type { GamePlatform } from '@/constants/app';
 import { NGrid, NGridItem, NSelect } from 'naive-ui';
 import { setLocale } from '@/locales';
-import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { START_ITEMS } from '@/constants/startItems';
 
@@ -15,7 +14,6 @@ defineOptions({
   name: 'setting'
 });
 
-const router = useRouter();
 const { locale, t } = useI18n();
 const gameStore = useGameStore();
 const appStore = useAppStore();

@@ -104,7 +104,14 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
   {
     title: $t('server.score'),
     key: 'score',
-    render: (row) => row.mapPhase ? `CT ${row.CTScore || 0} : ${row.TScore || 0} T` : '-'
+    width: 100,
+    render: (row) => (
+      <div class="flex items-center">
+        <NTag size="small" class="mr-3px rounded-5px" type="info">
+          {row.mapPhase ? `CT ${row.CTScore || 0} : ${row.TScore || 0} T` : '-'}
+        </NTag>
+      </div>
+    )
   },
   {
     title: $t('server.operate'),
