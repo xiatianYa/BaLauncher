@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick, computed, onUnmounted } from 'vue';
+import { ref, onMounted, nextTick, computed } from 'vue';
 import { useGameStore } from '@/store/modules/game';
 import { useAppStore } from '@/store/modules/app';
 import { localStg } from '@/utils/storage';
@@ -10,7 +10,6 @@ import { setLocale } from '@/locales';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { START_ITEMS } from '@/constants/startItems';
-import { app } from 'electron/main';
 
 defineOptions({
   name: 'setting'

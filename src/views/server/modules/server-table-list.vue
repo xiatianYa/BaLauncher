@@ -143,8 +143,9 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
 </script>
 
 <template>
-  <div class="h-full overflow-auto p-5px relative">
-    <NDataTable :columns="columns" :data="servers" :pagination="false" size="small" striped :row-props="getRowProps" />
+  <div class="h-full overflow-auto p-5px">
+    <NDataTable :columns="columns" :data="servers" :pagination="false" size="small" striped :row-props="getRowProps"
+      class="w-full" v-show="servers.length > 0" />
   </div>
 </template>
 
