@@ -42,6 +42,8 @@ declare namespace StorageType {
     selectedStartItems: string[];
     /** The theme */
     theme: string;
+    /** The volume */
+    volume: number;
     /**
      * The override theme flags
      *

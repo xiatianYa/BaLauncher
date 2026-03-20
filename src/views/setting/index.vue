@@ -10,6 +10,7 @@ import { setLocale } from '@/locales';
 import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { START_ITEMS } from '@/constants/startItems';
+import { app } from 'electron/main';
 
 defineOptions({
   name: 'setting'
@@ -336,6 +337,14 @@ onMounted(() => {
             </NGridItem>
           </NGrid>
         </div>
+        <div class="flex items-center pl-20px pr-20px">
+          <NText class="w-80px font-bold">
+            音量调节
+          </NText>
+          <NSlider :value="appStore.volume" :min="0" :max="1" :step="0.1"
+            :marks="{ 0: '0', 0.1: '0.1', 0.2: '0.2', 0.3: '0.3', 0.4: '0.4', 0.5: '0.5', 0.6: '0.6', 0.7: '0.7', 0.8: '0.8', 0.9: '0.9', 1: '1' }"
+            @update:value="appStore.setVolume" />
+        </div>
       </div>
       <div class="game-setting-box">
         <div class="game-setting-title">
@@ -427,8 +436,8 @@ onMounted(() => {
               </NGridItem>
             </NGrid>
             <div class="flex mt-10px">
-              <NInput v-model:value="customStartItem" class="rounded-5px mr-10px" :placeholder="$t('settings.inputCustomStartOption')"
-                @keyup.enter="addCustomStartItem" />
+              <NInput v-model:value="customStartItem" class="rounded-5px mr-10px"
+                :placeholder="$t('settings.inputCustomStartOption')" @keyup.enter="addCustomStartItem" />
               <NButton class="rounded-5px" type="info" @click="addCustomStartItem">{{ $t('settings.add') }}</NButton>
             </div>
             <div class="flex items-center mt-5px font-size-12px">

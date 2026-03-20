@@ -36,6 +36,18 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     '阿罗娜': audioArona
   };
 
+  // 音量，从 localStorage 读取，默认为 1
+  const volume = ref<number>(localStg.get('volume') ?? 0.5);
+
+  /**
+   * 设置音量
+   * @param val 音量值 (0-1)
+   */
+  function setVolume(val: number) {
+    volume.value = val;
+    localStg.set('volume', val);
+  }
+
   // 主题列表
   const themes = [
     { name: '阿罗娜', img: themeArona, id: '阿罗娜' },
@@ -63,6 +75,8 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     themes,
     locale,
     onlineUserList,
-    setTheme
+    volume,
+    setTheme,
+    setVolume
   };
 });
