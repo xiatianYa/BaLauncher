@@ -215,6 +215,8 @@ declare namespace Api {
             joinServerCountValue: number;
             /** 自动重试 */
             joinServerAutoRetryValue: boolean;
+            /** GIS数据推送 */
+            pushGisValue: boolean;
         }
 
         /** 地图订阅数据 */

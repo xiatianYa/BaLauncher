@@ -110,6 +110,13 @@ function repositionNotifications(screenWidth: number, screenHeight: number): voi
   })
 }
 
+// 安全关闭通知窗口
+function safeCloseNotificationWindow(notificationItem: NotificationWindowItem): void {
+  if (!notificationItem.window.isDestroyed()) {
+    notificationItem.window.close()
+  }
+}
+
 // 根据ID关闭通知窗口
 function closeNotificationWindowById(id: number): void {
   const notificationItem = notificationWindows.find(item => item.id === id)
@@ -118,16 +125,8 @@ function closeNotificationWindowById(id: number): void {
     notificationItem.window.webContents.executeJavaScript(`
       document.body.style.animation = 'fadeOut 0.3s ease forwards';
     `).then(() => {
-      setTimeout(() => {
-        if (!notificationItem.window.isDestroyed()) {
-          notificationItem.window.close()
-        }
-      }, 300)
-    }).catch(() => {
-      if (!notificationItem.window.isDestroyed()) {
-        notificationItem.window.close()
-      }
-    })
+      setTimeout(() => safeCloseNotificationWindow(notificationItem), 300)
+    }).catch(() => safeCloseNotificationWindow(notificationItem))
   }
 }
 

@@ -19,18 +19,22 @@ defineOptions({
       <NGrid :cols="2" x-gap="10">
         <NGridItem>
           <NTabs type="segment" animated>
-            <NTabPane name="Line Chart" tab="社区历史在线">
+            <NTabPane name="Line Chart" :tab="$t('home.communityHistoryOnline')">
               <LineChart />
             </NTabPane>
-            <NTabPane name="Pie Chart" tab="社区实时在线">
+            <NTabPane name="Pie Chart" :tab="$t('home.communityRealtimeOnline')">
               <PieChart />
             </NTabPane>
-            <NTabPane name="Map Chart" tab="地图游玩统计">
+            <NTabPane name="Map Chart" :tab="$t('home.mapPlayStats')">
             </NTabPane>
           </NTabs>
         </NGridItem>
         <NGridItem>
-          <OnlineBanner />
+          <NTabs type="segment" animated>
+            <NTabPane name="onLine Games" :tab="$t('home.onlinePlayers')">
+              <OnlineBanner />
+            </NTabPane>
+          </NTabs>
         </NGridItem>
       </NGrid>
     </NCard>

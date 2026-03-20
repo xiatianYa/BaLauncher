@@ -1,128 +1,86 @@
-import { reactive, ref } from 'vue';
-import { defineStore } from 'pinia';
-import { SetupStoreId } from '@/enum';
-import ServerWebsocket from '@/utils/ws/server';
-import { fetchGetCommunityList } from '@/service/api/game/community';
-import { fetchGetServerList } from '@/service/api/game/server';
-import { fetchGetMapList } from '@/service/api/game/map';
-import { fetchGetPieChart } from '@/service/api';
-import { localStg } from '@/utils/storage';
-import { GamePlatform } from '@/constants/app';
-import GisWebsocket from '@/utils/ws/gis';
-import { useAppStore } from '../app';
+import { reactive, ref } from 'vue'
+import { defineStore } from 'pinia'
+import { SetupStoreId } from '@/enum'
+import ServerWebsocket from '@/utils/ws/server'
+import { fetchGetCommunityList } from '@/service/api/game/community'
+import { fetchGetServerList } from '@/service/api/game/server'
+import { fetchGetMapList } from '@/service/api/game/map'
+import { fetchGetPieChart } from '@/service/api'
+import { localStg } from '@/utils/storage'
+import { GamePlatform } from '@/constants/app'
+import GisWebsocket from '@/utils/ws/gis'
+import { useAppStore } from '../app'
+import { STORAGE_KEYS, LOG_PATTERNS, UserConnectionStatus, GisDataSendTimerState } from '@/constants/cs2'
 
+/** GIS数据发送间隔（毫秒） */
+const GIS_SEND_INTERVAL = 2000
+/** 游戏状态检查间隔（毫秒） */
+const GAME_CHECK_INTERVAL = 3000
+
+/**
+ * 游戏状态管理 Store
+ * 管理游戏相关状态、服务器列表、自动挤服、GSI数据等功能
+ */
 export const useGameStore = defineStore(SetupStoreId.Game, () => {
+  // ==================== 定时器 ====================
+  /** 游戏状态检查定时器 */
+  let gameCheckTimer: ReturnType<typeof setInterval> | null = null
+  /** 连接检测定时器 */
+  let connectionCheckTimer: ReturnType<typeof setTimeout> | null = null
+  /** 防止 connection_failed 重复触发重试的标志 */
+  let hasRetriedForThisConnection = false
 
-  const logPatterns = {
-    // 游戏启动加载界面到游戏界面的日志匹配模式
-    loadingToIngame: /ChangeGameUIState:.*LOADINGSCREEN\s*->\s*CSGO_GAME_UI_STATE_INGAME/,
-    // 地图信息日志匹配模式
-    mapInfo: /\[Client\] Map:\s*"([^"]+)"/,
-    // 连接成功日志匹配模式
-    connected: /\[Client\] CL:\s*Connected to/,
-    // 服务器已满日志匹配模式
-    serverFull: /\[Client\] Disconnected from server: NETWORK_DISCONNECT_REJECT_SERVERFULL/,
-    // 切换到levelload循环模式日志匹配模式
-    switchingToLevelload: /switching to "levelload" loopmode/,
-    // 队列新请求日志匹配模式
-    queueNewRequest: /\[HostStateManager\] CHostStateMgr::QueueNewRequest/
-  };
+  // ==================== 列表数据 ====================
+  /** 社区列表 */
+  const communityList = reactive<Api.Game.Community[]>([])
+  /** 服务器列表 */
+  const serverDataList = reactive<Api.Game.Server[]>([])
+  /** 地图列表 */
+  const mapList = reactive<Api.Game.Map[]>([])
+  /** 当前服务器列表（源服务器查询结果） */
+  const currentServerList = reactive<Api.Game.InfoResponse[]>([])
+  /** 当前服务器列表（WebSocket推送） */
+  const currentServerWsList = reactive<Api.Game.InfoResponse[]>([])
+  /** GIS服务器信息列表 */
+  const currentGisServerList = reactive<Api.Game.ServerInfoData[]>([])
+  /** GIS玩家信息列表 */
+  const currentGisPlayerList = reactive<Api.Game.CsgoPlayer[]>([])
+  /** 自动挤服玩家列表 */
+  const currentAutomaticPlayerList = reactive<Api.Game.AutomationPlayer[]>([])
+  /** 自动挤服动态消息列表 */
+  const currentAutomaticPlayerDynamicList = reactive<string[]>([])
 
-  // 检测游戏是否启动的定时器
-  let gameCheckTimer: ReturnType<typeof setInterval> | null = null;
-
-  // 连接成功检测定时器
-  let connectionCheckTimer: ReturnType<typeof setTimeout> | null = null;
-
-  // 防止 connection_failed 重复触发重试的标志
-  let hasRetriedForThisConnection = false;
-
-  // 社区列表
-  const communityList: Api.Game.Community[] = reactive([]);
-
-  // 服务器列表存储
-  const serverDataList: Api.Game.Server[] = reactive([]);
-
-  // 地图列表
-  const mapList: Api.Game.Map[] = reactive([]);
-
-  // 当前服务器原始数据列表(本地缓存)
-  const currentServerList: Api.Game.InfoResponse[] = reactive([]);
-
-  // 当前服务器数据列表(Ws推送)
-  const currentServerWsList: Api.Game.InfoResponse[] = reactive([]);
-
-  // 所有服务器的GIS信息
-  const currentGisServerList: Api.Game.ServerInfoData[] = reactive([])
-
-  // 所有玩家的GIS信息
-  const currentGisPlayerList: Api.Game.CsgoPlayer[] = reactive([])
-
-  // 所有玩家的挤服消息
-  const currentAutomaticPlayerList: Api.Game.AutomationPlayer[] = reactive([])
-
-  // 所有玩家的挤服动态消息
-  const currentAutomaticPlayerDynamicList: string[] = reactive([])
-
-  // 用户应用的按键绑定项
+  // ==================== 用户设置 ====================
+  /** 已应用的按键绑定项 */
   const applyKeyBindItems = ref<Api.Game.ApplyKeyBindItem[]>([])
-
-  // 已勾选的启动项
+  /** 已勾选的启动项 */
   const selectedStartItems = ref<string[]>([])
+  /** 当前选择的社区ID */
+  const selectedCommunityId = ref<number | null>(null)
 
-  // 当前选择的社区
-  const selectedCommunityId = ref<number | null>(null);
+  // ==================== 服务器相关 ====================
+  /** 正在刷新的服务器地址列表 */
+  const refreshingServerAddrs = ref<string[]>([])
+  /** 要加入的服务器信息 */
+  const joinServerInfo = ref<Api.Game.InfoResponse>()
 
-  // 正在刷新的服务器地址列表
-  const refreshingServerAddrs = ref<string[]>([]);
-
-  // 需要加入的服务器信息
-  const joinServerInfo = ref<Api.Game.InfoResponse>();
-
-  // 是否自动挤服
-  const isAutomatic = ref<boolean>(false);
-
-  // 挤服托盘是否可见
-  const isJoinServerTrayVisible = ref<boolean>(false);
-
-  // 自动重试标识(用户是否切换到目标地图)
-  const isAutomaticRetry = ref<boolean>(false);
-
-  // 检测次数
-  const automaticCount = ref<number>(0);
-
-  // 游戏是否启动
-  const isGameRunning = ref<boolean>(false);
-
-  // 游戏是否在启动中
-  const isGameLaunching = ref<boolean>(false);
-
-  // GSI 服务是否在运行
-  const isGsiRunning = ref<boolean>(false);
-
-  // 日志监听是否在运行
-  const isLogReading = ref<boolean>(false);
-
-  // 用户游戏连接状态
-  const userConnectionStatus = ref<'idle' | 'connecting' | 'map_loading' | 'in_game' | 'connection_failed'>('idle');
-
-  // 游戏平台：international 国际服，perfect 完美平台
-  const GamePlatform = ref<GamePlatform>('international');
-
-  // Csgo2 安装目录
-  const csgo2Path = ref<string>('');
-
-  // Steam 安装目录
-  const steamPath = ref<string>('');
-
-  // 自动挤服配置
+  // ==================== 自动挤服状态 ====================
+  /** 是否正在自动挤服 */
+  const isAutomatic = ref(false)
+  /** 挤服托盘是否可见 */
+  const isJoinServerTrayVisible = ref(false)
+  /** 是否自动重试（用户是否切换到目标地图） */
+  const isAutomaticRetry = ref(false)
+  /** 自动挤服尝试次数 */
+  const automaticCount = ref(0)
+  /** 自动挤服配置 */
   const automaticJoinConfig = ref<Api.Game.AutomaticJoinConfig>({
     joinServerPersonValue: 63,
     joinServerCountValue: 2,
     joinServerAutoRetryValue: true,
-  });
-
-  // 挤服信息
+    pushGisValue: true
+  })
+  /** 自动挤服信息 */
   const automaticInfo = ref<Api.Game.ServerVo>({
     connectStr: '',
     mapLabel: '',
@@ -133,22 +91,41 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     serverName: '',
     type: '',
     tag: [],
-    minPlayers: 0,
-  });
+    minPlayers: 0
+  })
 
-  // 用户所在服务器信息
+  // ==================== 游戏状态 ====================
+  /** 游戏是否运行中 */
+  const isGameRunning = ref(false)
+  /** 游戏是否正在启动 */
+  const isGameLaunching = ref(false)
+  /** GSI服务是否运行中 */
+  const isGsiRunning = ref(false)
+  /** 日志监听是否运行中 */
+  const isLogReading = ref(false)
+  /** 用户连接状态 */
+  const userConnectionStatus = ref<UserConnectionStatus>('idle')
+
+  // ==================== 平台与路径 ====================
+  /** 游戏平台（international/perfect） */
+  const GamePlatform = ref<GamePlatform>('international')
+  /** CS2安装路径 */
+  const csgo2Path = ref('')
+  /** Steam安装路径 */
+  const steamPath = ref('')
+
+  // ==================== 游戏信息 ====================
+  /** 当前服务器游戏信息 */
   const gameServerInfo = ref<Api.Game.ServerInfoData>({
     addr: '',
     round: '',
     CTScore: '',
     TScore: '',
     mapStage: '',
-    mapPhase: '',
-  });
-
-  // 用户游戏信息
+    mapPhase: ''
+  })
+  /** 当前玩家游戏信息 */
   const gamePlayerInfo = ref<Api.Game.CsgoPlayer>({
-    //服务器地址
     addr: '',
     team: '',
     health: 0,
@@ -161,1041 +138,1083 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     helmet: false,
     kills: 0,
     score: 0
-  });
+  })
 
-  // 从存储读取设置
-  function loadSettingsFromStorage() {
-    const savedPlatform = localStg.get('GamePlatform');
-    const savedCsgo2Path = localStg.get('csgo2Path');
-    const savedSteamPath = localStg.get('steamPath');
-    const savedAutomaticJoinConfig = localStg.get('automaticJoinConfig');
-    const savedApplyKeyBindItems = localStg.get('applyKeyBindItems');
-    const savedSelectedStartItems = localStg.get('selectedStartItems');
-
-    if (savedPlatform) {
-      GamePlatform.value = savedPlatform as 'international' | 'perfect';
-    }
-    if (savedCsgo2Path) {
-      csgo2Path.value = savedCsgo2Path;
-    }
-    if (savedSteamPath) {
-      steamPath.value = savedSteamPath;
-    }
-    if (savedAutomaticJoinConfig) {
-      Object.assign(automaticJoinConfig.value, savedAutomaticJoinConfig);
-    }
-    if (savedApplyKeyBindItems) {
-      applyKeyBindItems.value = savedApplyKeyBindItems;
-    }
-    if (savedSelectedStartItems) {
-      selectedStartItems.value = savedSelectedStartItems;
-    }
+  // ==================== GIS发送状态 ====================
+  /** GIS数据发送状态 */
+  const gisSendState: GisDataSendTimerState = {
+    lastSentAt: 0,
+    sendTimer: null,
+    pendingData: null
   }
 
-  // 保存设置到存储
-  function saveSettingsToStorage() {
-    localStg.set('GamePlatform', GamePlatform.value);
-    localStg.set('csgo2Path', csgo2Path.value);
-    localStg.set('steamPath', steamPath.value);
-    localStg.set('automaticJoinConfig', automaticJoinConfig.value);
-    localStg.set('applyKeyBindItems', applyKeyBindItems.value);
-  }
+  // ==================== 工具函数 ====================
 
-  // 设置用户应用的按键绑定项
-  function setApplyKeyBindItems(items: Api.Game.ApplyKeyBindItem[]) {
-    applyKeyBindItems.value = items;
-    localStg.set('applyKeyBindItems', items);
-  }
-
-  // 设置已勾选的启动项
-  function setSelectedStartItems(items: string[]) {
-    selectedStartItems.value = items;
-    localStg.set('selectedStartItems', items);
-  }
-
-  // 切换启动项勾选状态
-  function toggleStartItem(value: string) {
-    const index = selectedStartItems.value.indexOf(value);
-    if (index > -1) {
-      selectedStartItems.value.splice(index, 1);
-    } else {
-      selectedStartItems.value.push(value);
-    }
-    localStg.set('selectedStartItems', selectedStartItems.value);
-  }
-
-  // 设置游戏平台
-  function setGamePlatform(platform: 'international' | 'perfect') {
-    GamePlatform.value = platform;
-    saveSettingsToStorage();
-  }
-
-  // 设置 CSGO2 路径
-  function setCsgo2Path(path: string) {
-    csgo2Path.value = path;
-    saveSettingsToStorage();
-  }
-
-  // 设置 Steam 路径
-  function setSteamPath(path: string) {
-    steamPath.value = path;
-    saveSettingsToStorage();
-  }
-
-  // 设置自动挤服人数阈值
-  function setJoinServerPersonValue(value: number) {
-    automaticJoinConfig.value.joinServerPersonValue = value;
-    saveSettingsToStorage();
-  }
-
-  // 设置自动挤服线程数量
-  function setJoinServerCountValue(value: number) {
-    automaticJoinConfig.value.joinServerCountValue = value;
-    saveSettingsToStorage();
-  }
-
-  // 设置是否自动重试
-  function setJoinServerAutoRetryValue(value: boolean) {
-    automaticJoinConfig.value.joinServerAutoRetryValue = value;
-    saveSettingsToStorage();
-  }
-
-  // 检查游戏是否启动
-  async function checkGameRunning() {
+  /**
+   * 安全打印日志
+   * 防止日志打印失败导致程序崩溃
+   */
+  function safeLog(message: string, ...args: unknown[]): void {
     try {
-      const { isRunning } = await window.ipcRenderer.checkCsgo2Running();
-      isGameRunning.value = isRunning;
+      console.log(message, ...args)
+    } catch {
+      console.log(message, '[日志打印失败，原始数据:]', args)
+    }
+  }
+
+  // ==================== 存储相关 ====================
+
+  /** 从本地存储加载设置 */
+  function loadSettingsFromStorage(): void {
+    const savedPlatform = localStg.get(STORAGE_KEYS.GAME_PLATFORM)
+    const savedCsgo2Path = localStg.get(STORAGE_KEYS.CSGO2_PATH)
+    const savedSteamPath = localStg.get(STORAGE_KEYS.STEAM_PATH)
+    const savedAutomaticJoinConfig = localStg.get(STORAGE_KEYS.AUTOMATIC_JOIN_CONFIG)
+    const savedApplyKeyBindItems = localStg.get(STORAGE_KEYS.APPLY_KEY_BIND_ITEMS)
+    const savedSelectedStartItems = localStg.get(STORAGE_KEYS.SELECTED_START_ITEMS)
+
+    if (savedPlatform) GamePlatform.value = savedPlatform as 'international' | 'perfect'
+    if (savedCsgo2Path) csgo2Path.value = savedCsgo2Path
+    if (savedSteamPath) steamPath.value = savedSteamPath
+    if (savedAutomaticJoinConfig) Object.assign(automaticJoinConfig.value, savedAutomaticJoinConfig)
+    if (savedApplyKeyBindItems) applyKeyBindItems.value = savedApplyKeyBindItems
+    if (savedSelectedStartItems) selectedStartItems.value = savedSelectedStartItems
+  }
+
+  /** 保存设置到本地存储 */
+  function saveSettingsToStorage(): void {
+    localStg.set(STORAGE_KEYS.GAME_PLATFORM, GamePlatform.value)
+    localStg.set(STORAGE_KEYS.CSGO2_PATH, csgo2Path.value)
+    localStg.set(STORAGE_KEYS.STEAM_PATH, steamPath.value)
+    localStg.set(STORAGE_KEYS.AUTOMATIC_JOIN_CONFIG, automaticJoinConfig.value)
+    localStg.set(STORAGE_KEYS.APPLY_KEY_BIND_ITEMS, applyKeyBindItems.value)
+  }
+
+  /** 设置已应用的按键绑定项 */
+  function setApplyKeyBindItems(items: Api.Game.ApplyKeyBindItem[]): void {
+    applyKeyBindItems.value = items
+    localStg.set(STORAGE_KEYS.APPLY_KEY_BIND_ITEMS, items)
+  }
+
+  /** 设置已勾选的启动项 */
+  function setSelectedStartItems(items: string[]): void {
+    selectedStartItems.value = items
+    localStg.set(STORAGE_KEYS.SELECTED_START_ITEMS, items)
+  }
+
+  /** 切换启动项勾选状态 */
+  function toggleStartItem(value: string): void {
+    const index = selectedStartItems.value.indexOf(value)
+    if (index > -1) {
+      selectedStartItems.value.splice(index, 1)
+    } else {
+      selectedStartItems.value.push(value)
+    }
+    localStg.set(STORAGE_KEYS.SELECTED_START_ITEMS, selectedStartItems.value)
+  }
+
+  /** 设置游戏平台 */
+  function setGamePlatform(platform: 'international' | 'perfect'): void {
+    GamePlatform.value = platform
+    saveSettingsToStorage()
+  }
+
+  /** 设置CS2路径 */
+  function setCsgo2Path(path: string): void {
+    csgo2Path.value = path
+    saveSettingsToStorage()
+  }
+
+  /** 设置Steam路径 */
+  function setSteamPath(path: string): void {
+    steamPath.value = path
+    saveSettingsToStorage()
+  }
+
+  /** 设置自动挤服人数阈值 */
+  function setJoinServerPersonValue(value: number): void {
+    automaticJoinConfig.value.joinServerPersonValue = value
+    saveSettingsToStorage()
+  }
+
+  /** 设置自动挤服线程数量 */
+  function setJoinServerCountValue(value: number): void {
+    automaticJoinConfig.value.joinServerCountValue = value
+    saveSettingsToStorage()
+  }
+
+  /** 设置是否自动重试 */
+  function setJoinServerAutoRetryValue(value: boolean): void {
+    automaticJoinConfig.value.joinServerAutoRetryValue = value
+    saveSettingsToStorage()
+  }
+
+  /** 设置是否推送GIS数据 */
+  function setPushGisValue(value: boolean): void {
+    automaticJoinConfig.value.pushGisValue = value
+    saveSettingsToStorage()
+  }
+
+  // ==================== 游戏状态检查 ====================
+
+  /**
+   * 检查游戏是否运行中
+   * 自动启动/停止GSI服务和日志监听
+   */
+  async function checkGameRunning(): Promise<void> {
+    try {
+      const { isRunning } = await window.ipcRenderer.checkCsgo2Running()
+      isGameRunning.value = isRunning
+
       if (isGameRunning.value) {
-        //检查 GIS 服文件是否安装
-        const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2Path.value);
-        if (!exists) return;
-        // 检查 GSI 服务是否已启动
-        const { isConnected } = await window.ipcRenderer.checkGsiConnected();
+        // 检查GSI配置是否存在
+        const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2Path.value)
+        if (!exists) return
+
+        // 检查GSI服务是否已启动
+        const { isConnected } = await window.ipcRenderer.checkGsiConnected()
         if (!isConnected) {
-          await window.ipcRenderer.startGsiService();
-          console.log('GSI 服务已启动');
-          // 开始监听数据
-          listenToGsiData();
+          await window.ipcRenderer.startGsiService()
+          safeLog('GSI 服务已启动')
+          listenToGsiData()
         }
+
         // 开始读取日志
         if (!isLogReading.value) {
-          startLogReading();
+          startLogReading()
         }
       } else {
-        //关闭自动挤服
-        stopAutomaticJoinServer();
-        const gsiConnected = await window.ipcRenderer.stopGsiService();
-        //关闭监听数据事件
+        // 游戏已关闭，清理相关服务
+        stopAutomaticJoinServer()
+        const gsiConnected = await window.ipcRenderer.stopGsiService()
         if (!gsiConnected && isGsiRunning.value) {
-          isGsiRunning.value = false;
-          removeGsiDataListener();
+          isGsiRunning.value = false
+          removeGsiDataListener()
         }
-        // 停止读取日志
         if (isLogReading.value) {
-          stopLogReading();
+          stopLogReading()
         }
       }
     } catch (error) {
-      console.error('检查游戏状态失败:', error);
+      console.error('检查游戏状态失败:', error)
     }
   }
 
-  // 开始监听游戏状态
-  function startGameRunningCheck(intervalMs: number = 3000) {
-    if (gameCheckTimer) return;
-    checkGameRunning();
-    gameCheckTimer = setInterval(checkGameRunning, intervalMs);
+  /** 开始定期检查游戏状态 */
+  function startGameRunningCheck(intervalMs = GAME_CHECK_INTERVAL): void {
+    if (gameCheckTimer) return
+    checkGameRunning()
+    gameCheckTimer = setInterval(checkGameRunning, intervalMs)
   }
 
-  // 停止监听游戏状态
-  function stopGameRunningCheck() {
-    if (!gameCheckTimer) return;
-    clearInterval(gameCheckTimer);
-    gameCheckTimer = null;
+  /** 停止定期检查游戏状态 */
+  function stopGameRunningCheck(): void {
+    if (!gameCheckTimer) return
+    clearInterval(gameCheckTimer)
+    gameCheckTimer = null
   }
 
-  // 初始化服务器列表
-  async function initServerList() {
-    // 加载设置
-    loadSettingsFromStorage();
-    const { data: communityData } = await fetchGetCommunityList();
-    if (communityData) communityList.push(...communityData);
-    const { data: mapData } = await fetchGetMapList();
-    if (mapData) mapList.push(...mapData);
-    // 统计所有社区下的服务器数量
-    await countServerServerNumber();
-    // 统计所有社区下的玩家人数
-    await countServerPlayerNumber();
+  // ==================== 服务器列表初始化 ====================
+
+  /** 初始化服务器列表 */
+  async function initServerList(): Promise<void> {
+    loadSettingsFromStorage()
+    const { data: communityData } = await fetchGetCommunityList()
+    if (communityData) communityList.push(...communityData)
+    const { data: mapData } = await fetchGetMapList()
+    if (mapData) mapList.push(...mapData)
+    await countServerServerNumber()
+    await countServerPlayerNumber()
   }
 
-  // 统计所有社区下的服务器数量
-  async function countServerServerNumber() {
-    const { data: serverData } = await fetchGetServerList();
-    //取消push 增加替换
-    if (serverData) serverDataList.splice(0, serverDataList.length, ...serverData);
+  /** 统计各社区的服务器数量 */
+  async function countServerServerNumber(): Promise<void> {
+    const { data: serverData } = await fetchGetServerList()
+    if (serverData) serverDataList.splice(0, serverDataList.length, ...serverData)
     for (const community of communityList) {
-      community.serverNumber = serverDataList.filter(server => server.communityId === community.id).length;
+      community.serverNumber = serverDataList.filter(server => server.communityId === community.id).length
     }
   }
 
-  // 统计所有社区下的玩家人数
-  async function countServerPlayerNumber() {
-    const { data: pieChartData } = await fetchGetPieChart();
-    // 根据社区名称 设置玩家人数
+  /** 统计各社区的在线玩家数量 */
+  async function countServerPlayerNumber(): Promise<void> {
+    const { data: pieChartData } = await fetchGetPieChart()
     for (const community of communityList) {
-      community.playerNumber = 0;
-      if (!pieChartData) continue;
-      community.playerNumber = pieChartData.find(item => item.name === community.communityName)?.value || 0;
+      community.playerNumber = 0
+      if (!pieChartData) continue
+      community.playerNumber = pieChartData.find(item => item.name === community.communityName)?.value || 0
+    }
+  }
+
+  // ==================== 服务器查询 ====================
+
+  /**
+   * 创建离线服务器数据
+   * @param server 服务器基础信息
+   */
+  function createOfflineServer(server: Api.Game.Server): Api.Game.InfoResponse {
+    return {
+      protocol: 0,
+      name: server.serverName || '',
+      map: '',
+      folder: '',
+      game: '',
+      appId: 0,
+      players: 0,
+      maxPlayers: 0,
+      bots: 0,
+      serverType: '',
+      environment: '',
+      visibility: 0,
+      vac: 0,
+      version: '',
+      addr: server.connectStr || '',
+      isOnline: false,
+      round: '',
+      CTScore: '',
+      TScore: '',
+      mapStage: '',
+      mapPhase: '',
+      csgoPlayer: []
     }
   }
 
   /**
-   *  查询服务器列表信息(源服务器)
+   * 查询服务器列表信息（源服务器）
+   * 获取服务器在线状态、玩家数量等信息
    */
-  async function queryServerInfosResponse() {
-    // 使用 IPC 查询服务器信息
-    if (serverDataList.length > 0) {
-      // 筛选当前社区要查询的服务器，并保持原始顺序
-      const targetServers = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value);
-      const serverAddresses = targetServers.map(server => server.connectStr);
-      try {
-        const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses);
-        if (success) {
-          // 处理查询结果
-          const processedServers = infoResponseList.map((item: any) => {
-            //查询服务器是否在线
-            if (item.success === false) {
-              item.isOnline = false;
-              // 如果源服务器查询失败，尝试从 currentServerWsList 获取数据
-              const wsServer = currentServerWsList.find(ws => ws.addr === item.addr);
-              if (wsServer) {
-                Object.assign(item, wsServer);
-                item.isOnline = true;
-              }
-            } else {
-              item.isOnline = true;
-            }
-            //查询服务器是否有状态
-            const matchingServer = currentGisServerList.find(gisServer => gisServer.addr === item.addr);
-
-            if (matchingServer) {
-              item.round = matchingServer.round || '';
-              item.CTScore = matchingServer.CTScore || '';
-              item.TScore = matchingServer.TScore || '';
-              item.mapStage = matchingServer.mapStage || '';
-              item.mapPhase = matchingServer.mapPhase || '';
-            }
-            return item;
-          });
-
-          // 按照 serverDataList 的原始顺序排序
-          const sortedServers = targetServers.map(server => {
-            const foundServer = processedServers.find((s: Api.Game.InfoResponse) => s.addr === server.connectStr);
-            if (foundServer) {
-              return foundServer;
-            }
-            // 如果查询结果中没有该服务器，返回离线数据
-            return {
-              protocol: 0,
-              name: server.serverName || '',
-              map: '',
-              folder: '',
-              game: '',
-              appId: 0,
-              players: 0,
-              maxPlayers: 0,
-              bots: 0,
-              serverType: '',
-              environment: '',
-              visibility: 0,
-              vac: 0,
-              version: '',
-              addr: server.connectStr || '',
-              isOnline: false,
-              round: '',
-              CTScore: '',
-              TScore: '',
-              mapStage: '',
-              mapPhase: '',
-              csgoPlayer: [],
-            };
-          });
-
-          currentServerList.splice(0, currentServerList.length, ...sortedServers);
-
-          // 更新 joinServerInfo
-          if (joinServerInfo.value) {
-            const matchingServer = sortedServers.find(
-              (server: Api.Game.InfoResponse) => server.addr === joinServerInfo.value?.addr
-            );
-            if (matchingServer) {
-              joinServerInfo.value = matchingServer;
-            }
-          }
-        }
-      } finally {
-        countServerServerNumber();
-        countServerPlayerNumber();
-      }
-    } else {
-      countServerServerNumber();
-      countServerPlayerNumber();
+  async function queryServerInfosResponse(): Promise<void> {
+    if (serverDataList.length === 0) {
+      await countServerServerNumber()
+      await countServerPlayerNumber()
+      return
     }
-  }
 
-  /**
-   * 查询所有服务器的PING值
-   */
-  async function queryServerInfosPingResponse() {
-    // 使用 IPC 查询服务器信息
-    if (serverDataList.length > 0) {
-      // 筛选当前社区要查询的服务器
-      const serverAddresses = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value).map(server => server.connectStr);
-      const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses);
-      if (success) {
-        infoResponseList.forEach((item: any) => {
-          // 查找当前列表中的对应服务器
-          const server = currentServerList.find(s => s.addr === item.addr);
-          if (server) {
-            // 更新 ping 值
-            server.ping = item.ping;
+    const targetServers = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value)
+    const serverAddresses = targetServers.map(server => server.connectStr)
+
+    try {
+      const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses)
+      if (!success) return
+
+      const processedServers = infoResponseList.map((item: any) => {
+        if (item.success === false) {
+          item.isOnline = false
+          // 如果源服务器查询失败，尝试从WebSocket数据获取
+          const wsServer = currentServerWsList.find(ws => ws.addr === item.addr)
+          if (wsServer) {
+            Object.assign(item, wsServer)
+            item.isOnline = true
           }
-        });
-      }
-    }
-  }
-
-  /**
-   *  查询服务器列表信息(WS服务器)
-   */
-  async function queryWsServerInfosResponse() {
-    // 使用 IPC 查询服务器信息
-    if (serverDataList.length > 0) {
-      // 先查询源服务器信息 不等待 获取ping
-      queryServerInfosPingResponse();
-      // 筛选当前社区要查询的服务器
-      const targetServers = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value);
-
-      // 按照 targetServers 的顺序构建结果列表
-      const allServers: Api.Game.InfoResponse[] = targetServers.map(server => {
-        const wsServer = currentServerWsList.find(item => item.addr === server.connectStr);
-
-        if (wsServer) {
-          // 如果是WS在线服务器，处理状态并返回
-          wsServer.isOnline = true;
-          //查询服务器是否有状态
-          const matchingServer = currentGisServerList.find(gisServer => gisServer.addr === wsServer.addr);
-
-          if (matchingServer) {
-            wsServer.round = matchingServer.round || '';
-            wsServer.CTScore = matchingServer.CTScore || '';
-            wsServer.TScore = matchingServer.TScore || '';
-            wsServer.mapStage = matchingServer.mapStage || '';
-            wsServer.mapPhase = matchingServer.mapPhase || '';
-          }
-          return wsServer;
         } else {
-          // 如果是离线服务器，构建离线数据
-          return {
-            protocol: 0,
-            name: server.serverName || '',
-            map: '',
-            folder: '',
-            game: '',
-            appId: 0,
-            players: 0,
-            maxPlayers: 0,
-            bots: 0,
-            serverType: '',
-            environment: '',
-            visibility: 0,
-            vac: 0,
-            version: '',
-            addr: server.connectStr || '',
-            isOnline: false,
-            round: '',
-            CTScore: '',
-            TScore: '',
-            mapStage: '',
-            mapPhase: '',
-            csgoPlayer: [],
-          };
+          item.isOnline = true
         }
-      });
 
-      // 将结果赋值给currentServerList
-      currentServerList.splice(0, currentServerList.length, ...allServers);
-      await countServerServerNumber();
-      await countServerPlayerNumber();
-    } else {
-      await countServerServerNumber();
-      await countServerPlayerNumber();
+        // 合并GIS服务器状态
+        const matchingServer = currentGisServerList.find(gisServer => gisServer.addr === item.addr)
+        if (matchingServer) {
+          item.round = matchingServer.round || ''
+          item.CTScore = matchingServer.CTScore || ''
+          item.TScore = matchingServer.TScore || ''
+          item.mapStage = matchingServer.mapStage || ''
+          item.mapPhase = matchingServer.mapPhase || ''
+        }
+
+        return item
+      })
+
+      // 按原始顺序排序
+      const sortedServers = targetServers.map(server => {
+        const foundServer = processedServers.find((s: Api.Game.InfoResponse) => s.addr === server.connectStr)
+        return foundServer || createOfflineServer(server)
+      })
+
+      currentServerList.splice(0, currentServerList.length, ...sortedServers)
+
+      // 更新当前要加入的服务器信息
+      if (joinServerInfo.value) {
+        const matchingServer = sortedServers.find(
+          (server: Api.Game.InfoResponse) => server.addr === joinServerInfo.value?.addr
+        )
+        if (matchingServer) {
+          joinServerInfo.value = matchingServer
+        }
+      }
+    } finally {
+      await countServerServerNumber()
+      await countServerPlayerNumber()
     }
   }
 
-  //查询单个服务器信息
-  async function queryServerInfoResponse(server: Api.Game.InfoResponse) {
-    const { success, data: infoResponse } = await window.ipcRenderer.invoke('query-game-server', server.addr);
+  /**
+   * 查询服务器Ping值
+   * 更新当前服务器列表的延迟信息
+   */
+  async function queryServerInfosPingResponse(): Promise<void> {
+    if (serverDataList.length === 0) return
+
+    const serverAddresses = serverDataList
+      .filter(server => server.connectStr && server.communityId === selectedCommunityId.value)
+      .map(server => server.connectStr)
+
+    const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses)
+    if (!success) return
+
+    infoResponseList.forEach((item: any) => {
+      const server = currentServerList.find(s => s.addr === item.addr)
+      if (server) {
+        server.ping = item.ping
+      }
+    })
+  }
+
+  /**
+   * 查询服务器列表信息（WebSocket）
+   * 优先使用WebSocket推送的数据
+   */
+  async function queryWsServerInfosResponse(): Promise<void> {
+    if (serverDataList.length === 0) {
+      await countServerServerNumber()
+      await countServerPlayerNumber()
+      return
+    }
+
+    // 先更新Ping值（不等待）
+    queryServerInfosPingResponse()
+
+    const targetServers = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value)
+
+    const allServers: Api.Game.InfoResponse[] = targetServers.map(server => {
+      const wsServer = currentServerWsList.find(item => item.addr === server.connectStr)
+
+      if (wsServer) {
+        wsServer.isOnline = true
+        // 合并GIS服务器状态
+        const matchingServer = currentGisServerList.find(gisServer => gisServer.addr === wsServer.addr)
+        if (matchingServer) {
+          wsServer.round = matchingServer.round || ''
+          wsServer.CTScore = matchingServer.CTScore || ''
+          wsServer.TScore = matchingServer.TScore || ''
+          wsServer.mapStage = matchingServer.mapStage || ''
+          wsServer.mapPhase = matchingServer.mapPhase || ''
+        }
+        return wsServer
+      }
+
+      return createOfflineServer(server)
+    })
+
+    currentServerList.splice(0, currentServerList.length, ...allServers)
+    await countServerServerNumber()
+    await countServerPlayerNumber()
+  }
+
+  /**
+   * 查询单个服务器信息
+   * @param server 要查询的服务器
+   * @returns 是否查询成功
+   */
+  async function queryServerInfoResponse(server: Api.Game.InfoResponse): Promise<boolean> {
+    const { success, data: infoResponse } = await window.ipcRenderer.invoke('query-game-server', server.addr)
+
     if (success) {
       currentServerList.forEach((item: Api.Game.InfoResponse) => {
         if (item.addr === server.addr) {
-          item.isOnline = true;
-          Object.assign(item, infoResponse.data);
+          item.isOnline = true
+          Object.assign(item, infoResponse.data)
         }
-      });
+      })
 
-      // 更新 joinServerInfo
       if (joinServerInfo.value && joinServerInfo.value.addr === server.addr && server.name) {
-        const updatedServer = { ...infoResponse.data };
-        updatedServer.addr = server.addr;
-        updatedServer.isOnline = true;
-        joinServerInfo.value = updatedServer;
+        const updatedServer = { ...infoResponse.data }
+        updatedServer.addr = server.addr
+        updatedServer.isOnline = true
+        joinServerInfo.value = updatedServer
       }
     } else {
-      server.isOnline = false;
-      // 更新 joinServerInfo 的在线状态
+      server.isOnline = false
       if (joinServerInfo.value && joinServerInfo.value.addr === server.addr) {
-        joinServerInfo.value.isOnline = false;
+        joinServerInfo.value.isOnline = false
       }
     }
-    return success;
+
+    return success
   }
 
-  // 确保GIS和Steam目录CSGO配置正确
-  async function ensureGameStartReady() {
+  // ==================== 游戏启动 ====================
+
+  /**
+   * 检查游戏启动前的准备工作
+   * 验证路径配置、创建GSI配置
+   * @returns 是否准备就绪
+   */
+  async function ensureGameStartReady(): Promise<boolean> {
     if (!csgo2Path.value) {
-      console.error('未配置 CS2 路径，请在设置中配置');
-      window.$message?.error('未配置 CS2 路径，请在设置中配置');
-      return false;
+      console.error('未配置 CS2 路径，请在设置中配置')
+      window.$message?.error('未配置 CS2 路径，请在设置中配置')
+      return false
     }
 
     if (!steamPath.value) {
-      console.error('未配置 Steam 路径，请在设置中配置');
-      window.$message?.error('未配置 Steam 路径，请在设置中配置');
-      return false;
+      console.error('未配置 Steam 路径，请在设置中配置')
+      window.$message?.error('未配置 Steam 路径，请在设置中配置')
+      return false
     }
 
-    const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2Path.value);
+    const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2Path.value)
     if (!exists) {
-      const { success } = await window.ipcRenderer.createGsiConfig(csgo2Path.value);
-      if (success) {
-      } else {
-        window.$message?.error('GSI 配置文件创建失败，部分功能可能无法使用');
+      const { success } = await window.ipcRenderer.createGsiConfig(csgo2Path.value)
+      if (!success) {
+        window.$message?.error('GSI 配置文件创建失败，部分功能可能无法使用')
       }
     }
 
-    return true;
+    return true
   }
 
-  // 启动游戏
-  async function startGame() {
-    const ready = await ensureGameStartReady();
-    if (!ready) return;
+  /**
+   * 启动游戏
+   * @returns 是否启动成功
+   */
+  async function startGame(): Promise<boolean> {
+    const ready = await ensureGameStartReady()
+    if (!ready) return false
 
-    isGameLaunching.value = true;
-    // 根据 GamePlatform 动态计算 serverMode
-    const serverMode = GamePlatform.value === 'perfect' ? 'perfectworld' : 'worldwide';
-    // 根据 isGameRunning 决定启动方式
-    const startType: 'steamurl' | 'steamexe' = isGameRunning.value ? 'steamurl' : 'steamexe';
-    
-    // 启动游戏
+    isGameLaunching.value = true
+    const serverMode = GamePlatform.value === 'perfect' ? 'perfectworld' : 'worldwide'
+    const startType: 'steamurl' | 'steamexe' = isGameRunning.value ? 'steamurl' : 'steamexe'
+
     const launchResult = await window.ipcRenderer.launchCs2(
       csgo2Path.value,
       serverMode,
       startType,
       steamPath.value,
       [...selectedStartItems.value]
-    );
+    )
+
     if (!launchResult.success) {
-      window.$message?.error('启动游戏失败: ' + launchResult.error);
-      return false;
+      window.$message?.error('启动游戏失败: ' + launchResult.error)
+      isGameLaunching.value = false
+      return false
     }
 
-    // 等待游戏启动完成
-    const waitResult = await window.ipcRenderer.waitForCs2Launch(csgo2Path.value);
+    const waitResult = await window.ipcRenderer.waitForCs2Launch(csgo2Path.value)
     if (!waitResult.success) {
-      window.$message?.error('等待游戏启动超时');
-      isGameLaunching.value = false;
-      return false;
+      window.$message?.error('等待游戏启动超时')
+      isGameLaunching.value = false
+      return false
     }
-    isGameLaunching.value = false;
-    return true;
+
+    isGameLaunching.value = false
+    return true
   }
 
-  // 连接服务器 使用steamUrl
-  async function connectServerUsingSteamUrl() {
-    if (!joinServerInfo.value) return;
-    const ready = await ensureGameStartReady();
-    if (!ready) return;
-    currentGisPlayerList.splice(0, currentGisPlayerList.length);
-    const aLink = document.createElement('a');
-    aLink.href = `steam://rungame/730/76561198977557298/+connect ${joinServerInfo.value.addr}`;
-    aLink.click();
+  /**
+   * 使用Steam URL连接服务器
+   * 通过steam://协议启动游戏并连接
+   */
+  async function connectServerUsingSteamUrl(): Promise<void> {
+    if (!joinServerInfo.value) return
+    const ready = await ensureGameStartReady()
+    if (!ready) return
+
+    currentGisPlayerList.splice(0, currentGisPlayerList.length)
+    const aLink = document.createElement('a')
+    aLink.href = `steam://rungame/730/76561198977557298/+connect ${joinServerInfo.value.addr}`
+    aLink.click()
   }
 
-  // 开启自动挤服
-  async function startAutomaticJoinServer() {
+  // ==================== 自动挤服 ====================
+
+  /**
+   * 开始自动挤服
+   * 启动多线程挤服，监控服务器空位
+   */
+  async function startAutomaticJoinServer(): Promise<void> {
     if (!joinServerInfo.value) {
-      window.$message?.error('请先选择要加入的服务器');
-      return;
+      window.$message?.error('请先选择要加入的服务器')
+      return
     }
-    const ready = await ensureGameStartReady();
-    if (!ready) return;
-    isAutomatic.value = true;
-    automaticCount.value = 0;
-    hasRetriedForThisConnection = false;
+
+    const ready = await ensureGameStartReady()
+    if (!ready) return
+
+    isAutomatic.value = true
+    automaticCount.value = 0
+    hasRetriedForThisConnection = false
 
     try {
       const result = await window.ipcRenderer.invoke('start-automatic-join', {
         serverAddr: joinServerInfo.value.addr,
         maxPlayers: automaticJoinConfig.value.joinServerPersonValue,
         threadCount: automaticJoinConfig.value.joinServerCountValue
-      });
+      })
 
       if (result.success && result.found) {
-        // 自动重试标识(用户是否切换到目标地图)
-        isAutomaticRetry.value = true;
-        // 检测用户是否成功连接到服务器
+        isAutomaticRetry.value = true
+
         if (automaticJoinConfig.value.joinServerAutoRetryValue) {
-          connectServerUsingSteamUrl();
+          connectServerUsingSteamUrl()
 
           // 清除之前的定时器
           if (connectionCheckTimer) {
-            clearTimeout(connectionCheckTimer);
-            connectionCheckTimer = null;
+            clearTimeout(connectionCheckTimer)
+            connectionCheckTimer = null
           }
 
-          // 启动连接检测定时器，30秒后如果还没连接成功则重试
+          // 60秒后检查是否连接成功，否则重试
           connectionCheckTimer = setTimeout(() => {
             if (isAutomaticRetry.value && isAutomatic.value) {
-              console.log('⏰ 连接超时，重新尝试连接...');
-              startAutomaticJoinServer();
+              safeLog('⏰ 连接超时，重新尝试连接...')
+              startAutomaticJoinServer()
             }
-          }, 60000);
+          }, 60000)
         } else {
-          isAutomatic.value = false;
-          isAutomaticRetry.value = false;
-          connectServerUsingSteamUrl();
-          window.$message?.success("连接成功")
+          isAutomatic.value = false
+          isAutomaticRetry.value = false
+          connectServerUsingSteamUrl()
+          window.$message?.success('连接成功')
         }
       } else if (result.stopped) {
-        window.$message?.info('已停止自动挤服');
+        window.$message?.info('已停止自动挤服')
       } else if (!result.success) {
-        window.$message?.error(result.error || '自动挤服失败');
+        window.$message?.error(result.error || '自动挤服失败')
       }
     } catch (error) {
-      console.error('自动挤服失败:', error);
-      window.$message?.error('自动挤服失败');
+      console.error('自动挤服失败:', error)
+      window.$message?.error('自动挤服失败')
     }
   }
 
-  // 停止自动挤服
-  async function stopAutomaticJoinServer() {
-    // 重置自动重试标志
-    isAutomaticRetry.value = false;
+  /**
+   * 停止自动挤服
+   * 清理定时器和状态
+   */
+  async function stopAutomaticJoinServer(): Promise<void> {
+    isAutomaticRetry.value = false
+    hasRetriedForThisConnection = false
 
-    // 重置重复重试标志
-    hasRetriedForThisConnection = false;
-
-    // 清除连接检测定时器
     if (connectionCheckTimer) {
-      clearTimeout(connectionCheckTimer);
-      connectionCheckTimer = null;
+      clearTimeout(connectionCheckTimer)
+      connectionCheckTimer = null
     }
 
-    if (!isAutomatic.value) {
-      return;
-    } else {
-      isAutomatic.value = false;
-    }
+    if (!isAutomatic.value) return
+    isAutomatic.value = false
 
     try {
-      await window.ipcRenderer.invoke('stop-automatic-join');
+      await window.ipcRenderer.invoke('stop-automatic-join')
     } catch (error) {
-      console.error('停止自动挤服失败:', error);
+      console.error('停止自动挤服失败:', error)
     }
   }
 
-  // 安全打印日志的函数
-  function safeLog(message: string, ...args: any[]) {
-    try {
-      console.log(message, ...args);
-    } catch (error) {
-      console.log(message, '[日志打印失败，原始数据:]', args);
-    }
-  }
+  // ==================== GSI数据监听 ====================
 
-  // 监听 GSI 数据的函数
-  function listenToGsiData() {
-    safeLog("开始监听 GSI 数据");
-    isGsiRunning.value = true;
-    window.ipcRenderer.on('cs2-gsi-data', (_event, res) => {
-      const { eventName, data } = res;
+  /** GSI数据事件处理器 */
+  let gsiDataHandler: ((_event: unknown, res: unknown) => void) | null = null
 
-      // 根据事件类型打印详细信息
+  /**
+   * 监听GSI数据
+   * 处理游戏状态变化事件
+   */
+  function listenToGsiData(): void {
+    safeLog('开始监听 GSI 数据')
+    isGsiRunning.value = true
+
+    gsiDataHandler = (_event, res: any) => {
+      const { eventName, data } = res
+
       switch (eventName) {
-        // ========== Map 事件 ==========
+        // 地图名称变更 - 用户成功连接到目标服务器
         case 'map:nameChanged':
           safeLog('🗺️ [Map:地图名称变更] - 当前游戏地图已切换', {
             '原地图': data.previous || '无',
             '当前地图': data.current,
             '目标服务器地图': joinServerInfo.value?.map || '未设置'
-          });
-          console.log(data.current, data.previous);
-
-          // 只有接收到 map:nameChanged 事件才确认用户成功连接
+          })
           if (joinServerInfo.value?.map === data.current) {
-            safeLog('✅ 用户已成功连接到目标服务器');
+            safeLog('✅ 用户已成功连接到目标服务器')
             isAutomaticRetry.value = false;
             isAutomatic.value = false;
+            isJoinServerTrayVisible.value = false;
 
-            // 清除连接检测定时器
             if (connectionCheckTimer) {
-              clearTimeout(connectionCheckTimer);
+              clearTimeout(connectionCheckTimer)
               connectionCheckTimer = null;
             }
 
-            //发送地址
-            sendUserGisJoinAddr();
-            //GIS清空挤服
-            pauseAutomaticJoinServer();
-            //清空连接动态
-            currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length);
-            sendAutomaticDynamic("已连接进服务器...");
-            //播放音频
-            const appStore = useAppStore();
-            const currentTheme = appStore.currentTheme;
-            const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜'];
-            const audio = new Audio(audioSrc);
-            audio.volume = 0.5;
-            audio.play();
-            window.$message?.success("连接成功")
+            sendUserGisJoinAddr()
+            pauseAutomaticJoinServer()
+            currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length)
+            sendAutomaticDynamic('已连接进服务器...')
+
+            // 播放连接成功音效
+            const appStore = useAppStore()
+            const currentTheme = appStore.currentTheme
+            const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜']
+            const audio = new Audio(audioSrc)
+            audio.volume = 0.5
+            audio.play()
+            window.$message?.success('连接成功')
           }
-          break;
+          break
+
+        // 地图阶段变更
         case 'map:phaseChanged':
-          safeLog('🎯 [Map:阶段变更] - 游戏阶段已更新', data.current, data.previous);
-          gameServerInfo.value.mapPhase = data.current;
-          // 发送数据给服务器
-          sendServerGisData(gameServerInfo.value);
-          break;
+          safeLog('🎯 [Map:阶段变更] - 游戏阶段已更新', data.current, data.previous)
+          gameServerInfo.value.mapPhase = data.current
+          sendServerGisData(gameServerInfo.value)
+          break
+
+        // 回合数变更
         case 'map:roundChanged':
-          safeLog('🔄 [Map:回合变更] - 回合数已更新', data.current, data.previous);
-          gameServerInfo.value.round = data.current;
-          // 发送数据给服务器
-          sendServerGisData(gameServerInfo.value);
-          break;
+          safeLog('🔄 [Map:回合变更] - 回合数已更新', data.current, data.previous)
+          gameServerInfo.value.round = data.current
+          sendServerGisData(gameServerInfo.value)
+          break
+
+        // CT分数变更
         case 'map:teamCTScoreChanged':
-          safeLog('🔵 [Map:CT分数变更] - CT阵营分数已更新', data.current, data.previous);
-          gameServerInfo.value.CTScore = data.current;
-          // 发送数据给服务器
-          sendServerGisData(gameServerInfo.value);
-          break;
+          safeLog('🔵 [Map:CT分数变更] - CT阵营分数已更新', data.current, data.previous)
+          gameServerInfo.value.CTScore = data.current
+          sendServerGisData(gameServerInfo.value)
+          break
+
+        // T分数变更
         case 'map:teamTScoreChanged':
-          safeLog('🟠 [Map:T分数变更] - T阵营分数已更新', data.current, data.previous);
-          gameServerInfo.value.TScore = data.current;
-          // 发送数据给服务器
-          sendServerGisData(gameServerInfo.value);
-          break;
-        // ========== Round 事件 ==========
+          safeLog('🟠 [Map:T分数变更] - T阵营分数已更新', data.current, data.previous)
+          gameServerInfo.value.TScore = data.current
+          sendServerGisData(gameServerInfo.value)
+          break
+
+        // 回合阶段相关事件
         case 'round:phaseChanged':
-          safeLog('⏱️ [Round:阶段变更] - 回合阶段已更新', data.current, data.previous);
-          gameServerInfo.value.mapPhase = data.current;
-          // 发送数据给服务器
-          sendServerGisData(gameServerInfo.value);
-          break;
         case 'round:started':
-          safeLog('▶️ [Round:开始] - 新回合开始', data.current, data.previous);
-          gameServerInfo.value.mapPhase = data.current;
-          // 发送数据给服务器
-          sendServerGisData(gameServerInfo.value);
-          break;
         case 'round:ended':
-          safeLog('⏹️ [Round:结束] - 回合结束', data.current, data.previous);
-          gameServerInfo.value.mapPhase = data.current;
-          // 发送数据给服务器
-          sendServerGisData(gameServerInfo.value);
-          break;
+          safeLog(`⏱️ [Round:${eventName.split(':')[1]}]`, data.current, data.previous)
+          gameServerInfo.value.mapPhase = data.current
+          sendServerGisData(gameServerInfo.value)
+          break
+
+        // 玩家阵营变更
         case 'player:teamChanged':
-          safeLog('👥 [Player:阵营变更] - 玩家所属阵营已切换', data.current, data.previous);
-          gamePlayerInfo.value.team = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('👥 [Player:阵营变更] - 玩家所属阵营已切换', data.current, data.previous)
+          gamePlayerInfo.value.team = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 玩家生命值变更
         case 'player:hpChanged':
-          safeLog('❤️ [Player:生命值变更] - 玩家生命值已更新', data.current, data.previous);
-          gamePlayerInfo.value.health = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('❤️ [Player:生命值变更] - 玩家生命值已更新', data.current, data.previous)
+          gamePlayerInfo.value.health = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 玩家护甲值变更
         case 'player:armorChanged':
-          safeLog('🛡️ [Player:护甲值变更] - 玩家护甲值已更新', data.current, data.previous);
-          gamePlayerInfo.value.armor = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('🛡️ [Player:护甲值变更] - 玩家护甲值已更新', data.current, data.previous)
+          gamePlayerInfo.value.armor = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 玩家头盔状态变更
         case 'player:helmetChanged':
-          safeLog('⛑️ [Player:头盔变更] - 玩家头盔状态已更新', data.current, data.previous);
-          gamePlayerInfo.value.helmet = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('⛑️ [Player:头盔变更] - 玩家头盔状态已更新', data.current, data.previous)
+          gamePlayerInfo.value.helmet = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 玩家金钱变更
         case 'player:moneyChanged':
-          safeLog('💰 [Player:金钱变更] - 玩家金钱已更新', data.current, data.previous);
-          gamePlayerInfo.value.money = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('💰 [Player:金钱变更] - 玩家金钱已更新', data.current, data.previous)
+          gamePlayerInfo.value.money = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 玩家装备价值变更
         case 'player:equipmentValueChanged':
-          safeLog('💎 [Player:装备价值变更] - 玩家装备价值已更新', data.current, data.previous);
-          gamePlayerInfo.value.equipValue = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('💎 [Player:装备价值变更] - 玩家装备价值已更新', data.current, data.previous)
+          gamePlayerInfo.value.equipValue = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 玩家武器变更
         case 'player:weaponChanged':
-          safeLog('🔫 [Player:武器变更] - 玩家武器已更新', data.current, data.previous);
-          gamePlayerInfo.value.weapon = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('🔫 [Player:武器变更] - 玩家武器已更新', data.current, data.previous)
+          gamePlayerInfo.value.weapon = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 玩家弹夹弹药变更
         case 'player:ammoClipChanged':
-          safeLog('📦 [Player:弹夹弹药变更] - 玩家弹夹弹药已更新', data.current, data.previous);
-          gamePlayerInfo.value.clipAmmo = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('📦 [Player:弹夹弹药变更] - 玩家弹夹弹药已更新', data.current, data.previous)
+          gamePlayerInfo.value.clipAmmo = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 玩家备用弹药变更
         case 'player:ammoReserveChanged':
-          safeLog('🎒 [Player:备用弹药变更] - 玩家备用弹药已更新', data.current, data.previous);
-          gamePlayerInfo.value.reserveAmmo = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('🎒 [Player:备用弹药变更] - 玩家备用弹药已更新', data.current, data.previous)
+          gamePlayerInfo.value.reserveAmmo = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 玩家击杀数变更
         case 'player:killsChanged':
-          safeLog('💀 [Player:击杀数变更] - 玩家击杀数已更新', data.current, data.previous);
-          gamePlayerInfo.value.kills = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('💀 [Player:击杀数变更] - 玩家击杀数已更新', data.current, data.previous)
+          gamePlayerInfo.value.kills = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 玩家分数变更
         case 'player:scoreChanged':
-          safeLog('📊 [Player:分数变更] - 玩家分数已更新', data.current, data.previous);
-          gamePlayerInfo.value.score = data.current;
-          // 发送数据给服务器
-          sendUserGisData(gamePlayerInfo.value);
-          break;
+          safeLog('📊 [Player:分数变更] - 玩家分数已更新', data.current, data.previous)
+          gamePlayerInfo.value.score = data.current
+          sendUserGisData(gamePlayerInfo.value)
+          break
+
+        // 时间戳变更
         case 'provider:timestampChanged':
-          safeLog('⏰ [Provider:时间戳变更] - 更新服务器时间戳', data.current, data.previous);
-          // 发送数据给服务器
-          sendServerGisData(gameServerInfo.value);
-          break;
+          safeLog('⏰ [Provider:时间戳变更] - 更新服务器时间戳', data.current, data.previous)
+          sendServerGisData(gameServerInfo.value)
+          break
+
         default:
-          safeLog('❓ [未知事件]', { eventName, data });
+          safeLog('❓ [未知事件]', { eventName, data })
       }
-    });
-  }
-
-  // 移除 GSI 数据监听的函数
-  function removeGsiDataListener() {
-    window.ipcRenderer.off('cs2-gsi-data', () => {
-      console.log('✅ GSI 数据监听已移除');
-    });
-  }
-
-  // 开始监听日志
-  async function startLogReading(delayMs: number = 5000) {
-    if (!csgo2Path.value) {
-      console.error('未配置 CS2 路径，无法开始读取日志');
-      return;
     }
 
-    try {
-      const result = await window.ipcRenderer.invoke('start-log-reader', csgo2Path.value, delayMs);
-      if (result.success) {
-        isLogReading.value = true;
-        listenToConsoleLog();
-        console.log("开始读取日志");
+    window.ipcRenderer.on('cs2-gsi-data', gsiDataHandler)
+  }
 
-      }
-    } catch (error) {
-      console.error('开始读取日志失败:', error);
+  /** 移除GSI数据监听 */
+  function removeGsiDataListener(): void {
+    if (gsiDataHandler) {
+      window.ipcRenderer.off('cs2-gsi-data', gsiDataHandler)
+      safeLog('✅ GSI 数据监听已移除')
+      gsiDataHandler = null
     }
   }
 
-  // 停止监听日志
-  async function stopLogReading() {
-    if (!isLogReading.value) return;
+  // ==================== 日志监听 ====================
 
-    try {
-      await window.ipcRenderer.invoke('stop-log-reader');
-      isLogReading.value = false;
-      userConnectionStatus.value = 'idle';
-      removeConsoleLogListener();
-    } catch (error) {
-      console.error('停止读取日志失败:', error);
-    }
-  }
+  /** 控制台日志事件处理器 */
+  let consoleLogHandler: ((_event: unknown, logData: string) => void) | null = null
 
-  // 解析单行日志
-  function parseLogLine(logLine: string): any {
-    if (logPatterns.connected.test(logLine)) {
-      return {
-        status: 'connecting',
-        message: '正在连接服务器'
-      };
+  /**
+   * 解析单行日志
+   * @param logLine 日志行内容
+   * @returns 解析结果
+   */
+  function parseLogLine(logLine: string): { status: UserConnectionStatus; message: string; mapName?: string } | null {
+    if (LOG_PATTERNS.connected.test(logLine)) {
+      return { status: 'connecting', message: '正在连接服务器' }
     }
 
-    if (logPatterns.switchingToLevelload.test(logLine)) {
-      return {
-        status: 'map_loading',
-        message: '开始加载地图'
-      };
+    if (LOG_PATTERNS.switchingToLevelload.test(logLine)) {
+      return { status: 'map_loading', message: '开始加载地图' }
     }
 
-    if (logPatterns.loadingToIngame.test(logLine)) {
-      return {
-        status: 'in_game',
-        message: '玩家进入游戏'
-      };
+    if (LOG_PATTERNS.loadingToIngame.test(logLine)) {
+      return { status: 'in_game', message: '玩家进入游戏' }
     }
 
-    if (logPatterns.serverFull.test(logLine)) {
-      return {
-        status: 'connection_failed',
-        message: '服务器已满员'
-      };
+    if (LOG_PATTERNS.serverFull.test(logLine)) {
+      return { status: 'connection_failed', message: '服务器已满员' }
     }
 
-    const mapMatch = logLine.match(logPatterns.mapInfo);
+    const mapMatch = logLine.match(LOG_PATTERNS.mapInfo)
     if (mapMatch) {
       return {
         status: 'map_loading',
         mapName: mapMatch[1],
         message: `正在加载地图: ${mapMatch[1]}`
-      };
-    }
-
-    return null;
-  }
-
-  // 解析日志内容
-  function parseLogContent(logContent: string): any {
-    const lines = logContent.split('\n').reverse();
-
-    for (const line of lines) {
-      const result = parseLogLine(line);
-      if (result) {
-        return result;
       }
     }
 
-    return null;
+    return null
   }
 
-  // 监听控制台日志数据
-  function listenToConsoleLog() {
-    window.ipcRenderer.on('cs2-console-log', (_event, logData) => {
-      const lines = logData.split('\n');
+  /**
+   * 解析日志内容
+   * 从后向前查找最新的状态变化
+   * @param logContent 日志内容
+   */
+  function parseLogContent(logContent: string): ReturnType<typeof parseLogLine> {
+    const lines = logContent.split('\n').reverse()
 
-      // 检测是否有新的连接请求，如果有则重置重试标志
+    for (const line of lines) {
+      const result = parseLogLine(line)
+      if (result) return result
+    }
+
+    return null
+  }
+
+  /**
+   * 监听控制台日志
+   * 处理游戏连接状态变化
+   */
+  function listenToConsoleLog(): void {
+    consoleLogHandler = (_event, logData: string) => {
+      const lines = logData.split('\n')
+
+      // 检测新的连接请求，重置重试标志
       for (const line of lines) {
-        if (logPatterns.queueNewRequest.test(line)) {
-          hasRetriedForThisConnection = false;
-          break;
+        if (LOG_PATTERNS.queueNewRequest.test(line)) {
+          hasRetriedForThisConnection = false
+          break
         }
       }
 
-      const logContent = parseLogContent(logData);
+      const logContent = parseLogContent(logData)
 
       if (logContent) {
-        userConnectionStatus.value = logContent.status;
+        userConnectionStatus.value = logContent.status
 
         switch (logContent.status) {
           case 'in_game':
-            console.log('✅ 用户已成功进入游戏');
-            hasRetriedForThisConnection = false;
-            break;
+            safeLog('✅ 用户已成功进入游戏')
+            hasRetriedForThisConnection = false
+            break
           case 'connection_failed':
-            console.log('❌ 服务器已满员，连接被拒绝');
+            safeLog('❌ 服务器已满员，连接被拒绝')
+            // 自动重试连接
             if (isAutomatic.value && automaticJoinConfig.value.joinServerAutoRetryValue && !hasRetriedForThisConnection) {
-              hasRetriedForThisConnection = true;
-              startAutomaticJoinServer();
+              hasRetriedForThisConnection = true
+              startAutomaticJoinServer()
             }
-            break;
+            break
           case 'map_loading':
-            console.log('📦 用户正在加载地图');
-            break;
+            safeLog('📦 用户正在加载地图')
+            break
           case 'connecting':
-            console.log('🔗 用户正在连接服务器');
-            break;
+            safeLog('🔗 用户正在连接服务器')
+            break
         }
       }
-    });
+    }
+
+    window.ipcRenderer.on('cs2-console-log', consoleLogHandler)
   }
 
-  // 移除控制台日志监听
-  function removeConsoleLogListener() {
-    window.ipcRenderer.off('cs2-console-log', () => {
-      console.log('✅ 控制台日志监听已移除');
-    });
-  }
-
-  let userGisLastSentAt = 0;
-  let userGisSendTimer: ReturnType<typeof setTimeout> | null = null;
-  let pendingUserGisData: Api.Game.CsgoPlayer | null = null;
-
-  // GIS发送用户搜索连接地址消息
-  function sendUserGisAddr() {
-    if (!joinServerInfo.value?.addr) return;
-    if (!GisWebsocket.GisWebsocket) return;
-
-    const setAddrMessage: Api.Game.WsServerMsgType = {
-      type: '101',
-      data: joinServerInfo.value.addr
-    };
-    GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage));
-  }
-
-  // GIS发送用户连接地址消息
-  function sendUserGisJoinAddr() {
-    if (!joinServerInfo.value?.addr) return;
-    if (!GisWebsocket.GisWebsocket) return;
-
-    const setAddrMessage: Api.Game.WsServerMsgType = {
-      type: '103',
-      data: joinServerInfo.value.addr
-    };
-    GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage));
-  }
-
-
-  // GIS暂停自动挤服消息
-  async function pauseAutomaticJoinServer() {
-    isAutomatic.value = false;
-    const sendMessage = {
-      code: 104,
-      data: {
-        serverAddr: joinServerInfo.value?.addr,
-      }
-    };
-    if (GisWebsocket.GisWebsocket) {
-      GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage));
+  /** 移除控制台日志监听 */
+  function removeConsoleLogListener(): void {
+    if (consoleLogHandler) {
+      window.ipcRenderer.off('cs2-console-log', consoleLogHandler)
+      safeLog('✅ 控制台日志监听已移除')
+      consoleLogHandler = null
     }
   }
 
-  function flushUserGisData() {
-    if (!joinServerInfo.value?.addr) return;
-    if (!GisWebsocket.GisWebsocket) return;
-    if (!pendingUserGisData) return;
+  /**
+   * 开始读取游戏日志
+   * @param delayMs 读取延迟（毫秒）
+   */
+  async function startLogReading(delayMs = 5000): Promise<void> {
+    if (!csgo2Path.value) {
+      console.error('未配置 CS2 路径，无法开始读取日志')
+      return
+    }
 
-    const addr = joinServerInfo.value.addr;
-    const dataToSend: Api.Game.CsgoPlayer = { ...pendingUserGisData, addr };
-    pendingUserGisData = null;
-    userGisLastSentAt = Date.now();
+    try {
+      const result = await window.ipcRenderer.invoke('start-log-reader', csgo2Path.value, delayMs)
+      if (result.success) {
+        isLogReading.value = true
+        listenToConsoleLog()
+        safeLog('开始读取日志')
+      }
+    } catch (error) {
+      console.error('开始读取日志失败:', error)
+    }
+  }
+
+  /** 停止读取游戏日志 */
+  async function stopLogReading(): Promise<void> {
+    if (!isLogReading.value) return
+
+    try {
+      await window.ipcRenderer.invoke('stop-log-reader')
+      isLogReading.value = false
+      userConnectionStatus.value = 'idle'
+      removeConsoleLogListener()
+    } catch (error) {
+      console.error('停止读取日志失败:', error)
+    }
+  }
+
+  // ==================== GIS数据发送 ====================
+
+  /** 刷新并发送待发送的GIS用户数据 */
+  function flushUserGisData(): void {
+    if (!joinServerInfo.value?.addr) return
+    if (!GisWebsocket.GisWebsocket) return
+    if (!gisSendState.pendingData) return
+
+    const addr = joinServerInfo.value.addr
+    const dataToSend: Api.Game.CsgoPlayer = { ...gisSendState.pendingData, addr }
+    gisSendState.pendingData = null
+    gisSendState.lastSentAt = Date.now()
 
     const sendMessage: Api.Game.WsServerMsgType = {
       type: '100',
       data: dataToSend
-    };
-
-    GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage));
-  }
-
-  /**
-   * WS发送用户GIS数据(快速推送)
-   */
-  function sendUserGisData(data: Api.Game.CsgoPlayer) {
-    if (!joinServerInfo.value?.addr) return;
-    pendingUserGisData = { ...data, addr: joinServerInfo.value.addr };
-
-    const now = Date.now();
-    const elapsed = now - userGisLastSentAt;
-
-    if (elapsed >= 2000) {
-      if (userGisSendTimer) {
-        clearTimeout(userGisSendTimer);
-        userGisSendTimer = null;
-      }
-      flushUserGisData();
-      return;
     }
 
-    if (userGisSendTimer) return;
-
-    userGisSendTimer = setTimeout(() => {
-      userGisSendTimer = null;
-      flushUserGisData();
-    }, 2000 - elapsed);
+    GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage))
   }
 
   /**
-   * WS发送服务器GIS数据(快速推送)
+   * 发送用户GIS数据（带节流）
+   * 限制发送频率，避免频繁发送
+   * @param data 用户数据
    */
-  function sendServerGisData(data: Api.Game.ServerInfoData) {
-    if (!joinServerInfo.value?.addr) return;
-    //设置服务器地址
-    data.addr = joinServerInfo.value.addr;
+  function sendUserGisData(data: Api.Game.CsgoPlayer): void {
+    if (!joinServerInfo.value?.addr || !automaticJoinConfig.value.pushGisValue) return
+    gisSendState.pendingData = { ...data, addr: joinServerInfo.value.addr }
+
+    const now = Date.now()
+    const elapsed = now - gisSendState.lastSentAt
+
+    if (elapsed >= GIS_SEND_INTERVAL) {
+      if (gisSendState.sendTimer) {
+        clearTimeout(gisSendState.sendTimer)
+        gisSendState.sendTimer = null
+      }
+      flushUserGisData()
+      return
+    }
+
+    if (gisSendState.sendTimer) return
+
+    gisSendState.sendTimer = setTimeout(() => {
+      gisSendState.sendTimer = null
+      flushUserGisData()
+    }, GIS_SEND_INTERVAL - elapsed)
+  }
+
+  /**
+   * 发送服务器GIS数据
+   * @param data 服务器数据
+   */
+  function sendServerGisData(data: Api.Game.ServerInfoData): void {
+    if (!joinServerInfo.value?.addr) return
+    data.addr = joinServerInfo.value.addr
+
     const sendMessage: Api.Game.WsServerMsgType = {
       type: '103',
       data
-    };
+    }
+
     if (ServerWebsocket.ServerWebsocket) {
-      ServerWebsocket.ServerWebsocket.send(JSON.stringify(sendMessage));
+      ServerWebsocket.ServerWebsocket.send(JSON.stringify(sendMessage))
     }
   }
 
   /**
-   * WS发送挤服动态数据
+   * 发送自动挤服动态消息
+   * @param data 动态消息内容
    */
-  function sendAutomaticDynamic(data: string) {
-    if (!data) return;
+  function sendAutomaticDynamic(data: string): void {
+    if (!data) return
     const sendMessage: Api.Game.WsServerMsgType = {
       type: '102',
       data: {
         addr: joinServerInfo?.value?.addr,
-        description: data,
+        description: data
       }
-    };
+    }
     if (GisWebsocket.GisWebsocket) {
-      GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage));
+      GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage))
     }
   }
 
-
-  /** WS发送挤服数据 */
-  function sendJoinServer(data: Api.Game.ServerVo) {
+  /**
+   * 发送加入服务器信息
+   * @param data 服务器信息
+   */
+  function sendJoinServer(data: Api.Game.ServerVo): void {
     const sendMessage: Api.Game.WsServerMsgType = {
       type: '100',
       data
-    };
+    }
     if (ServerWebsocket.ServerWebsocket) {
-      ServerWebsocket.ServerWebsocket.send(JSON.stringify(sendMessage));
+      ServerWebsocket.ServerWebsocket.send(JSON.stringify(sendMessage))
     }
   }
 
-  // 初始化服务器 WebSocket 连接
-  async function initServerWebsocket() {
-    ServerWebsocket.init();
+  /** 发送用户GIS搜索地址 */
+  function sendUserGisAddr(): void {
+    if (!joinServerInfo.value?.addr) return
+    if (!GisWebsocket.GisWebsocket) return
+
+    const setAddrMessage: Api.Game.WsServerMsgType = {
+      type: '101',
+      data: joinServerInfo.value.addr
+    }
+    GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage))
   }
 
-  /** Close GisWebsocket connection */
-  function closeGisWebsocket() {
+  /** 发送用户GIS连接地址 */
+  function sendUserGisJoinAddr(): void {
+    if (!joinServerInfo.value?.addr) return
+    if (!GisWebsocket.GisWebsocket) return
+
+    const setAddrMessage: Api.Game.WsServerMsgType = {
+      type: '103',
+      data: joinServerInfo.value.addr
+    }
+    GisWebsocket.GisWebsocket.send(JSON.stringify(setAddrMessage))
+  }
+
+  /**
+   * 暂停自动挤服
+   * 向服务器发送暂停消息
+   */
+  async function pauseAutomaticJoinServer(): Promise<void> {
+    isAutomatic.value = false
+    const sendMessage = {
+      code: 104,
+      data: {
+        serverAddr: joinServerInfo.value?.addr
+      }
+    }
     if (GisWebsocket.GisWebsocket) {
-      GisWebsocket.close();
+      GisWebsocket.GisWebsocket.send(JSON.stringify(sendMessage))
     }
   }
 
-  // 初始化GIS WebSocket 连接
-  async function initGisWebsocket() {
-    GisWebsocket.init();
+  // ==================== WebSocket ====================
+
+  /** 初始化服务器WebSocket连接 */
+  async function initServerWebsocket(): Promise<void> {
+    ServerWebsocket.init()
   }
 
-  /** Close ServerWebsocket connection */
-  function closeServerWebsocket() {
+  /** 关闭GIS WebSocket连接 */
+  function closeGisWebsocket(): void {
+    if (GisWebsocket.GisWebsocket) {
+      GisWebsocket.close()
+    }
+  }
+
+  /** 初始化GIS WebSocket连接 */
+  async function initGisWebsocket(): Promise<void> {
+    GisWebsocket.init()
+  }
+
+  /** 关闭服务器WebSocket连接 */
+  function closeServerWebsocket(): void {
     if (ServerWebsocket.ServerWebsocket) {
-      ServerWebsocket.close();
+      ServerWebsocket.close()
     }
   }
 
+  // ==================== 导出 ====================
 
   return {
+    // 状态
     automaticInfo,
     automaticCount,
     isAutomatic,
@@ -1222,6 +1241,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     isJoinServerTrayVisible,
     isLogReading,
     userConnectionStatus,
+
+    // 方法
     initServerWebsocket,
     initGisWebsocket,
     initServerList,
@@ -1243,6 +1264,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     setJoinServerPersonValue,
     setJoinServerCountValue,
     setJoinServerAutoRetryValue,
+    setPushGisValue,
     setApplyKeyBindItems,
     setSelectedStartItems,
     toggleStartItem,
@@ -1259,7 +1281,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     startLogReading,
     stopLogReading,
     applyKeyBindItems,
-    selectedStartItems,
-  };
-});
-
+    selectedStartItems
+  }
+})

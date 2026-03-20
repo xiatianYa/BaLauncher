@@ -410,7 +410,7 @@ onMounted(() => {
         <div class="game-setting-item mt-10px">
           <div class="font-size-14px font-semibold mr-5px w-120px">
             <NText class="w-150px">
-              自定义启动选项
+              {{ $t('settings.customStartOptions') }}
             </NText>
           </div>
           <div>
@@ -427,20 +427,20 @@ onMounted(() => {
               </NGridItem>
             </NGrid>
             <div class="flex mt-10px">
-              <NInput v-model:value="customStartItem" class="rounded-5px mr-10px" placeholder="输入自定义启动选项"
+              <NInput v-model:value="customStartItem" class="rounded-5px mr-10px" :placeholder="$t('settings.inputCustomStartOption')"
                 @keyup.enter="addCustomStartItem" />
-              <NButton class="rounded-5px" type="info" @click="addCustomStartItem">添加</NButton>
+              <NButton class="rounded-5px" type="info" @click="addCustomStartItem">{{ $t('settings.add') }}</NButton>
             </div>
             <div class="flex items-center mt-5px font-size-12px">
               <SvgIcon icon="material-symbols:lightbulb-2-outline" class="color-#f0a020 mr-5px" />
-              提示 : 可在上方输入框中自定义添加启动选项
+              {{ $t('settings.customStartOptionTip') }}
             </div>
           </div>
         </div>
         <div class="game-setting-item mt-10px">
           <div class="font-size-14px font-semibold mr-5px w-120px">
             <NText class="w-150px">
-              当前已选启动项
+              {{ $t('settings.currentSelectedItems') }}
             </NText>
           </div>
           <NGrid :cols="3" :x-gap="12" :y-gap="12">
@@ -511,7 +511,7 @@ onMounted(() => {
               <template #icon>
                 <SvgIcon icon="material-symbols:refresh" />
               </template>
-              {{ isCheckingUpdate ? '检查中...' : '检查更新' }}
+              {{ isCheckingUpdate ? $t('settings.checking') : $t('settings.checkUpdate') }}
             </NButton>
           </div>
         </div>

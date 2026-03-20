@@ -261,13 +261,13 @@ const getWeaponName = (weaponName: string) => {
         'weapon_sg556': 'SG 553',
         'weapon_famas': '法玛斯',
         'weapon_galilar': '加利尔 AR',
-        
+
         // 狙击枪
         'weapon_awp': 'AWP',
         'weapon_g3sg1': 'G3SG1',
         'weapon_scar20': 'SCAR-20',
         'weapon_ssg08': '鸟狙',
-        
+
         // 手枪
         'weapon_glock': '格洛克',
         'weapon_usp_silencer': 'USP-S',
@@ -277,7 +277,7 @@ const getWeaponName = (weaponName: string) => {
         'weapon_deagle': '沙漠之鹰',
         'weapon_revolver': 'R8左轮',
         'weapon_cz75a': 'CZ75',
-        
+
         // 冲锋枪
         'weapon_mp7': 'MP7',
         'weapon_mp9': 'MP9',
@@ -287,25 +287,25 @@ const getWeaponName = (weaponName: string) => {
         'weapon_p90': 'P90',
         'weapon_mp5sd': 'MP5-SD',
         'weapon_mp5': 'MP5',
-        
+
         // 霰弹枪
         'weapon_nova': '新星',
         'weapon_xm1014': 'XM1014',
         'weapon_sawedoff': '截短霰弹枪',
         'weapon_mag7': 'MAG-7',
         'weapon_m1014': 'M1014',
-        
+
         // 机枪
         'weapon_m249': 'M249',
         'weapon_negev': '内格夫',
-        
+
         // 装备
         'weapon_c4': 'C4',
         'weapon_taser': '电击枪',
         'weapon_knife': '匕首',
         'weapon_shield': '防暴盾',
         'weapon_zeus': '宙斯',
-        
+
         // 投掷物
         'weapon_molotov': '燃烧瓶',
         'weapon_incgrenade': '燃烧弹',
@@ -349,8 +349,6 @@ const handleCancelExit = () => {
     gameStore.currentGisPlayerList.splice(0, gameStore.currentGisPlayerList.length);
     //清空记录
     gameStore.currentAutomaticPlayerDynamicList.splice(0, gameStore.currentAutomaticPlayerDynamicList.length);
-    //清空连接动态
-    gameStore.stopAutomaticJoinServer();
 
     emit('update:showJoinServer', false);
     return;
@@ -427,8 +425,8 @@ onBeforeUnmount(() => {
                             </div>
                         </NTag>
                     </NSpace>
-                    <NSlider v-model:value="gameStore.automaticJoinConfig.joinServerPersonValue" :step="1" :min="1"
-                        :max="63" :tooltip="false" />
+                    <NSlider :value="gameStore.automaticJoinConfig.joinServerPersonValue" :step="1" :min="1"
+                        :max="63" :tooltip="false" @update:value="gameStore.setJoinServerPersonValue" />
                     <NSpace justify="space-between">
                         <div class="font-bold font-size-10px">
                             {{ $t('serverJoin.personCount', { count: 1 }) }}
@@ -457,8 +455,8 @@ onBeforeUnmount(() => {
                             </div>
                         </NTag>
                     </NSpace>
-                    <NSlider v-model:value="gameStore.automaticJoinConfig.joinServerCountValue" :step="1" :min="1"
-                        :max="6" :tooltip="false" />
+                    <NSlider :value="gameStore.automaticJoinConfig.joinServerCountValue" :step="1" :min="1"
+                        :max="6" :tooltip="false" @update:value="gameStore.setJoinServerCountValue" />
                     <NSpace justify="space-between">
                         <div class="font-bold font-size-10px">
                             {{ $t('serverJoin.threadCount', { count: 1 }) }}
@@ -469,7 +467,7 @@ onBeforeUnmount(() => {
                     </NSpace>
                 </div>
                 <div class="mb-15px">
-                    <NSpace justify="space-between" align="center">
+                    <NSpace justify="space-between">
                         <div class="flex items-center gap-3px">
                             <div class="font-size-18px">
                                 <SvgIcon icon="material-symbols:refresh"></SvgIcon>
@@ -478,14 +476,34 @@ onBeforeUnmount(() => {
                                 {{ $t('serverJoin.autoRetry') }}
                             </div>
                         </div>
-                        <NSwitch v-model:value="gameStore.automaticJoinConfig.joinServerAutoRetryValue"
-                            :round="false" />
+                        <NSwitch :value="gameStore.automaticJoinConfig.joinServerAutoRetryValue"
+                            :round="false" @update:value="gameStore.setJoinServerAutoRetryValue" />
                     </NSpace>
                     <div class="flex items-center font-bold font-size-12px mt-5px">
                         <div class="font-size-16px mr-5px">
                             <SvgIcon icon="material-symbols:info-outline"></SvgIcon>
                         </div>
                         {{ $t('serverJoin.autoRetryTip') }}
+                    </div>
+                </div>
+                <div class="mb-15px">
+                    <NSpace justify="space-between">
+                        <div class="flex items-center gap-3px">
+                            <div class="font-size-18px">
+                                <SvgIcon icon="material-symbols:refresh"></SvgIcon>
+                            </div>
+                            <div class="font-size-14px font-bold">
+                                {{ $t('serverJoin.gisPush') }}
+                            </div>
+                        </div>
+                        <NSwitch :value="gameStore.automaticJoinConfig.pushGisValue" :round="false"
+                            @update:value="gameStore.setPushGisValue" />
+                    </NSpace>
+                    <div class="flex items-center font-bold font-size-12px mt-5px">
+                        <div class="font-size-16px mr-5px">
+                            <SvgIcon icon="material-symbols:info-outline"></SvgIcon>
+                        </div>
+                        {{ $t('serverJoin.gisPushTip') }}
                     </div>
                 </div>
                 <NSpace justify="space-between">
@@ -668,7 +686,8 @@ onBeforeUnmount(() => {
                                                 <SvgIcon icon="hugeicons:gun" class="mr-5px" />
                                             </div>
                                             <NText>
-                                                {{ player.weapon?.name ? getWeaponName(player.weapon.name) : $t('serverJoin.weapon.none') }}
+                                                {{ player.weapon?.name ? getWeaponName(player.weapon.name) :
+                                                    $t('serverJoin.weapon.none') }}
                                             </NText>
                                         </div>
                                     </div>

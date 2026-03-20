@@ -8,14 +8,13 @@ import { useDict } from '@/hooks/business/dict';
 import OpenGameConfirm from '@/views/server/modules/open-game-confirm.vue';
 import OpenGameJoin from '@/views/server/modules/open-game-join.vue';
 import JoinServerTray from '@/views/server/modules/join-server-tray.vue';
-import { useI18n } from 'vue-i18n';
+import { $t } from '@/locales';
 
 defineOptions({
   name: 'server'
 });
 
 const gameStore = useGameStore();
-const { t } = useI18n();
 
 const { dictOptions } = useDict();
 
@@ -215,7 +214,7 @@ const joinServer = async (server: Api.Game.InfoResponse) => {
 const openAutoJoinServer = (server: Api.Game.InfoResponse) => {
   //如果正在挤服 则不能打开其他挤服窗口
   if (gameStore.isJoinServerTrayVisible) {
-    window.$message?.error(t('server.joinBusy'));
+    window.$message?.error($t('server.joinBusy'));
     return;
   }
   gameStore.joinServerInfo = server;
@@ -227,7 +226,7 @@ const openAutoJoinServer = (server: Api.Game.InfoResponse) => {
 // 复制服务器地址
 const copyServerAddr = (server: Api.Game.InfoResponse) => {
   navigator.clipboard.writeText(`connect ${server.addr}`);
-  window.$message?.success(t('server.copySuccess'));
+  window.$message?.success($t('server.copySuccess'));
 };
 
 // 获取源服务器信息
@@ -281,13 +280,13 @@ onUnmounted(() => {
             <template #icon>
               <SvgIcon icon="hugeicons:start-up-02" />
             </template>
-            启动游戏
+            {{ $t('server.openGame.start') }}
           </NButton>
           <NButton v-else class="rounded-5px p-8px" type="success" strong disabled dashed>
             <template #icon>
               <SvgIcon icon="ix:success" />
             </template>
-            游戏已运行
+            {{ $t('server.openGame.gameStarted') }}
           </NButton>
           <div class="countdown-container cursor-pointer" @click="queryServerInfos(true, false)" v-if="!isRefreshing">
             <svg v-if="!isRefreshing" class="countdown-svg" width="40" height="40">

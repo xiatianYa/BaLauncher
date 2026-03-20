@@ -142,11 +142,11 @@ npm run commit
 - <span style="color: green;">[✓]</span> 挤服托盘
 - <span style="color: green;">[✓]</span> 按键绑定
 - <span style="color: green;">[✓]</span> 服务器热身状态
+- <span style="color: green;">[✓]</span> 首页数据展示
+- <span style="color: green;">[✓]</span> 地图订阅
 
 ### 计划添加功能
 - [ ] 游戏状态托盘
-- [ ] 首页数据展示
-- [ ] 地图订阅
 - [ ] QQ机器人通知
 - [ ] 换图提醒
 - [ ] 一键换肤
