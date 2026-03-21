@@ -34,7 +34,7 @@ const countdownTextRef = ref<HTMLElement>();
 const progressRingRef = ref<HTMLElement>();
 
 // 刷新服务器列表倒计时值
-const countdownValue = ref(20);
+const countdownValue = ref(10);
 
 // 刷新服务器列表是否正在刷新状态
 const isRefreshing = ref(false);
@@ -52,28 +52,16 @@ const moduleMap: Record<UnionKey.ServerLayoutModule, ServerLayoutModule> = {
   'tableModal': { label: $t('tools.tableModal'), component: ServerTableList },
 };
 
-const activeModuleKey = ref<UnionKey.ServerLayoutModule>('cardModel');
-const activeModule = computed(() => moduleMap[activeModuleKey.value]);
-
-const isFullscreen = ref(false);
-
-const toggleFullscreen = () => {
-  isFullscreen.value = !isFullscreen.value;
-};
+const activeModule = computed(() => moduleMap[gameStore.serverViewModule]);
 
 // 切换社区
 const selectCommunity = async (id: number) => {
   //点击相同社区 不进行加载
   if (gameStore.selectedCommunityId === id || serverLoading.value || isRefreshing.value) return;
   serverLoading.value = true;
-  gameStore.selectedCommunityId = id;
+  gameStore.setSelectedCommunityId(id);
   await queryServerInfos(true, true);
   serverLoading.value = false;
-};
-
-// 切换服务器视图
-const changeServerView = () => {
-  activeModuleKey.value = activeModuleKey.value === 'cardModel' ? 'tableModal' : 'cardModel';
 };
 
 // 恢复挤服窗口
@@ -85,7 +73,7 @@ const restoreJoinServerWindow = () => {
 const startCountdown = (reset: boolean = true) => {
   isRefreshing.value = false;
   if (reset) {
-    countdownValue.value = 20;
+    countdownValue.value = 10;
   }
 
   nextTick(() => {
@@ -97,7 +85,7 @@ const startCountdown = (reset: boolean = true) => {
       animate(progressRingRef.value, {
         strokeDashoffset: [0, 100.5],
         easing: 'linear',
-        duration: 20000,
+        duration: 10000,
       });
 
       animateNumber(countdownValue.value);
@@ -200,7 +188,8 @@ const refreshServerInfo = async (server: Api.Game.InfoResponse) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await queryServerInfos(true, true);
   startCountdown(false);
 });
 
@@ -214,9 +203,9 @@ onUnmounted(() => {
 
 <template>
   <NCard class="w-full h-full" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
-    <NCard :class="['rounded-10px', isFullscreen ? 'fixed inset-0 z-9999 m-0 rounded-none' : 'm-10px']" content-style="padding:10px;"
-      content-class="h-full flex flex-col flex-1 overflow-hidden" header-style="padding:10px 20px 10px 20px"
-      v-if="!serverLoading" :segmented="{
+    <NCard :class="['rounded-10px', gameStore.isFullscreen ? 'fixed inset-0 z-9999 m-0 rounded-none' : 'm-10px']"
+      content-style="padding:10px;" content-class="h-full flex flex-col flex-1 overflow-hidden"
+      header-style="padding:10px 20px 10px 20px" v-if="!serverLoading" :segmented="{
         content: true,
         footer: 'soft',
       }">
@@ -240,7 +229,8 @@ onUnmounted(() => {
           </NButton>
           <NTooltip placement="bottom">
             <template #trigger>
-              <NButton class="rounded-5px p-8px" type="default" strong dashed @click="changeServerView">
+              <NButton class="rounded-5px p-8px" type="default" strong dashed
+                @click="gameStore.toggleServerViewModule()">
                 <template #icon>
                   <SvgIcon icon="material-symbols:view-list" />
                 </template>
@@ -250,13 +240,13 @@ onUnmounted(() => {
           </NTooltip>
           <NTooltip placement="bottom">
             <template #trigger>
-              <NButton class="rounded-5px p-8px" type="default" strong dashed @click="toggleFullscreen">
+              <NButton class="rounded-5px p-8px" type="default" strong dashed @click="gameStore.toggleFullscreen()">
                 <template #icon>
-                  <SvgIcon :icon="isFullscreen ? 'iconamoon:screen-normal' : 'iconamoon:screen-full'" />
+                  <SvgIcon :icon="gameStore.isFullscreen ? 'iconamoon:screen-normal' : 'iconamoon:screen-full'" />
                 </template>
               </NButton>
             </template>
-            {{ isFullscreen ? $t('server.exitFullscreen') : $t('server.fullscreen') }}
+            {{ gameStore.isFullscreen ? $t('server.exitFullscreen') : $t('server.fullscreen') }}
           </NTooltip>
           <div class="countdown-container cursor-pointer" @click="queryServerInfos(true, false)" v-if="!isRefreshing">
             <svg v-if="!isRefreshing" class="countdown-svg" width="40" height="40">
@@ -312,7 +302,7 @@ onUnmounted(() => {
           </div>
         </div>
       </template>
-      <component :is="activeModule.component" @back="activeModuleKey = 'cardModel'"
+      <component :is="activeModule.component" @back="gameStore.serverViewModule = 'cardModel'"
         :servers="gameStore.currentServerList" :map-list="gameStore.mapList"
         :source-server-list="gameStore.serverDataList" :refreshing-addrs="gameStore.refreshingServerAddrs"
         @join="joinServer" @copy="copyServerAddr" @auto-join="openAutoJoinServer" @refresh="refreshServerInfo" />

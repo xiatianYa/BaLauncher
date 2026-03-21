@@ -106,6 +106,10 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   const isLogReading = ref(false)
   /** 用户连接状态 */
   const userConnectionStatus = ref<UserConnectionStatus>('idle')
+  /** 是否全屏 */
+  const isFullscreen = ref(false)
+  /** 服务器视图模式 */
+  const serverViewModule = ref<UnionKey.ServerLayoutModule>('cardModel')
 
   // ==================== 平台与路径 ====================
   /** 游戏平台（international/perfect） */
@@ -173,6 +177,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     const savedAutomaticJoinConfig = localStg.get(GAME_STORAGE_KEYS.AUTOMATIC_JOIN_CONFIG)
     const savedApplyKeyBindItems = localStg.get(GAME_STORAGE_KEYS.APPLY_KEY_BIND_ITEMS)
     const savedSelectedStartItems = localStg.get(GAME_STORAGE_KEYS.SELECTED_START_ITEMS)
+    const savedIsFullscreen = localStg.get(GAME_STORAGE_KEYS.IS_FULLSCREEN)
+    const savedServerViewModule = localStg.get(GAME_STORAGE_KEYS.SERVER_VIEW_MODULE)
+    const savedSelectedCommunityId = localStg.get(GAME_STORAGE_KEYS.SELECTED_COMMUNITY_ID)
 
     if (savedPlatform) GamePlatform.value = savedPlatform as 'international' | 'perfect'
     if (savedCsgo2Path) csgo2Path.value = savedCsgo2Path
@@ -180,6 +187,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     if (savedAutomaticJoinConfig) Object.assign(automaticJoinConfig.value, savedAutomaticJoinConfig)
     if (savedApplyKeyBindItems) applyKeyBindItems.value = savedApplyKeyBindItems
     if (savedSelectedStartItems) selectedStartItems.value = savedSelectedStartItems
+    if (savedIsFullscreen !== null) isFullscreen.value = savedIsFullscreen
+    if (savedServerViewModule) serverViewModule.value = savedServerViewModule
+    if (savedSelectedCommunityId !== null) selectedCommunityId.value = savedSelectedCommunityId
   }
 
   /** 保存设置到本地存储 */
@@ -230,6 +240,25 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   function setSteamPath(path: string): void {
     steamPath.value = path
     saveSettingsToStorage()
+  }
+
+  /** 切换全屏状态 */
+  function toggleFullscreen(): void {
+    isFullscreen.value = !isFullscreen.value
+    safeLog('切换全屏状态', isFullscreen.value)
+    localStg.set(GAME_STORAGE_KEYS.IS_FULLSCREEN, isFullscreen.value)
+  }
+
+  /** 切换服务器视图模式 */
+  function toggleServerViewModule(): void {
+    serverViewModule.value = serverViewModule.value === 'cardModel' ? 'tableModal' : 'cardModel'
+    localStg.set(GAME_STORAGE_KEYS.SERVER_VIEW_MODULE, serverViewModule.value)
+  }
+
+  /** 设置选中的社区ID */
+  function setSelectedCommunityId(id: number): void {
+    selectedCommunityId.value = id
+    localStg.set(GAME_STORAGE_KEYS.SELECTED_COMMUNITY_ID, id)
   }
 
   /** 设置自动挤服人数阈值 */
@@ -1242,6 +1271,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     isJoinServerTrayVisible,
     isLogReading,
     userConnectionStatus,
+    isFullscreen,
+    serverViewModule,
 
     // 方法
     initServerWebsocket,
@@ -1262,6 +1293,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     setGamePlatform,
     setCsgo2Path,
     setSteamPath,
+    toggleFullscreen,
+    toggleServerViewModule,
+    setSelectedCommunityId,
     setJoinServerPersonValue,
     setJoinServerCountValue,
     setJoinServerAutoRetryValue,

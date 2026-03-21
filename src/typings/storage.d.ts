@@ -61,5 +61,11 @@ declare namespace StorageType {
     lastLoginUserId: string;
     /** sideNavRoutes */
     sideNavRoutes: Api.Route.SideNavItem[]
+    /** is fullscreen */
+    isFullscreen: boolean
+    /** server view module */
+    serverViewModule: UnionKey.ServerLayoutModule
+    /** selected community id */
+    selectedCommunityId: number
   }
 }

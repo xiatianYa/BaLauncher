@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NGrid, NGridItem, NTag, NEllipsis} from 'naive-ui';
+import { NGrid, NGridItem, NTag, NEllipsis } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
 
 
@@ -104,8 +104,7 @@ const handleRefresh = (server: Api.Game.InfoResponse) => {
       <NGridItem v-for="(server, index) in servers" :key="index">
         <div class="sercer-card overflow-hidden flex flex-col"
           v-if="server.isOnline && getSourceServerInfo(server)?.serverName">
-          <img v-if="getMapByMapName(server.map)" class="server-card-bg"
-            v-lazy="getMapByMapName(server.map)?.mapUrl" />
+          <img v-if="getMapByMapName(server.map)" class="server-card-bg" v-lazy="getMapByMapName(server.map)?.mapUrl" />
           <div class="z-9 server-online" :style="`${getOnLineColor(server)}`"></div>
           <div class="server-card-mask"></div>
           <div
@@ -124,12 +123,13 @@ const handleRefresh = (server: Api.Game.InfoResponse) => {
             </div>
           </div>
           <div
-            class="mt-6px ml-5px font-size-13px flex items-center justify-between position-relative color-#fff font-bold">
-            <div class="flex items-center justify-center">
-              <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
-              {{ getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel : $t('server.noTranslation') }}
-            </div>
-            <div class="stat-chip chip-score mr-5px" v-show="server.mapPhase">
+            class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
+            <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
+            <NEllipsis class="flex items-center justify-center w-140px">
+              {{ getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel :
+                $t('server.noTranslation') }}
+            </NEllipsis>
+            <div class="stat-chip chip-score mr-5px flex-1" v-show="server.mapPhase">
               <span class="team team-ct">CT {{ server.CTScore || '0' }}</span>
               <span>{{ getMapPhaseText(server.mapPhase || '') }}</span>
               <span class="team team-t">T {{ server.TScore || '0' }}</span>
@@ -139,11 +139,11 @@ const handleRefresh = (server: Api.Game.InfoResponse) => {
             <NTag size="small" round class="mr-3px" ghost
               :type="dictOptions('game_type').find((item: any) => item.value === queryServerMapType(server.map))?.type"
               v-show="queryServerMapType(server.map)">
-              {{ dictOptions('game_type').find((item: any) => item.value === queryServerMapType(server.map))?.label }}
+              {{dictOptions('game_type').find((item: any) => item.value === queryServerMapType(server.map))?.label}}
             </NTag>
-            <NTag v-for="(tag, idx) in queryServerMapTag(server.map)" :key="idx" size="small" round
-              class="mr-3px" type="success" v-show="queryServerMapType(server.map)">
-              {{ dictOptions('game_tag').find((item: any) => item.value === tag)?.label }}
+            <NTag v-for="(tag, idx) in queryServerMapTag(server.map)" :key="idx" size="small" round class="mr-3px"
+              type="success" v-show="queryServerMapType(server.map)">
+              {{dictOptions('game_tag').find((item: any) => item.value === tag)?.label}}
             </NTag>
             <NTag size="small" round class="mr-3px" ghost :type="getPingType(server.ping)">
               {{ server.ping ? `${server.ping}ms` : '???' }}

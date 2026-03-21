@@ -5,7 +5,10 @@ export const GAME_STORAGE_KEYS = {
   STEAM_PATH: 'steamPath' as const,
   AUTOMATIC_JOIN_CONFIG: 'automaticJoinConfig' as const,
   APPLY_KEY_BIND_ITEMS: 'applyKeyBindItems' as const,
-  SELECTED_START_ITEMS: 'selectedStartItems' as const
+  SELECTED_START_ITEMS: 'selectedStartItems' as const,
+  IS_FULLSCREEN: 'isFullscreen' as const,
+  SERVER_VIEW_MODULE: 'serverViewModule' as const,
+  SELECTED_COMMUNITY_ID: 'selectedCommunityId' as const
 };
 
 // 应用设置存储键
