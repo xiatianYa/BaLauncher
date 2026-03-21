@@ -4,6 +4,7 @@ import { router as globalRouter } from "@/router";
 import { RouteLocationRaw } from "vue-router";
 import { reactive } from "vue";
 import { localStg } from "@/utils/storage";
+import { ROUTE_STORAGE_KEYS } from '@/constants/cache';
 import icon940326 from '@/assets/imgs/menu/940326.png';
 import icon939940 from '@/assets/imgs/menu/939940.png';
 import icon911476 from '@/assets/imgs/menu/911476.png';
@@ -66,7 +67,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     },
   ];
 
-  const storedRoutes = localStg.get('sideNavRoutes');
+  const storedRoutes = localStg.get(ROUTE_STORAGE_KEYS.SIDE_NAV_ROUTES);
   const initialRoutes = Array.isArray(storedRoutes) ? storedRoutes : DEFAULT_SIDE_NAV_ROUTES;
   const SideNavRoutes: Api.Route.SideNavItem[] = reactive(initialRoutes.map(normalizeNavItem));
 

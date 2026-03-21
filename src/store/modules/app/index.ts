@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { SetupStoreId } from '@/enum';
 import { ref } from 'vue';
 import { localStg } from '@/utils/storage';
+import { APP_STORAGE_KEYS } from '@/constants/cache';
 
 // 导入音频资源
 import audioYuuka from '@/assets/video/优香.mp3';
@@ -21,7 +22,7 @@ import themeArona from '@/assets/theme/阿罗娜.png';
 
 export const useAppStore = defineStore(SetupStoreId.App, () => {
   // 当前主题，默认为 '阿罗娜'
-  const currentTheme = ref<string>(localStg.get('theme') || '阿罗娜');
+  const currentTheme = ref<string>(localStg.get(APP_STORAGE_KEYS.THEME) || '阿罗娜');
 
     // 在线用户列表
   const onlineUserList = ref<Array<Api.System.OnLineUser>>([]);
@@ -37,7 +38,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   };
 
   // 音量，从 localStorage 读取，默认为 1
-  const volume = ref<number>(localStg.get('volume') ?? 0.5);
+  const volume = ref<number>(localStg.get(APP_STORAGE_KEYS.VOLUME) ?? 0.5);
 
   /**
    * 设置音量
@@ -45,7 +46,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
    */
   function setVolume(val: number) {
     volume.value = val;
-    localStg.set('volume', val);
+    localStg.set(APP_STORAGE_KEYS.VOLUME, val);
   }
 
   // 主题列表
@@ -58,7 +59,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     { name: '白子', img: themeShiroko, id: '白子' },
   ];
 
-    const locale = ref<App.I18n.LangType>(localStg.get('lang') || 'zh-CN');
+    const locale = ref<App.I18n.LangType>(localStg.get(APP_STORAGE_KEYS.LANG) || 'zh-CN');
 
   /**
    * 设置当前主题
@@ -66,7 +67,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
    */
   function setTheme(theme: string) {
     currentTheme.value = theme;
-    localStg.set('theme', theme);
+    localStg.set(APP_STORAGE_KEYS.THEME, theme);
   }
 
   return {

@@ -10,7 +10,8 @@ import { localStg } from '@/utils/storage'
 import { GamePlatform } from '@/constants/app'
 import GisWebsocket from '@/utils/ws/gis'
 import { useAppStore } from '../app'
-import { STORAGE_KEYS, LOG_PATTERNS, UserConnectionStatus, GisDataSendTimerState } from '@/constants/cs2'
+import { LOG_PATTERNS, UserConnectionStatus, GisDataSendTimerState } from '@/constants/cs2'
+import { GAME_STORAGE_KEYS } from '@/constants/cache'
 
 /** GIS数据发送间隔（毫秒） */
 const GIS_SEND_INTERVAL = 2000
@@ -166,12 +167,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /** 从本地存储加载设置 */
   function loadSettingsFromStorage(): void {
-    const savedPlatform = localStg.get(STORAGE_KEYS.GAME_PLATFORM)
-    const savedCsgo2Path = localStg.get(STORAGE_KEYS.CSGO2_PATH)
-    const savedSteamPath = localStg.get(STORAGE_KEYS.STEAM_PATH)
-    const savedAutomaticJoinConfig = localStg.get(STORAGE_KEYS.AUTOMATIC_JOIN_CONFIG)
-    const savedApplyKeyBindItems = localStg.get(STORAGE_KEYS.APPLY_KEY_BIND_ITEMS)
-    const savedSelectedStartItems = localStg.get(STORAGE_KEYS.SELECTED_START_ITEMS)
+    const savedPlatform = localStg.get(GAME_STORAGE_KEYS.GAME_PLATFORM)
+    const savedCsgo2Path = localStg.get(GAME_STORAGE_KEYS.CSGO2_PATH)
+    const savedSteamPath = localStg.get(GAME_STORAGE_KEYS.STEAM_PATH)
+    const savedAutomaticJoinConfig = localStg.get(GAME_STORAGE_KEYS.AUTOMATIC_JOIN_CONFIG)
+    const savedApplyKeyBindItems = localStg.get(GAME_STORAGE_KEYS.APPLY_KEY_BIND_ITEMS)
+    const savedSelectedStartItems = localStg.get(GAME_STORAGE_KEYS.SELECTED_START_ITEMS)
 
     if (savedPlatform) GamePlatform.value = savedPlatform as 'international' | 'perfect'
     if (savedCsgo2Path) csgo2Path.value = savedCsgo2Path
@@ -183,23 +184,23 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /** 保存设置到本地存储 */
   function saveSettingsToStorage(): void {
-    localStg.set(STORAGE_KEYS.GAME_PLATFORM, GamePlatform.value)
-    localStg.set(STORAGE_KEYS.CSGO2_PATH, csgo2Path.value)
-    localStg.set(STORAGE_KEYS.STEAM_PATH, steamPath.value)
-    localStg.set(STORAGE_KEYS.AUTOMATIC_JOIN_CONFIG, automaticJoinConfig.value)
-    localStg.set(STORAGE_KEYS.APPLY_KEY_BIND_ITEMS, applyKeyBindItems.value)
+    localStg.set(GAME_STORAGE_KEYS.GAME_PLATFORM, GamePlatform.value)
+    localStg.set(GAME_STORAGE_KEYS.CSGO2_PATH, csgo2Path.value)
+    localStg.set(GAME_STORAGE_KEYS.STEAM_PATH, steamPath.value)
+    localStg.set(GAME_STORAGE_KEYS.AUTOMATIC_JOIN_CONFIG, automaticJoinConfig.value)
+    localStg.set(GAME_STORAGE_KEYS.APPLY_KEY_BIND_ITEMS, applyKeyBindItems.value)
   }
 
   /** 设置已应用的按键绑定项 */
   function setApplyKeyBindItems(items: Api.Game.ApplyKeyBindItem[]): void {
     applyKeyBindItems.value = items
-    localStg.set(STORAGE_KEYS.APPLY_KEY_BIND_ITEMS, items)
+    localStg.set(GAME_STORAGE_KEYS.APPLY_KEY_BIND_ITEMS, items)
   }
 
   /** 设置已勾选的启动项 */
   function setSelectedStartItems(items: string[]): void {
     selectedStartItems.value = items
-    localStg.set(STORAGE_KEYS.SELECTED_START_ITEMS, items)
+    localStg.set(GAME_STORAGE_KEYS.SELECTED_START_ITEMS, items)
   }
 
   /** 切换启动项勾选状态 */
@@ -210,7 +211,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     } else {
       selectedStartItems.value.push(value)
     }
-    localStg.set(STORAGE_KEYS.SELECTED_START_ITEMS, selectedStartItems.value)
+    localStg.set(GAME_STORAGE_KEYS.SELECTED_START_ITEMS, selectedStartItems.value)
   }
 
   /** 设置游戏平台 */

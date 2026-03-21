@@ -144,6 +144,7 @@ npm run commit
 - <span style="color: green;">[✓]</span> 服务器热身状态
 - <span style="color: green;">[✓]</span> 首页数据展示
 - <span style="color: green;">[✓]</span> 地图订阅
+- <span style="color: green;">[✓]</span> 服务器列表显示模式切换
 
 ### 计划添加功能
 - [ ] 游戏状态托盘
@@ -154,7 +155,6 @@ npm run commit
 - [ ] 聊天室
 - [ ] 游戏直播
 - [ ] 直播OBS
-- [ ] 服务器列表显示模式切换
 
 ### 迁移计划
 - 移植到 Tauri 的可能性

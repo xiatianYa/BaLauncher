@@ -4,6 +4,7 @@ import { computed, reactive, ref } from "vue";
 import { clearAuthStorage, getToken } from "./shared";
 import { fetchGetUserInfo, fetchLogin, fetchLogout, fetchOAuthLogin } from "@/service/api/auth"
 import { localStg } from "@/utils/storage";
+import { AUTH_STORAGE_KEYS } from '@/constants/cache';
 import { useRouterPush } from "@/hooks/common/router";
 import { useGameStore } from "@/store/modules/game";
 import { useDictStore } from "@/store/modules/dict";
@@ -62,7 +63,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     if (!userInfo.userId) {
       return;
     }
-    localStg.set('lastLoginUserId', userInfo.userId);
+    localStg.set(AUTH_STORAGE_KEYS.LAST_LOGIN_USER_ID, userInfo.userId);
   }
 
   /**
@@ -177,8 +178,8 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
 
   async function loginByToken(loginToken: Api.Auth.LoginToken) {
     // 1. 存储token到localStorage
-    localStg.set("token", loginToken.token);
-    localStg.set("refreshToken", loginToken.refreshToken);
+    localStg.set(AUTH_STORAGE_KEYS.TOKEN, loginToken.token);
+    localStg.set(AUTH_STORAGE_KEYS.REFRESH_TOKEN, loginToken.refreshToken);
 
     // 2. 获取用户信息
     const pass = await getUserInfo();

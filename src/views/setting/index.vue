@@ -2,13 +2,15 @@
 import { ref, onMounted, nextTick, computed } from 'vue';
 import { useGameStore } from '@/store/modules/game';
 import { useAppStore } from '@/store/modules/app';
+import { useThemeStore } from '@/store/modules/theme';
 import { localStg } from '@/utils/storage';
 import { animate } from 'animejs';
 import type { GamePlatform } from '@/constants/app';
-import { NGrid, NGridItem, NSelect } from 'naive-ui';
+import { NGrid, NGridItem, NSelect, NModal, NButton } from 'naive-ui';
 import { setLocale } from '@/locales';
 import { useI18n } from 'vue-i18n';
 import { START_ITEMS } from '@/constants/startItems';
+import { ROUTE_STORAGE_KEYS, APP_STORAGE_KEYS, GAME_STORAGE_KEYS, AUTH_STORAGE_KEYS, ALL_STORAGE_KEYS } from '@/constants/cache';
 
 defineOptions({
   name: 'setting'
@@ -17,6 +19,8 @@ defineOptions({
 const { locale, t } = useI18n();
 const gameStore = useGameStore();
 const appStore = useAppStore();
+const themeStore = useThemeStore();
+const isDarkMode = computed(() => themeStore.darkMode);
 
 const themes = computed(() => appStore.themes);
 
@@ -150,9 +154,9 @@ const steamPath = computed({
 });
 
 const selectedStartItemsList = computed(() => {
-  const presetItems = START_ITEMS.filter(item => gameStore.selectedStartItems.includes(item.value));
+  const presetItems = START_ITEMS.filter((item: { value: string; }) => gameStore.selectedStartItems.includes(item.value));
   const customValues = gameStore.selectedStartItems.filter(
-    value => !START_ITEMS.some(item => item.value === value)
+    value => !START_ITEMS.some((item: { value: string; }) => item.value === value)
   );
   const customItems = customValues.map(value => ({ label: value, value }));
   return [...presetItems, ...customItems];
@@ -184,14 +188,41 @@ const selectCsgo2Path = async () => {
 };
 
 const clearCache = () => {
-  try {
-    // 只清理侧边栏路由缓存
-    localStg.remove('sideNavRoutes');
+  selectedCacheTypes.value = [];
+  cacheUpdateTrigger.value++;
+  cacheModalVisible.value = true;
+};
 
-    // 重新计算缓存大小
+const handleClearCache = () => {
+  if (selectedCacheTypes.value.length === 0) {
+    window.$message?.warning('请选择要清理的缓存类型');
+    return;
+  }
+
+  try {
+    selectedCacheTypes.value.forEach((type) => {
+      switch (type) {
+        case 'gameSettings':
+          Object.values(GAME_STORAGE_KEYS).forEach(key => localStg.remove(key));
+          break;
+        case 'appSettings':
+          Object.values(APP_STORAGE_KEYS).forEach(key => localStg.remove(key));
+          break;
+        case 'authData':
+          Object.values(AUTH_STORAGE_KEYS).forEach(key => localStg.remove(key));
+          break;
+        case 'routeData':
+          Object.values(ROUTE_STORAGE_KEYS).forEach(key => localStg.remove(key));
+          break;
+      }
+    });
+
+    cacheModalVisible.value = false;
+    window.$message?.success('缓存清理成功');
+
+    cacheUpdateTrigger.value++;
     calculateCacheSize();
 
-    // 刷新页面以应用更改
     setTimeout(() => {
       window.location.reload();
     }, 1000);
@@ -247,18 +278,78 @@ const selectPlatform = (platform: 'international' | 'perfect') => {
 };
 
 const cacheSize = ref('0 KB');
+const cacheModalVisible = ref(false);
+const cacheUpdateTrigger = ref(0);
+
+type CacheType = {
+  label: string;
+  value: string;
+  key: string;
+  icon: string;
+  type: 'info' | 'primary' | 'warning' | 'success' | 'error';
+}
+
+const cacheTypes: CacheType[] = [
+  { label: '游戏数据', value: 'gameSettings', key: 'gameSettings', icon: 'mdi:gamepad-variant', type: 'success' },
+  { label: '系统数据', value: 'appSettings', key: 'appSettings', icon: 'mdi:cog', type: 'primary' },
+  { label: '用户数据', value: 'authData', key: 'authData', icon: 'mdi:shield-account', type: 'warning' },
+  { label: '路由数据', value: 'routeData', key: 'routeData', icon: 'mdi:routes', type: 'info' },
+];
+
+const getCacheTypeSize = (type: string) => {
+  let size = 0;
+
+  const getKeySize = (key: string) => {
+    const value = localStg.get(key as keyof StorageType.Local);
+    console.log(key, value);
+    if (value) {
+      size += (key.length + JSON.stringify(value).length) * 2;
+    }
+  };
+
+  switch (type) {
+    case 'gameSettings':
+      Object.values(GAME_STORAGE_KEYS).forEach(getKeySize);
+      break;
+    case 'appSettings':
+      Object.values(APP_STORAGE_KEYS).forEach(getKeySize);
+      break;
+    case 'authData':
+      Object.values(AUTH_STORAGE_KEYS).forEach(getKeySize);
+      break;
+    case 'routeData':
+      Object.values(ROUTE_STORAGE_KEYS).forEach(getKeySize);
+      break;
+  }
+
+  if (size < 1024) {
+    return `${size}B`;
+  } else if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(2)}KB`;
+  } else {
+    return `${(size / (1024 * 1024)).toFixed(2)}MB`;
+  }
+};
+
+const selectedCacheTypes = ref<string[]>([]);
+
+const toggleCacheType = (type: string) => {
+  const index = selectedCacheTypes.value.indexOf(type);
+  if (index === -1) {
+    selectedCacheTypes.value.push(type);
+  } else {
+    selectedCacheTypes.value.splice(index, 1);
+  }
+};
 
 const calculateCacheSize = () => {
   let size = 0;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('BA_')) {
-      const value = localStorage.getItem(key);
-      if (value) {
-        size += (key.length + value.length) * 2; // JS strings are UTF-16
-      }
+  Object.values(ALL_STORAGE_KEYS).forEach((key) => {
+    const value = localStg.get(key as keyof StorageType.Local);
+    if (value) {
+      size += (key.length + JSON.stringify(value).length) * 2;
     }
-  }
+  });
 
   if (size < 1024) {
     cacheSize.value = `${size} B`;
@@ -553,6 +644,59 @@ onMounted(() => {
       </div>
     </NCard>
   </NCard>
+
+  <NModal v-model:show="cacheModalVisible" :bordered="true" preset="card"
+    class="w-450px rounded-20px cache-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
+    size="small">
+    <template #header>
+      <div class="flex items-center font-size-18px">
+        <div class="font-size-16px">清理缓存</div>
+      </div>
+    </template>
+    <div class="cache-modal-content">
+      <!-- 顶部装饰区域 -->
+      <div class="capture-header">
+        <div class="character-image">
+          <img src="@/assets/imgs/setting/538397.png" alt="character" />
+        </div>
+        <div class="header-glow"></div>
+      </div>
+      <!-- 缓存类型选择区域 -->
+      <div class="cache-select-area">
+        <p class="mb-10px text-center">请选择要清理的缓存类型</p>
+        <NGrid :cols="2" :x-gap="12" :y-gap="12">
+          <NGridItem v-for="type in cacheTypes" :key="type.value">
+            <NButton class="w-full flex flex-col rounded-5px relative" ghost
+              :dashed="!selectedCacheTypes.includes(type.value)"
+              :class="{ 'selected': selectedCacheTypes.includes(type.value) }" :type="type.type"
+              @click="toggleCacheType(type.value)">
+              <div class="flex items-center gap-2">
+                <SvgIcon :icon="type.icon" class="text-xl" />
+                <span class="text-sm font-medium">{{ type.label }}</span>
+              </div>
+              <span class="font-size-12px ml-10px w-40px">{{ getCacheTypeSize(type.value) }}</span>
+            </NButton>
+          </NGridItem>
+        </NGrid>
+      </div>
+    </div>
+    <template #footer>
+      <div class="w-full flex">
+        <NButton class="flex-1 mr-20px rounded-10px" ghost type="info" @click="cacheModalVisible = false">
+          <template #icon>
+            <SvgIcon icon="mdi:close" />
+          </template>
+          取消
+        </NButton>
+        <NButton class="flex-1 ml-20px rounded-10px" ghost type="error" @click="handleClearCache">
+          <template #icon>
+            <SvgIcon icon="material-symbols:delete-outline" />
+          </template>
+          确认清理
+        </NButton>
+      </div>
+    </template>
+  </NModal>
 </template>
 
 <style scoped lang="scss">
@@ -884,6 +1028,82 @@ onMounted(() => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.cache-modal-wrapper {
+  :deep(.n-card) {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border: none;
+    overflow: hidden;
+  }
+
+  &.light-mode {
+    :deep(.n-card) {
+      background: linear-gradient(135deg, #f8f9fc 0%, #eef0f5 100%);
+    }
+
+    .cache-modal-content {
+      color: #333;
+
+      .capture-header {
+        .character-image {
+          border-color: rgba(102, 126, 234, 0.6);
+          box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .header-glow {
+          background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+        }
+      }
+    }
+  }
+}
+
+.cache-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0 16px 0;
+  color: #fff;
+  position: relative;
+
+  .capture-header {
+    position: relative;
+    width: 100%;
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    margin-bottom: 12px;
+
+    .character-image {
+      position: relative;
+      z-index: 2;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid rgba(102, 126, 234, 0.5);
+      box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+
+    .header-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 150px;
+      height: 150px;
+      background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+      z-index: 1;
+    }
   }
 }
 </style>

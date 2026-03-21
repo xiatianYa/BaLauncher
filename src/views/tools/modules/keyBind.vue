@@ -753,7 +753,7 @@ onMounted(() => {
                                 </NCard>
                             </template>
                             <div class="config-code-block" :class="{ 'dark': isDarkMode, 'light': !isDarkMode }">
-                                <pre><code>{{ item.systemBindCfgVO?.keyConfigJson }}</code></pre>
+                                <pre><code>{{ item.renderKeyConfigJson }}</code></pre>
                             </div>
                         </NCollapseItem>
                     </NCollapse>
