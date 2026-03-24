@@ -490,6 +490,14 @@ const handleWheelFn = (e: WheelEvent) => {
 };
 
 /**
+ * 复制配置代码
+ */
+const copyConfigCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    window.$message?.success('已复制到剪贴板');
+};
+
+/**
  * 保存按键并关闭弹窗
  */
 const saveAndCloseCaptureFn = () => {
@@ -753,6 +761,11 @@ onMounted(() => {
                                 </NCard>
                             </template>
                             <div class="config-code-block" :class="{ 'dark': isDarkMode, 'light': !isDarkMode }">
+                                <NButton class="copy-btn" size="tiny" quaternary @click="copyConfigCode(item.renderKeyConfigJson)">
+                                    <template #icon>
+                                        <SvgIcon icon="mdi:content-copy" />
+                                    </template>
+                                </NButton>
                                 <pre><code>{{ item.renderKeyConfigJson }}</code></pre>
                             </div>
                         </NCollapseItem>
@@ -1220,6 +1233,7 @@ onMounted(() => {
 
 // 配置代码块样式
 .config-code-block {
+    position: relative;
     border-radius: 8px;
     padding: 12px 16px;
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
@@ -1228,6 +1242,18 @@ onMounted(() => {
     max-height: 300px;
     overflow: auto;
     border: 1px solid;
+
+    .copy-btn {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+    }
+
+    &:hover .copy-btn {
+        opacity: 1;
+    }
 
     pre {
         margin: 0;

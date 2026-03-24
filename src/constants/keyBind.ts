@@ -37,6 +37,7 @@ import XM1014 from '@/assets/imgs/weapon/XM1014.png';
 import Sawed from '@/assets/imgs/weapon/Sawed.png';
 import CommonWeapon from '@/assets/imgs/weapon/CommonWeapon.png';
 import MAG7 from '@/assets/imgs/weapon/MAG-7.png';
+import Dec from '@/assets/imgs/weapon/Dec.png';
 
 /** 系统配置库列表 */
 export const systemLibraryItems: Api.Game.SystemBindVO[] = [
@@ -65,181 +66,181 @@ export const GunLibaryCfgOption: Api.Game.SystemBindCfgVO[] = [
     {
         systemName: 'MP9',
         systemIcon: MP9,
-        keyConfigJson: 'bind "[按键:购买MP9]" "buy mp9"',
+        keyConfigJson: 'bind "[按键:购买MP9]" "mp9"',
         configDesc: '购买MP9冲锋枪',
     },
     {
         systemName: 'MP7',
         systemIcon: MP7,
-        keyConfigJson: 'bind "[按键:购买MP7]" "buy mp7"',
+        keyConfigJson: 'bind "[按键:购买MP7]" "mp7"',
         configDesc: '购买MP7冲锋枪',
     },
     {
         systemName: 'MP5SD',
         systemIcon: MP5SD,
-        keyConfigJson: 'bind "[按键:购买MP5]" "buy mp5sd"',
+        keyConfigJson: 'bind "[按键:购买MP5]" "mp5sd"',
         configDesc: '购买MP5SD冲锋枪',
     },
     {
         systemName: 'MAC10',
         systemIcon: MAC10,
-        keyConfigJson: 'bind "[按键:购买MAC10]" "buy mac10"',
+        keyConfigJson: 'bind "[按键:购买MAC10]" "mac10"',
         configDesc: '购买MAC-10冲锋枪',
     },
     {
         systemName: 'P90',
         systemIcon: CommonWeapon,
-        keyConfigJson: 'bind "[按键:购买P90]" "buy p90"',
+        keyConfigJson: 'bind "[按键:购买P90]" "p90"',
         configDesc: '购买P90冲锋枪',
     },
     {
         systemName: '野牛(牛肉粉最爱)',
         systemIcon: CommonWeapon,
-        keyConfigJson: 'bind "[按键:购买野牛]" "buy bizon"',
+        keyConfigJson: 'bind "[按键:购买野牛]" "bizon"',
         configDesc: '购买野牛冲锋枪',
     },
     {
         systemName: 'M249',
         systemIcon: M249,
-        keyConfigJson: 'bind "[按键:购买M249]" "buy m249"',
+        keyConfigJson: 'bind "[按键:购买M249]" "m249"',
         configDesc: '购买M249机枪',
     },
     {
         systemName: '内格夫',
         systemIcon: Negev,
-        keyConfigJson: 'bind "[按键:购买内格夫]" "buy negev"',
+        keyConfigJson: 'bind "[按键:购买内格夫]" "negev"',
         configDesc: '购买内格夫机枪',
     },
     {
         systemName: 'AK47',
         systemIcon: AK47,
-        keyConfigJson: 'bind "[按键:购买AK47]" "buy ak47"',
+        keyConfigJson: 'bind "[按键:购买AK47]" "ak47"',
         configDesc: '购买AK-47步枪',
     },
     {
         systemName: 'M4A4',
         systemIcon: M4A4,
-        keyConfigJson: 'bind "[按键:购买M4A4]" "buy m4a4"',
+        keyConfigJson: 'bind "[按键:购买M4A4]" "m4a4"',
         configDesc: '购买M4A4步枪',
     },
     {
         systemName: 'M4A1-S',
         systemIcon: M4A1,
-        keyConfigJson: 'bind "[按键:购买M4A1-S]" "buy m4a1_silencer"',
+        keyConfigJson: 'bind "[按键:购买M4A1-S]" "m4a1_silencer"',
         configDesc: '购买M4A1-S步枪',
     },
     {
         systemName: 'Famas',
         systemIcon: FAMAS,
-        keyConfigJson: 'bind "[按键:购买Famas]" "buy famas"',
+        keyConfigJson: 'bind "[按键:购买Famas]" "famas"',
         configDesc: '购买Famas步枪',
     },
     {
         systemName: 'SG556',
         systemIcon: SG556,
-        keyConfigJson: 'bind "[按键:购买SG553]" "buy sg556"',
+        keyConfigJson: 'bind "[按键:购买SG553]" "sg556"',
         configDesc: '购买SG556步枪',
     },
     {
         systemName: 'AUG',
         systemIcon: AUG,
-        keyConfigJson: 'bind "[按键:购买AUG]" "buy aug"',
+        keyConfigJson: 'bind "[按键:购买AUG]" "aug"',
         configDesc: '购买AUG步枪',
     },
     {
         systemName: 'Galilar',
         systemIcon: CommonWeapon,
-        keyConfigJson: 'bind "[按键:购买Galilar]" "buy galilar"',
+        keyConfigJson: 'bind "[按键:购买Galilar]" "galilar"',
         configDesc: '购买Galilar步枪',
     },
     {
         systemName: 'Nova',
         systemIcon: Nova,
-        keyConfigJson: 'bind "[按键:购买新星]" "buy nova"',
+        keyConfigJson: 'bind "[按键:购买新星]" "nova"',
         configDesc: '购买Nova喷子',
     },
     {
         systemName: 'XM1014',
         systemIcon: XM1014,
-        keyConfigJson: 'bind "[按键:购买XM1014]" "buy xm1014"',
+        keyConfigJson: 'bind "[按键:购买XM1014]" "xm1014"',
         configDesc: '购买XM1014连喷',
     },
     {
         systemName: '匪喷',
         systemIcon: Sawed,
-        keyConfigJson: 'bind "[按键:购买匪喷]" "buy sawedoff"',
+        keyConfigJson: 'bind "[按键:购买匪喷]" "sawedoff"',
         configDesc: '购买匪喷',
     },
     {
         systemName: '警喷',
         systemIcon: MAG7,
-        keyConfigJson: 'bind "[按键:购买警喷]" "buy mag7"',
+        keyConfigJson: 'bind "[按键:购买警喷]" "mag7"',
         configDesc: '购买警喷',
     },
     {
         systemName: 'SSG08(86137用)',
         systemIcon: Scout,
-        keyConfigJson: 'bind "[按键:购买SSG08]" "buy ssg08"',
+        keyConfigJson: 'bind "[按键:购买SSG08]" "ssg08"',
         configDesc: '购买SSG08狙击枪',
     },
     {
         systemName: 'AWP',
         systemIcon: AWP,
-        keyConfigJson: 'bind "[按键:购买AWP]" "buy awp"',
+        keyConfigJson: 'bind "[按键:购买AWP]" "awp"',
         configDesc: '购买AWP狙击枪',
     },
     {
         systemName: 'G3SG1',
         systemIcon: G3SG1,
-        keyConfigJson: 'bind "[按键:购买G3SG1]" "buy g3sg1"',
+        keyConfigJson: 'bind "[按键:购买G3SG1]" "g3sg1"',
         configDesc: '购买G3SG1自动狙击枪',
     },
     {
         systemName: 'SCAR20',
         systemIcon: SCAR20,
-        keyConfigJson: 'bind "[按键:购买SCAR20]" "buy scar20"',
+        keyConfigJson: 'bind "[按键:购买SCAR20]" "scar20"',
         configDesc: '购买SCAR-20自动狙击枪',
     },
     {
         systemName: '沙鹰',
         systemIcon: Deagle,
-        keyConfigJson: 'bind "[按键:购买沙鹰]" "buy deagle"',
+        keyConfigJson: 'bind "[按键:购买沙鹰]" "deagle"',
         configDesc: '购买沙漠之鹰手枪',
     },
     {
         systemName: 'R8(阿伟的最爱)',
         systemIcon: R8,
-        keyConfigJson: 'bind "[按键:购买R8]" "buy revolver"',
+        keyConfigJson: 'bind "[按键:购买R8]" "revolver"',
         configDesc: '购买R8左轮手枪',
     },
     {
         systemName: '格洛克',
         systemIcon: Glock,
-        keyConfigJson: 'bind "[按键:购买格洛克]" "buy glock"',
+        keyConfigJson: 'bind "[按键:购买格洛克]" "glock"',
         configDesc: '购买格洛克手枪',
     },
     {
         systemName: '双枪',
         systemIcon: DualBerettas,
-        keyConfigJson: 'bind "[按键:购买双枪]" "buy elite"',
+        keyConfigJson: 'bind "[按键:购买双枪]" "elite"',
         configDesc: '购买双持贝瑞塔手枪',
     },
     {
         systemName: 'USP',
         systemIcon: USP,
-        keyConfigJson: 'bind "[按键:购买USP]" "buy usp_sliencer"',
+        keyConfigJson: 'bind "[按键:购买USP]" "usp_sliencer"',
         configDesc: '购买USP-S手枪',
     },
     {
         systemName: 'P250',
         systemIcon: P250,
-        keyConfigJson: 'bind "[按键:购买P250]" "buy p250"',
+        keyConfigJson: 'bind "[按键:购买P250]" "p250"',
         configDesc: '购买P250手枪',
     },
     {
         systemName: 'CZ-75',
         systemIcon: CZ75,
-        keyConfigJson: 'bind "[按键:购买CZ-75]" "buy cz75a"',
+        keyConfigJson: 'bind "[按键:购买CZ-75]" "cz75a"',
         configDesc: '购买CZ75自动手枪',
     },
 ];
@@ -250,7 +251,6 @@ export const PropLibaryCfgOption: Api.Game.SystemBindCfgVO[] = [
         systemName: '烟雾弹',
         systemIcon: Smoke,
         keyConfigJson: 'bind "[按键:购买烟雾弹]" "buy !smokegrenade"',
-
     },
     {
         systemName: '手雷',
@@ -261,13 +261,16 @@ export const PropLibaryCfgOption: Api.Game.SystemBindCfgVO[] = [
         systemName: '燃烧瓶',
         systemIcon: Fire,
         keyConfigJson: 'bind [按键:购买烟雾弹] "say !molotov"',
-
+    },
+    {
+        systemName: '电圈雷',
+        systemIcon: Dec,
+        keyConfigJson: 'bind [按键:购买电圈雷] "say !dec"',
     },
     {
         systemName: '闪光弹',
         systemIcon: Flash,
-        keyConfigJson: 'bind "[按键:购买闪光弹]" "buy !flashbang',
-
+        keyConfigJson: 'bind "[按键:购买闪光弹]" "buy !flashbang"',
     },
     {
         systemName: '夜视仪',
@@ -313,33 +316,26 @@ alias cs_aliasfirst_tp "firstperson;alias cs_chasecam_tp cs_aliasthird_tp"
 
 alias "+tp" "+tp_magnifier"
 alias "-tp" "cs_chasecam_tp;-keys_mouse"
-alias _freecamup "bind MWHEELUP incrementvar cam_idealdist -999999 999999 -100"
-alias _freecamdn "bind MWHEELDOWN incrementvar cam_idealdist -999999 999999 100"
-alias -keys_mouse  "bind "mwheelup" "+jump";bind mwheeldown "+jump""
 
 bind [按键:开启第三人称] "+tp"
 c_thirdpersonshoulder 1; cam_idealyaw 0; cam_idealpitch 0; cam_collision 0
 c_mindistance -999999; c_maxdistance 999999`,
-
     },
     {
         systemName: '灵魂出窍',
         systemIcon: Command,
-        keyConfigJson: `c_thirdpersonshoulder 0; cam_idealyaw 0; cam_idealpitch 0; cam_collision 1
-c_mindistance -999999; c_maxdistance 999999
-alias cam_settings “cam_idealyaw 0;cam_idealpitch 0;c_thirdpersonshoulder 0;c_thirdpersonshoulderheight 6;c_thirdpersonshoulderoffset 0;c_thirdpersonshoulderaimdist 0;cam_idealdist 0;”
-
-alias “cs_aliasthird” “thirdperson; cam_settings; alias cs_chasecam cs_aliasfirst”
-alias “cs_aliasfirst” “firstperson; alias cs_chasecam cs_aliasthird”
-alias “cs_chasecam” “cs_aliasthird”
-
-bind [按键:开启灵魂出窍] “+tp_magnifier” 
-alias +tp_magnifier “cs_chasecam; bind_zoomin; bind_zoomout; cam_collision 0”
-alias -tp_magnifier “cs_chasecam; bind_normal1; bind_normal2”
-alias bind_zoomin “bind MWHEELUP incrementvar cam_idealdist -999999 999999 -100”
-alias bind_zoomout “bind MWHEELDOWN incrementvar cam_idealdist -999999 999999 100”
-alias bind_normal1 “bind MWHEELUP +jump” // 此处替换你自己原来的指令
-alias bind_normal2 “bind MWHEELDOWN +jump” // 此处替换你自己原来的指令`,
+        keyConfigJson: `// 灵魂出窍
+alias cam_settings_soul "cam_idealyaw 0; cam_idealpitch 0; cam_ideallag 0; c_thirdpersonshoulder 0;cam_idealdist 0;c_mindistance -50000; c_maxdistance 50000;"
+alias cs_aliasthird_soul "thirdperson; cam_settings_soul; alias cs_chasecam_soul cs_aliasfirst_soul"
+alias cs_aliasfirst_soul "firstperson; alias cs_chasecam_soul cs_aliasthird_soul"
+alias cs_chasecam_soul cs_aliasthird_soul
+// 按下按键后可以使用滚轮进行镜头的缩进和拉远
+bind CAPSLOCK +cam_soul
+alias +cam_soul "cs_chasecam_soul; bindZoom; cam_collision 0"
+alias -cam_soul "cs_chasecam_soul; bindNormal"
+alias bindZoom "bind MWHEELUP incrementvar cam_idealdist -50000 50000 -100; bind MWHEELDOWN incrementvar cam_idealdist -50000 50000 100"
+// 在这里你需要把“+jump”替换你自己原本使用的指令
+alias bindNormal "unbind MWHEELUP; bind MWHEELDOWN [按键:关闭灵魂出窍]" `,
     },
     {
         systemName: '传送',
@@ -360,7 +356,7 @@ alias bind_normal2 “bind MWHEELDOWN +jump” // 此处替换你自己原来的
     {
         systemName: '画面亮度调整',
         systemIcon: Command,
-        keyConfigJson: 'bind [按键:画面亮度调整] “toggle r_fullscreen_gamma 1 1.5 2 2.5 3”',
+        keyConfigJson: 'bind [按键:画面亮度调整] "toggle r_fullscreen_gamma 1 1.5 2 2.5 3"',
     },
     {
         systemName: '隐藏腿部模型',

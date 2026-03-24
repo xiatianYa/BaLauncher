@@ -125,11 +125,11 @@ const handleRefresh = (server: Api.Game.InfoResponse) => {
           <div
             class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
             <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
-            <NEllipsis class="flex items-center justify-center w-140px">
+            <NEllipsis class="flex items-center justify-center flex-1">
               {{ getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel :
                 $t('server.noTranslation') }}
             </NEllipsis>
-            <div class="stat-chip chip-score mr-5px flex-1" v-show="server.mapPhase">
+            <div class="stat-chip chip-score mr-5px w-145px flex items-center justify-center" v-show="server.mapPhase">
               <span class="team team-ct">CT {{ server.CTScore || '0' }}</span>
               <span>{{ getMapPhaseText(server.mapPhase || '') }}</span>
               <span class="team team-t">T {{ server.TScore || '0' }}</span>
