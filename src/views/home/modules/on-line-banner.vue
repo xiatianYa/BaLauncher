@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { $t } from '@/locales';
 import { useAppStore } from '@/store/modules/app';
 
 // 应用仓库

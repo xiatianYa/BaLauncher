@@ -145,11 +145,10 @@ npm run commit
 - <span style="color: green;">[✓]</span> 首页数据展示
 - <span style="color: green;">[✓]</span> 地图订阅
 - <span style="color: green;">[✓]</span> 服务器列表显示模式切换
+- <span style="color: green;">[✓]</span> QQ机器人通知
 
 ### 计划添加功能
 - [ ] 游戏状态托盘
-- [ ] QQ机器人通知
-- [ ] 换图提醒
 - [ ] 一键换肤
 - [ ] 地图库
 - [ ] 聊天室

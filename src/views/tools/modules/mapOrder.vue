@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue';
-import { NInput, NCollapse, NCollapseItem } from 'naive-ui';
+import { NInput, NCollapse, NCollapseItem, NModal, NButton, NSelect } from 'naive-ui';
 import { useDebounceFn } from '@vueuse/core';
 import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
+import { useAuthStore } from '@/store/modules/auth';
 import { useDict } from '@/hooks/business/dict';
 import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList } from '@/service/api/game/map';
 import { $t } from '@/locales';
 import dayjs from 'dayjs';
+import { fetchGetGroupList } from '@/service/api/game/group';
+import { fetchBindQQ, fetchBindQQGroup } from '@/service/api/system/user';
 
 defineOptions({
     name: 'MapOrder'
@@ -23,6 +26,7 @@ const DEFAULT_PAGE_SIZE = 12;
 
 const themeStore = useThemeStore();
 const gameStore = useGameStore();
+const authStore = useAuthStore();
 const { dictOptions } = useDict();
 
 /* ================================ Emits ================================ */
@@ -35,9 +39,11 @@ const isDarkMode = computed(() => themeStore.darkMode);
 
 const searchKeyword = ref<string>('');
 const mapList = ref<Api.Game.MapVo[]>([]);
-const subscribeList = ref<Api.Game.Map[]>([]);
+const subscribeList = ref<Api.Game.MapVo[]>([]);
 const mapLoading = ref<boolean>(false);
 const subscribeLoading = ref<boolean>(false);
+// QQ群配置项
+const qqGroupOptions = ref<CommonType.Option<string>[]>([]);
 
 const pagination = reactive<Api.Common.PaginatingCommonParams>({
     current: 1,
@@ -49,6 +55,34 @@ const subscribedMapIds = computed<Set<number>>(() =>
     new Set(subscribeList.value.map(map => map.id))
 );
 
+const getSubscribedMap = (mapId: number) =>
+    subscribeList.value.find(map => map.id === mapId);
+
+const isSystemSubscribed = (mapId: number) => {
+    const subscribedMap = getSubscribedMap(mapId);
+    return subscribedMap?.systemOrder === '1';
+};
+
+const isQQSubscribed = (mapId: number) => {
+    const subscribedMap = getSubscribedMap(mapId);
+    return subscribedMap?.qqOrder === '1';
+};
+
+const isCurrentSystemSubscribed = computed(() =>
+    currentSubscribeMap.value ? isSystemSubscribed(currentSubscribeMap.value.id) : false
+);
+
+const isCurrentQQSubscribed = computed(() =>
+    currentSubscribeMap.value ? isQQSubscribed(currentSubscribeMap.value.id) : false
+);
+
+const showSubscribeModal = ref<boolean>(false);
+const currentSubscribeMap = ref<Api.Game.MapVo | null>(null);
+
+const showBindQQModal = ref<boolean>(false);
+const bindQQId = ref<string | null>(null);
+const bindQQGroup = ref<string | null>(null);
+
 /* ================================ Event Handlers ================================ */
 
 const handleBack = (): void => emit('back');
@@ -58,14 +92,69 @@ const handlePageChange = (page: number): void => {
     fetchMapList(searchKeyword.value);
 };
 
-const handleSubscribe = async (map: Api.Game.MapVo): Promise<void> => {
-    const { error } = await fetchAddMapSubscribe(map.id);
+const handleSubscribe = (map: Api.Game.MapVo): void => {
+    currentSubscribeMap.value = map;
+    showSubscribeModal.value = true;
+};
+
+const handleSystemSubscribe = async (): Promise<void> => {
+    if (!currentSubscribeMap.value) return;
+    const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, "1", null);
     if (!error) {
         window.$message?.success($t('mapOrder.subscribeSuccess'));
     } else {
         window.$message?.error($t('mapOrder.subscribeFailed'));
     }
+    showSubscribeModal.value = false;
+    currentSubscribeMap.value = null;
     await fetchSubscribeList();
+};
+
+const onGetOption = async () => {
+    const { data, error } = await fetchGetGroupList();
+    if (!error) {
+        qqGroupOptions.value = data;
+    }
+}
+
+const handleQQSubscribe = async (): Promise<void> => {
+    if (!currentSubscribeMap.value) return;
+
+    if (!authStore.userInfo.qqId || !authStore.userInfo.qqgroup) {
+        showSubscribeModal.value = false;
+        bindQQId.value = authStore.userInfo.qqId;
+        bindQQGroup.value = authStore.userInfo.qqgroup;
+        showBindQQModal.value = true;
+        return;
+    }
+    const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, null, "1");
+    if (!error) {
+        window.$message?.success($t('mapOrder.subscribeSuccess'));
+    } else {
+        window.$message?.error($t('mapOrder.subscribeFailed'));
+    }
+
+    showSubscribeModal.value = false;
+    currentSubscribeMap.value = null;
+    await fetchSubscribeList();
+};
+
+const handleBindQQ = async (): Promise<void> => {
+    if (!bindQQId.value || !bindQQGroup.value) {
+        window.$message?.error('QQ号和QQ群号不能为空');
+        return;
+    }
+    const { error } = await fetchBindQQ(bindQQId.value);
+    const { error: error2 } = await fetchBindQQGroup(bindQQGroup.value);
+    if (!error && !error2) {
+        window.$message?.success("绑定成功");
+        await authStore.getUserInfo();
+    } else if (error) {
+        window.$message?.error(error.message);
+    } else if (error2) {
+        window.$message?.error(error2.message);
+    }
+    showBindQQModal.value = false;
 };
 
 const handleRemoveSubscribe = async (mapId: number) => {
@@ -154,6 +243,7 @@ watch(searchKeyword, (newValue) => {
 
 onMounted(() => {
     fetchSubscribeList();
+    onGetOption();
 });
 </script>
 
@@ -241,13 +331,10 @@ onMounted(() => {
                             <template #footer>
                                 <div class="flex mt-5px">
                                     <NButton v-if="map.isOrder === '1'"
-                                        :type="isSubscribed(map.id) ? 'warning' : 'info'" ghost size="small"
+                                        type="info" ghost size="small"
                                         class="w-full rounded-5px" @click="handleSubscribe(map)">
-                                        <SvgIcon
-                                            :icon="isSubscribed(map.id) ? 'material-symbols:close' : 'material-symbols:add'"
-                                            class="mr-3px" />
-                                        {{ isSubscribed(map.id) ? $t('mapOrder.unsubscribe') : $t('mapOrder.subscribe')
-                                        }}
+                                        <SvgIcon icon="material-symbols:add" class="mr-3px" />
+                                        {{ $t('mapOrder.subscribe') }}
                                     </NButton>
                                     <NButton v-else type="error" ghost size="small" class="w-full rounded-5px"
                                         :disabled="true">
@@ -300,6 +387,71 @@ onMounted(() => {
             </NCard>
         </div>
     </div>
+
+    <NModal v-model:show="showSubscribeModal" :bordered="true" preset="card"
+        class="w-400px rounded-20px subscribe-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
+        size="small">
+        <template #header>
+            <div class="flex items-center font-size-18px">
+                <div class="font-size-16px">选择订阅方式</div>
+            </div>
+        </template>
+        <div class="subscribe-modal-new">
+            <div class="subscribe-header">
+                <div class="character-image">
+                    <img src="@/assets/imgs/tool/3594431.png" alt="character" />
+                </div>
+                <div class="header-glow"></div>
+            </div>
+            <div class="subscribe-tips mt-20px">
+                <div class="tip-item cursor-pointer" :class="{ 'disabled': isCurrentSystemSubscribed }" @click="!isCurrentSystemSubscribed && handleSystemSubscribe()">
+                    <SvgIcon icon="material-symbols:computer" class="tip-icon" />
+                    <span class="tip-text">{{ isCurrentSystemSubscribed ? '已系统订阅' : '系统订阅' }}</span>
+                </div>
+                <div class="tip-item cursor-pointer" :class="{ 'disabled': isCurrentQQSubscribed }" @click="!isCurrentQQSubscribed && handleQQSubscribe()">
+                    <SvgIcon icon="material-symbols:chat-bubble" class="tip-icon" />
+                    <span class="tip-text">{{ isCurrentQQSubscribed ? '已QQ订阅' : 'QQ订阅' }}</span>
+                </div>
+            </div>
+        </div>
+    </NModal>
+
+    <NModal v-model:show="showBindQQModal" :bordered="true" preset="card"
+        class="w-400px rounded-20px bind-qq-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
+        size="small">
+        <template #header>
+            <div class="flex items-center font-size-18px">
+                <div class="font-size-16px">绑定QQ信息</div>
+            </div>
+        </template>
+        <div class="bind-qq-modal-new">
+            <div class="subscribe-header">
+                <div class="character-image">
+                    <img src="@/assets/imgs/tool/418392.png" alt="character" />
+                </div>
+                <div class="header-glow"></div>
+            </div>
+            <div class="bind-qq-form">
+                <div class="form-item">
+                    <div class="form-label">QQ号</div>
+                    <NInput v-model:value="bindQQId" placeholder="请输入您的QQ号" class="form-input" />
+                </div>
+                <div class="form-item">
+                    <div class="form-label">QQ群号</div>
+                    <NSelect v-model:value="bindQQGroup" :options="qqGroupOptions" placeholder="请选择QQ群号"
+                        class="form-input" clearable />
+                </div>
+            </div>
+            <div class="bind-buttons">
+                <NButton type="primary" class="w-full rounded-10px" @click="handleBindQQ">
+                    <template #icon>
+                        <SvgIcon icon="material-symbols:check" />
+                    </template>
+                    确认绑定
+                </NButton>
+            </div>
+        </div>
+    </NModal>
 </template>
 
 <style scoped lang="scss">
@@ -541,6 +693,296 @@ onMounted(() => {
     to {
         opacity: 1;
         transform: translateY(0);
+    }
+}
+
+.subscribe-modal-wrapper {
+    :deep(.n-card) {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: none;
+        overflow: hidden;
+    }
+
+    &.light-mode {
+        :deep(.n-card) {
+            background: linear-gradient(135deg, #f8f9fc 0%, #eef0f5 100%);
+        }
+
+        .subscribe-modal-new {
+            display: flex;
+            align-items: center;
+            color: #333;
+
+            .subscribe-header {
+                .character-image {
+                    border-color: rgba(102, 126, 234, 0.6);
+                    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+                }
+
+                .header-glow {
+                    background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+                }
+            }
+
+            .subscribe-tips {
+                .tip-item {
+                    background: rgba(102, 126, 234, 0.05);
+                    border-color: rgba(102, 126, 234, 0.15);
+                    cursor: pointer;
+
+                    &:hover {
+                        background: rgba(102, 126, 234, 0.15);
+                        border-color: rgba(102, 126, 234, 0.5);
+                        box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
+                        transform: translateY(-2px);
+
+                        .tip-icon {
+                            color: #764ba2;
+                        }
+
+                        .tip-text {
+                            color: rgba(0, 0, 0, 0.9);
+                        }
+                    }
+
+                    .tip-icon {
+                        color: #667eea;
+                        transition: all 0.3s ease;
+                    }
+
+                    .tip-text {
+                        color: rgba(0, 0, 0, 0.6);
+                        transition: all 0.3s ease;
+                    }
+                }
+            }
+        }
+    }
+}
+
+.subscribe-modal-new {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 16px 0;
+    color: #fff;
+    position: relative;
+
+    .subscribe-header {
+        position: relative;
+        width: 100%;
+        height: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        margin-bottom: 12px;
+
+        .character-image {
+            position: relative;
+            z-index: 2;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+
+        .header-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+            z-index: 1;
+        }
+    }
+
+    .subscribe-tips {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        gap: 12px;
+        width: 100%;
+
+        .tip-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+
+            &.disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                background: rgba(100, 100, 100, 0.2);
+
+                &:hover {
+                    background: rgba(100, 100, 100, 0.2);
+                    border-color: rgba(255, 255, 255, 0.1);
+                    box-shadow: none;
+                    transform: none;
+
+                    .tip-icon {
+                        color: #667eea;
+                    }
+
+                    .tip-text {
+                        color: rgba(255, 255, 255, 0.8);
+                    }
+                }
+            }
+
+            &:hover {
+                background: rgba(102, 126, 234, 0.2);
+                border-color: rgba(102, 126, 234, 0.5);
+                box-shadow: 0 0 15px rgba(102, 126, 234, 0.3);
+                transform: translateY(-2px);
+
+                .tip-icon {
+                    color: #764ba2;
+                }
+
+                .tip-text {
+                    color: #fff;
+                }
+            }
+
+            .tip-icon {
+                font-size: 20px;
+                color: #667eea;
+                transition: all 0.3s ease;
+            }
+
+            .tip-text {
+                font-size: 14px;
+                font-weight: 500;
+                color: rgba(255, 255, 255, 0.8);
+                transition: all 0.3s ease;
+            }
+        }
+    }
+}
+
+.bind-qq-modal-wrapper {
+    :deep(.n-card) {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        border: none;
+        overflow: hidden;
+    }
+
+    &.light-mode {
+        :deep(.n-card) {
+            background: linear-gradient(135deg, #f8f9fc 0%, #eef0f5 100%);
+        }
+
+        .bind-qq-modal-new {
+            color: #333;
+
+            .subscribe-header {
+                .character-image {
+                    border-color: rgba(102, 126, 234, 0.6);
+                    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+                }
+
+                .header-glow {
+                    background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+                }
+            }
+
+            .bind-qq-form {
+                .form-item {
+                    .form-label {
+                        color: rgba(0, 0, 0, 0.8);
+                    }
+                }
+            }
+        }
+    }
+}
+
+.bind-qq-modal-new {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 0 16px 0;
+    color: #fff;
+    position: relative;
+
+    .subscribe-header {
+        position: relative;
+        width: 100%;
+        height: 100px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-end;
+        margin-bottom: 12px;
+
+        .character-image {
+            position: relative;
+            z-index: 2;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid rgba(102, 126, 234, 0.5);
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+
+        .header-glow {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
+            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+            z-index: 1;
+        }
+    }
+
+    .bind-qq-form {
+        width: 100%;
+        padding: 0 20px;
+        margin-bottom: 16px;
+
+        .form-item {
+            margin-bottom: 16px;
+
+            .form-label {
+                font-size: 14px;
+                font-weight: 500;
+                margin-bottom: 8px;
+                color: rgba(255, 255, 255, 0.8);
+            }
+
+            .form-input {
+                width: 100%;
+            }
+        }
+    }
+
+    .bind-buttons {
+        width: 100%;
+        padding: 0 20px;
     }
 }
 </style>

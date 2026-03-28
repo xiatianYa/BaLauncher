@@ -66,6 +66,10 @@ declare namespace Api {
       mapAchievement: string;
       /** 是否可订阅 */
       isOrder: string;
+      /** 系统订阅 */
+      systemOrder: string | null;
+      /** QQ订阅 */
+      qqOrder: string | null;
       /** 扩展地图 */
       exgMap: {
         /** 地图名称 */

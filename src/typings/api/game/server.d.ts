@@ -122,6 +122,7 @@ declare namespace Api {
             mapPhase: string;
             ping?: number;
             csgoPlayer?: CsgoPlayer[];
+            sort?: number;
         }
 
         type ServerInfoData = {

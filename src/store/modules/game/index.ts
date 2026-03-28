@@ -405,7 +405,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       TScore: '',
       mapStage: '',
       mapPhase: '',
-      csgoPlayer: []
+      csgoPlayer: [],
+      sort: server.sort
     }
   }
 
@@ -430,7 +431,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       const processedServers = infoResponseList.map((item: any) => {
         if (item.success === false) {
           item.isOnline = false
-          // 如果源服务器查询失败，尝试从WebSocket数据获取
           const wsServer = currentServerWsList.find(ws => ws.addr === item.addr)
           if (wsServer) {
             Object.assign(item, wsServer)
@@ -440,7 +440,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
           item.isOnline = true
         }
 
-        // 合并GIS服务器状态
         const matchingServer = currentGisServerList.find(gisServer => gisServer.addr === item.addr)
         if (matchingServer) {
           item.round = matchingServer.round || ''
@@ -453,15 +452,15 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
         return item
       })
 
-      // 按原始顺序排序
       const sortedServers = targetServers.map(server => {
         const foundServer = processedServers.find((s: Api.Game.InfoResponse) => s.addr === server.connectStr)
-        return foundServer || createOfflineServer(server)
-      })
+        const result = foundServer || createOfflineServer(server)
+        result.sort = server.sort
+        return result
+      }).sort((a, b) => (a.sort || 0) - (b.sort || 0))
 
       currentServerList.splice(0, currentServerList.length, ...sortedServers)
 
-      // 更新当前要加入的服务器信息
       if (joinServerInfo.value) {
         const matchingServer = sortedServers.find(
           (server: Api.Game.InfoResponse) => server.addr === joinServerInfo.value?.addr
@@ -500,16 +499,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /**
    * 查询服务器列表信息（WebSocket）
-   * 优先使用WebSocket推送的数据
+   * 优先使用WebSocket推送的数据更新服务器列表
    */
-  async function queryWsServerInfosResponse(): Promise<void> {
-    if (serverDataList.length === 0) {
-      await countServerServerNumber()
-      await countServerPlayerNumber()
-      return
-    }
-
-    // 先更新Ping值（不等待）
+  async function queryWsServerInfosResponse() {
     queryServerInfosPingResponse()
 
     const targetServers = serverDataList.filter(server => server.connectStr && server.communityId === selectedCommunityId.value)
@@ -519,7 +511,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
       if (wsServer) {
         wsServer.isOnline = true
-        // 合并GIS服务器状态
         const matchingServer = currentGisServerList.find(gisServer => gisServer.addr === wsServer.addr)
         if (matchingServer) {
           wsServer.round = matchingServer.round || ''
@@ -528,11 +519,14 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
           wsServer.mapStage = matchingServer.mapStage || ''
           wsServer.mapPhase = matchingServer.mapPhase || ''
         }
+        wsServer.sort = server.sort
         return wsServer
       }
 
-      return createOfflineServer(server)
-    })
+      const offlineServer = createOfflineServer(server)
+      offlineServer.sort = server.sort
+      return offlineServer
+    }).sort((a, b) => (a.sort || 0) - (b.sort || 0))
 
     currentServerList.splice(0, currentServerList.length, ...allServers)
     await countServerServerNumber()
@@ -774,9 +768,13 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
               connectionCheckTimer = null;
             }
 
+            // 发送用户连接信息到GIS服务器
             sendUserGisJoinAddr()
+            // 清除玩家挤服状态
             pauseAutomaticJoinServer()
+            // 清除玩家挤服状态
             currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length)
+            // 发送已连接进服务器...动态信息
             sendAutomaticDynamic('已连接进服务器...')
 
             // 播放连接成功音效

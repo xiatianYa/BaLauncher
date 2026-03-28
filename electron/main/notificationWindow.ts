@@ -308,7 +308,8 @@ function generateNotificationHtml(data: NotificationData, notificationId: number
     </div>
     <div class="notification-content">
       <h3 class="notification-title">${escapeHtml(data.serverName || data.title)}</h3>
-      <p class="notification-message">${escapeHtml(data.mapName || data.message)} ${hasChineseName ? escapeHtml(data.mapChineseName) : ''}</p>
+      <p class="notification-message">${escapeHtml(data.mapName || data.message)}</p>
+      ${hasChineseName ? `<p class="notification-message">${escapeHtml(data.mapChineseName)}</p>` : ''}
       <div class="notification-actions">
         <button class="btn btn-close" onclick="event.stopPropagation(); window.close();">关闭通知</button>
         <button class="btn btn-join" onclick="event.stopPropagation(); joinServer('${escapeHtml(data.connectStr || '')}');">立即进服</button>

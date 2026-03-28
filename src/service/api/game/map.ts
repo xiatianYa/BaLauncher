@@ -58,7 +58,7 @@ export function fetchGetMapNames() {
  * 获取用户订阅列表
  */
 export function fetchGetUserSubscribeList() {
-  return request<Api.Game.Map[]>({
+  return request<Api.Game.MapVo[]>({
     url: '/gameMapOrder/listMy',
     method: 'get'
   });
@@ -67,11 +67,11 @@ export function fetchGetUserSubscribeList() {
 /**
  * 添加地图订阅
  */
-export function fetchAddMapSubscribe(mapId: number) {
+export function fetchAddMapSubscribe(mapId: number, systemOrder?: string | null, qqOrder?: string | null) {
   return request({
     url: `/gameMapOrder/save`,
     method: 'post',
-    data: { mapId }
+    data: { mapId, systemOrder, qqOrder }
   });
 }
 
