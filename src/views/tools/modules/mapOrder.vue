@@ -141,13 +141,13 @@ const handleQQSubscribe = async (): Promise<void> => {
 
 const handleBindQQ = async (): Promise<void> => {
     if (!bindQQId.value || !bindQQGroup.value) {
-        window.$message?.error('QQ号和QQ群号不能为空');
+        window.$message?.error($t('mapOrder.qqAndGroupCannotBeEmpty'));
         return;
     }
     const { error } = await fetchBindQQ(bindQQId.value);
     const { error: error2 } = await fetchBindQQGroup(bindQQGroup.value);
     if (!error && !error2) {
-        window.$message?.success("绑定成功");
+        window.$message?.success($t('mapOrder.bindSuccess'));
         await authStore.getUserInfo();
     } else if (error) {
         window.$message?.error(error.message);
@@ -297,7 +297,7 @@ onMounted(() => {
                                 <NCollapseItem :title="$t('mapOrder.mapCD')">
                                     <div class="text-12px">
                                         <div class="flex justify-between">
-                                            <span class="color-#999">称号:</span>
+                                            <span class="color-#999">{{ $t('mapOrder.achievement') }}:</span>
                                             <NTag size="small" class="rounded-5px" type="info">
                                                 {{ map.exgMap.achievement10 || '-' }}
                                             </NTag>
@@ -320,10 +320,10 @@ onMounted(() => {
                                                 }}</NTag>
                                         </div>
                                         <div class="flex justify-between mt-5px">
-                                            <span class="color-#999">是否可预定:</span>
+                                            <span class="color-#999">{{ $t('mapOrder.isOrderable') }}:</span>
                                             <NTag v-if="map.exgMap.isOrder" type="success" size="small"
-                                                class="rounded-5px">是</NTag>
-                                            <NTag v-else type="error" size="small" class="rounded-5px">否</NTag>
+                                                class="rounded-5px">{{ $t('mapOrder.yes') }}</NTag>
+                                            <NTag v-else type="error" size="small" class="rounded-5px">{{ $t('mapOrder.no') }}</NTag>
                                         </div>
                                     </div>
                                 </NCollapseItem>
@@ -393,7 +393,7 @@ onMounted(() => {
         size="small">
         <template #header>
             <div class="flex items-center font-size-18px">
-                <div class="font-size-16px">选择订阅方式</div>
+                <div class="font-size-16px">{{ $t('mapOrder.selectSubscribeType') }}</div>
             </div>
         </template>
         <div class="subscribe-modal-new">
@@ -406,11 +406,11 @@ onMounted(() => {
             <div class="subscribe-tips mt-20px">
                 <div class="tip-item cursor-pointer" :class="{ 'disabled': isCurrentSystemSubscribed }" @click="!isCurrentSystemSubscribed && handleSystemSubscribe()">
                     <SvgIcon icon="material-symbols:computer" class="tip-icon" />
-                    <span class="tip-text">{{ isCurrentSystemSubscribed ? '已系统订阅' : '系统订阅' }}</span>
+                    <span class="tip-text">{{ isCurrentSystemSubscribed ? $t('mapOrder.alreadySystemSubscribed') : $t('mapOrder.systemSubscribe') }}</span>
                 </div>
                 <div class="tip-item cursor-pointer" :class="{ 'disabled': isCurrentQQSubscribed }" @click="!isCurrentQQSubscribed && handleQQSubscribe()">
                     <SvgIcon icon="material-symbols:chat-bubble" class="tip-icon" />
-                    <span class="tip-text">{{ isCurrentQQSubscribed ? '已QQ订阅' : 'QQ订阅' }}</span>
+                    <span class="tip-text">{{ isCurrentQQSubscribed ? $t('mapOrder.alreadyQQSubscribed') : $t('mapOrder.qqSubscribe') }}</span>
                 </div>
             </div>
         </div>
@@ -421,7 +421,7 @@ onMounted(() => {
         size="small">
         <template #header>
             <div class="flex items-center font-size-18px">
-                <div class="font-size-16px">绑定QQ信息</div>
+                <div class="font-size-16px">{{ $t('mapOrder.bindQQInfo') }}</div>
             </div>
         </template>
         <div class="bind-qq-modal-new">
@@ -433,12 +433,12 @@ onMounted(() => {
             </div>
             <div class="bind-qq-form">
                 <div class="form-item">
-                    <div class="form-label">QQ号</div>
-                    <NInput v-model:value="bindQQId" placeholder="请输入您的QQ号" class="form-input" />
+                    <div class="form-label">{{ $t('mapOrder.qqId') }}</div>
+                    <NInput v-model:value="bindQQId" :placeholder="$t('mapOrder.pleaseInputQQId')" class="form-input" />
                 </div>
                 <div class="form-item">
-                    <div class="form-label">QQ群号</div>
-                    <NSelect v-model:value="bindQQGroup" :options="qqGroupOptions" placeholder="请选择QQ群号"
+                    <div class="form-label">{{ $t('mapOrder.qqGroupId') }}</div>
+                    <NSelect v-model:value="bindQQGroup" :options="qqGroupOptions" :placeholder="$t('mapOrder.pleaseSelectQQGroup')"
                         class="form-input" clearable />
                 </div>
             </div>
@@ -447,7 +447,7 @@ onMounted(() => {
                     <template #icon>
                         <SvgIcon icon="material-symbols:check" />
                     </template>
-                    确认绑定
+                    {{ $t('mapOrder.confirmBind') }}
                 </NButton>
             </div>
         </div>
