@@ -13,6 +13,8 @@ import { useGameStore } from '@/store/modules/game';
 import {
     fetchGetMyKeyBinds,
     fetchAddKeyBind,
+    fetchDeleteKeyBind,
+    fetchUpdateKeyBind,
 } from '@/service/api/game/keyBind';
 import { MdEditor } from 'md-editor-v3';
 import dayjs from 'dayjs';
@@ -271,11 +273,15 @@ const handleMouseDownFn = (e: MouseEvent) => {
 const currentSelectedItem = ref<Api.Game.SystemBindCfgVO | null>(null);
 // 是否是个人配置库
 const isPersonalConfig = ref(false);
-// 新增配置弹框状态
+// 新增/编辑配置弹框状态
 const showAddConfigModal = ref(false);
-// 新增配置名称
+// 是否是编辑模式
+const isEditMode = ref(false);
+// 当前编辑的配置ID
+const editingConfigId = ref<number | null>(null);
+// 配置名称
 const newConfigName = ref('');
-// 新增配置JSON
+// 配置JSON
 const newConfigJson = ref('');
 
 // 打开按键捕获弹窗
@@ -473,7 +479,7 @@ const saveResetKeyAndCloseFn = async () => {
                     window.$message?.error($t('keyBind.messages.writeCfgFailed'));
                 }
             } else {
-                window.$message?.error('未配置 CS2 路径，请在设置中配置');
+                window.$message?.error($t('keyBind.messages.csgoPathNotFound'));
             }
         }
     }
@@ -510,7 +516,7 @@ const handleWheelFn = (e: WheelEvent) => {
  */
 const copyConfigCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    window.$message?.success('已复制到剪贴板');
+    window.$message?.success($t('keyBind.messages.saveSuccess'));
 };
 
 /**
@@ -527,42 +533,90 @@ const copyPersonalConfig = () => {
  * 打开新增配置弹框
  */
 const openAddConfigModal = () => {
+    isEditMode.value = false;
+    editingConfigId.value = null;
     newConfigName.value = '';
     newConfigJson.value = '';
     showAddConfigModal.value = true;
 };
 
 /**
- * 关闭新增配置弹框
+ * 打开编辑配置弹框
+ */
+const openEditConfigModal = () => {
+    if (currentSelectedItem.value && currentSelectedItem.value.id) {
+        isEditMode.value = true;
+        editingConfigId.value = currentSelectedItem.value.id;
+        newConfigName.value = currentSelectedItem.value.systemName;
+        newConfigJson.value = currentSelectedItem.value.keyConfigJson;
+        showAddConfigModal.value = true;
+        showKeyCaptureModal.value = false;
+    }
+};
+
+/**
+ * 关闭新增/编辑配置弹框
  */
 const closeAddConfigModal = () => {
     showAddConfigModal.value = false;
+    isEditMode.value = false;
+    editingConfigId.value = null;
     newConfigName.value = '';
     newConfigJson.value = '';
 };
 
 /**
- * 保存新增配置
+ * 保存配置（新增或编辑）
  */
 const saveAddConfig = async () => {
     if (!newConfigName.value.trim()) {
-        window.$message?.warning('请输入配置名称');
+        window.$message?.warning($t('keyBind.pleaseEnterConfigName'));
         return;
     }
     if (!newConfigJson.value.trim()) {
-        window.$message?.warning('请输入配置内容');
+        window.$message?.warning($t('keyBind.pleaseEnterConfigContent'));
         return;
     }
 
-    const { error } = await fetchAddKeyBind({
-        configName: newConfigName.value.trim(),
-        keyConfigJson: newConfigJson.value.trim()
-    });
+    let error;
+    if (isEditMode.value && editingConfigId.value) {
+        // 编辑模式
+        ({ error } = await fetchUpdateKeyBind({
+            id: editingConfigId.value,
+            configName: newConfigName.value.trim(),
+            keyConfigJson: newConfigJson.value.trim()
+        }));
+        if (!error) {
+            window.$message?.success($t('keyBind.configUpdated'));
+        }
+    } else {
+        // 新增模式
+        ({ error } = await fetchAddKeyBind({
+            configName: newConfigName.value.trim(),
+            keyConfigJson: newConfigJson.value.trim()
+        }));
+        if (!error) {
+            window.$message?.success($t('keyBind.configAdded'));
+        }
+    }
 
     if (!error) {
-        window.$message?.success('配置添加成功');
         closeAddConfigModal();
         await fetchLocalConfigLibrary();
+    }
+};
+
+/**
+ * 删除个人配置
+ */
+const removePersonalConfig = async () => {
+    if (currentSelectedItem.value && currentSelectedItem.value.id) {
+        const { error } = await fetchDeleteKeyBind(currentSelectedItem.value.id);
+        if (!error) {
+            window.$message?.success($t('keyBind.configDeleted'));
+            showKeyCaptureModal.value = false;
+            await fetchLocalConfigLibrary();
+        }
     }
 };
 
@@ -670,6 +724,7 @@ const fetchLocalConfigLibrary = async () => {
     const { error, data } = await fetchGetMyKeyBinds();
     if (!error && data) {
         LocalConfigItems.value = data.map(item => ({
+            id: item.id,
             systemName: item.configName,
             systemIcon: Command,
             keyConfigJson: item.keyConfigJson,
@@ -789,7 +844,7 @@ onMounted(() => {
                         <NCard class="rounded-10px add-config-card cursor-pointer" content-style="padding:10px"
                             content-class="flex flex-col items-center justify-center" @click="openAddConfigModal">
                             <SvgIcon icon="material-symbols:add" class="w-48px h-48px text-gray-400 mb-8px" />
-                            <span class="text-12px text-gray-400">新增配置</span>
+                            <span class="text-12px text-gray-400">{{ $t('keyBind.addConfig') }}</span>
                         </NCard>
                     </NGridItem>
                     <NGridItem v-for="item in currentCfgOptions" :key="item.systemName"
@@ -849,12 +904,12 @@ onMounted(() => {
                 </div>
             </NCard>
         </div>
-
+        <!-- 按键绑定配置弹窗 -->
         <NModal v-model:show="showKeyCaptureModal" :bordered="true" preset="card"
             class="w-400px rounded-20px key-capture-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
             size="small">
             <template #header>
-                按键绑定配置
+                {{ $t('keyBind.keyBindConfig') }}
             </template>
             <template #header-extra>
                 <div class="flex items-center justify-between font-size-18px">
@@ -919,48 +974,58 @@ onMounted(() => {
                 <div class="capture-tips">
                     <div class="tip-item cursor-pointer" @click="copyPersonalConfig">
                         <SvgIcon icon="mdi:content-copy" class="tip-icon" />
-                        <span class="tip-text">复制配置</span>
+                        <span class="tip-text">{{ $t('keyBind.copyConfig') }}</span>
+                    </div>
+                    <div class="tip-item cursor-pointer" @click="openEditConfigModal">
+                        <SvgIcon icon="material-symbols:edit-square-outline" class="tip-icon" />
+                        <span class="tip-text">{{ $t('keyBind.editConfig') }}</span>
+                    </div>
+                    <div class="tip-item cursor-pointer" @click="removePersonalConfig">
+                        <SvgIcon icon="material-symbols:delete-outline" class="tip-icon" />
+                        <span class="tip-text">{{ $t('keyBind.deleteConfig') }}</span>
                     </div>
                 </div>
             </div>
         </NModal>
-        <!-- 新增配置弹框 -->
+        <!-- 新增/编辑配置弹框 -->
         <NModal v-model:show="showAddConfigModal" :bordered="true" preset="card"
-            class="w-600px h-500px rounded-10px key-capture-wrapper overflow-auto"
+            class="w-600px h-500px rounded-20px key-capture-wrapper overflow-auto"
             :class="{ 'light-mode': !isDarkMode }" :closable="false" size="medium">
             <template #header>
                 <div class="flex items-center justify-between font-size-18px">
-                    <div class="font-size-16px">新增个人配置</div>
+                    <div class="font-size-16px">{{ isEditMode ? $t('keyBind.editPersonalConfig') : $t('keyBind.addPersonalConfig') }}</div>
                     <NButton quaternary size="tiny" @click="closeAddConfigModal">
                         <SvgIcon icon="material-symbols:close" />
                     </NButton>
                 </div>
             </template>
-            <div class="add-config-modal pt-20px pb-20px pl-20px pr-20px">
+            <div class="pt-20px pb-20px pl-20px pr-20px">
                 <div class="mb-20px">
-                    <div class="text-sm font-medium mb-5px">配置名称</div>
-                    <NInput v-model:value="newConfigName" placeholder="请输入配置名称" />
+                    <div class="text-sm font-medium mb-5px">{{ $t('keyBind.configName') }}</div>
+                    <NInput v-model:value="newConfigName" :placeholder="$t('keyBind.configNamePlaceholder')" />
                 </div>
                 <div class="mb-20px">
-                    <div class="text-sm font-medium mb-5px">配置内容</div>
+                    <div class="text-sm font-medium mb-5px">{{ $t('keyBind.configContent') }}</div>
                     <MdEditor v-model="newConfigJson" :theme="isDarkMode ? 'dark' : 'light'" :preview="false"
-                        :toolbars="['revoke', 'next']" class="h-300px" />
+                        :toolbars="['revoke', 'next']" />
                 </div>
+            </div>
+            <template #footer>
                 <div class="flex flex-wrap gap-10px">
                     <NButton type="warning" class="flex-1 rounded-5px" ghost @click="closeAddConfigModal">
                         <template #icon>
                             <SvgIcon icon="material-symbols:close" />
                         </template>
-                        取消
+                        {{ $t('keyBind.cancel') }}
                     </NButton>
                     <NButton type="info" class="flex-1 rounded-5px" ghost @click="saveAddConfig">
                         <template #icon>
                             <SvgIcon icon="material-symbols:check" />
                         </template>
-                        添加配置
+                        {{ isEditMode ? $t('keyBind.saveChanges') : $t('keyBind.addConfig') }}
                     </NButton>
                 </div>
-            </div>
+            </template>
         </NModal>
     </div>
 </template>

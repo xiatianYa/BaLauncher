@@ -104,5 +104,11 @@ export const commonIcons = [
   'fluent-emoji-high-contrast:package',
   'material-symbols:inbox-outline',
   'material-symbols:left-panel-open-outline',
-  'material-symbols:check'
+  'material-symbols:check',
+  'material-symbols:folder-code-outline',
+  'mdi:content-copy',
+  'material-symbols:close',
+  'material-symbols:keyboard',
+  'material-symbols:mouse',
+  'material-symbols:swap-vert'
 ]

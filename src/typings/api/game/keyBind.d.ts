@@ -70,6 +70,8 @@ declare namespace Api {
 
     /** SystemBind Cfg Vo */
     type SystemBindCfgVO = {
+      /** 配置ID */
+      id?: number;
       /** 系统库名称 */
       systemName: string;
       /** 系统配置图标 */
