@@ -145,7 +145,7 @@ function handleLogin(type: 'qq' | 'steam') {
 </script>
 
 <template>
-  <NModal v-model:show="authStore.loginModalVisibel" preset="card" class="w-750px h-420px rounded-20px overflow-hidden"
+  <NModal v-model:show="authStore.loginModalVisibel" preset="card" class="w-750px h-420px rounded-10px overflow-hidden"
     content-style="padding:0px;" :closable="false" :close-on-esc="false" :mask-closable="false">
     <div class="flex h-full relative">
       <div class="w-full h-full">

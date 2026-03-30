@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue';
-import { NInput, NCollapse, NCollapseItem, NModal, NButton, NSelect } from 'naive-ui';
+import { NInput, NModal, NButton, NSelect } from 'naive-ui';
 import { useDebounceFn } from '@vueuse/core';
 import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
 import { useAuthStore } from '@/store/modules/auth';
 import { useDict } from '@/hooks/business/dict';
-import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList } from '@/service/api/game/map';
+import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList, fetchUpdateMapSubscribe } from '@/service/api/game/map';
 import { $t } from '@/locales';
 import dayjs from 'dayjs';
 import { fetchGetGroupList } from '@/service/api/game/group';
 import { fetchBindQQ, fetchBindQQGroup } from '@/service/api/system/user';
+import { preloadIcons } from '@/utils/icon';
 
 defineOptions({
     name: 'MapOrder'
@@ -18,232 +19,350 @@ defineOptions({
 
 /* ================================ Constants ================================ */
 
-const DEBOUNCE_DELAY = 300;
-const LOADING_DELAY = 500;
-const DEFAULT_PAGE_SIZE = 12;
+const DEBOUNCE_DELAY = 300; // 防抖延迟时间（毫秒）
+const LOADING_DELAY = 500; // 加载延迟时间（毫秒）
+const DEFAULT_PAGE_SIZE = 12; // 默认每页显示数量
+
+/* ================================ 图标列表 ================================ */
+
+const mapOrderIcons = [
+    'material-symbols:map-outline',
+    'material-symbols:arrow-back',
+    'material-symbols:search',
+    'tabler:device-desktop',
+    'basil:qq-outline',
+    'fluent-emoji-high-contrast:package',
+    'material-symbols:inbox-outline',
+    'material-symbols:left-panel-open-outline',
+    'material-symbols:check',
+    'material-symbols:delete-outline'
+];
 
 /* ================================ Composables ================================ */
 
-const themeStore = useThemeStore();
-const gameStore = useGameStore();
-const authStore = useAuthStore();
-const { dictOptions } = useDict();
+const themeStore = useThemeStore(); // 主题Store
+const gameStore = useGameStore(); // 游戏Store
+const authStore = useAuthStore(); // 认证Store
+const { dictOptions } = useDict(); // 字典选项
 
 /* ================================ Emits ================================ */
 
-const emit = defineEmits<{ back: [] }>();
+const emit = defineEmits<{ back: [] }>(); // 定义事件
 
 /* ================================ Reactive State ================================ */
 
-const isDarkMode = computed(() => themeStore.darkMode);
+const isDarkMode = computed(() => themeStore.darkMode); // 是否为深色模式
 
-const searchKeyword = ref<string>('');
-const mapList = ref<Api.Game.MapVo[]>([]);
-const subscribeList = ref<Api.Game.MapVo[]>([]);
-const mapLoading = ref<boolean>(false);
-const subscribeLoading = ref<boolean>(false);
-// QQ群配置项
-const qqGroupOptions = ref<CommonType.Option<string>[]>([]);
+const searchKeyword = ref<string>(''); // 搜索关键词
+const mapList = ref<Api.Game.MapVo[]>([]); // 地图列表
+const subscribeList = ref<Api.Game.MapVo[]>([]); // 订阅列表
+const mapLoading = ref<boolean>(false); // 地图加载状态
+const subscribeLoading = ref<boolean>(false); // 订阅加载状态
+const qqGroupOptions = ref<CommonType.Option<string>[]>([]); // QQ群配置项
 
 const pagination = reactive<Api.Common.PaginatingCommonParams>({
-    current: 1,
-    size: DEFAULT_PAGE_SIZE,
-    total: 0
+    current: 1, // 当前页码
+    size: DEFAULT_PAGE_SIZE, // 每页数量
+    total: 0 // 总数
 });
 
 const subscribedMapIds = computed<Set<number>>(() =>
-    new Set(subscribeList.value.map(map => map.id))
+    new Set(subscribeList.value.map(map => map.id)) // 已订阅地图ID集合
 );
 
 const getSubscribedMap = (mapId: number) =>
-    subscribeList.value.find(map => map.id === mapId);
+    subscribeList.value.find(map => map.id === mapId); // 获取已订阅地图
 
 const isSystemSubscribed = (mapId: number) => {
     const subscribedMap = getSubscribedMap(mapId);
-    return subscribedMap?.systemOrder === '1';
+    return subscribedMap?.systemOrder === '1'; // 检查是否已系统订阅
 };
 
 const isQQSubscribed = (mapId: number) => {
     const subscribedMap = getSubscribedMap(mapId);
-    return subscribedMap?.qqOrder === '1';
+    return subscribedMap?.qqOrder === '1'; // 检查是否已QQ订阅
 };
 
 const isCurrentSystemSubscribed = computed(() =>
-    currentSubscribeMap.value ? isSystemSubscribed(currentSubscribeMap.value.id) : false
+    currentSubscribeMap.value ? isSystemSubscribed(currentSubscribeMap.value.id) : false // 当前地图是否已系统订阅
 );
 
 const isCurrentQQSubscribed = computed(() =>
-    currentSubscribeMap.value ? isQQSubscribed(currentSubscribeMap.value.id) : false
+    currentSubscribeMap.value ? isQQSubscribed(currentSubscribeMap.value.id) : false // 当前地图是否已QQ订阅
 );
 
-const showSubscribeModal = ref<boolean>(false);
-const currentSubscribeMap = ref<Api.Game.MapVo | null>(null);
+const showSubscribeModal = ref<boolean>(false); // 订阅弹框显示状态
+const currentSubscribeMap = ref<Api.Game.MapVo | null>(null); // 当前订阅的地图
 
-const showBindQQModal = ref<boolean>(false);
-const bindQQId = ref<string | null>(null);
-const bindQQGroup = ref<string | null>(null);
+const showBindQQModal = ref<boolean>(false); // 绑定QQ弹框显示状态
+const bindQQId = ref<string | null>(null); // 绑定的QQ号
+const bindQQGroup = ref<string | null>(null); // 绑定的QQ群
+
+const showEditModal = ref<boolean>(false); // 编辑弹框显示状态
+const currentEditMap = ref<Api.Game.MapVo | null>(null); // 当前编辑的地图
+
+const isCurrentEditSystemSubscribed = computed(() =>
+    currentEditMap.value ? isSystemSubscribed(currentEditMap.value.id) : false // 编辑地图是否已系统订阅
+);
+
+const isCurrentEditQQSubscribed = computed(() =>
+    currentEditMap.value ? isQQSubscribed(currentEditMap.value.id) : false // 编辑地图是否已QQ订阅
+);
+
+/* ================================ 编辑相关函数 ================================ */
+
+const handleEditSubscribe = (map: Api.Game.MapVo): void => {
+    currentEditMap.value = map; // 设置当前编辑的地图
+    showEditModal.value = true; // 显示编辑弹框
+};
+
+const handleEditSystemSubscribe = async (): Promise<void> => {
+    if (!currentEditMap.value) return;
+    await handleSystemSubscribeDirect(currentEditMap.value); // 直接系统订阅
+    showEditModal.value = false; // 关闭编辑弹框
+    currentEditMap.value = null; // 重置当前编辑地图
+};
+
+const handleEditQQSubscribe = async (): Promise<void> => {
+    if (!currentEditMap.value) return;
+    await handleQQSubscribeDirect(currentEditMap.value); // 直接QQ订阅
+    showEditModal.value = false; // 关闭编辑弹框
+    currentEditMap.value = null; // 重置当前编辑地图
+};
+
+const handleEditUnsubscribeSystem = async (): Promise<void> => {
+    if (!currentEditMap.value) return;
+    await handleUnsubscribeSystem(currentEditMap.value); // 取消系统订阅
+};
+
+const handleEditUnsubscribeQQ = async (): Promise<void> => {
+    if (!currentEditMap.value) return;
+    await handleUnsubscribeQQ(currentEditMap.value); // 取消QQ订阅
+};
+
+const handleDeleteSubscribe = async (): Promise<void> => {
+    if (!currentEditMap.value) return;
+    const { error } = await fetchDeleteMapSubscribe(currentEditMap.value!.id); // 删除订阅
+    if (!error) {
+        window.$message?.success($t('mapOrder.unsubscribeSuccess')); // 提示成功
+    } else {
+        window.$message?.error($t('mapOrder.unsubscribeFailed')); // 提示失败
+    }
+    showEditModal.value = false; // 关闭编辑弹框
+    currentEditMap.value = null; // 重置当前编辑地图
+    await fetchSubscribeList(); // 刷新订阅列表
+};
 
 /* ================================ Event Handlers ================================ */
 
-const handleBack = (): void => emit('back');
+const handleBack = (): void => emit('back'); // 返回
 
 const handlePageChange = (page: number): void => {
-    pagination.current = page;
-    fetchMapList(searchKeyword.value);
-};
-
-const handleSubscribe = (map: Api.Game.MapVo): void => {
-    currentSubscribeMap.value = map;
-    showSubscribeModal.value = true;
+    pagination.current = page; // 更新当前页码
+    fetchMapList(searchKeyword.value); // 获取地图列表
 };
 
 const handleSystemSubscribe = async (): Promise<void> => {
     if (!currentSubscribeMap.value) return;
-    const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, "1", null);
+    const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, "1", null); // 添加系统订阅
     if (!error) {
-        window.$message?.success($t('mapOrder.subscribeSuccess'));
+        window.$message?.success($t('mapOrder.subscribeSuccess')); // 提示成功
     } else {
-        window.$message?.error($t('mapOrder.subscribeFailed'));
+        window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
     }
-    showSubscribeModal.value = false;
-    currentSubscribeMap.value = null;
-    await fetchSubscribeList();
+    showSubscribeModal.value = false; // 关闭订阅弹框
+    currentSubscribeMap.value = null; // 重置当前订阅地图
+    await fetchSubscribeList(); // 刷新订阅列表
 };
 
 const onGetOption = async () => {
-    const { data, error } = await fetchGetGroupList();
+    const { data, error } = await fetchGetGroupList(); // 获取QQ群列表
     if (!error) {
-        qqGroupOptions.value = data;
+        qqGroupOptions.value = data; // 设置QQ群选项
     }
-}
+};
 
 const handleQQSubscribe = async (): Promise<void> => {
     if (!currentSubscribeMap.value) return;
 
     if (!authStore.userInfo.qqId || !authStore.userInfo.qqgroup) {
-        showSubscribeModal.value = false;
-        bindQQId.value = authStore.userInfo.qqId;
-        bindQQGroup.value = authStore.userInfo.qqgroup;
-        showBindQQModal.value = true;
+        showSubscribeModal.value = false; // 关闭订阅弹框
+        bindQQId.value = authStore.userInfo.qqId; // 设置QQ号
+        bindQQGroup.value = authStore.userInfo.qqgroup; // 设置QQ群
+        showBindQQModal.value = true; // 显示绑定QQ弹框
         return;
     }
-    const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, null, "1");
+    const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, null, "1"); // 添加QQ订阅
     if (!error) {
-        window.$message?.success($t('mapOrder.subscribeSuccess'));
+        window.$message?.success($t('mapOrder.subscribeSuccess')); // 提示成功
     } else {
-        window.$message?.error($t('mapOrder.subscribeFailed'));
+        window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
     }
 
-    showSubscribeModal.value = false;
-    currentSubscribeMap.value = null;
-    await fetchSubscribeList();
+    showSubscribeModal.value = false; // 关闭订阅弹框
+    currentSubscribeMap.value = null; // 重置当前订阅地图
+    await fetchSubscribeList(); // 刷新订阅列表
 };
 
 const handleBindQQ = async (): Promise<void> => {
     if (!bindQQId.value || !bindQQGroup.value) {
-        window.$message?.error($t('mapOrder.qqAndGroupCannotBeEmpty'));
+        window.$message?.error($t('mapOrder.qqAndGroupCannotBeEmpty')); // 提示QQ号和QQ群不能为空
         return;
     }
-    const { error } = await fetchBindQQ(bindQQId.value);
-    const { error: error2 } = await fetchBindQQGroup(bindQQGroup.value);
+    const { error } = await fetchBindQQ(bindQQId.value); // 绑定QQ号
+    const { error: error2 } = await fetchBindQQGroup(bindQQGroup.value); // 绑定QQ群
     if (!error && !error2) {
-        window.$message?.success($t('mapOrder.bindSuccess'));
-        await authStore.getUserInfo();
+        window.$message?.success($t('mapOrder.bindSuccess')); // 提示绑定成功
+        await authStore.getUserInfo(); // 刷新用户信息
     } else if (error) {
-        window.$message?.error(error.message);
+        window.$message?.error(error.message); // 提示绑定QQ失败
     } else if (error2) {
-        window.$message?.error(error2.message);
+        window.$message?.error(error2.message); // 提示绑定QQ群失败
     }
-    showBindQQModal.value = false;
+    showBindQQModal.value = false; // 关闭绑定QQ弹框
 };
 
-const handleRemoveSubscribe = async (mapId: number) => {
-    const { error } = await fetchDeleteMapSubscribe(mapId);
+const handleSystemSubscribeDirect = async (map: Api.Game.MapVo): Promise<void> => {
+    const { error } = await fetchAddMapSubscribe(map.id, "1", null); // 直接添加系统订阅
     if (!error) {
-        window.$message?.success($t('mapOrder.unsubscribeSuccess'));
+        window.$message?.success($t('mapOrder.subscribeSuccess')); // 提示成功
     } else {
-        window.$message?.error($t('mapOrder.unsubscribeFailed'));
+        window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
     }
-    await fetchSubscribeList();
+    await fetchSubscribeList(); // 刷新订阅列表
+};
+
+const handleQQSubscribeDirect = async (map: Api.Game.MapVo): Promise<void> => {
+    if (!authStore.userInfo.qqId || !authStore.userInfo.qqgroup) {
+        currentSubscribeMap.value = map; // 设置当前订阅地图
+        bindQQId.value = authStore.userInfo.qqId; // 设置QQ号
+        bindQQGroup.value = authStore.userInfo.qqgroup; // 设置QQ群
+        showBindQQModal.value = true; // 显示绑定QQ弹框
+        return;
+    }
+    const { error } = await fetchAddMapSubscribe(map.id, null, "1"); // 直接添加QQ订阅
+    if (!error) {
+        window.$message?.success($t('mapOrder.subscribeSuccess')); // 提示成功
+    } else {
+        window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
+    }
+    await fetchSubscribeList(); // 刷新订阅列表
+};
+
+const handleUnsubscribeSystem = async (map: Api.Game.MapVo): Promise<void> => {
+    const params: Api.Game.UpdateMapSubscribeParams = {
+        mapId: map.id,
+        systemOrder: "0",
+        qqOrder: null,
+    };
+    const { error } = await fetchUpdateMapSubscribe(params); // 更新订阅（取消系统订阅）
+    if (!error) {
+        window.$message?.success($t('mapOrder.unsubscribeSystemSuccess')); // 提示已取消系统订阅
+    } else {
+        window.$message?.error($t('mapOrder.unsubscribeFailed')); // 提示失败
+    }
+    await fetchSubscribeList(); // 刷新订阅列表
+    if (showEditModal.value && currentEditMap.value?.id === map.id) {
+        showEditModal.value = false; // 关闭编辑弹框
+        currentEditMap.value = null; // 重置当前编辑地图
+    }
+};
+
+const handleUnsubscribeQQ = async (map: Api.Game.MapVo): Promise<void> => {
+    const params: Api.Game.UpdateMapSubscribeParams = {
+        mapId: map.id,
+        systemOrder: null,
+        qqOrder: "0",
+    };
+    const { error } = await fetchUpdateMapSubscribe(params); // 更新订阅（取消QQ订阅）
+    if (!error) {
+        window.$message?.success($t('mapOrder.unsubscribeQQSuccess')); // 提示已取消QQ订阅
+    } else {
+        window.$message?.error($t('mapOrder.unsubscribeFailed')); // 提示失败
+    }
+    await fetchSubscribeList(); // 刷新订阅列表
+    if (showEditModal.value && currentEditMap.value?.id === map.id) {
+        showEditModal.value = false; // 关闭编辑弹框
+        currentEditMap.value = null; // 重置当前编辑地图
+    }
 };
 
 /* ================================ Data Fetching ================================ */
 
 const fetchMapList = async (keyword: string): Promise<void> => {
     if (!keyword.trim()) {
-        mapList.value = [];
-        pagination.total = 0;
+        mapList.value = []; // 清空地图列表
+        pagination.total = 0; // 重置总数
         return;
     }
 
-    mapLoading.value = true;
+    mapLoading.value = true; // 开始加载
 
     try {
-        const { data } = await fetchGetMapPage(pagination, keyword.trim());
-        mapList.value = data?.records || [];
-        pagination.total = data?.total || 0;
+        const { data } = await fetchGetMapPage(pagination, keyword.trim()); // 获取地图分页数据
+        mapList.value = data?.records || []; // 设置地图列表
+        pagination.total = data?.total || 0; // 设置总数
     } catch (error) {
-        window.$message?.error($t('mapOrder.searchFailed'));
+        window.$message?.error($t('mapOrder.searchFailed')); // 提示搜索失败
         console.error('[MapOrder] Failed to fetch map list:', error);
     } finally {
         setTimeout(() => {
-            mapLoading.value = false;
+            mapLoading.value = false; // 结束加载
         }, LOADING_DELAY);
     }
 };
 
-// 获取用户订阅列表
 const fetchSubscribeList = async (): Promise<void> => {
-    subscribeLoading.value = true;
+    subscribeLoading.value = true; // 开始加载
     try {
-        const { data } = await fetchGetUserSubscribeList();
-        subscribeList.value = data || [];
+        const { data } = await fetchGetUserSubscribeList(); // 获取用户订阅列表
+        subscribeList.value = data || []; // 设置订阅列表
     } catch (error) {
-        window.$message?.error($t('mapOrder.fetchSubscribeListFailed'));
+        window.$message?.error($t('mapOrder.fetchSubscribeListFailed')); // 提示获取失败
         console.error('[MapOrder] Failed to fetch subscribe list:', error);
     } finally {
-        subscribeLoading.value = false;
+        subscribeLoading.value = false; // 结束加载
     }
 };
 
 /* ================================ Utility Functions ================================ */
 
-const isSubscribed = (mapId: number): boolean => subscribedMapIds.value.has(mapId);
+const isSubscribed = (mapId: number): boolean => subscribedMapIds.value.has(mapId); // 检查是否已订阅
 
 const getMapTypeInfo = (mapName: string | undefined): Api.Game.Map | undefined => {
     if (!mapName) return undefined;
-    return gameStore.mapList.find(map => map.mapName === mapName);
+    return gameStore.mapList.find(map => map.mapName === mapName); // 获取地图类型信息
 };
 
-const getMapType = (mapName: string | undefined): string | undefined => getMapTypeInfo(mapName)?.type;
+const getMapType = (mapName: string | undefined): string | undefined => getMapTypeInfo(mapName)?.type; // 获取地图类型
 
 const getMapTags = (mapName: string | undefined): string[] => {
     const mapInfo = getMapTypeInfo(mapName);
     if (!mapInfo?.tag) return [];
-    return Array.isArray(mapInfo.tag) ? mapInfo.tag : [mapInfo.tag];
+    return Array.isArray(mapInfo.tag) ? mapInfo.tag : [mapInfo.tag]; // 获取地图标签
 };
 
-
 const getGameTypeOption = (type: string | undefined) =>
-    type ? dictOptions('game_type').find((item: any) => item.value === type) : undefined;
+    type ? dictOptions('game_type').find((item: any) => item.value === type) : undefined; // 获取游戏类型选项
 
 const getGameTagOption = (tag: string | undefined) =>
-    tag ? dictOptions('game_tag').find((item: any) => item.value === tag) : undefined;
+    tag ? dictOptions('game_tag').find((item: any) => item.value === tag) : undefined; // 获取游戏标签选项
 
 /* ================================ Watchers ================================ */
 
-const debouncedSearch = useDebounceFn(fetchMapList, DEBOUNCE_DELAY);
+const debouncedSearch = useDebounceFn(fetchMapList, DEBOUNCE_DELAY); // 防抖搜索
 
 watch(searchKeyword, (newValue) => {
-    pagination.current = 1;
-    debouncedSearch(newValue);
+    pagination.current = 1; // 重置到第一页
+    debouncedSearch(newValue); // 执行搜索
 });
 
 /* ================================ Lifecycle ================================ */
 
-onMounted(() => {
-    fetchSubscribeList();
-    onGetOption();
+onMounted(async () => {
+    await preloadIcons(mapOrderIcons); // 预加载图标
+    fetchSubscribeList(); // 获取订阅列表
+    onGetOption(); // 获取QQ群选项
 });
 </script>
 
@@ -293,50 +412,63 @@ onMounted(() => {
                                     {{ getGameTagOption(tag)?.label }}
                                 </NTag>
                             </div>
-                            <NCollapse v-if="map.exgMap" class="mt-5px">
-                                <NCollapseItem :title="$t('mapOrder.mapCD')">
-                                    <div class="text-12px">
-                                        <div class="flex justify-between">
-                                            <span class="color-#999">{{ $t('mapOrder.achievement') }}:</span>
-                                            <NTag size="small" class="rounded-5px" type="info">
-                                                {{ map.exgMap.achievement10 || '-' }}
-                                            </NTag>
-                                        </div>
-                                        <div class="flex justify-between mt-5px">
-                                            <span class="color-#999">{{ $t('mapOrder.lastRun') }}:</span>
-                                            <NTag size="small" class="rounded-5px" type="info">
-                                                {{ dayjs(map.exgMap.lastRun).format('YYYY-MM-DD HH:mm:ss') || '-'
-                                                }}</NTag>
-                                        </div>
-                                        <div class="flex justify-between mt-5px">
-                                            <span class="color-#999">{{ $t('mapOrder.cooldown') }}:</span>
-                                            <NTag size="small" class="rounded-5px" type="info">
-                                                {{ map.exgMap.cooldownMinute }} {{ $t('mapOrder.minutes') }}</NTag>
-                                        </div>
-                                        <div class="flex justify-between mt-5px">
-                                            <span class="color-#999">{{ $t('mapOrder.deadline') }}:</span>
-                                            <NTag size="small" class="rounded-5px" type="info">
-                                                {{ dayjs(map.exgMap.deadline).format('YYYY-MM-DD HH:mm:ss') || '-'
-                                                }}</NTag>
-                                        </div>
-                                        <div class="flex justify-between mt-5px">
-                                            <span class="color-#999">{{ $t('mapOrder.isOrderable') }}:</span>
-                                            <NTag v-if="map.exgMap.isOrder" type="success" size="small"
-                                                class="rounded-5px">{{ $t('mapOrder.yes') }}</NTag>
-                                            <NTag v-else type="error" size="small" class="rounded-5px">{{ $t('mapOrder.no') }}</NTag>
-                                        </div>
-                                    </div>
-                                </NCollapseItem>
-                            </NCollapse>
+                            <div class="text-12px mt-5px">
+                                <div class="flex justify-between">
+                                    <span class="color-#999">{{ $t('mapOrder.achievement') }}:</span>
+                                    <NTag size="small" class="rounded-5px" type="info">
+                                        {{ map.exgMap.achievement10 || '-' }}
+                                    </NTag>
+                                </div>
+                                <div class="flex justify-between mt-5px">
+                                    <span class="color-#999">{{ $t('mapOrder.lastRun') }}:</span>
+                                    <NTag size="small" class="rounded-5px" type="info">
+                                        {{ dayjs(map.exgMap.lastRun).format('YYYY-MM-DD HH:mm:ss') || '-'
+                                        }}</NTag>
+                                </div>
+                                <div class="flex justify-between mt-5px">
+                                    <span class="color-#999">{{ $t('mapOrder.cooldown') }}:</span>
+                                    <NTag size="small" class="rounded-5px" type="info">
+                                        {{ map.exgMap.cooldownMinute }} {{ $t('mapOrder.minutes') }}</NTag>
+                                </div>
+                                <div class="flex justify-between mt-5px">
+                                    <span class="color-#999">{{ $t('mapOrder.deadline') }}:</span>
+                                    <NTag size="small" class="rounded-5px" type="info">
+                                        {{ dayjs(map.exgMap.deadline).format('YYYY-MM-DD HH:mm:ss') || '-'
+                                        }}</NTag>
+                                </div>
+                                <div class="flex justify-between mt-5px">
+                                    <span class="color-#999">{{ $t('mapOrder.isOrderable') }}:</span>
+                                    <NTag v-if="map.exgMap.isOrder" type="success" size="small" class="rounded-5px">{{
+                                        $t('mapOrder.yes') }}</NTag>
+                                    <NTag v-else type="error" size="small" class="rounded-5px">{{ $t('mapOrder.no') }}
+                                    </NTag>
+                                </div>
+                            </div>
                             <template #footer>
-                                <div class="flex mt-5px">
-                                    <NButton v-if="map.isOrder === '1'"
-                                        type="info" ghost size="small"
-                                        class="w-full rounded-5px" @click="handleSubscribe(map)">
-                                        <SvgIcon icon="material-symbols:add" class="mr-3px" />
-                                        {{ $t('mapOrder.subscribe') }}
+                                <div class="flex flex-wrap gap-5px mt-5px" v-if="map.isOrder === '1'">
+                                    <NButton v-if="!isSystemSubscribed(map.id)" type="info" ghost size="small"
+                                        class="flex-1 rounded-5px" @click="handleSystemSubscribeDirect(map)">
+                                        <SvgIcon icon="tabler:device-desktop" class="mr-3px" />
+                                        {{ $t('mapOrder.systemSubscribe') }}
                                     </NButton>
-                                    <NButton v-else type="error" ghost size="small" class="w-full rounded-5px"
+                                    <NButton v-else type="info" size="small" class="flex-1 rounded-5px"
+                                        @click="handleUnsubscribeSystem(map)">
+                                        <SvgIcon icon="tabler:device-desktop" class="mr-3px" />
+                                        {{ $t('mapOrder.unsubscribeSystem') }}
+                                    </NButton>
+                                    <NButton v-if="!isQQSubscribed(map.id)" type="success" ghost size="small"
+                                        class="flex-1 rounded-5px" @click="handleQQSubscribeDirect(map)">
+                                        <SvgIcon icon="basil:qq-outline" class="mr-3px" />
+                                        {{ $t('mapOrder.qqSubscribe') }}
+                                    </NButton>
+                                    <NButton v-else type="success" size="small" class="flex-1 rounded-5px"
+                                        @click="handleUnsubscribeQQ(map)">
+                                        <SvgIcon icon="basil:qq-outline" class="mr-3px" />
+                                        {{ $t('mapOrder.unsubscribeQQ') }}
+                                    </NButton>
+                                </div>
+                                <div class="flex mt-5px" v-else>
+                                    <NButton type="error" ghost size="small" class="w-full rounded-5px"
                                         :disabled="true">
                                         {{ $t('mapOrder.notSubscribable') }}
                                     </NButton>
@@ -376,18 +508,18 @@ onMounted(() => {
                             <div class="subscribe-item-name">{{ map.mapName }}</div>
                             <div class="subscribe-item-label">{{ map.mapLabel }}</div>
                         </div>
-                        <NButton type="error" ghost class="subscribe-item-remove rounded-8px"
-                            @click="handleRemoveSubscribe(map.id)">
+                        <NButton type="info" ghost class="subscribe-item-remove rounded-5px"
+                            @click="handleEditSubscribe(map)">
                             <template #icon>
-                                <SvgIcon icon="material-symbols:delete-outline" />
+                                <SvgIcon icon="material-symbols:left-panel-open-outline" />
                             </template>
+                            {{ $t('mapOrder.edit') }}
                         </NButton>
                     </div>
                 </div>
             </NCard>
         </div>
     </div>
-
     <NModal v-model:show="showSubscribeModal" :bordered="true" preset="card"
         class="w-400px rounded-20px subscribe-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
         size="small">
@@ -404,18 +536,21 @@ onMounted(() => {
                 <div class="header-glow"></div>
             </div>
             <div class="subscribe-tips mt-20px">
-                <div class="tip-item cursor-pointer" :class="{ 'disabled': isCurrentSystemSubscribed }" @click="!isCurrentSystemSubscribed && handleSystemSubscribe()">
-                    <SvgIcon icon="material-symbols:computer" class="tip-icon" />
-                    <span class="tip-text">{{ isCurrentSystemSubscribed ? $t('mapOrder.alreadySystemSubscribed') : $t('mapOrder.systemSubscribe') }}</span>
+                <div class="tip-item cursor-pointer" :class="{ 'disabled': isCurrentSystemSubscribed }"
+                    @click="!isCurrentSystemSubscribed && handleSystemSubscribe()">
+                    <SvgIcon icon="tabler:device-desktop" class="tip-icon" />
+                    <span class="tip-text">{{ isCurrentSystemSubscribed ? $t('mapOrder.alreadySystemSubscribed') :
+                        $t('mapOrder.systemSubscribe') }}</span>
                 </div>
-                <div class="tip-item cursor-pointer" :class="{ 'disabled': isCurrentQQSubscribed }" @click="!isCurrentQQSubscribed && handleQQSubscribe()">
-                    <SvgIcon icon="material-symbols:chat-bubble" class="tip-icon" />
-                    <span class="tip-text">{{ isCurrentQQSubscribed ? $t('mapOrder.alreadyQQSubscribed') : $t('mapOrder.qqSubscribe') }}</span>
+                <div class="tip-item cursor-pointer" :class="{ 'disabled': isCurrentQQSubscribed }"
+                    @click="!isCurrentQQSubscribed && handleQQSubscribe()">
+                    <SvgIcon icon="basil:qq-outline" class="tip-icon" />
+                    <span class="tip-text">{{ isCurrentQQSubscribed ? $t('mapOrder.alreadyQQSubscribed') :
+                        $t('mapOrder.qqSubscribe') }}</span>
                 </div>
             </div>
         </div>
     </NModal>
-
     <NModal v-model:show="showBindQQModal" :bordered="true" preset="card"
         class="w-400px rounded-20px bind-qq-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
         size="small">
@@ -438,8 +573,8 @@ onMounted(() => {
                 </div>
                 <div class="form-item">
                     <div class="form-label">{{ $t('mapOrder.qqGroupId') }}</div>
-                    <NSelect v-model:value="bindQQGroup" :options="qqGroupOptions" :placeholder="$t('mapOrder.pleaseSelectQQGroup')"
-                        class="form-input" clearable />
+                    <NSelect v-model:value="bindQQGroup" :options="qqGroupOptions"
+                        :placeholder="$t('mapOrder.pleaseSelectQQGroup')" class="form-input" clearable />
                 </div>
             </div>
             <div class="bind-buttons">
@@ -448,6 +583,60 @@ onMounted(() => {
                         <SvgIcon icon="material-symbols:check" />
                     </template>
                     {{ $t('mapOrder.confirmBind') }}
+                </NButton>
+            </div>
+        </div>
+    </NModal>
+
+    <NModal v-model:show="showEditModal" :bordered="true" preset="card"
+        class="w-400px rounded-20px subscribe-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
+        size="small">
+        <template #header>
+            <div class="flex items-center font-size-18px">
+                <div class="font-size-16px">{{ $t('mapOrder.editSubscribe') }}</div>
+            </div>
+        </template>
+        <div class="subscribe-modal-new">
+            <div class="subscribe-header">
+                <div class="character-image">
+                    <img src="@/assets/imgs/tool/3594431.png" alt="character" />
+                </div>
+                <div class="header-glow"></div>
+            </div>
+            <div class="flex flex-wrap gap-10px mt-20px">
+                <NButton v-if="!isCurrentEditSystemSubscribed" type="info" ghost class="flex-1 rounded-5px"
+                    @click="handleEditSystemSubscribe()">
+                    <template #icon>
+                        <SvgIcon icon="tabler:device-desktop" />
+                    </template>
+                    {{ $t('mapOrder.systemSubscribe') }}
+                </NButton>
+                <NButton v-else type="info" class="flex-1 rounded-5px" @click="handleEditUnsubscribeSystem()">
+                    <template #icon>
+                        <SvgIcon icon="tabler:device-desktop" />
+                    </template>
+                    {{ $t('mapOrder.unsubscribeSystem') }}
+                </NButton>
+                <NButton v-if="!isCurrentEditQQSubscribed" type="success" ghost class="flex-1 rounded-5px"
+                    @click="handleEditQQSubscribe()">
+                    <template #icon>
+                        <SvgIcon icon="basil:qq-outline" />
+                    </template>
+                    {{ $t('mapOrder.qqSubscribe') }}
+                </NButton>
+                <NButton v-else type="success" class="flex-1 rounded-5px" @click="handleEditUnsubscribeQQ()">
+                    <template #icon>
+                        <SvgIcon icon="basil:qq-outline" />
+                    </template>
+                    {{ $t('mapOrder.unsubscribeQQ') }}
+                </NButton>
+            </div>
+            <div class="mt-20px">
+                <NButton type="error" ghost class="w-full rounded-5px" @click="handleDeleteSubscribe">
+                    <template #icon>
+                        <SvgIcon icon="material-symbols:delete-outline" />
+                    </template>
+                    {{ $t('mapOrder.deleteSubscribe') }}
                 </NButton>
             </div>
         </div>
@@ -535,7 +724,8 @@ onMounted(() => {
                 .map-card-img {
                     width: 100%;
                     object-fit: cover;
-                    border-radius: 5px;
+                    overflow: hidden;
+                    border-radius: 10px;
                 }
 
                 .map-card-info {
@@ -595,19 +785,10 @@ onMounted(() => {
                     border: 1px solid rgba(255, 255, 255, 0.1);
                     transition: all 0.3s ease;
 
-                    &:hover {
-                        background: rgba(255, 255, 255, 0.1);
-                        border-color: rgba(102, 126, 234, 0.3);
-
-                        .subscribe-item-remove {
-                            opacity: 1;
-                        }
-                    }
-
                     .subscribe-item-img {
                         width: 50px;
                         height: 50px;
-                        border-radius: 6px;
+                        border-radius: 5px;
                         overflow: hidden;
                         flex-shrink: 0;
 
@@ -637,11 +818,6 @@ onMounted(() => {
                             overflow: hidden;
                             text-overflow: ellipsis;
                         }
-                    }
-
-                    .subscribe-item-remove {
-                        opacity: 0;
-                        transition: opacity 0.3s ease;
                     }
                 }
             }

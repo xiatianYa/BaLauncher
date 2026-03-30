@@ -20,12 +20,8 @@ declare namespace Api {
     type KeyBindAddParams = {
       /** 配置名称（便于用户区分） */
       configName: string;
-      /** 配置描述（可选） */
-      configDesc?: string;
       /** 按键配置JSON字符串 */
       keyConfigJson: string;
-      /** 分享状态(0:未分享,1:已分享,2:已取消) */
-      shareStatus: number;
     };
 
     /** KeyBind update params */
@@ -38,28 +34,26 @@ declare namespace Api {
       configDesc?: string;
       /** 按键配置JSON字符串 */
       keyConfigJson?: string;
-      /** 分享状态(0:未分享,1:已分享,2:已取消) */
-      shareStatus?: number;
     };
 
     /** KeyBind VO */
     type KeyBindVO = Api.Common.CommonRecord<{
-      /** 发布人名称 */
+      /** 配置所属用户ID（创建者） */
+      userId?: number;
+      /** 创建者用户名 */
+      userName?: string;
+      /** 创建者昵称 */
       nickName: string;
-      /** 发布人头像 */
+      /** 创建者头像 */
       avatar: string;
       /** 配置名称（便于用户区分） */
       configName: string;
-      /** 配置描述（可选） */
-      configDesc?: string;
       /** 按键配置JSON字符串 */
       keyConfigJson: string;
-      /** 配置类型 */
-      gameModelType: string;
-      /** 分享状态(0:未分享,1:已分享) */
-      shareStatus: number;
-      /** 配置被分享/使用次数 */
-      shareCount: number;
+      /** 创建人ID */
+      createUserId?: number;
+      /** 修改人ID */
+      updateUserId?: number;
     }>;
 
     /** SystemBind Vo */

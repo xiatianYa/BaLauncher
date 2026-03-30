@@ -5,13 +5,14 @@ import {
     NCard,
     NModal,
     NGrid,
-    NGridItem
+    NGridItem,
+    NInput
 } from 'naive-ui';
 import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
 import {
-    fetchGetAllSharedKeyBinds,
     fetchGetMyKeyBinds,
+    fetchAddKeyBind,
 } from '@/service/api/game/keyBind';
 import { MdEditor } from 'md-editor-v3';
 import dayjs from 'dayjs';
@@ -22,6 +23,7 @@ import {
     ZELibaryCfgOption as ZELibaryCfgOptionConst
 } from '@/constants/keyBind';
 import { $t } from '@/locales';
+import Command from '@/assets/imgs/tool/Command.png';
 
 
 /**
@@ -76,14 +78,15 @@ const currentCfgOptions = computed(() => {
             return PropLibaryCfgOption.value;
         case 'ZE常用':
             return ZELibaryCfgOption.value;
+        case '个人配置库':
+            return LocalConfigItems.value;
         default:
             return [];
     }
 });
-// 公共数据库库配置
-const configLibraryItems = ref<Api.Game.KeyBindList>([]);
+
 // 引用的数据库配置
-const localConfigItems = ref<Api.Game.KeyBindList>([]);
+const LocalConfigItems = ref<Api.Game.SystemBindCfgVO[]>([]);
 // 用户应用的按键绑定项 - 从 gameStore 获取
 const applyKeyBindItems = computed({
     get: () => gameStore.applyKeyBindItems,
@@ -266,10 +269,23 @@ const handleMouseDownFn = (e: MouseEvent) => {
 
 // 当前选中的配置项
 const currentSelectedItem = ref<Api.Game.SystemBindCfgVO | null>(null);
+// 是否是个人配置库
+const isPersonalConfig = ref(false);
+// 新增配置弹框状态
+const showAddConfigModal = ref(false);
+// 新增配置名称
+const newConfigName = ref('');
+// 新增配置JSON
+const newConfigJson = ref('');
 
 // 打开按键捕获弹窗
 const openKeyCaptureFn = (item: Api.Game.SystemBindCfgVO) => {
     currentSelectedItem.value = item;
+    isPersonalConfig.value = selectedSystemConfig.value === '个人配置库';
+    if (isPersonalConfig.value) {
+        showKeyCaptureModal.value = true;
+        return;
+    }
     capturedKey.value = '';
     showKeyCaptureModal.value = true;
     window.addEventListener('keydown', handleKeyDownFn);
@@ -498,6 +514,59 @@ const copyConfigCode = (code: string) => {
 };
 
 /**
+ * 复制个人配置
+ */
+const copyPersonalConfig = () => {
+    if (currentSelectedItem.value) {
+        copyConfigCode(currentSelectedItem.value.keyConfigJson);
+        showKeyCaptureModal.value = false;
+    }
+};
+
+/**
+ * 打开新增配置弹框
+ */
+const openAddConfigModal = () => {
+    newConfigName.value = '';
+    newConfigJson.value = '';
+    showAddConfigModal.value = true;
+};
+
+/**
+ * 关闭新增配置弹框
+ */
+const closeAddConfigModal = () => {
+    showAddConfigModal.value = false;
+    newConfigName.value = '';
+    newConfigJson.value = '';
+};
+
+/**
+ * 保存新增配置
+ */
+const saveAddConfig = async () => {
+    if (!newConfigName.value.trim()) {
+        window.$message?.warning('请输入配置名称');
+        return;
+    }
+    if (!newConfigJson.value.trim()) {
+        window.$message?.warning('请输入配置内容');
+        return;
+    }
+
+    const { error } = await fetchAddKeyBind({
+        configName: newConfigName.value.trim(),
+        keyConfigJson: newConfigJson.value.trim()
+    });
+
+    if (!error) {
+        window.$message?.success('配置添加成功');
+        closeAddConfigModal();
+        await fetchLocalConfigLibrary();
+    }
+};
+
+/**
  * 保存按键并关闭弹窗
  */
 const saveAndCloseCaptureFn = () => {
@@ -595,22 +664,17 @@ const saveLocalAutoexecCfg = async () => {
 // ============================================================================
 
 /**
- * 获取公共配置库
- */
-const fetchConfigLibrary = async () => {
-    const { error, data } = await fetchGetAllSharedKeyBinds();
-    if (!error) {
-        configLibraryItems.value = data || [];
-    }
-};
-
-/**
  * 获取个人配置库
  */
 const fetchLocalConfigLibrary = async () => {
     const { error, data } = await fetchGetMyKeyBinds();
-    if (!error) {
-        localConfigItems.value = data || [];
+    if (!error && data) {
+        LocalConfigItems.value = data.map(item => ({
+            systemName: item.configName,
+            systemIcon: Command,
+            keyConfigJson: item.keyConfigJson,
+            configDesc: '用户个人配置库'
+        }));
     }
 };
 
@@ -627,7 +691,7 @@ const handleBackFn = () => emit('back');
  * 组件挂载时初始化
  */
 onMounted(() => {
-    Promise.all([fetchConfigLibrary(), fetchLocalConfigLibrary()]);
+    Promise.all([fetchLocalConfigLibrary()]);
 });
 </script>
 
@@ -694,7 +758,7 @@ onMounted(() => {
                                                 class="w-48px h-48px object-contain" />
                                             <div class="flex flex-col">
                                                 <span class="text-14px font-bold">{{ item.systemBindCfgVO?.systemName
-                                                }}</span>
+                                                    }}</span>
                                                 <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }}: {{
                                                     item.key }}</span>
                                             </div>
@@ -721,13 +785,20 @@ onMounted(() => {
                     </div>
                 </template>
                 <NGrid x-gap="10" y-gap="10" :cols="4" v-if="activeTab === 'library'">
+                    <NGridItem v-if="selectedSystemConfig === '个人配置库'" class="add-config-grid-item">
+                        <NCard class="rounded-10px add-config-card cursor-pointer" content-style="padding:10px"
+                            content-class="flex flex-col items-center justify-center" @click="openAddConfigModal">
+                            <SvgIcon icon="material-symbols:add" class="w-48px h-48px text-gray-400 mb-8px" />
+                            <span class="text-12px text-gray-400">新增配置</span>
+                        </NCard>
+                    </NGridItem>
                     <NGridItem v-for="item in currentCfgOptions" :key="item.systemName"
                         @click="!isItemApplied(item.systemName) && openKeyCaptureFn(item)">
                         <NCard class="rounded-10px"
                             :class="{ 'applied': isItemApplied(item.systemName), 'selected': selectedSystemConfig === item.systemName }"
                             content-style="padding:10px"
                             :content-class="isItemApplied(item.systemName) ? 'flex flex-col items-center justify-center' : 'cursor-pointer flex flex-col items-center justify-center'">
-                            <img :src="item.systemIcon" class="w-48px h-48px object-contain mb-8px" />
+                            <img :src="item.systemIcon || Command" class="w-48px h-48px object-contain mb-8px" />
                             <span class="text-12px">{{ item.systemName }}</span>
                         </NCard>
                     </NGridItem>
@@ -744,24 +815,25 @@ onMounted(() => {
                                     <div class="flex-1 flex flex-col align-center justify-between">
                                         <span class="text-14px font-bold">{{ $t('keyBind.configName') }} : {{
                                             item.systemBindCfgVO?.systemName
-                                            }}</span>
+                                        }}</span>
                                         <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }} : {{
                                             item.key }}</span>
                                     </div>
                                     <div class="flex flex-col items-center justify-center w-150px gap-10px">
                                         <NButton class="rounded-10px" type="info" ghost
                                             @click.stop="resetAppliedBindingKey(item.systemBindCfgVO?.systemName)">{{
-                                            $t('keyBind.resetKey') }}
+                                                $t('keyBind.resetKey') }}
                                         </NButton>
                                         <NButton class="rounded-10px" type="warning" ghost
                                             @click.stop="removeAppliedBinding(item.systemBindCfgVO?.systemName)">{{
-                                            $t('keyBind.removeBinding') }}
+                                                $t('keyBind.removeBinding') }}
                                         </NButton>
                                     </div>
                                 </NCard>
                             </template>
                             <div class="config-code-block" :class="{ 'dark': isDarkMode, 'light': !isDarkMode }">
-                                <NButton class="copy-btn" size="tiny" quaternary @click="copyConfigCode(item.renderKeyConfigJson)">
+                                <NButton class="copy-btn" size="tiny" quaternary
+                                    @click="copyConfigCode(item.renderKeyConfigJson)">
                                     <template #icon>
                                         <SvgIcon icon="mdi:content-copy" />
                                     </template>
@@ -782,20 +854,30 @@ onMounted(() => {
             class="w-400px rounded-20px key-capture-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
             size="small">
             <template #header>
-                <div class="flex items-center font-size-18px">
-                    <div class="font-size-16px">{{ $t('keyBind.tutorial.title') }}</div>
+                按键绑定配置
+            </template>
+            <template #header-extra>
+                <div class="flex items-center justify-between font-size-18px">
+                    <NButton quaternary size="tiny" @click="closeKeyCaptureFn">
+                        <SvgIcon icon="material-symbols:close" />
+                    </NButton>
                 </div>
             </template>
-            <div class="key-capture-modal-new" @wheel="handleWheelFn" @mousedown="handleMouseDownFn">
+            <div v-if="!isPersonalConfig" class="key-capture-modal-new pt-20px pb-20px pl-20px pr-20px"
+                @wheel="handleWheelFn" @mousedown="handleMouseDownFn">
                 <!-- 顶部装饰区域 -->
-                <div class="capture-header">
+                <div class="capture-header mb-20px">
                     <div class="character-image">
                         <img src="@/assets/imgs/menu/942302.png" alt="character" />
                     </div>
                     <div class="header-glow"></div>
                 </div>
+                <!-- 配置名称 -->
+                <div class="config-name text-18px font-bold mb-20px text-center">
+                    {{ currentSelectedItem?.systemName }}
+                </div>
                 <!-- 按键显示区域 -->
-                <div class="capture-display-area" :class="{ 'has-key': capturedKey }">
+                <div class="capture-display-area mb-20px" :class="{ 'has-key': capturedKey }">
                     <div class="key-display-box">
                         <span v-if="capturedKey" class="captured-key-text">{{ capturedKey }}</span>
                         <span v-else class="waiting-text">
@@ -808,7 +890,7 @@ onMounted(() => {
                     </div>
                 </div>
                 <!-- 提示信息 -->
-                <div class="capture-tips">
+                <div class="capture-tips mb-20px">
                     <div class="tip-item">
                         <SvgIcon icon="material-symbols:keyboard" class="tip-icon" />
                         <span class="tip-text">{{ $t('keyBind.capture.keyboard') }}</span>
@@ -821,6 +903,62 @@ onMounted(() => {
                         <SvgIcon icon="material-symbols:swap-vert" class="tip-icon" />
                         <span class="tip-text">{{ $t('keyBind.capture.wheel') }}</span>
                     </div>
+                </div>
+            </div>
+            <div v-else class="key-capture-modal-new pt-20px pb-20px pl-20px pr-20px">
+                <!-- 顶部装饰区域 -->
+                <div class="capture-header mb-20px">
+                    <div class="character-image">
+                        <img src="@/assets/imgs/menu/942302.png" alt="character" />
+                    </div>
+                    <div class="header-glow"></div>
+                </div>
+                <div class="config-name text-18px font-bold mb-20px text-center">
+                    {{ currentSelectedItem?.systemName }}
+                </div>
+                <div class="capture-tips">
+                    <div class="tip-item cursor-pointer" @click="copyPersonalConfig">
+                        <SvgIcon icon="mdi:content-copy" class="tip-icon" />
+                        <span class="tip-text">复制配置</span>
+                    </div>
+                </div>
+            </div>
+        </NModal>
+        <!-- 新增配置弹框 -->
+        <NModal v-model:show="showAddConfigModal" :bordered="true" preset="card"
+            class="w-600px h-500px rounded-10px key-capture-wrapper overflow-auto"
+            :class="{ 'light-mode': !isDarkMode }" :closable="false" size="medium">
+            <template #header>
+                <div class="flex items-center justify-between font-size-18px">
+                    <div class="font-size-16px">新增个人配置</div>
+                    <NButton quaternary size="tiny" @click="closeAddConfigModal">
+                        <SvgIcon icon="material-symbols:close" />
+                    </NButton>
+                </div>
+            </template>
+            <div class="add-config-modal pt-20px pb-20px pl-20px pr-20px">
+                <div class="mb-20px">
+                    <div class="text-sm font-medium mb-5px">配置名称</div>
+                    <NInput v-model:value="newConfigName" placeholder="请输入配置名称" />
+                </div>
+                <div class="mb-20px">
+                    <div class="text-sm font-medium mb-5px">配置内容</div>
+                    <MdEditor v-model="newConfigJson" :theme="isDarkMode ? 'dark' : 'light'" :preview="false"
+                        :toolbars="['revoke', 'next']" class="h-300px" />
+                </div>
+                <div class="flex flex-wrap gap-10px">
+                    <NButton type="warning" class="flex-1 rounded-5px" ghost @click="closeAddConfigModal">
+                        <template #icon>
+                            <SvgIcon icon="material-symbols:close" />
+                        </template>
+                        取消
+                    </NButton>
+                    <NButton type="info" class="flex-1 rounded-5px" ghost @click="saveAddConfig">
+                        <template #icon>
+                            <SvgIcon icon="material-symbols:check" />
+                        </template>
+                        添加配置
+                    </NButton>
                 </div>
             </div>
         </NModal>

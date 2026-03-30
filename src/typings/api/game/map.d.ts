@@ -88,5 +88,15 @@ declare namespace Api {
         achievement10: string;
       };
     }>;
+
+    /** 修改地图订阅 params */
+    type UpdateMapSubscribeParams = {
+      /** 地图ID */
+      mapId: number;
+      /** 系统订阅 */
+      systemOrder: string | null;
+      /** QQ订阅 */
+      qqOrder: string | null;
+    };
   }
 }

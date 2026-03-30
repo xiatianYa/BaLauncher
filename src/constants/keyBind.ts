@@ -58,13 +58,19 @@ export const systemLibraryItems: Api.Game.SystemBindVO[] = [
         systemIcon: ZE,
         configName: 'ZE常用',
         configDesc: 'CSGO2 通用ZE配置cfg',
-    }
+    },
+    {
+        systemName: '个人配置库',
+        systemIcon: Command,
+        configName: '个人配置库',
+        configDesc: '用户个人配置库',
+    },
 ];
 
 /** 系统武器配置库 */
 export const GunLibaryCfgOption: Api.Game.SystemBindCfgVO[] = [
     {
-        systemName: 'MP9',
+        systemName: 'MP9(傲丙初最爱)',
         systemIcon: MP9,
         keyConfigJson: 'bind "[按键:购买MP9]" "mp9"',
         configDesc: '购买MP9冲锋枪',

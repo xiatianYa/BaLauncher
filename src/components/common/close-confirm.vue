@@ -31,7 +31,7 @@ const handleConfirmExit = async () => {
 </script>
 
 <template>
-  <NModal v-model:show="props.showCloseConfirm" preset="card" class="w-320px rounded-md" size="small" :bordered="false"
+  <NModal v-model:show="props.showCloseConfirm" preset="card" class="w-320px rounded-10px" size="small" :bordered="false"
     :closable="false" :onMaskClick="handleCancelExit">
     <div class="flex flex-col items-center p-4">
       <!-- 退出图标（使用naive-ui的NIcon组件） -->

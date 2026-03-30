@@ -129,7 +129,7 @@ const handleRefresh = (server: Api.Game.InfoResponse) => {
               {{ getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel :
                 $t('server.noTranslation') }}
             </NEllipsis>
-            <div class="stat-chip chip-score mr-5px w-145px flex items-center justify-center" v-show="server.mapPhase">
+            <div class="stat-chip chip-score mr-5px w-160px flex items-center justify-center" v-show="server.mapPhase">
               <span class="team team-ct">CT {{ server.CTScore || '0' }}</span>
               <span>{{ getMapPhaseText(server.mapPhase || '') }}</span>
               <span class="team team-t">T {{ server.TScore || '0' }}</span>

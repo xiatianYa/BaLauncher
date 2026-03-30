@@ -16,6 +16,7 @@ export default {
   },
   common: {
     loading: '正在加载...',
+    cancel: '取消',
   },
   windowControls: {
     notifications: '通知',
@@ -308,6 +309,8 @@ export default {
     searchPlaceholder: '搜索地图名称，译名，或标签',
     subscribe: '订阅',
     unsubscribe: '取消订阅',
+    unsubscribeSystem: '取消系统订阅',
+    unsubscribeQQ: '取消QQ订阅',
     notSubscribable: '不可订阅',
     subscribeSuccess: '订阅成功',
     subscribeFailed: '订阅失败',
@@ -339,5 +342,11 @@ export default {
     isOrderable: '是否可预定',
     yes: '是',
     no: '否',
+    edit: '编辑',
+    editSubscribe: '编辑订阅',
+    deleteSubscribe: '删除订阅',
+    confirmDeleteSubscribe: '确认删除该订阅？',
+    unsubscribeSystemSuccess: '已取消系统订阅',
+    unsubscribeQQSuccess: '已取消QQ订阅',
   },
 };

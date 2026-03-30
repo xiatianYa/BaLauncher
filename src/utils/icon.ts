@@ -98,5 +98,11 @@ export const commonIcons = [
   'material-symbols:touch-double-outline',
   'ic:outline-check-circle',
   'ic:sharp-clear',
-  'material-symbols:lightbulb-2-outline'
+  'material-symbols:lightbulb-2-outline',
+  'material-symbols:search',
+  'tabler:device-desktop',
+  'fluent-emoji-high-contrast:package',
+  'material-symbols:inbox-outline',
+  'material-symbols:left-panel-open-outline',
+  'material-symbols:check'
 ]

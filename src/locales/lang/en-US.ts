@@ -16,6 +16,7 @@ export default {
   },
   common: {
     loading: 'Loading...',
+    cancel: 'Cancel',
   },
   windowControls: {
     notifications: 'Notifications',
@@ -308,6 +309,8 @@ export default {
     searchPlaceholder: 'Search map name, translation, or tags',
     subscribe: 'Subscribe',
     unsubscribe: 'Unsubscribe',
+    unsubscribeSystem: 'Unsubscribe System',
+    unsubscribeQQ: 'Unsubscribe QQ',
     notSubscribable: 'Not Subscribable',
     subscribeSuccess: 'Subscribed successfully',
     subscribeFailed: 'Subscription failed',
@@ -339,5 +342,11 @@ export default {
     isOrderable: 'Orderable',
     yes: 'Yes',
     no: 'No',
+    edit: 'Edit',
+    editSubscribe: 'Edit Subscription',
+    deleteSubscribe: 'Delete Subscription',
+    confirmDeleteSubscribe: 'Confirm delete this subscription?',
+    unsubscribeSystemSuccess: 'System subscription canceled',
+    unsubscribeQQSuccess: 'QQ subscription canceled',
   },
 };

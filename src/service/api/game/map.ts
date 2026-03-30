@@ -84,3 +84,14 @@ export function fetchDeleteMapSubscribe(mapId: number) {
     method: 'delete'
   });
 }
+
+/**
+ * 修改地图订阅
+ */
+export function fetchUpdateMapSubscribe(params: Api.Game.UpdateMapSubscribeParams) {
+  return request({
+    url: `/gameMapOrder/update`,
+    method: 'put',
+    data: params
+  });
+}

@@ -59,19 +59,3 @@ export function fetchGetMyKeyBinds() {
     method: 'get'
   });
 }
-
-/** 获取所有已分享的按键绑定配置列表 */
-export function fetchGetAllSharedKeyBinds() {
-  return request<Api.Game.KeyBindList>({
-    url: '/gameKeyBind/listAllShared',
-    method: 'get'
-  });
-}
-
-/** 增加按键绑定配置使用次数 */
-export function fetchIncrementUseCount(id: number) {
-  return request<boolean>({
-    url: `/gameKeyBind/incrementUseCount/${id}`,
-    method: 'post'
-  });
-}

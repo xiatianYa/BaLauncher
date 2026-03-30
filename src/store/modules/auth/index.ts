@@ -99,13 +99,6 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         loginModalVisibel.value = false;
 
         await redirectFromLogin(needRedirect);
-
-        window.$notification?.success({
-          title: "登陆成功",
-          content: `欢迎回来,${userInfo.userName}!`,
-          duration: 3000,
-        });
-
         toHome();
       }
     } else {
