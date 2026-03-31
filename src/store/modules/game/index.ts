@@ -757,7 +757,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             '当前地图': data.current,
             '目标服务器地图': joinServerInfo.value?.map || '未设置'
           })
-          if (joinServerInfo.value?.map === data.current) {
+          console.log(isAutomatic.value);
+          
+          if (joinServerInfo.value?.map === data.current && isAutomatic.value) {
             safeLog('✅ 用户已成功连接到目标服务器')
             isAutomaticRetry.value = false;
             isAutomatic.value = false;
