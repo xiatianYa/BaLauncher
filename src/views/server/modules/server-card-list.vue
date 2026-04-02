@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { NGrid, NGridItem, NTag, NEllipsis } from 'naive-ui';
+import { NGrid, NGridItem, NTag, NEllipsis, NTooltip } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
+import { useGameStore } from '@/store/modules/game';
 
+const gameStore = useGameStore();
 
 const props = defineProps<{
   servers: Api.Game.InfoResponse[];
@@ -15,6 +17,7 @@ const emit = defineEmits<{
   (e: 'copy', server: Api.Game.InfoResponse): void;
   (e: 'autoJoin', server: Api.Game.InfoResponse): void;
   (e: 'refresh', server: Api.Game.InfoResponse): void;
+  (e: 'delete', server: Api.Game.InfoResponse): void;
 }>();
 
 const { dictOptions } = useDict();
@@ -68,7 +71,14 @@ const getMapPhaseText = (phase: string) => {
 
 // 获取源服务器信息
 const getSourceServerInfo = (server: Api.Game.InfoResponse): Api.Game.Server | undefined => {
-  return props.sourceServerList.find(s => s.connectStr === server.addr);
+  return props.sourceServerList.find(s => {
+    if (s.connectStr === server.addr) return true;
+    if (s.ip && s.port) {
+      const serverAddr = `${s.ip}:${s.port}`;
+      if (serverAddr === server.addr) return true;
+    }
+    return false;
+  });
 };
 
 // 查询服务器地图类型
@@ -96,6 +106,13 @@ const handleAutoJoin = (server: Api.Game.InfoResponse) => {
 const handleRefresh = (server: Api.Game.InfoResponse) => {
   emit('refresh', server);
 };
+
+const handleDelete = (server: Api.Game.InfoResponse) => {
+  if (gameStore.isCustomCategory(gameStore?.selectedCommunityId || 0)) {
+    gameStore.removeCustomServer(server.addr, gameStore.selectedCommunityId || 0);
+    emit('delete', server);
+  }
+};
 </script>
 
 <template>
@@ -122,8 +139,7 @@ const handleRefresh = (server: Api.Game.InfoResponse) => {
               <span class="chip-text">{{ `${server.players}/${server.maxPlayers}` }}</span>
             </div>
           </div>
-          <div
-            class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
+          <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
             <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
             <NEllipsis class="flex items-center justify-center flex-1">
               {{ getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel :
@@ -159,6 +175,15 @@ const handleRefresh = (server: Api.Game.InfoResponse) => {
             <div class="three-btn h-30px" @click="handleAutoJoin(server)">
               <SvgIcon icon="material-symbols:alarm-smart-wake-outline" class="text-22px" />
             </div>
+            <NTooltip trigger="hover" placement="bottom"
+              v-if="gameStore.isCustomCategory(gameStore?.selectedCommunityId || 0)">
+              <template #trigger>
+                <div class="four-btn h-30px" @click="handleDelete(server)">
+                  <SvgIcon icon="mdi:delete-outline" class="text-22px" />
+                </div>
+              </template>
+              {{ $t('server.deleteServer') }}
+            </NTooltip>
           </div>
         </div>
         <div v-else class="sercer-card overflow-hidden flex flex-col">
@@ -185,6 +210,15 @@ const handleRefresh = (server: Api.Game.InfoResponse) => {
                 <SvgIcon icon="material-symbols:refresh" class="text-22px" />
               </div>
             </div>
+            <NTooltip trigger="hover" placement="bottom"
+              v-if="gameStore.isCustomCategory(gameStore?.selectedCommunityId || 0)">
+              <template #trigger>
+                <div class="four-btn h-30px" @click="handleDelete(server)">
+                  <SvgIcon icon="mdi:delete-outline" class="text-22px" />
+                </div>
+              </template>
+              {{ $t('server.deleteServer') }}
+            </NTooltip>
           </div>
         </div>
       </NGridItem>
@@ -303,6 +337,20 @@ const handleRefresh = (server: Api.Game.InfoResponse) => {
       background-color: rgba(0, 0, 0, 0.5);
       cursor: pointer;
       color: rgba(249, 115, 22, 0.7);
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    .four-btn {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex: 2;
+      background-color: rgba(0, 0, 0, 0.5);
+      cursor: pointer;
+      color: rgba(239, 68, 68, 0.7);
 
       &:hover {
         background-color: rgba(255, 255, 255, 0.1);

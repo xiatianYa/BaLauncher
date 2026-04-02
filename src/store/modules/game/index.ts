@@ -34,6 +34,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // ==================== 列表数据 ====================
   /** 社区列表 */
   const communityList = reactive<Api.Game.Community[]>([])
+  /** 自定义分类ID列表 */
+  const customCommunityIds = reactive<number[]>([])
   /** 服务器列表 */
   const serverDataList = reactive<Api.Game.Server[]>([])
   /** 地图列表 */
@@ -192,6 +194,209 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     if (savedSelectedCommunityId !== null) selectedCommunityId.value = savedSelectedCommunityId
   }
 
+  /** 应用社区排序 */
+  function applyCommunityOrder(communities: Api.Game.Community[]): Api.Game.Community[] {
+    const savedOrder = localStg.get(GAME_STORAGE_KEYS.COMMUNITY_ORDER) as number[] | null
+    if (!savedOrder || savedOrder.length === 0) {
+      return communities
+    }
+
+    const idToCommunity = new Map(communities.map(c => [c.id, c]))
+    const sorted: Api.Game.Community[] = []
+
+    for (const id of savedOrder) {
+      const community = idToCommunity.get(id)
+      if (community) {
+        sorted.push(community)
+        idToCommunity.delete(id)
+      }
+    }
+
+    sorted.push(...idToCommunity.values())
+
+    return sorted
+  }
+
+  /** 保存社区排序 */
+  function saveCommunityOrder(): void {
+    const order = communityList.map(c => c.id)
+    localStg.set(GAME_STORAGE_KEYS.COMMUNITY_ORDER, order)
+  }
+
+  /** 加载自定义分类ID */
+  function loadCustomCommunityIds(): void {
+    const saved = localStg.get(GAME_STORAGE_KEYS.CUSTOM_COMMUNITY_IDS) as number[] | null
+    if (saved) {
+      customCommunityIds.splice(0, customCommunityIds.length, ...saved)
+    }
+  }
+
+  /** 保存自定义分类ID */
+  function saveCustomCommunityIds(): void {
+    localStg.set(GAME_STORAGE_KEYS.CUSTOM_COMMUNITY_IDS, [...customCommunityIds])
+  }
+
+  /** 加载自定义分类 */
+  function loadCustomCommunities(): void {
+    const saved = localStg.get(GAME_STORAGE_KEYS.CUSTOM_COMMUNITIES) as Api.Game.Community[] | null
+    if (saved) {
+      saved.forEach(community => {
+        if (!communityList.find(c => c.id === community.id)) {
+          communityList.push(community)
+        }
+      })
+    }
+  }
+
+  /** 保存自定义分类 */
+  function saveCustomCommunities(): void {
+    const customCommunities = communityList.filter(c => customCommunityIds.includes(c.id))
+    localStg.set(GAME_STORAGE_KEYS.CUSTOM_COMMUNITIES, [...customCommunities])
+  }
+
+  /** 加载自定义服务器 */
+  function loadCustomServers(): void {
+    const saved = localStg.get(GAME_STORAGE_KEYS.CUSTOM_SERVERS) as Api.Game.Server[] | null
+    if (saved) {
+      saved.forEach(server => {
+        if (!serverDataList.find(s => s.connectStr === server.connectStr && s.communityId === server.communityId)) {
+          serverDataList.push(server)
+        }
+      })
+    }
+  }
+
+  /** 保存自定义服务器 */
+  function saveCustomServers(): void {
+    const customServers = serverDataList.filter(server => customCommunityIds.includes(server.communityId || 0))
+    localStg.set(GAME_STORAGE_KEYS.CUSTOM_SERVERS, [...customServers])
+  }
+
+  /** 添加自定义分类 */
+  function addCustomCategory(name: string): Api.Game.Community {
+    const category: Api.Game.Community = {
+      id: Number(Date.now().toString() + Math.floor(Math.random() * 10000).toString().padStart(4, '0')),
+      createBy: '',
+      createTime: '',
+      updateBy: '',
+      updateTime: '',
+      status: 1,
+      communityName: name,
+      logo: '',
+      website: '',
+      serverNumber: 0,
+      playerNumber: 0
+    }
+    communityList.push(category)
+    customCommunityIds.push(category.id)
+    saveCustomCommunityIds()
+    saveCustomCommunities()
+    saveCommunityOrder()
+    return category
+  }
+
+  /** 编辑自定义分类 */
+  function editCustomCategory(categoryId: number, name: string): void {
+    const category = communityList.find(c => c.id === categoryId)
+    if (category) {
+      category.communityName = name
+      saveCustomCommunities()
+    }
+  }
+
+  /** 删除自定义分类 */
+  function removeCustomCategory(categoryId: number): void {
+    const categoryIndex = communityList.findIndex(c => c.id === categoryId)
+    if (categoryIndex !== -1) {
+      communityList.splice(categoryIndex, 1)
+    }
+    const idIndex = customCommunityIds.indexOf(categoryId)
+    if (idIndex !== -1) {
+      customCommunityIds.splice(idIndex, 1)
+    }
+    const serversToRemove = serverDataList.filter(s => s.communityId === categoryId)
+    serversToRemove.forEach(server => {
+      const serverIndex = serverDataList.indexOf(server)
+      if (serverIndex !== -1) {
+        serverDataList.splice(serverIndex, 1)
+      }
+    })
+    if (selectedCommunityId.value === categoryId) {
+      selectedCommunityId.value = null
+    }
+    saveCustomCommunityIds()
+    saveCustomCommunities()
+    saveCustomServers()
+    saveCommunityOrder()
+  }
+
+  /** 添加服务器到自定义分类 */
+  function addServerToCategory(categoryId: number, server: Api.Game.Server): void {
+    serverDataList.push(server)
+    const category = communityList.find(c => c.id === categoryId)
+    if (category) {
+      category.serverNumber = serverDataList.filter(s => s.communityId === categoryId).length
+    }
+    saveCustomServers()
+  }
+
+  /** 删除自定义服务器 */
+  function removeCustomServer(addr: string, communityId?: number): void {
+    const id = communityId || selectedCommunityId.value || 0
+    const index = serverDataList.findIndex(s => {
+      if (s.communityId !== id) return false
+      if (s.connectStr === addr) return true
+      if (s.ip && s.port) {
+        const serverAddr = `${s.ip}:${s.port}`
+        if (serverAddr === addr) return true
+      }
+      return false
+    })
+    if (index !== -1) {
+      const categoryId = id
+      serverDataList.splice(index, 1)
+      const category = communityList.find(c => c.id === categoryId)
+      if (category) {
+        category.serverNumber = serverDataList.filter(s => s.communityId === categoryId).length
+      }
+      saveCustomServers()
+    }
+  }
+
+  /** 判断是否是自定义分类 */
+  function isCustomCategory(communityId: number): boolean {
+    return customCommunityIds.includes(communityId)
+  }
+
+  /** 获取自定义分类的服务器列表 */
+  function getCustomCategoryServers(categoryId: number): Api.Game.InfoResponse[] {
+    const servers = serverDataList.filter(s => s.communityId === categoryId)
+    return servers.map(s => ({
+      protocol: 0,
+      name: s.serverName || '',
+      map: '',
+      folder: '',
+      game: '',
+      appId: 730,
+      players: 0,
+      maxPlayers: 0,
+      bots: 0,
+      serverType: 'd',
+      environment: 'l',
+      visibility: 0,
+      vac: 0,
+      version: '1.0.0.0',
+      addr: s.ip && s.port ? `${s.ip}:${s.port}` : s.connectStr || '',
+      isOnline: false,
+      round: '',
+      CTScore: '0',
+      TScore: '0',
+      mapStage: '',
+      mapPhase: '',
+      csgoPlayer: []
+    }))
+  }
+
   /** 保存设置到本地存储 */
   function saveSettingsToStorage(): void {
     localStg.set(GAME_STORAGE_KEYS.GAME_PLATFORM, GamePlatform.value)
@@ -253,6 +458,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   function toggleServerViewModule(): void {
     serverViewModule.value = serverViewModule.value === 'cardModel' ? 'tableModal' : 'cardModel'
     localStg.set(GAME_STORAGE_KEYS.SERVER_VIEW_MODULE, serverViewModule.value)
+  }
+
+  /** 更新社区列表排序 */
+  function updateCommunityList(communities: Api.Game.Community[]): void {
+    communityList.splice(0, communityList.length, ...communities)
+    saveCommunityOrder()
   }
 
   /** 设置选中的社区ID */
@@ -349,21 +560,47 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   /** 初始化服务器列表 */
   async function initServerList(): Promise<void> {
     loadSettingsFromStorage()
+    loadCustomCommunityIds()
+    loadCustomCommunities()
+    loadCustomServers()
+
+    const customCommunities = [...communityList.filter(c => customCommunityIds.includes(c.id))]
+    const customServers = [...serverDataList.filter(server => customCommunityIds.includes(server.communityId || 0))]
+
     const { data: communityData } = await fetchGetCommunityList()
-    if (communityData) communityList.push(...communityData)
+    if (communityData) {
+      const allCommunities = [...communityData, ...customCommunities]
+      const sortedCommunities = applyCommunityOrder(allCommunities)
+      communityList.splice(0, communityList.length, ...sortedCommunities)
+    }
     const { data: mapData } = await fetchGetMapList()
     if (mapData) mapList.push(...mapData)
+
     await countServerServerNumber()
+
+    const currentCustomServers = serverDataList.filter(server => customCommunityIds.includes(server.communityId || 0))
+    const missingCustomServers = customServers.filter(cs =>
+      !currentCustomServers.some(ccs => ccs.connectStr === cs.connectStr && ccs.communityId === cs.communityId)
+    )
+    if (missingCustomServers.length > 0) {
+      serverDataList.push(...missingCustomServers)
+    }
+
     await countServerPlayerNumber()
   }
 
   /** 统计各社区的服务器数量 */
   async function countServerServerNumber(): Promise<void> {
     const { data: serverData } = await fetchGetServerList()
-    if (serverData) serverDataList.splice(0, serverDataList.length, ...serverData)
+    const customServers = serverDataList.filter(server => customCommunityIds.includes(server.communityId || 0))
+    if (serverData) {
+      const allServers = [...serverData, ...customServers]
+      serverDataList.splice(0, serverDataList.length, ...allServers)
+    }
     for (const community of communityList) {
       community.serverNumber = serverDataList.filter(server => server.communityId === community.id).length
     }
+    saveCustomServers()
   }
 
   /** 统计各社区的在线玩家数量 */
@@ -757,8 +994,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             '当前地图': data.current,
             '目标服务器地图': joinServerInfo.value?.map || '未设置'
           })
-          console.log(isAutomatic.value);
-          
           if (joinServerInfo.value?.map === data.current && isAutomatic.value) {
             safeLog('✅ 用户已成功连接到目标服务器')
             isAutomaticRetry.value = false;
@@ -1249,6 +1484,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     automaticCount,
     isAutomatic,
     communityList,
+    customCommunityIds,
     serverDataList,
     mapList,
     currentServerList,
@@ -1295,6 +1531,14 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     setSteamPath,
     toggleFullscreen,
     toggleServerViewModule,
+    updateCommunityList,
+    addCustomCategory,
+    editCustomCategory,
+    removeCustomCategory,
+    addServerToCategory,
+    removeCustomServer,
+    isCustomCategory,
+    getCustomCategoryServers,
     setSelectedCommunityId,
     setJoinServerPersonValue,
     setJoinServerCountValue,

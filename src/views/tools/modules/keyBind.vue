@@ -516,7 +516,7 @@ const handleWheelFn = (e: WheelEvent) => {
  */
 const copyConfigCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    window.$message?.success($t('keyBind.messages.saveSuccess'));
+    window.$message?.success($t('keyBind.messages.copySuccess'));
 };
 
 /**
@@ -762,7 +762,6 @@ onMounted(() => {
                 <span>{{ $t('keyBind.back') }}</span>
             </div>
         </div>
-
         <div class="main-content">
             <NCard class="left-panel" content-class="h-full overflow-auto" content-style="padding:10px;">
                 <div class="flex flex-col gap-10px">
@@ -813,7 +812,7 @@ onMounted(() => {
                                                 class="w-48px h-48px object-contain" />
                                             <div class="flex flex-col">
                                                 <span class="text-14px font-bold">{{ item.systemBindCfgVO?.systemName
-                                                    }}</span>
+                                                }}</span>
                                                 <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }}: {{
                                                     item.key }}</span>
                                             </div>
@@ -855,6 +854,13 @@ onMounted(() => {
                             :content-class="isItemApplied(item.systemName) ? 'flex flex-col items-center justify-center' : 'cursor-pointer flex flex-col items-center justify-center'">
                             <img :src="item.systemIcon || Command" class="w-48px h-48px object-contain mb-8px" />
                             <span class="text-12px">{{ item.systemName }}</span>
+                            <NButton class="copy-btn" size="tiny" quaternary
+                                @click.stop="copyConfigCode(item.keyConfigJson)">
+                                <template #icon>
+                                    <SvgIcon icon="mdi:content-copy" />
+                                </template>
+                                {{ $t('keyBind.copyCommand') }}
+                            </NButton>
                         </NCard>
                     </NGridItem>
                 </NGrid>
@@ -870,7 +876,7 @@ onMounted(() => {
                                     <div class="flex-1 flex flex-col align-center justify-between">
                                         <span class="text-14px font-bold">{{ $t('keyBind.configName') }} : {{
                                             item.systemBindCfgVO?.systemName
-                                        }}</span>
+                                            }}</span>
                                         <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }} : {{
                                             item.key }}</span>
                                     </div>
@@ -993,7 +999,8 @@ onMounted(() => {
             :class="{ 'light-mode': !isDarkMode }" :closable="false" size="medium">
             <template #header>
                 <div class="flex items-center justify-between font-size-18px">
-                    <div class="font-size-16px">{{ isEditMode ? $t('keyBind.editPersonalConfig') : $t('keyBind.addPersonalConfig') }}</div>
+                    <div class="font-size-16px">{{ isEditMode ? $t('keyBind.editPersonalConfig') :
+                        $t('keyBind.addPersonalConfig') }}</div>
                     <NButton quaternary size="tiny" @click="closeAddConfigModal">
                         <SvgIcon icon="material-symbols:close" />
                     </NButton>

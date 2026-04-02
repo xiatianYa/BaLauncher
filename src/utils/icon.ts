@@ -110,5 +110,8 @@ export const commonIcons = [
   'material-symbols:close',
   'material-symbols:keyboard',
   'material-symbols:mouse',
-  'material-symbols:swap-vert'
+  'material-symbols:swap-vert',
+  'material-symbols:expand-more',
+  'material-symbols:expand-less',
+  'material-symbols:drag-indicator'
 ]

@@ -11,7 +11,6 @@ import { $t } from '@/locales';
 import dayjs from 'dayjs';
 import { fetchGetGroupList } from '@/service/api/game/group';
 import { fetchBindQQ, fetchBindQQGroup } from '@/service/api/system/user';
-import { preloadIcons } from '@/utils/icon';
 
 defineOptions({
     name: 'MapOrder'
@@ -22,21 +21,6 @@ defineOptions({
 const DEBOUNCE_DELAY = 300; // 防抖延迟时间（毫秒）
 const LOADING_DELAY = 500; // 加载延迟时间（毫秒）
 const DEFAULT_PAGE_SIZE = 12; // 默认每页显示数量
-
-/* ================================ 图标列表 ================================ */
-
-const mapOrderIcons = [
-    'material-symbols:map-outline',
-    'material-symbols:arrow-back',
-    'material-symbols:search',
-    'tabler:device-desktop',
-    'basil:qq-outline',
-    'fluent-emoji-high-contrast:package',
-    'material-symbols:inbox-outline',
-    'material-symbols:left-panel-open-outline',
-    'material-symbols:check',
-    'material-symbols:delete-outline'
-];
 
 /* ================================ Composables ================================ */
 
@@ -65,10 +49,6 @@ const pagination = reactive<Api.Common.PaginatingCommonParams>({
     size: DEFAULT_PAGE_SIZE, // 每页数量
     total: 0 // 总数
 });
-
-const subscribedMapIds = computed<Set<number>>(() =>
-    new Set(subscribeList.value.map(map => map.id)) // 已订阅地图ID集合
-);
 
 const getSubscribedMap = (mapId: number) =>
     subscribeList.value.find(map => map.id === mapId); // 获取已订阅地图
@@ -326,9 +306,6 @@ const fetchSubscribeList = async (): Promise<void> => {
 };
 
 /* ================================ Utility Functions ================================ */
-
-const isSubscribed = (mapId: number): boolean => subscribedMapIds.value.has(mapId); // 检查是否已订阅
-
 const getMapTypeInfo = (mapName: string | undefined): Api.Game.Map | undefined => {
     if (!mapName) return undefined;
     return gameStore.mapList.find(map => map.mapName === mapName); // 获取地图类型信息
@@ -360,7 +337,6 @@ watch(searchKeyword, (newValue) => {
 /* ================================ Lifecycle ================================ */
 
 onMounted(async () => {
-    await preloadIcons(mapOrderIcons); // 预加载图标
     fetchSubscribeList(); // 获取订阅列表
     onGetOption(); // 获取QQ群选项
 });
@@ -501,20 +477,61 @@ onMounted(async () => {
                 </div>
                 <div v-else class="subscribe-list">
                     <div v-for="map in subscribeList" :key="map.id" class="subscribe-item">
-                        <div class="subscribe-item-img">
-                            <img :src="map.mapUrl" :alt="map.mapName" />
+                        <div class="subscribe-item-header">
+                            <div class="subscribe-item-img">
+                                <img :src="map.mapUrl" :alt="map.mapName" />
+                            </div>
+                            <div class="subscribe-item-info">
+                                <div class="subscribe-item-name">{{ map.mapName }}</div>
+                                <div class="subscribe-item-label">{{ map.mapLabel }}</div>
+                            </div>
+                            <NButton type="info" ghost class="subscribe-item-remove rounded-5px"
+                                @click="handleEditSubscribe(map)">
+                                <template #icon>
+                                    <SvgIcon icon="material-symbols:left-panel-open-outline" />
+                                </template>
+                                {{ $t('mapOrder.edit') }}
+                            </NButton>
                         </div>
-                        <div class="subscribe-item-info">
-                            <div class="subscribe-item-name">{{ map.mapName }}</div>
-                            <div class="subscribe-item-label">{{ map.mapLabel }}</div>
-                        </div>
-                        <NButton type="info" ghost class="subscribe-item-remove rounded-5px"
-                            @click="handleEditSubscribe(map)">
-                            <template #icon>
-                                <SvgIcon icon="material-symbols:left-panel-open-outline" />
-                            </template>
-                            {{ $t('mapOrder.edit') }}
-                        </NButton>
+                        <NCollapse class="subscribe-item-collapse">
+                            <NCollapseItem :title="$t('mapOrder.mapCD')" name="mapCd">
+                                <div class="text-12px mt-5px">
+                                    <div class="flex justify-between">
+                                        <span class="color-#999">{{ $t('mapOrder.achievement') }}:</span>
+                                        <NTag size="small" class="rounded-5px" type="info">
+                                            {{ map.exgMap.achievement10 || '-' }}
+                                        </NTag>
+                                    </div>
+                                    <div class="flex justify-between mt-5px">
+                                        <span class="color-#999">{{ $t('mapOrder.lastRun') }}:</span>
+                                        <NTag size="small" class="rounded-5px" type="info">
+                                            {{ dayjs(map.exgMap.lastRun).format('YYYY-MM-DD HH:mm:ss') || '-'
+                                            }}</NTag>
+                                    </div>
+                                    <div class="flex justify-between mt-5px">
+                                        <span class="color-#999">{{ $t('mapOrder.cooldown') }}:</span>
+                                        <NTag size="small" class="rounded-5px" type="info">
+                                            {{ map.exgMap.cooldownMinute }} {{ $t('mapOrder.minutes') }}</NTag>
+                                    </div>
+                                    <div class="flex justify-between mt-5px">
+                                        <span class="color-#999">{{ $t('mapOrder.deadline') }}:</span>
+                                        <NTag size="small" class="rounded-5px" type="info">
+                                            {{ dayjs(map.exgMap.deadline).format('YYYY-MM-DD HH:mm:ss') || '-'
+                                            }}</NTag>
+                                    </div>
+                                    <div class="flex justify-between mt-5px">
+                                        <span class="color-#999">{{ $t('mapOrder.isOrderable') }}:</span>
+                                        <NTag v-if="map.exgMap?.isOrder" type="success" size="small"
+                                            class="rounded-5px">
+                                            {{
+                                                $t('mapOrder.yes') }}</NTag>
+                                        <NTag v-else type="error" size="small" class="rounded-5px">{{ $t('mapOrder.no')
+                                        }}
+                                        </NTag>
+                                    </div>
+                                </div>
+                            </NCollapseItem>
+                        </NCollapse>
                     </div>
                 </div>
             </NCard>
@@ -777,13 +794,20 @@ onMounted(async () => {
 
                 .subscribe-item {
                     display: flex;
-                    align-items: center;
-                    gap: 10px;
+                    flex-direction: column;
+                    gap: 8px;
                     padding: 8px;
                     border-radius: 8px;
                     background: rgba(255, 255, 255, 0.05);
                     border: 1px solid rgba(255, 255, 255, 0.1);
                     transition: all 0.3s ease;
+
+                    .subscribe-item-header {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        width: 100%;
+                    }
 
                     .subscribe-item-img {
                         width: 50px;
@@ -818,6 +842,10 @@ onMounted(async () => {
                             overflow: hidden;
                             text-overflow: ellipsis;
                         }
+                    }
+
+                    .subscribe-item-collapse {
+                        width: 100%;
                     }
                 }
             }

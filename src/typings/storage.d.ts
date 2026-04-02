@@ -44,6 +44,14 @@ declare namespace StorageType {
     theme: string;
     /** The volume */
     volume: number;
+    /** The community order */
+    communityOrder: number[];
+    /** The custom community ids */
+    customCommunityIds: number[];
+    /** The custom communities */
+    customCommunities: Api.Game.Community[];
+    /** The custom servers */
+    customServers: Api.Game.Server[];
     /**
      * The override theme flags
      *

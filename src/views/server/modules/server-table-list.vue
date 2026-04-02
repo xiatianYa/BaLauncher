@@ -3,6 +3,9 @@ import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
 import { DataTableColumn, NButton, NTag, NTooltip } from 'naive-ui';
 import { ref } from 'vue';
+import { useGameStore } from '@/store/modules/game';
+
+const gameStore = useGameStore();
 
 const props = defineProps<{
   servers: Api.Game.InfoResponse[];
@@ -16,6 +19,7 @@ const emit = defineEmits<{
   (e: 'copy', server: Api.Game.InfoResponse): void;
   (e: 'autoJoin', server: Api.Game.InfoResponse): void;
   (e: 'refresh', server: Api.Game.InfoResponse): void;
+  (e: 'delete', server: Api.Game.InfoResponse): void;
   (e: 'back'): void;
 }>();
 
@@ -43,7 +47,14 @@ const getPlayerColor = (players: number) => {
 
 // 获取源服务器信息
 const getSourceServerInfo = (server: Api.Game.InfoResponse): Api.Game.Server | undefined => {
-  return props.sourceServerList.find(s => s.connectStr === server.addr);
+  return props.sourceServerList.find(s => {
+    if (s.connectStr === server.addr) return true;
+    if (s.ip && s.port) {
+      const serverAddr = `${s.ip}:${s.port}`;
+      if (serverAddr === server.addr) return true;
+    }
+    return false;
+  });
 };
 
 // 判断服务器是否离线
@@ -58,6 +69,12 @@ const getRowProps = (row: Api.Game.InfoResponse) => {
       'offline-row': isServerOffline(row) ? 'offline-row' : ''
     }
   };
+};
+
+// 删除服务器
+const handleDelete = (server: Api.Game.InfoResponse) => {
+  gameStore.removeCustomServer(server.addr, gameStore.selectedCommunityId || 0);
+  emit('delete', server);
 };
 
 const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
@@ -121,34 +138,51 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
     title: $t('server.operate'),
     key: 'operate',
     align: 'center',
-    render: (row) => (
-      <div class="flex items-center flex-center gap-8px">
-        <NTooltip trigger="hover" placement="bottom">
-          {{
-            trigger: () => (
-              <NButton class="mr-5px" type="primary" ghost size="small" onClick={() => emit('join', row)}>
-                {{
-                  icon: () => <SvgIcon icon="iconamoon:player-play-bold" />
-                }}
-              </NButton>
-            ),
-            default: () => $t('server.joinServer')
-          }}
-        </NTooltip>
-        <NTooltip trigger="hover" placement="bottom">
-          {{
-            trigger: () => (
-              <NButton type="warning" ghost size="small" onClick={() => emit('autoJoin', row)}>
-                {{
-                  icon: () => <SvgIcon icon="iconamoon:player-next-bold" />
-                }}
-              </NButton>
-            ),
-            default: () => $t('server.autoJoin')
-          }}
-        </NTooltip>
-      </div>
-    )
+    render: (row) => {
+      const isCustom = gameStore.isCustomCategory(gameStore?.selectedCommunityId || 0);
+      return (
+        <div class="flex items-center flex-center gap-8px">
+          <NTooltip trigger="hover" placement="bottom">
+            {{
+              trigger: () => (
+                <NButton class="mr-5px" type="primary" ghost size="small" onClick={() => emit('join', row)}>
+                  {{
+                    icon: () => <SvgIcon icon="iconamoon:player-play-bold" />
+                  }}
+                </NButton>
+              ),
+              default: () => $t('server.joinServer')
+            }}
+          </NTooltip>
+          <NTooltip trigger="hover" placement="bottom">
+            {{
+              trigger: () => (
+                <NButton type="warning" ghost size="small" onClick={() => emit('autoJoin', row)}>
+                  {{
+                    icon: () => <SvgIcon icon="iconamoon:player-next-bold" />
+                  }}
+                </NButton>
+              ),
+              default: () => $t('server.autoJoin')
+            }}
+          </NTooltip>
+          {isCustom && (
+            <NTooltip trigger="hover" placement="bottom">
+              {{
+                trigger: () => (
+                  <NButton type="error" ghost size="small" onClick={() => handleDelete(row)}>
+                    {{
+                      icon: () => <SvgIcon icon="mdi:delete-outline" />
+                    }}
+                  </NButton>
+                ),
+                default: () => $t('server.deleteServer')
+              }}
+            </NTooltip>
+          )}
+        </div>
+      );
+    }
   }
 ]);
 </script>

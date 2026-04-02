@@ -8,7 +8,11 @@ export const GAME_STORAGE_KEYS = {
   SELECTED_START_ITEMS: 'selectedStartItems' as const,
   IS_FULLSCREEN: 'isFullscreen' as const,
   SERVER_VIEW_MODULE: 'serverViewModule' as const,
-  SELECTED_COMMUNITY_ID: 'selectedCommunityId' as const
+  SELECTED_COMMUNITY_ID: 'selectedCommunityId' as const,
+  COMMUNITY_ORDER: 'communityOrder' as const,
+  CUSTOM_COMMUNITY_IDS: 'customCommunityIds' as const,
+  CUSTOM_COMMUNITIES: 'customCommunities' as const,
+  CUSTOM_SERVERS: 'customServers' as const
 };
 
 // 应用设置存储键

@@ -425,8 +425,8 @@ onBeforeUnmount(() => {
                             </div>
                         </NTag>
                     </NSpace>
-                    <NSlider :value="gameStore.automaticJoinConfig.joinServerPersonValue" :step="1" :min="1"
-                        :max="63" :tooltip="false" @update:value="gameStore.setJoinServerPersonValue" />
+                    <NSlider :value="gameStore.automaticJoinConfig.joinServerPersonValue" :step="1" :min="1" :max="63"
+                        :tooltip="false" @update:value="gameStore.setJoinServerPersonValue" />
                     <NSpace justify="space-between">
                         <div class="font-bold font-size-10px">
                             {{ $t('serverJoin.personCount', { count: 1 }) }}
@@ -455,8 +455,8 @@ onBeforeUnmount(() => {
                             </div>
                         </NTag>
                     </NSpace>
-                    <NSlider :value="gameStore.automaticJoinConfig.joinServerCountValue" :step="1" :min="1"
-                        :max="6" :tooltip="false" @update:value="gameStore.setJoinServerCountValue" />
+                    <NSlider :value="gameStore.automaticJoinConfig.joinServerCountValue" :step="1" :min="1" :max="6"
+                        :tooltip="false" @update:value="gameStore.setJoinServerCountValue" />
                     <NSpace justify="space-between">
                         <div class="font-bold font-size-10px">
                             {{ $t('serverJoin.threadCount', { count: 1 }) }}
@@ -476,8 +476,8 @@ onBeforeUnmount(() => {
                                 {{ $t('serverJoin.autoRetry') }}
                             </div>
                         </div>
-                        <NSwitch :value="gameStore.automaticJoinConfig.joinServerAutoRetryValue"
-                            :round="false" @update:value="gameStore.setJoinServerAutoRetryValue" />
+                        <NSwitch :value="gameStore.automaticJoinConfig.joinServerAutoRetryValue" :round="false"
+                            @update:value="gameStore.setJoinServerAutoRetryValue" />
                     </NSpace>
                     <div class="flex items-center font-bold font-size-12px mt-5px">
                         <div class="font-size-16px mr-5px">
@@ -624,7 +624,7 @@ onBeforeUnmount(() => {
                                                 fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
                                             <span class="ml-2 font-bold">{{ player.loginUser?.nickName ||
                                                 $t('serverJoin.unknownPlayer')
-                                            }}</span>
+                                                }}</span>
                                             <NTag size="small" :type="getTeamColor(player.team)" class="ml-2"
                                                 :bordered="false">
                                                 {{ getTeamLabel(player.team) }}
@@ -705,7 +705,7 @@ onBeforeUnmount(() => {
 .game-join-container {
     position: relative;
     display: flex;
-    height: 420px;
+    height: 450px;
     padding: 40px 20px 20px 20px;
     gap: 15px;
 
