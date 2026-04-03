@@ -52,6 +52,15 @@ function createVueRoutes(): RouteRecordRaw[] {
                         requiresAuth: false
                     }
                 },
+                {
+                    path: 'updateLog',
+                    name: 'updateLog',
+                    component: () => import('@/views/updateLog/index.vue'),
+                    meta: {
+                        title: '更新日志',
+                        requiresAuth: false
+                    }
+                },
             ]
         }
     ];

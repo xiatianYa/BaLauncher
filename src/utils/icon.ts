@@ -113,5 +113,8 @@ export const commonIcons = [
   'material-symbols:swap-vert',
   'material-symbols:expand-more',
   'material-symbols:expand-less',
-  'material-symbols:drag-indicator'
+  'material-symbols:drag-indicator',
+  'mdi:update',
+  'lucide:calendar-1',
+  'solar:pin-line-duotone',
 ]

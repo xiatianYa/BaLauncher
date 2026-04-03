@@ -13,10 +13,12 @@ export default {
     server: 'Server',
     tools: 'Tools',
     setting: 'Settings',
+    updateLog: 'VerLog',
   },
   common: {
     loading: 'Loading...',
     cancel: 'Cancel',
+    submit: 'Submit'
   },
   windowControls: {
     notifications: 'Notifications',
@@ -342,6 +344,46 @@ export default {
     weapon: {
       none: 'None',
     },
+  },
+  updateLog: {
+    title: 'Update Log',
+    subtitle: 'Record details of each update',
+    addLog: 'Add Log',
+    addUpdateLog: 'Add Update Log',
+    noLogs: 'No update logs yet',
+    pinned: 'Pinned',
+    allLoaded: 'All updates loaded',
+    totalLogs: '{count} logs in total',
+    addSuccess: 'Added successfully',
+    form: {
+      version: {
+        label: 'Version',
+        placeholder: 'e.g. 1.0.0',
+        required: 'Please enter version'
+      },
+      updateType: {
+        label: 'Update Type',
+        placeholder: 'Please select update type',
+        required: 'Please select update type'
+      },
+      title: {
+        label: 'Title',
+        placeholder: 'Please enter update title',
+        required: 'Please enter title'
+      },
+      content: {
+        label: 'Content',
+        required: 'Please enter content'
+      },
+      pinned: {
+        label: 'Pin',
+        desc: 'Whether to pin'
+      },
+      enabled: {
+        label: 'Enabled',
+        desc: 'Whether enabled'
+      }
+    }
   },
   mapOrder: {
     title: 'Map Subscription',

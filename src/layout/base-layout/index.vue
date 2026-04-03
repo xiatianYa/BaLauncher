@@ -4,7 +4,6 @@ import { useThemeStore } from '@/store/modules/theme';
 import { useAuthStore } from '@/store/modules/auth';
 import WindowControls from '@/components/common/window-controls.vue';
 import LoginDialog from '@/components/common/login-dialog.vue';
-import UpdateConfirm from '@/components/common/update-confirm.vue';
 
 const themeStore = useThemeStore();
 const authStore = useAuthStore();
@@ -49,7 +48,7 @@ onMounted(() => {
 
 /* 展开状态的宽度 */
 .expanded {
-  width: 230px;
+  width: 250px;
 }
 
 /* 折叠状态的宽度 */

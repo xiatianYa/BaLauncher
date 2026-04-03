@@ -2,10 +2,26 @@
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
 import { DataTableColumn, NButton, NTag, NTooltip } from 'naive-ui';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import { useGameStore } from '@/store/modules/game';
+import { useThemeStore } from '@/store/modules/theme';
 
 const gameStore = useGameStore();
+const themeStore = useThemeStore();
+
+const isDarkMode = computed(() => themeStore.darkMode);
+
+const getSecondaryTextColor = () => {
+  return isDarkMode.value ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)';
+};
+
+const getProgressBarBgColor = () => {
+  return isDarkMode.value ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+};
+
+const getOfflineRowBgColor = () => {
+  return isDarkMode.value ? 'rgba(255, 77, 79, 0.08)' : 'rgba(255, 77, 79, 0.12)';
+};
 
 const props = defineProps<{
   servers: Api.Game.InfoResponse[];
@@ -28,21 +44,21 @@ const getMapByMapName = (mapName: string) => {
   return props.mapList.find(map => map.mapName === mapName);
 };
 
-// 获取 Ping 值对应的颜色类型
-const getPingType = (ping?: number) => {
-  if (ping === undefined || ping === null) return 'error';
-  if (ping < 70) return 'success';
-  if (ping < 100) return 'warning';
-  return 'error';
+// 获取 Ping 值对应的颜色
+const getPingColor = (ping?: number) => {
+  if (ping === undefined || ping === null) return '#ff4d4f';
+  if (ping < 70) return '#52c41a';
+  if (ping < 100) return '#faad14';
+  return '#ff4d4f';
 };
 
 // 根据在线人数获取颜色
 const getPlayerColor = (players: number) => {
-  if (players <= 20) return '#00f91a';
-  if (players <= 40) return '#5470ee';
-  if (players <= 60) return '#ffa325';
-  if (players <= 80) return '#ff4f00';
-  return '#ff0000';
+  if (players <= 20) return '#52c41a';
+  if (players <= 40) return '#4096ff';
+  if (players <= 60) return '#faad14';
+  if (players <= 80) return '#ff7a45';
+  return '#ff4d4f';
 };
 
 // 获取源服务器信息
@@ -62,12 +78,13 @@ const isServerOffline = (server: Api.Game.InfoResponse) => {
   return !server.isOnline;
 };
 
-// 行样式类名
+// 行样式
 const getRowProps = (row: Api.Game.InfoResponse) => {
   return {
     class: {
-      'offline-row': isServerOffline(row) ? 'offline-row' : ''
-    }
+      'offline-row': isServerOffline(row)
+    },
+    style: isServerOffline(row) ? { backgroundColor: getOfflineRowBgColor() } : {}
   };
 };
 
@@ -86,7 +103,7 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
   {
     title: $t('server.map'),
     key: 'map',
-    render: (row) => getMapByMapName(row.map)?.mapLabel || row.map,
+    render: (row) => <span style={{ color: getSecondaryTextColor() }}>{getMapByMapName(row.map)?.mapLabel || row.map}</span>,
   },
   {
     title: $t('server.playerCountColumn'),
@@ -98,7 +115,7 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
     },
     render: (row) => (
       <div class="flex items-center gap-6px">
-        <div class="w-60px h-6px bg-gray-200 rounded-3px overflow-hidden">
+        <div class="w-60px h-6px rounded-3px overflow-hidden" style={{ backgroundColor: getProgressBarBgColor() }}>
           <div
             class="h-full rounded-3px transition-all duration-300"
             style={{
@@ -107,7 +124,7 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
             }}
           />
         </div>
-        <span class="text-12px whitespace-nowrap">{row.players || 0}/{row.maxPlayers || 0}</span>
+        <span class="text-12px whitespace-nowrap" style={{ color: getSecondaryTextColor() }}>{row.players || 0}/{row.maxPlayers || 0}</span>
       </div>
     )
   },
@@ -116,9 +133,7 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
     key: 'ping',
     render: (row) => (
       <div class="flex items-center">
-        <NTag size="small" class="mr-3px rounded-5px" type={getPingType(row.ping)}>
-          {row.ping ? `${row.ping}ms` : '??'}
-        </NTag>
+        <span style={{ color: getPingColor(row.ping) }}>{row.ping ? `${row.ping}ms` : '??'}</span>
       </div>
     )
   },
@@ -128,9 +143,9 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
     width: 100,
     render: (row) => (
       <div class="flex items-center">
-        <NTag size="small" class="mr-3px rounded-5px" type="info">
+        <span class="text-12px" style={{ color: getSecondaryTextColor() }}>
           {row.mapPhase ? `CT ${row.CTScore || 0} : ${row.TScore || 0} T` : '-'}
-        </NTag>
+        </span>
       </div>
     )
   },
@@ -141,11 +156,11 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
     render: (row) => {
       const isCustom = gameStore.isCustomCategory(gameStore?.selectedCommunityId || 0);
       return (
-        <div class="flex items-center flex-center gap-8px">
+        <div class="flex items-center flex-center gap-6px">
           <NTooltip trigger="hover" placement="bottom">
             {{
               trigger: () => (
-                <NButton class="mr-5px" type="primary" ghost size="small" onClick={() => emit('join', row)}>
+                <NButton text size="small" onClick={() => emit('join', row)}>
                   {{
                     icon: () => <SvgIcon icon="iconamoon:player-play-bold" />
                   }}
@@ -157,7 +172,7 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
           <NTooltip trigger="hover" placement="bottom">
             {{
               trigger: () => (
-                <NButton type="warning" ghost size="small" onClick={() => emit('autoJoin', row)}>
+                <NButton text size="small" onClick={() => emit('autoJoin', row)}>
                   {{
                     icon: () => <SvgIcon icon="iconamoon:player-next-bold" />
                   }}
@@ -170,7 +185,7 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
             <NTooltip trigger="hover" placement="bottom">
               {{
                 trigger: () => (
-                  <NButton type="error" ghost size="small" onClick={() => handleDelete(row)}>
+                  <NButton text size="small" onClick={() => handleDelete(row)}>
                     {{
                       icon: () => <SvgIcon icon="mdi:delete-outline" />
                     }}
@@ -189,15 +204,18 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
 
 <template>
   <div class="h-full overflow-auto p-5px">
-    <NDataTable :columns="columns" :data="servers" :pagination="false" size="small" striped :row-props="getRowProps"
-      class="w-full" v-show="servers.length > 0" />
+    <NDataTable :columns="columns" :data="servers" :pagination="false" size="medium" :row-props="getRowProps"
+      class="w-full server-table" v-show="servers.length > 0" />
   </div>
 </template>
 
 <style scoped lang="scss">
-:deep(.offline-row) {
-  td {
-    background-color: rgba(255, 0, 0, 0.1) !important;
+:deep(.server-table) {
+  .n-data-table-tr {
+    .n-data-table-td {
+      padding-top: 12px;
+      padding-bottom: 12px;
+    }
   }
 }
 </style>

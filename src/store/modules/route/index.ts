@@ -9,6 +9,7 @@ import icon940326 from '@/assets/imgs/menu/940326.png';
 import icon939940 from '@/assets/imgs/menu/939940.png';
 import icon911476 from '@/assets/imgs/menu/911476.png';
 import icon207977 from '@/assets/imgs/menu/207977.png';
+import icon766184 from '@/assets/imgs/menu/766184.png';
 
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
@@ -25,7 +26,6 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       '服务器': 'routes.server',
       '工具箱': 'routes.tools',
       '设置': 'routes.setting',
-      '系统设置': 'routes.setting',
     };
     return map[name] ?? name;
   };
@@ -56,6 +56,13 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       key: "tools",
       icon: "gg:toolbox",
       img: icon911476,
+      isPersistent: true
+    },
+    {
+      name: "routes.updateLog",
+      key: "updateLog",
+      icon: "tabler:history",
+      img: icon766184,
       isPersistent: true
     },
     {

@@ -11,9 +11,9 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
 
     /** Theme settings */
     const settings: Ref<App.Theme.ThemeSetting> = ref({
-        themeScheme: 'light',
+        themeScheme: 'dark',
         layout: {
-            mode: 'expand'
+            mode: 'collapse'
         }
     });
 

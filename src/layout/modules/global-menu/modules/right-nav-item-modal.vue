@@ -5,6 +5,7 @@ import { useRouteStore } from '@/store/modules/route';
 import { localStg } from '@/utils/storage';
 import icon911476 from '@/assets/imgs/menu/911476.png';
 import icon207977 from '@/assets/imgs/menu/207977.png';
+import icon766184 from '@/assets/imgs/menu/766184.png';
 
 const visible = defineModel<boolean>('visible', {
     default: false
@@ -26,7 +27,14 @@ const SideNavRoutes: Api.Route.SideNavItem[] = reactive([
         icon: "tabler:settings",
         img: icon207977,
         isPersistent: true
-    }
+    },
+    {
+        name: "routes.updateLog",
+        key: "updateLog",
+        icon: "tabler:history",
+        img: icon766184,
+        isPersistent: true
+    },
 ])
 
 //菜单是否已添加

@@ -13,10 +13,12 @@ export default {
     server: '服务器',
     tools: '工具箱',
     setting: '设置',
+    updateLog: '更新日志',
   },
   common: {
     loading: '正在加载...',
     cancel: '取消',
+    submit: '提交'
   },
   windowControls: {
     notifications: '通知',
@@ -342,6 +344,46 @@ export default {
     weapon: {
       none: '无',
     },
+  },
+  updateLog: {
+    title: '更新日志',
+    subtitle: '记录每次更新的详细信息',
+    addLog: '添加日志',
+    addUpdateLog: '添加更新日志',
+    noLogs: '暂无更新日志',
+    pinned: '置顶',
+    allLoaded: '已加载全部更新',
+    totalLogs: '共 {count} 条日志',
+    addSuccess: '添加成功',
+    form: {
+      version: {
+        label: '版本号',
+        placeholder: '例如: 1.0.0',
+        required: '请输入版本号'
+      },
+      updateType: {
+        label: '更新类型',
+        placeholder: '请选择更新类型',
+        required: '请选择更新类型'
+      },
+      title: {
+        label: '标题',
+        placeholder: '请输入更新标题',
+        required: '请输入标题'
+      },
+      content: {
+        label: '内容',
+        required: '请输入内容'
+      },
+      pinned: {
+        label: '置顶',
+        desc: '是否置顶显示'
+      },
+      enabled: {
+        label: '启用',
+        desc: '是否启用'
+      }
+    }
   },
   mapOrder: {
     title: '地图订阅',
