@@ -48,15 +48,14 @@ const loadUpdateLog = async () => {
   loadingUpdateLog.value = true;
   try {
     const { data, error } = await fetchGetUpdateLogByVersion(latestVersion.value);
-    console.log('加载更新日志:', data, error);
     if (!error) {
+      state.value.show = true;
       updateLog.value = data;
     }
   } catch (error) {
     console.error('加载更新日志失败:', error);
   } finally {
     loadingUpdateLog.value = false;
-    state.value.show = true;
   }
 };
 
