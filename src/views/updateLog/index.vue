@@ -61,7 +61,7 @@ const newLogIds = ref<Set<number>>(new Set());
  * @example formatDateTime('2026-04-04T14:30:00') => '2026年04月04日 14时30分' or 'Apr 04, 2026 14:30'
  */
 const formatDateTime = (dateStr: string): string => {
-    return dayjs(dateStr).format('YYYY年MM月DD日 HH时mm分');
+    return dayjs(dateStr).format('YYYY年MM月DD日');
 };
 
 /**
@@ -188,9 +188,14 @@ onMounted(() => {
                                 <div class="timeline-content" :class="{ 'light-mode': !isDarkMode }">
                                     <div class="log-header">
                                         <div class="log-title-row">
-                                            <span class="log-version" :class="{ 'light-mode': !isDarkMode }">v{{
-                                                log.version
-                                                }}</span>
+                                            <h3 class="log-title" :class="{ 'light-mode': !isDarkMode }">{{ log.title }}
+                                            </h3>
+                                            <NTag type="info" size="small" :bordered="false" class="rounded-5px">
+                                                <template #icon>
+                                                    <SvgIcon icon="lucide:tag" class="mr-5px" />
+                                                </template>
+                                                v{{ log.version }}
+                                            </NTag>
                                             <NTag type="info" size="small" :bordered="false" class="rounded-5px">
                                                 <template #icon>
                                                     <SvgIcon icon="lucide:calendar-1" class="mr-5px" />
@@ -212,8 +217,6 @@ onMounted(() => {
                                     </div>
 
                                     <div class="log-body">
-                                        <h3 class="log-title" :class="{ 'light-mode': !isDarkMode }">{{ log.title }}
-                                        </h3>
                                         <div v-if="log.content" class="log-content">
                                             <MdPreview class="p-10px rounded-10px"
                                                 :theme="isDarkMode ? 'dark' : 'light'" :modelValue="log.content" />
@@ -326,7 +329,6 @@ onMounted(() => {
     &:hover {
         border-color: rgba(102, 126, 234, 0.4);
         background: rgba(255, 255, 255, 0.08);
-        transform: translateX(4px);
     }
 
     &.light-mode {
@@ -353,25 +355,6 @@ onMounted(() => {
     gap: 12px;
     margin-bottom: 8px;
     flex-wrap: wrap;
-}
-
-/**
- * 版本号样式
- */
-.log-version {
-    font-size: 20px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-
-    &.light-mode {
-        background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
 }
 
 /**

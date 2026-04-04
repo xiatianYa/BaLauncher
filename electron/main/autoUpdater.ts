@@ -21,6 +21,7 @@ function safeSendToWindow(win: BrowserWindow | null, channel: string, ...args: a
   }
 }
 
+// 初始化自动更新
 function initAutoUpdater(win: BrowserWindow) {
   if (isInitialized) return
   isInitialized = true
@@ -65,6 +66,7 @@ function initAutoUpdater(win: BrowserWindow) {
   })
 }
 
+// 检查更新
 export function checkForUpdates(win: BrowserWindow, delay: number = 2000) {
   if (app.isPackaged && isWindowAvailable(win)) {
     initAutoUpdater(win)
@@ -79,15 +81,19 @@ export function checkForUpdates(win: BrowserWindow, delay: number = 2000) {
   }
 }
 
+// 设置自动更新IPC事件
 export function setupAutoUpdaterIpc() {
+  // 安装更新
   ipcMain.handle('install-update', () => {
     autoUpdater.quitAndInstall()
   })
 
+  // 下载更新
   ipcMain.handle('download-update', () => {
     autoUpdater.downloadUpdate()
   })
 
+  // 检查更新
   ipcMain.handle('check-update', (event) => {
     const win = BrowserWindow.fromWebContents(event.sender)
     if (win && isWindowAvailable(win)) {

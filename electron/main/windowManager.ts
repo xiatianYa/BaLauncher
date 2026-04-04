@@ -25,7 +25,7 @@ async function createWindow(onDidFinishLoad?: (win: BrowserWindow) => void) {
     resizable: false,
     webPreferences: {
       preload,
-      devTools: VITE_DEV_SERVER_URL ? true : false,
+      devTools: true,
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,

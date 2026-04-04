@@ -61,3 +61,11 @@ export function fetchGetLatestUpdateLogList(limit?: number) {
     params: limit ? { limit } : undefined
   });
 }
+
+/** get update log by version */
+export function fetchGetUpdateLogByVersion(version: string) {
+  return request<Api.System.UpdateLogVo>({
+    url: `/sysUpdateLog/getByVersion/${version}`,
+    method: 'get'
+  });
+}
