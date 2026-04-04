@@ -27,7 +27,10 @@ function initAutoUpdater(win: BrowserWindow) {
   isInitialized = true
   mainWindow = win
 
+  // 自动下载更新
   autoUpdater.autoDownload = false
+  // 退出应用时自动安装（静默关键）
+  autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.setFeedURL({
     provider: 'generic',
     url: 'https://www.bluearchive.top/statics/soft/',
@@ -85,7 +88,8 @@ export function checkForUpdates(win: BrowserWindow, delay: number = 2000) {
 export function setupAutoUpdaterIpc() {
   // 安装更新
   ipcMain.handle('install-update', () => {
-    autoUpdater.quitAndInstall()
+    // 静默安装 + 安装后自动重启
+    autoUpdater.quitAndInstall(true, true)
   })
 
   // 下载更新

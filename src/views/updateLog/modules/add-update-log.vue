@@ -71,9 +71,8 @@ const rules: FormRules = {
     },
     updateType: {
         required: true,
-        type: 'number',
         message: () => $t('updateLog.form.updateType.required'),
-        trigger: 'change'
+        trigger: 'blur'
     },
     title: {
         required: true,
