@@ -218,6 +218,8 @@ declare namespace Api {
             joinServerAutoRetryValue: boolean;
             /** GIS数据推送 */
             pushGisValue: boolean;
+            /** 挤服延迟(毫秒) */
+            joinServerDelayValue: number;
         }
 
         /** 地图订阅数据 */

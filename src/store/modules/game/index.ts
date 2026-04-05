@@ -81,7 +81,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     joinServerPersonValue: 63,
     joinServerCountValue: 2,
     joinServerAutoRetryValue: true,
-    pushGisValue: true
+    pushGisValue: true,
+    joinServerDelayValue: 0
   })
   /** 自动挤服信息 */
   const automaticInfo = ref<Api.Game.ServerVo>({
@@ -186,7 +187,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     if (savedPlatform) GamePlatform.value = savedPlatform as 'international' | 'perfect'
     if (savedCsgo2Path) csgo2Path.value = savedCsgo2Path
     if (savedSteamPath) steamPath.value = savedSteamPath
-    if (savedAutomaticJoinConfig) Object.assign(automaticJoinConfig.value, savedAutomaticJoinConfig)
+    if (savedAutomaticJoinConfig) {
+      automaticJoinConfig.value = {
+        ...automaticJoinConfig.value,
+        ...savedAutomaticJoinConfig
+      }
+    }
     if (savedApplyKeyBindItems) applyKeyBindItems.value = savedApplyKeyBindItems
     if (savedSelectedStartItems) selectedStartItems.value = savedSelectedStartItems
     if (savedIsFullscreen !== null) isFullscreen.value = savedIsFullscreen
@@ -493,6 +499,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   /** 设置是否推送GIS数据 */
   function setPushGisValue(value: boolean): void {
     automaticJoinConfig.value.pushGisValue = value
+    saveSettingsToStorage()
+  }
+
+  /** 设置挤服延迟 */
+  function setJoinServerDelayValue(value: number): void {
+    automaticJoinConfig.value.joinServerDelayValue = value
     saveSettingsToStorage()
   }
 
@@ -908,7 +920,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       const result = await window.ipcRenderer.invoke('start-automatic-join', {
         serverAddr: joinServerInfo.value.addr,
         maxPlayers: automaticJoinConfig.value.joinServerPersonValue,
-        threadCount: automaticJoinConfig.value.joinServerCountValue
+        threadCount: automaticJoinConfig.value.joinServerCountValue,
+        joinDelay: automaticJoinConfig.value.joinServerDelayValue
       })
 
       if (result.success && result.found) {
@@ -960,7 +973,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       connectionCheckTimer = null
     }
 
-    if (!isAutomatic.value) return
     isAutomatic.value = false
 
     try {
@@ -1555,6 +1567,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     setJoinServerCountValue,
     setJoinServerAutoRetryValue,
     setPushGisValue,
+    setJoinServerDelayValue,
     setApplyKeyBindItems,
     setSelectedStartItems,
     toggleStartItem,

@@ -476,6 +476,41 @@ onBeforeUnmount(() => {
                         <NSpace justify="space-between">
                             <div class="flex items-center gap-3px">
                                 <div class="font-size-18px">
+                                    <SvgIcon icon="mdi:clock-outline"></SvgIcon>
+                                </div>
+                                <div class="font-size-14px font-bold">
+                                    {{ $t('serverJoin.joinDelay') }}
+                                </div>
+                            </div>
+                            <NTag type="info" ghost size="small" :bordered="false">
+                                <div class="font-bold">
+                                    {{ $t('serverJoin.delayMs', {
+                                        delay: gameStore.automaticJoinConfig.joinServerDelayValue
+                                    }) }}
+                                </div>
+                            </NTag>
+                        </NSpace>
+                        <NSlider :value="gameStore.automaticJoinConfig.joinServerDelayValue" :step="100" :min="0"
+                            :max="5000" :tooltip="false" @update:value="gameStore.setJoinServerDelayValue" />
+                        <NSpace justify="space-between">
+                            <div class="font-bold font-size-10px">
+                                {{ $t('serverJoin.delayMs', { delay: 0 }) }}
+                            </div>
+                            <div class="font-bold font-size-10px">
+                                {{ $t('serverJoin.delayMs', { delay: 5000 }) }}
+                            </div>
+                        </NSpace>
+                        <div class="flex items-center font-bold font-size-12px mt-5px">
+                            <div class="font-size-16px mr-5px">
+                                <SvgIcon icon="material-symbols:info-outline"></SvgIcon>
+                            </div>
+                            {{ $t('serverJoin.joinDelayTip') }}
+                        </div>
+                    </div>
+                    <div class="mb-15px">
+                        <NSpace justify="space-between">
+                            <div class="flex items-center gap-3px">
+                                <div class="font-size-18px">
                                     <SvgIcon icon="material-symbols:refresh"></SvgIcon>
                                 </div>
                                 <div class="font-size-14px font-bold">

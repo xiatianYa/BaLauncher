@@ -6,19 +6,19 @@ import { fileURLToPath } from 'node:url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-let shouldStop = false
+let workers: Worker[] = []
+let currentResolve: ((value: any) => void) | null = null
 
 export function setupAutomaticJoinIpc() {
   ipcMain.handle('start-automatic-join', async (_, options) => {
-    const { serverAddr, maxPlayers, threadCount } = options
-    shouldStop = false
+    const { serverAddr, maxPlayers, threadCount, joinDelay } = options
+    console.log(joinDelay)
 
     if (!isMainThread) {
       return { success: false, error: 'Must be run in main thread' }
     }
 
     const workerPath = path.join(__dirname, 'serverQuery.js')
-    const workers: Worker[] = []
 
     for (let i = 0; i < threadCount; i++) {
       const worker = new Worker(workerPath)
@@ -27,25 +27,18 @@ export function setupAutomaticJoinIpc() {
 
     return new Promise((resolve) => {
       let resolved = false
-      let activeWorkers = workers.length
+      currentResolve = resolve
 
       const cleanup = () => {
         workers.forEach(w => w.terminate())
+        workers = []
         resolved = true
+        currentResolve = null
       }
 
       const onResult = (message: any, worker: Worker) => {
+        console.log('Worker success')
         if (resolved) return
-
-        if (shouldStop) {
-          cleanup()
-          resolve({
-            success: true,
-            found: false,
-            stopped: true
-          })
-          return
-        }
 
         if (message.success && message.found) {
           cleanup()
@@ -57,12 +50,12 @@ export function setupAutomaticJoinIpc() {
           return
         }
 
-        if (!shouldStop && !resolved) {
+        if (!resolved) {
           setTimeout(() => {
-            if (!shouldStop && !resolved) {
+            if (!resolved && workers.includes(worker)) {
               worker.postMessage({ serverAddr, maxPlayers })
             }
-          }, 200) 
+          }, joinDelay || 200)
         }
       }
 
@@ -70,22 +63,34 @@ export function setupAutomaticJoinIpc() {
         worker.on('message', (msg) => onResult(msg, worker))
         worker.on('error', (err) => {
           console.error('Worker error:', err)
-          if (!shouldStop && !resolved) {
+          if (!resolved) {
              setTimeout(() => {
-                if (!shouldStop && !resolved) {
+                if (!resolved && workers.includes(worker)) {
                   worker.postMessage({ serverAddr, maxPlayers })
                 }
              }, 1000)
           }
         })
-        
+
         worker.postMessage({ serverAddr, maxPlayers })
       })
     })
   })
 
   ipcMain.handle('stop-automatic-join', async () => {
-    shouldStop = true
+    console.log('Stop automatic join')
+    workers.forEach(w => w.terminate())
+    workers = []
+
+    if (currentResolve) {
+      currentResolve({
+        success: true,
+        found: false,
+        stopped: true
+      })
+      currentResolve = null
+    }
+
     return {
       success: true
     }
