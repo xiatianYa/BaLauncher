@@ -268,14 +268,8 @@ const handleUnsubscribeQQ = async (map: Api.Game.MapVo): Promise<void> => {
 };
 
 /* ================================ Data Fetching ================================ */
-
+// 获取地图列表
 const fetchMapList = async (keyword: string): Promise<void> => {
-    if (!keyword.trim()) {
-        mapList.value = []; // 清空地图列表
-        pagination.total = 0; // 重置总数
-        return;
-    }
-
     mapLoading.value = true; // 开始加载
 
     try {
@@ -292,6 +286,7 @@ const fetchMapList = async (keyword: string): Promise<void> => {
     }
 };
 
+// 获取用户订阅列表
 const fetchSubscribeList = async (): Promise<void> => {
     subscribeLoading.value = true; // 开始加载
     try {
@@ -337,6 +332,7 @@ watch(searchKeyword, (newValue) => {
 /* ================================ Lifecycle ================================ */
 
 onMounted(async () => {
+    fetchMapList(''); // 获取地图列表
     fetchSubscribeList(); // 获取订阅列表
     onGetOption(); // 获取QQ群选项
 });
@@ -371,7 +367,7 @@ onMounted(async () => {
                     <NGridItem v-for="map in mapList" :key="map.id">
                         <NCard class="map-card" content-style="padding:10px" footer-style="padding: 0px 10px 10px 10px">
                             <div class="map-card-img">
-                                <img class="w-full h-full" v-lazy="map.mapUrl" alt="map" />
+                                <img class="w-full h-full max-h-160px object-cover" v-lazy="map.mapUrl" alt="map" />
                             </div>
                             <div class="map-card-info">
                                 <div class="map-card-name">{{ map.mapName }}</div>
@@ -392,29 +388,29 @@ onMounted(async () => {
                                 <div class="flex justify-between">
                                     <span class="color-#999">{{ $t('mapOrder.achievement') }}:</span>
                                     <NTag size="small" class="rounded-5px" type="info">
-                                        {{ map.exgMap.achievement10 || '-' }}
+                                        {{ map.exgMap?.achievement10 || '-' }}
                                     </NTag>
                                 </div>
                                 <div class="flex justify-between mt-5px">
                                     <span class="color-#999">{{ $t('mapOrder.lastRun') }}:</span>
                                     <NTag size="small" class="rounded-5px" type="info">
-                                        {{ dayjs(map.exgMap.lastRun).format('YYYY-MM-DD HH:mm:ss') || '-'
+                                        {{ dayjs(map.exgMap?.lastRun).format('YYYY-MM-DD HH:mm:ss') || '-'
                                         }}</NTag>
                                 </div>
                                 <div class="flex justify-between mt-5px">
                                     <span class="color-#999">{{ $t('mapOrder.cooldown') }}:</span>
                                     <NTag size="small" class="rounded-5px" type="info">
-                                        {{ map.exgMap.cooldownMinute }} {{ $t('mapOrder.minutes') }}</NTag>
+                                        {{ map.exgMap?.cooldownMinute || '-' }} {{ $t('mapOrder.minutes') }}</NTag>
                                 </div>
                                 <div class="flex justify-between mt-5px">
                                     <span class="color-#999">{{ $t('mapOrder.deadline') }}:</span>
                                     <NTag size="small" class="rounded-5px" type="info">
-                                        {{ dayjs(map.exgMap.deadline).format('YYYY-MM-DD HH:mm:ss') || '-'
+                                        {{ dayjs(map.exgMap?.deadline).format('YYYY-MM-DD HH:mm:ss') || '-'
                                         }}</NTag>
                                 </div>
                                 <div class="flex justify-between mt-5px">
                                     <span class="color-#999">{{ $t('mapOrder.isOrderable') }}:</span>
-                                    <NTag v-if="map.exgMap.isOrder" type="success" size="small" class="rounded-5px">{{
+                                    <NTag v-if="map.exgMap?.isOrder" type="success" size="small" class="rounded-5px">{{
                                         $t('mapOrder.yes') }}</NTag>
                                     <NTag v-else type="error" size="small" class="rounded-5px">{{ $t('mapOrder.no') }}
                                     </NTag>
@@ -735,6 +731,7 @@ onMounted(async () => {
                 display: flex;
                 flex-direction: column;
                 justify-content: space-between;
+                height: 100%;
                 border-radius: 5px;
                 overflow: hidden;
 

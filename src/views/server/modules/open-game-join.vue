@@ -4,6 +4,7 @@ import { NModal, NText, NSpace, NTag, NButton, NSwitch, NSlider, NCollapse, NCol
 import { useDict } from '@/hooks/business/dict';
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { $t } from '@/locales';
 
 const props = defineProps<{
     showJoinServer: boolean;
@@ -356,15 +357,18 @@ const handleCancelExit = () => {
 
 //开始挤服
 const startJoinServer = () => {
-    gameStore.sendAutomaticDynamic(t('serverJoin.dynamicJoining'));
+    gameStore.sendAutomaticDynamic($t('serverJoin.dynamicJoining'));
     gameStore.startAutomaticJoinServer();
 };
 
 //暂停挤服
 const stopJoinServer = () => {
-    gameStore.sendAutomaticDynamic(t('serverJoin.dynamicPaused'));
+    gameStore.pauseAutomaticJoinServer();
+    gameStore.sendAutomaticDynamic($t('serverJoin.dynamicPaused'));
     //清空记录
-    gameStore.currentAutomaticPlayerDynamicList.splice(0, gameStore.currentAutomaticPlayerDynamicList.length);
+    setTimeout(() => {
+        gameStore.currentAutomaticPlayerDynamicList.splice(0, gameStore.currentAutomaticPlayerDynamicList.length);
+    }, 500);
     gameStore.stopAutomaticJoinServer();
 };
 
@@ -396,138 +400,144 @@ onBeforeUnmount(() => {
                 <SvgIcon icon="ic:baseline-close" />
             </div>
             <div class="game-join-option" v-if="!gameStore.isAutomatic">
-                <div class="title-container mb-10px">
-                    <div class="flex items-center font-size-20px">
-                        <SvgIcon icon="ic:twotone-settings"></SvgIcon>
+                <div class="game-join-option-content">
+                    <div class="title-container mb-10px">
+                        <div class="flex items-center font-size-20px">
+                            <SvgIcon icon="ic:twotone-settings"></SvgIcon>
+                        </div>
+                        <h1
+                            class="title-text text-16px font-bold bg-gradient-to-r bg-clip-text text-transparent ml-5px">
+                            <NText>
+                                {{ $t('serverJoin.title') }}
+                            </NText>
+                        </h1>
                     </div>
-                    <h1 class="title-text text-16px font-bold bg-gradient-to-r bg-clip-text text-transparent ml-5px">
-                        <NText>
-                            {{ $t('serverJoin.title') }}
-                        </NText>
-                    </h1>
-                </div>
-                <div class="mb-15px">
-                    <NSpace justify="space-between">
-                        <div class="flex items-center gap-3px">
-                            <div class="font-size-18px">
-                                <SvgIcon icon="ic:baseline-accessible-forward"></SvgIcon>
+                    <div class="mb-15px">
+                        <NSpace justify="space-between">
+                            <div class="flex items-center gap-3px">
+                                <div class="font-size-18px">
+                                    <SvgIcon icon="ic:baseline-accessible-forward"></SvgIcon>
+                                </div>
+                                <div class="font-size-14px font-bold">
+                                    {{ $t('serverJoin.joinWhenPlayers') }}
+                                </div>
                             </div>
-                            <div class="font-size-14px font-bold">
-                                {{ $t('serverJoin.joinWhenPlayers') }}
+                            <NTag type="info" ghost size="small" :bordered="false">
+                                <div class="font-bold">
+                                    {{ $t('serverJoin.personCount', {
+                                        count:
+                                            gameStore.automaticJoinConfig.joinServerPersonValue
+                                    }) }}
+                                </div>
+                            </NTag>
+                        </NSpace>
+                        <NSlider :value="gameStore.automaticJoinConfig.joinServerPersonValue" :step="1" :min="1"
+                            :max="63" :tooltip="false" @update:value="gameStore.setJoinServerPersonValue" />
+                        <NSpace justify="space-between">
+                            <div class="font-bold font-size-10px">
+                                {{ $t('serverJoin.personCount', { count: 1 }) }}
                             </div>
-                        </div>
-                        <NTag type="info" ghost size="small" :bordered="false">
-                            <div class="font-bold">
-                                {{ $t('serverJoin.personCount', {
-                                    count:
-                                        gameStore.automaticJoinConfig.joinServerPersonValue
-                                }) }}
+                            <div class="font-bold font-size-10px">
+                                {{ $t('serverJoin.personCount', { count: 63 }) }}
                             </div>
-                        </NTag>
-                    </NSpace>
-                    <NSlider :value="gameStore.automaticJoinConfig.joinServerPersonValue" :step="1" :min="1" :max="63"
-                        :tooltip="false" @update:value="gameStore.setJoinServerPersonValue" />
-                    <NSpace justify="space-between">
-                        <div class="font-bold font-size-10px">
-                            {{ $t('serverJoin.personCount', { count: 1 }) }}
-                        </div>
-                        <div class="font-bold font-size-10px">
-                            {{ $t('serverJoin.personCount', { count: 63 }) }}
-                        </div>
-                    </NSpace>
-                </div>
-                <div class="mb-15px">
-                    <NSpace justify="space-between">
-                        <div class="flex items-center gap-3px">
-                            <div class="font-size-18px">
-                                <SvgIcon icon="heroicons:cpu-chip"></SvgIcon>
+                        </NSpace>
+                    </div>
+                    <div class="mb-15px">
+                        <NSpace justify="space-between">
+                            <div class="flex items-center gap-3px">
+                                <div class="font-size-18px">
+                                    <SvgIcon icon="heroicons:cpu-chip"></SvgIcon>
+                                </div>
+                                <div class="font-size-14px font-bold">
+                                    {{ $t('serverJoin.threadCountLabel') }}
+                                </div>
                             </div>
-                            <div class="font-size-14px font-bold">
-                                {{ $t('serverJoin.threadCountLabel') }}
+                            <NTag type="info" ghost size="small" :bordered="false">
+                                <div class="font-bold">
+                                    {{ $t('serverJoin.threadCount', {
+                                        count:
+                                            gameStore.automaticJoinConfig.joinServerCountValue
+                                    }) }}
+                                </div>
+                            </NTag>
+                        </NSpace>
+                        <NSlider :value="gameStore.automaticJoinConfig.joinServerCountValue" :step="1" :min="1" :max="6"
+                            :tooltip="false" @update:value="gameStore.setJoinServerCountValue" />
+                        <NSpace justify="space-between">
+                            <div class="font-bold font-size-10px">
+                                {{ $t('serverJoin.threadCount', { count: 1 }) }}
                             </div>
-                        </div>
-                        <NTag type="info" ghost size="small" :bordered="false">
-                            <div class="font-bold">
-                                {{ $t('serverJoin.threadCount', {
-                                    count:
-                                        gameStore.automaticJoinConfig.joinServerCountValue
-                                }) }}
+                            <div class="font-bold font-size-10px">
+                                {{ $t('serverJoin.threadCount', { count: 6 }) }}
                             </div>
-                        </NTag>
-                    </NSpace>
-                    <NSlider :value="gameStore.automaticJoinConfig.joinServerCountValue" :step="1" :min="1" :max="6"
-                        :tooltip="false" @update:value="gameStore.setJoinServerCountValue" />
-                    <NSpace justify="space-between">
-                        <div class="font-bold font-size-10px">
-                            {{ $t('serverJoin.threadCount', { count: 1 }) }}
-                        </div>
-                        <div class="font-bold font-size-10px">
-                            {{ $t('serverJoin.threadCount', { count: 6 }) }}
-                        </div>
-                    </NSpace>
-                </div>
-                <div class="mb-15px">
-                    <NSpace justify="space-between">
-                        <div class="flex items-center gap-3px">
-                            <div class="font-size-18px">
-                                <SvgIcon icon="material-symbols:refresh"></SvgIcon>
+                        </NSpace>
+                    </div>
+                    <div class="mb-15px">
+                        <NSpace justify="space-between">
+                            <div class="flex items-center gap-3px">
+                                <div class="font-size-18px">
+                                    <SvgIcon icon="material-symbols:refresh"></SvgIcon>
+                                </div>
+                                <div class="font-size-14px font-bold">
+                                    {{ $t('serverJoin.autoRetry') }}
+                                </div>
                             </div>
-                            <div class="font-size-14px font-bold">
-                                {{ $t('serverJoin.autoRetry') }}
+                            <NSwitch :value="gameStore.automaticJoinConfig.joinServerAutoRetryValue" :round="false"
+                                @update:value="gameStore.setJoinServerAutoRetryValue" />
+                        </NSpace>
+                        <div class="flex items-center font-bold font-size-12px mt-5px">
+                            <div class="font-size-16px mr-5px">
+                                <SvgIcon icon="material-symbols:info-outline"></SvgIcon>
                             </div>
+                            {{ $t('serverJoin.autoRetryTip') }}
                         </div>
-                        <NSwitch :value="gameStore.automaticJoinConfig.joinServerAutoRetryValue" :round="false"
-                            @update:value="gameStore.setJoinServerAutoRetryValue" />
-                    </NSpace>
-                    <div class="flex items-center font-bold font-size-12px mt-5px">
-                        <div class="font-size-16px mr-5px">
-                            <SvgIcon icon="material-symbols:info-outline"></SvgIcon>
+                    </div>
+                    <div class="mb-15px">
+                        <NSpace justify="space-between">
+                            <div class="flex items-center gap-3px">
+                                <div class="font-size-18px">
+                                    <SvgIcon icon="material-symbols:refresh"></SvgIcon>
+                                </div>
+                                <div class="font-size-14px font-bold">
+                                    {{ $t('serverJoin.gisPush') }}
+                                </div>
+                            </div>
+                            <NSwitch :value="gameStore.automaticJoinConfig.pushGisValue" :round="false"
+                                @update:value="gameStore.setPushGisValue" />
+                        </NSpace>
+                        <div class="flex items-center font-bold font-size-12px mt-5px">
+                            <div class="font-size-16px mr-5px">
+                                <SvgIcon icon="material-symbols:info-outline"></SvgIcon>
+                            </div>
+                            {{ $t('serverJoin.gisPushTip') }}
                         </div>
-                        {{ $t('serverJoin.autoRetryTip') }}
                     </div>
                 </div>
-                <div class="mb-15px">
+                <div class="game-join-option-footer">
                     <NSpace justify="space-between">
-                        <div class="flex items-center gap-3px">
-                            <div class="font-size-18px">
-                                <SvgIcon icon="material-symbols:refresh"></SvgIcon>
-                            </div>
-                            <div class="font-size-14px font-bold">
-                                {{ $t('serverJoin.gisPush') }}
-                            </div>
-                        </div>
-                        <NSwitch :value="gameStore.automaticJoinConfig.pushGisValue" :round="false"
-                            @update:value="gameStore.setPushGisValue" />
+                        <NButton type="info" ghost strong class="rounded-6px" v-if="!gameStore.isGameRunning"
+                            @click="handleConfirmOpen" :loading="gameStore.isGameLaunching">
+                            <template #icon>
+                                <SvgIcon icon="hugeicons:start-up-02" />
+                            </template>
+                            {{ gameStore.isGameLaunching ? t('serverJoin.launching') : t('serverJoin.startGame') }}
+                        </NButton>
+                        <NButton type="success" ghost class="rounded-6px" v-if="gameStore.isGameRunning"
+                            :disabled="true">
+                            <template #icon>
+                                <SvgIcon icon="ix:success-filled" />
+                            </template>
+                            {{ $t('serverJoin.gameStarted') }}
+                        </NButton>
+                        <NButton type="success" ghost strong @click="startJoinServer" class="rounded-md"
+                            :disabled="!gameStore.isGameRunning">
+                            <template #icon>
+                                <SvgIcon icon="solar:gamepad-broken"></SvgIcon>
+                            </template>
+                            {{ gameStore.isGameRunning ? t('serverJoin.startJoin') : t('serverJoin.pleaseStartGame') }}
+                        </NButton>
                     </NSpace>
-                    <div class="flex items-center font-bold font-size-12px mt-5px">
-                        <div class="font-size-16px mr-5px">
-                            <SvgIcon icon="material-symbols:info-outline"></SvgIcon>
-                        </div>
-                        {{ $t('serverJoin.gisPushTip') }}
-                    </div>
                 </div>
-                <NSpace justify="space-between">
-                    <NButton type="info" ghost strong class="rounded-6px" v-if="!gameStore.isGameRunning"
-                        @click="handleConfirmOpen" :loading="gameStore.isGameLaunching">
-                        <template #icon>
-                            <SvgIcon icon="hugeicons:start-up-02" />
-                        </template>
-                        {{ gameStore.isGameLaunching ? t('serverJoin.launching') : t('serverJoin.startGame') }}
-                    </NButton>
-                    <NButton type="success" ghost class="rounded-6px" v-if="gameStore.isGameRunning" :disabled="true">
-                        <template #icon>
-                            <SvgIcon icon="ix:success-filled" />
-                        </template>
-                        {{ $t('serverJoin.gameStarted') }}
-                    </NButton>
-                    <NButton type="success" ghost strong @click="startJoinServer" class="rounded-md"
-                        :disabled="!gameStore.isGameRunning">
-                        <template #icon>
-                            <SvgIcon icon="solar:gamepad-broken"></SvgIcon>
-                        </template>
-                        {{ gameStore.isGameRunning ? t('serverJoin.startJoin') : t('serverJoin.pleaseStartGame') }}
-                    </NButton>
-                </NSpace>
             </div>
             <div class="game-join-person" v-if="gameStore.isAutomatic">
                 <div class="game-join-person-adnimation" ref="animationRef">
@@ -705,7 +715,7 @@ onBeforeUnmount(() => {
 .game-join-container {
     position: relative;
     display: flex;
-    height: 450px;
+    height: 400px;
     padding: 40px 20px 20px 20px;
     gap: 15px;
 
@@ -720,12 +730,25 @@ onBeforeUnmount(() => {
     .game-join-option {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
         flex: 1;
         height: 100%;
         background-color: rgba(133, 133, 133, 0.1);
         border-radius: 10px;
         padding: 15px;
+        overflow: hidden;
+
+        .game-join-option-content {
+            flex: 1;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .game-join-option-footer {
+            flex-shrink: 0;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
     }
 
     .game-join-person {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { NModal, NButton, NProgress, NSpin } from 'naive-ui';
+import { NModal, NButton, NProgress } from 'naive-ui';
 
 
 import { useThemeStore } from '@/store/modules/theme';
@@ -78,7 +78,6 @@ const handleInstallUpdate = async () => {
 };
 
 const updateAvailableHandler = (_: any, info: any) => {
-  console.log("检测到新版本了!", info);
   if (info && info.version) {
     latestVersion.value = info.version;
   }

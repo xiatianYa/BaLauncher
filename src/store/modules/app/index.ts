@@ -5,6 +5,7 @@ import { localStg } from '@/utils/storage';
 import { APP_STORAGE_KEYS } from '@/constants/cache';
 
 // 导入音频资源
+import audioSystem from '@/assets/video/系统.mp3';
 import audioYuuka from '@/assets/video/优香.mp3';
 import audioHoshino from '@/assets/video/星野.mp3';
 import audioYuzu from '@/assets/video/柚子.mp3';
@@ -13,6 +14,7 @@ import audioShiroko from '@/assets/video/白子.mp3';
 import audioArona from '@/assets/video/阿罗纳.mp3';
 
 // 导入主题图片
+import themeSystem from '@/assets/theme/系统.png';
 import themeYuuka from '@/assets/theme/优香.png';
 import themeHoshino from '@/assets/theme/星野.png';
 import themeYuzu from '@/assets/theme/柚子.png';
@@ -33,8 +35,9 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     '星野': audioHoshino,
     '柚子': audioYuzu,
     '爱丽丝': audioAris,
+    '系统': audioSystem,
     '白子': audioShiroko,
-    '阿罗娜': audioArona
+    '阿罗娜': audioArona,
   };
 
   // 音量，从 localStorage 读取，默认为 1
@@ -57,6 +60,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     { name: '柚子', img: themeYuzu, id: '柚子' },
     { name: '爱丽丝', img: themeAris, id: '爱丽丝' },
     { name: '白子', img: themeShiroko, id: '白子' },
+    { name: '系统', img: themeSystem, id: '系统' },
   ];
 
     const locale = ref<App.I18n.LangType>(localStg.get(APP_STORAGE_KEYS.LANG) || 'zh-CN');

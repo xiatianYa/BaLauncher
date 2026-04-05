@@ -79,6 +79,12 @@ const ServerWebsocket: ServerWebsocketType = {
           '206': () => {
             // 地图订阅通知
             if (data && window.ipcRenderer) {
+              // 播放连接成功音效
+              const currentTheme = appStore.currentTheme
+              const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜']
+              const audio = new Audio(audioSrc)
+              audio.volume = appStore.volume
+              audio.play()
               window.ipcRenderer.showMapOrderNotification({
                 title: '地图订阅提醒',
                 message: `您订阅的服务器地图已更新`,

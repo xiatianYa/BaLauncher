@@ -1189,6 +1189,10 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       return { status: 'connection_failed', message: '服务器已满员' }
     }
 
+    if (LOG_PATTERNS.disconnected.test(logLine)) {
+      return { status: 'disconnected', message: '用户已断开连接' }
+    }
+
     const mapMatch = logLine.match(LOG_PATTERNS.mapInfo)
     if (mapMatch) {
       return {
@@ -1256,6 +1260,13 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             break
           case 'connecting':
             safeLog('🔗 用户正在连接服务器')
+            break
+          case 'disconnected':
+            safeLog('🔌 用户已断开连接')
+            // 如果没有在自动挤服,则清除用户GIS连接数据
+            if (!isAutomatic.value) {
+              pauseAutomaticJoinServer();
+            }
             break
         }
       }
@@ -1440,7 +1451,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   async function pauseAutomaticJoinServer(): Promise<void> {
     isAutomatic.value = false
     const sendMessage = {
-      code: 104,
+      type: '104',
       data: {
         serverAddr: joinServerInfo.value?.addr
       }
