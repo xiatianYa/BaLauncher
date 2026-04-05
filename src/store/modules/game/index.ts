@@ -1006,7 +1006,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             '当前地图': data.current,
             '目标服务器地图': joinServerInfo.value?.map || '未设置'
           })
-          if (joinServerInfo.value?.map === data.current && isAutomatic.value) {
+          const targetMap = joinServerInfo.value?.map
+          const currentMap = data.current
+          if (targetMap && currentMap && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) && isAutomatic.value) {
             safeLog('✅ 用户已成功连接到目标服务器')
             isAutomaticRetry.value = false;
             isAutomatic.value = false;
@@ -1025,6 +1027,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
             currentAutomaticPlayerDynamicList.splice(0, currentAutomaticPlayerDynamicList.length)
             // 发送已连接进服务器...动态信息
             sendAutomaticDynamic('已连接进服务器...')
+            // 停止自动挤服
+            stopAutomaticJoinServer()
 
             // 播放连接成功音效
             const appStore = useAppStore()

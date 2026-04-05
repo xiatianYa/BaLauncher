@@ -1,6 +1,6 @@
 {
   "name": "BaLauncher",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "main": "dist-electron/main/index.js",
   "description": "Really simple Electron + Vue + Vite boilerplate.",
   "author": "夏天 <939648675@qq.com>",
