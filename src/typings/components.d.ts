@@ -9,7 +9,6 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppProvider: typeof import('./../components/common/app-provider.vue')['default']
-    BaseLayout: typeof import('./../layout/base-layout/index.vue')['default']
     ButtonIcon: typeof import('./../components/custom/button-icon.vue')['default']
     CloseConfirm: typeof import('./../components/common/close-confirm.vue')['default']
     CollapseFooter: typeof import('./../layout/windows-layout/modules/windows-footer/modules/collapse-footer.vue')['default']
@@ -18,9 +17,6 @@ declare module 'vue' {
     ExpendFooter: typeof import('./../layout/windows-layout/modules/windows-footer/modules/expend-footer.vue')['default']
     ExpendHeader: typeof import('./../layout/windows-layout/modules/windows-header/modules/expend-header.vue')['default']
     ExpendMenu: typeof import('./../layout/windows-layout/modules/windows-menu/modules/expend-menu.vue')['default']
-    GlobalFooter: typeof import('./../layout/modules/global-footer/index.vue')['default']
-    GlobalHeader: typeof import('./../layout/modules/global-header/index.vue')['default']
-    GlobalMenu: typeof import('./../layout/modules/global-menu/index.vue')['default']
     LoadingSpinner: typeof import('./../components/custom/loading-spinner.vue')['default']
     LoginDialog: typeof import('./../components/common/login-dialog.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']

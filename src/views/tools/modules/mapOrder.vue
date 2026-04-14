@@ -10,7 +10,7 @@ import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGe
 import { $t } from '@/locales';
 import dayjs from 'dayjs';
 import { fetchGetGroupList } from '@/service/api';
-import { fetchBindQQ, fetchBindQQGroup } from '@/service/api/system/user';
+import { fetchBindQQ, fetchBindQQGroup } from '@/service/api';
 
 defineOptions({
     name: 'MapOrder'

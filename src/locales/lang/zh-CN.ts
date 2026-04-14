@@ -354,11 +354,14 @@ export default {
     subtitle: '记录每次更新的详细信息',
     addLog: '添加日志',
     addUpdateLog: '添加更新日志',
+    editUpdateLog: '编辑更新日志',
+    edit: '编辑',
     noLogs: '暂无更新日志',
     pinned: '置顶',
     allLoaded: '已加载全部更新',
     totalLogs: '共 {count} 条日志',
     addSuccess: '添加成功',
+    editSuccess: '编辑成功',
     form: {
       version: {
         label: '版本号',

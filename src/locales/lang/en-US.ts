@@ -354,11 +354,14 @@ export default {
     subtitle: 'Record details of each update',
     addLog: 'Add Log',
     addUpdateLog: 'Add Update Log',
+    editUpdateLog: 'Edit Update Log',
+    edit: 'Edit',
     noLogs: 'No update logs yet',
     pinned: 'Pinned',
     allLoaded: 'All updates loaded',
     totalLogs: '{count} logs in total',
     addSuccess: 'Added successfully',
+    editSuccess: 'Edited successfully',
     form: {
       version: {
         label: 'Version',

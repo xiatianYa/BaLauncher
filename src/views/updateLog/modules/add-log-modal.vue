@@ -5,52 +5,29 @@ import { MdEditor } from 'md-editor-v3';
 import { $t } from '@/locales';
 
 import { useThemeStore } from '@/store/modules/theme';
-import { fetchSaveUpdateLog } from '@/service/api/system/updateLog';
+import { fetchSaveLog } from '@/service/api';
 import { useDict } from '@/hooks/business/dict';
 
-/**
- * 组件事件定义
- */
 interface Emits {
-    /** 控制模态框显示状态更新 */
-    (e: 'update:showAddUpdateLog', value: boolean): void;
-    /** 添加成功事件 */
+    (e: 'update:showAddLogModal', value: boolean): void;
     (e: 'success'): void;
 }
 
-/**
- * 组件属性定义
- */
 const props = defineProps<{
-    /** 控制模态框显示 */
-    showAddUpdateLog: boolean;
+    showAddLogModal: boolean;
 }>();
 
 const emit = defineEmits<Emits>();
 
-/**
- * 主题状态管理
- */
 const themeStore = useThemeStore();
 const isDarkMode = computed(() => themeStore.darkMode);
 
-/**
- * 字典选项
- * @description 从系统字典获取更新类型选项
- */
 const { dictOptions } = useDict();
 
-/**
- * 表单和加载状态
- */
 const loading = ref(false);
 const formRef = ref();
 
-/**
- * 表单数据
- * @description 新建更新日志所需的完整数据结构
- */
-const formData = ref<Api.System.SysUpdateLogAddDTO>({
+const formData = ref<Api.System.SysUpdateLogAddDTO & { updateType: string | number | null }>({
     version: '',
     updateType: null,
     title: '',
@@ -59,10 +36,6 @@ const formData = ref<Api.System.SysUpdateLogAddDTO>({
     status: 0
 });
 
-/**
- * 表单验证规则
- * @description 使用 Naive UI 的表单验证规则
- */
 const rules: FormRules = {
     version: {
         required: true,
@@ -86,13 +59,8 @@ const rules: FormRules = {
     }
 };
 
-/**
- * 提交更新日志
- * @async
- * @description 验证表单并提交数据到后端
- */
 const handleSubmit = async (): Promise<void> => {
-    console.log('提交更新日志数据:', formData.value);
+    console.log('添加更新日志数据:', formData.value);
 
     try {
         await formRef.value?.validate();
@@ -102,7 +70,11 @@ const handleSubmit = async (): Promise<void> => {
 
     loading.value = true;
     try {
-        const { error } = await fetchSaveUpdateLog(formData.value);
+        const submitData = {
+            ...formData.value,
+            updateType: formData.value.updateType ? Number(formData.value.updateType) : null
+        };
+        const { error } = await fetchSaveLog(submitData as Api.System.SysUpdateLogAddDTO);
         if (!error) {
             window.$message?.success($t('updateLog.addSuccess'));
             handleClose();
@@ -115,10 +87,6 @@ const handleSubmit = async (): Promise<void> => {
     }
 };
 
-/**
- * 关闭模态框
- * @description 重置表单验证状态和表单数据
- */
 const handleClose = (): void => {
     formRef.value?.restoreValidation();
     formData.value = {
@@ -129,17 +97,17 @@ const handleClose = (): void => {
         isTop: 0,
         status: 0
     };
-    emit('update:showAddUpdateLog', false);
+    emit('update:showAddLogModal', false);
 };
 </script>
 
 <template>
-    <NModal v-model:show="props.showAddUpdateLog" @update:show="(value) => !value && handleClose()" preset="card"
+    <NModal v-model:show="props.showAddLogModal" @update:show="(value) => !value && handleClose()" preset="card"
         size="large" :bordered="true" class="w-800px h-500px rounded-10px overflow-auto" header-style="padding:10px;"
         :closable="true">
         <template #header>
             <div class="flex items-center">
-                <SvgIcon icon="mdi:update" class="text-20px mr-2" />
+                <SvgIcon icon="mdi:plus" class="text-20px mr-2" />
                 <span class="text-18px font-bold">{{ $t('updateLog.addUpdateLog') }}</span>
             </div>
         </template>
@@ -159,11 +127,11 @@ const handleClose = (): void => {
                         clearable />
                 </NFormItem>
                 <NFormItem :label="$t('updateLog.form.pinned.label')" path="isTop">
-                    <NSwitch v-model:value="formData.isTop" :unchecked-value="0" />
+                    <NSwitch v-model:value="formData.isTop" :checked-value="1" :unchecked-value="0" />
                     <span class="ml-2 text-sm text-gray-500">{{ $t('updateLog.form.pinned.desc') }}</span>
                 </NFormItem>
                 <NFormItem :label="$t('updateLog.form.enabled.label')" path="status">
-                    <NSwitch v-model:value="formData.status" :unchecked-value="0" />
+                    <NSwitch v-model:value="formData.status" :checked-value="1" :unchecked-value="0" />
                     <span class="ml-2 text-sm text-gray-500">{{ $t('updateLog.form.enabled.desc') }}</span>
                 </NFormItem>
                 <NFormItem :label="$t('updateLog.form.content.label')" path="content">
@@ -208,8 +176,4 @@ const handleClose = (): void => {
 </template>
 
 <style scoped lang="scss">
-/**
- * 组件样式
- * @description 使用全局样式，无需额外样式
- */
 </style>

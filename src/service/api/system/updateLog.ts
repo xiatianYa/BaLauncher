@@ -3,7 +3,7 @@ import { request } from '@/service/request';
 // =============== Update Log Begin ===============
 
 /** save update log */
-export function fetchSaveUpdateLog(data: Api.System.SysUpdateLogAddDTO) {
+export function fetchSaveLog(data: Api.System.SysUpdateLogAddDTO) {
   return request<boolean>({
     url: '/sysUpdateLog/save',
     method: 'post',
@@ -12,7 +12,7 @@ export function fetchSaveUpdateLog(data: Api.System.SysUpdateLogAddDTO) {
 }
 
 /** remove update log */
-export function fetchRemoveUpdateLog(id: number) {
+export function fetchRemoveLog(id: number) {
   return request<boolean>({
     url: `/sysUpdateLog/remove/${id}`,
     method: 'delete'
@@ -20,7 +20,7 @@ export function fetchRemoveUpdateLog(id: number) {
 }
 
 /** update update log */
-export function fetchUpdateUpdateLog(data: Api.System.SysUpdateLogUpdateDTO) {
+export function fetchUpdateLog(data: Api.System.SysUpdateLogUpdateDTO) {
   return request<boolean>({
     url: '/sysUpdateLog/update',
     method: 'put',
@@ -29,7 +29,7 @@ export function fetchUpdateUpdateLog(data: Api.System.SysUpdateLogUpdateDTO) {
 }
 
 /** get update log list */
-export function fetchGetUpdateLogList() {
+export function fetchGetLogList() {
   return request<Api.System.UpdateLogVo[]>({
     url: '/sysUpdateLog/list',
     method: 'get'
@@ -37,7 +37,7 @@ export function fetchGetUpdateLogList() {
 }
 
 /** get update log info */
-export function fetchGetUpdateLogInfo(id: number) {
+export function fetchGetLogInfo(id: number) {
   return request<Api.System.UpdateLogVo>({
     url: `/sysUpdateLog/getInfo/${id}`,
     method: 'get'
@@ -45,7 +45,7 @@ export function fetchGetUpdateLogInfo(id: number) {
 }
 
 /** get update log page list */
-export function fetchGetUpdateLogPageList(params?: Api.System.SysUpdateLogSearchDTO) {
+export function fetchGetLogPageList(params?: Api.System.SysUpdateLogSearchDTO) {
   return request<Api.System.UpdateLogPageList>({
     url: '/sysUpdateLog/page',
     method: 'get',
@@ -54,7 +54,7 @@ export function fetchGetUpdateLogPageList(params?: Api.System.SysUpdateLogSearch
 }
 
 /** get latest update log list */
-export function fetchGetLatestUpdateLogList(limit?: number) {
+export function fetchGetLatestLogList(limit?: number) {
   return request<Api.System.UpdateLogVo[]>({
     url: '/sysUpdateLog/listLatest',
     method: 'get',
@@ -63,7 +63,7 @@ export function fetchGetLatestUpdateLogList(limit?: number) {
 }
 
 /** get update log by version */
-export function fetchGetUpdateLogByVersion(version: string) {
+export function fetchGetLogByVersion(version: string) {
   return request<Api.System.UpdateLogVo>({
     url: `/sysUpdateLog/getByVersion/${version}`,
     method: 'get'

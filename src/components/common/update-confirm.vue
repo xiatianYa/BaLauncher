@@ -2,7 +2,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { NModal, NButton, NProgress } from 'naive-ui';
 import { useThemeStore } from '@/store/modules/theme';
-import { fetchGetUpdateLogByVersion } from '@/service/api/system/updateLog';
+import { fetchGetLogByVersion } from '@/service/api';  
 import { useAuthStore } from '@/store/modules/auth';
 
 interface UpdateState {
@@ -45,7 +45,7 @@ const loadUpdateLog = async () => {
   if (!latestVersion.value) return;
   loadingUpdateLog.value = true;
   try {
-    const { data, error } = await fetchGetUpdateLogByVersion(latestVersion.value);
+    const { data, error } = await fetchGetLogByVersion(latestVersion.value);
     if (!error) {
       state.value.show = true;
       updateLog.value = data;

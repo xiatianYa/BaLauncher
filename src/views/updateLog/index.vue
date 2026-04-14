@@ -1,74 +1,44 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick } from 'vue';
+import { ref, computed, onMounted, nextTick, watch } from 'vue';
 import { NCard, NSpin, NEmpty, NTag, NButton } from 'naive-ui';
 import { MdPreview } from 'md-editor-v3';
 import dayjs from 'dayjs';
-
 import { useThemeStore } from '@/store/modules/theme';
-import { fetchGetLatestUpdateLogList } from '@/service/api/system/updateLog';
+import { fetchGetLatestLogList } from '@/service/api';
 import { useAuth } from '@/hooks/business/auth';
-import AddUpdateLog from './modules/add-update-log.vue';
+import AddLogModal from './modules/add-log-modal.vue';
+import UpdateLogModal from './modules/update-log-modal.vue';
 import { useDict } from '@/hooks/business/dict';
 import { $t } from '@/locales';
 
-/**
- * 组件配置选项
- */
 defineOptions({
     name: 'updateLog'
 });
 
-/**
- * 主题状态管理
- */
 const themeStore = useThemeStore();
 const isDarkMode = computed(() => themeStore.darkMode);
 
-/**
- * 字典选项
- */
 const { dictType, dictLabel } = useDict();
 
-/**
- * 权限控制
- */
 const { hasRole } = useAuth();
 const canAddUpdateLog = computed(() => hasRole(['R_SUPER', 'R_ADMIN']));
 
-/**
- * 模态框显示状态
- */
 const addModalVisible = ref(false);
+const editModalVisible = ref(false);
+const editingLog = ref<Api.System.UpdateLogVo | null>(null);
 
-/**
- * 分页和加载状态
- */
 const loading = ref(false);
 const loadingMore = ref(false);
 const finished = ref(false);
 const updateLogs = ref<Api.System.UpdateLogVo[]>([]);
 const limit = ref(10);
 
-/**
- * 用于动画跟踪的新日志ID集合
- */
 const newLogIds = ref<Set<number>>(new Set());
 
-/**
- * 格式化日期时间
- * @param dateStr - 日期字符串
- * @returns 格式化后的日期时间字符串
- * @example formatDateTime('2026-04-04T14:30:00') => '2026年04月04日 14时30分' or 'Apr 04, 2026 14:30'
- */
 const formatDateTime = (dateStr: string): string => {
     return dayjs(dateStr).format('YYYY年MM月DD日');
 };
 
-/**
- * 加载更新日志列表
- * @async
- * @description 支持初始加载和更多加载两种模式
- */
 const loadUpdateLogs = async (): Promise<void> => {
     if (loading.value || loadingMore.value) return;
 
@@ -79,7 +49,7 @@ const loadUpdateLogs = async (): Promise<void> => {
             loadingMore.value = true;
         }
 
-        const { data } = await fetchGetLatestUpdateLogList(limit.value);
+        const { data } = await fetchGetLatestLogList(limit.value);
         if (data) {
             if (updateLogs.value.length === 0) {
                 updateLogs.value = data;
@@ -111,10 +81,6 @@ const loadUpdateLogs = async (): Promise<void> => {
     }
 };
 
-/**
- * 加载更多更新日志
- * @description 无限滚动触发，增加加载数量并重新请求
- */
 const loadMore = (): void => {
     if (!finished.value && !loadingMore.value) {
         limit.value += 10;
@@ -122,29 +88,28 @@ const loadMore = (): void => {
     }
 };
 
-/**
- * 添加更新日志成功回调
- * @description 重置列表状态并重新加载
- */
-const handleAddSuccess = (): void => {
+const handleSuccess = (): void => {
     updateLogs.value = [];
     limit.value = 10;
     finished.value = false;
     loadUpdateLogs();
 };
 
-/**
- * 判断是否为新加载的日志
- * @param id - 日志ID
- * @returns 是否需要显示动画
- */
+const openEditModal = (log: Api.System.UpdateLogVo): void => {
+    editingLog.value = log;
+    editModalVisible.value = true;
+};
+
 const isNewLog = (id: number): boolean => {
     return newLogIds.value.has(id);
 };
 
-/**
- * 组件挂载初始化
- */
+watch(editModalVisible, (newVal) => {
+    if (!newVal) {
+        editingLog.value = null;
+    }
+});
+
 onMounted(() => {
     loadUpdateLogs();
 });
@@ -213,6 +178,13 @@ onMounted(() => {
                                                 </template>
                                                 {{ $t('updateLog.pinned') }}
                                             </NTag>
+                                            <NButton v-if="canAddUpdateLog" @click="openEditModal(log)" text
+                                                size="small" class="edit-button">
+                                                <template #icon>
+                                                    <SvgIcon icon="mdi:pencil" />
+                                                </template>
+                                                {{ $t('updateLog.edit') }}
+                                            </NButton>
                                         </div>
                                     </div>
 
@@ -253,7 +225,8 @@ onMounted(() => {
             </div>
         </NCard>
     </NCard>
-    <AddUpdateLog v-model:showAddUpdateLog="addModalVisible" @success="handleAddSuccess" />
+    <AddLogModal v-model:showAddLogModal="addModalVisible" @success="handleSuccess" />
+    <UpdateLogModal v-model:showUpdateLogModal="editModalVisible" :edit-log="editingLog" @success="handleSuccess" />
 </template>
 
 <style scoped lang="scss">
@@ -355,6 +328,16 @@ onMounted(() => {
     gap: 12px;
     margin-bottom: 8px;
     flex-wrap: wrap;
+
+    .edit-button {
+        margin-left: auto;
+        opacity: 0.7;
+        transition: opacity 0.3s;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
 }
 
 /**
