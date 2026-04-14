@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useGameStore } from '@/store/modules/game';
 import { NModal, NButton } from 'naive-ui';
-import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   showCloseConfirm: boolean;
@@ -13,7 +12,6 @@ const emit = defineEmits<{
 }>();
 
 const gameStore = useGameStore();
-const { t } = useI18n();
 
 // 取消退出：关闭弹窗
 const handleCancelExit = () => {

@@ -292,13 +292,18 @@ onUnmounted(() => {
   if (countdownInterval) {
     clearInterval(countdownInterval);
     countdownInterval = null;
+    //停止自动挤服
+    if (gameStore.isAutomatic) {
+      gameStore.isJoinServerTrayVisible = false;
+      gameStore.stopAutomaticJoinServer();
+    }
   }
 });
 </script>
 
 <template>
-  <NCard class="w-full h-full" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
-    <NCard :class="['rounded-10px', gameStore.isFullscreen ? 'fixed inset-0 z-9999 m-0 rounded-none' : 'm-10px']"
+  <NCard class="w-full h-full" content-class="flex h-full w-full" content-style="padding:0px;" :bordered="false">
+    <NCard :class="['rounded-10px', gameStore.isFullscreen ? 'fixed inset-0 z-9999 m-0 rounded-10px' : 'm-10px']"
       content-style="padding:10px;" content-class="h-full flex flex-col flex-1 overflow-hidden"
       header-style="padding:10px 20px 10px 20px" v-if="!serverLoading" :segmented="{
         content: true,

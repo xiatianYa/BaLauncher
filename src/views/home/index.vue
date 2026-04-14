@@ -3,6 +3,7 @@ import HeaderBanner from './modules/header-banner.vue';
 import PieChart from './modules/pie-chart.vue';
 import LineChart from './modules/line-chart.vue';
 import OnlineBanner from './modules/on-line-banner.vue';
+import MapPlayTime from './modules/map-play-time.vue';
 
 defineOptions({
   name: 'home'
@@ -26,6 +27,7 @@ defineOptions({
               <PieChart />
             </NTabPane>
             <NTabPane name="Map Chart" :tab="$t('home.mapPlayStats')">
+              <MapPlayTime />
             </NTabPane>
           </NTabs>
         </NGridItem>

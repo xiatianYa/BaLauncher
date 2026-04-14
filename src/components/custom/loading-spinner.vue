@@ -4,12 +4,10 @@ import ALuoNa02 from '@/assets/imgs/ALuoNa02.png';
 import ALuoNa03 from '@/assets/imgs/ALuoNa03.png';
 import ALuoNa04 from '@/assets/imgs/ALuoNa04.png';
 import { ref, onMounted, onUnmounted, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
 
 defineOptions({
   name: 'LoadingSpinner'
 });
-const { t } = useI18n();
 
 const props = withDefaults(defineProps<{
   loading: boolean;

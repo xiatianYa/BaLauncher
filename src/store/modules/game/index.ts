@@ -2,9 +2,9 @@ import { reactive, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { SetupStoreId } from '@/enum'
 import ServerWebsocket from '@/utils/ws/server'
-import { fetchGetCommunityList } from '@/service/api/game/community'
-import { fetchGetServerList } from '@/service/api/game/server'
-import { fetchGetMapList } from '@/service/api/game/map'
+import { fetchGetCommunityList } from '@/service/api'
+import { fetchGetServerList } from '@/service/api'
+import { fetchGetMapList } from '@/service/api'
 import { fetchGetPieChart } from '@/service/api'
 import { localStg } from '@/utils/storage'
 import { GamePlatform } from '@/constants/app'
@@ -14,9 +14,9 @@ import { LOG_PATTERNS, UserConnectionStatus, GisDataSendTimerState } from '@/con
 import { GAME_STORAGE_KEYS } from '@/constants/cache'
 
 /** GIS数据发送间隔（毫秒） */
-const GIS_SEND_INTERVAL = 2000
+const GIS_SEND_INTERVAL = 5000
 /** 游戏状态检查间隔（毫秒） */
-const GAME_CHECK_INTERVAL = 3000
+const GAME_CHECK_INTERVAL = 10000
 
 /**
  * 游戏状态管理 Store
@@ -132,6 +132,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     mapStage: '',
     mapPhase: ''
   })
+  
   /** 当前玩家游戏信息 */
   const gamePlayerInfo = ref<Api.Game.CsgoPlayer>({
     addr: '',
@@ -973,10 +974,14 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       connectionCheckTimer = null
     }
 
-    isAutomatic.value = false
-
     try {
-      await window.ipcRenderer.invoke('stop-automatic-join')
+      console.log(isAutomatic.value);
+      
+      if (isAutomatic.value) {
+        console.log("暂停挤服");
+        await window.ipcRenderer.invoke('stop-automatic-join')
+        isAutomatic.value = false
+      }
     } catch (error) {
       console.error('停止自动挤服失败:', error)
     }
@@ -1010,14 +1015,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
           const currentMap = data.current
           if (targetMap && currentMap && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) && isAutomatic.value) {
             safeLog('✅ 用户已成功连接到目标服务器')
-            isAutomaticRetry.value = false;
-            isAutomatic.value = false;
             isJoinServerTrayVisible.value = false;
-
-            if (connectionCheckTimer) {
-              clearTimeout(connectionCheckTimer)
-              connectionCheckTimer = null;
-            }
 
             // 发送用户连接信息到GIS服务器
             sendUserGisJoinAddr()
@@ -1465,7 +1463,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
    * 向服务器发送暂停消息
    */
   async function pauseAutomaticJoinServer(): Promise<void> {
-    isAutomatic.value = false
     const sendMessage = {
       type: '104',
       data: {

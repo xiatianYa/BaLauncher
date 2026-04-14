@@ -25,8 +25,10 @@ import themeArona from '@/assets/theme/阿罗娜.png';
 export const useAppStore = defineStore(SetupStoreId.App, () => {
   // 当前主题，默认为 '阿罗娜'
   const currentTheme = ref<string>(localStg.get(APP_STORAGE_KEYS.THEME) || '阿罗娜');
+  // 音量，从 localStorage 读取，默认为 1
+  const volume = ref<number>(localStg.get(APP_STORAGE_KEYS.VOLUME) || 0.5);
 
-    // 在线用户列表
+  // 在线用户列表
   const onlineUserList = ref<Array<Api.System.OnLineUser>>([]);
 
   // 音频映射
@@ -39,9 +41,6 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     '白子': audioShiroko,
     '阿罗娜': audioArona,
   };
-
-  // 音量，从 localStorage 读取，默认为 1
-  const volume = ref<number>(localStg.get(APP_STORAGE_KEYS.VOLUME) ?? 0.5);
 
   /**
    * 设置音量
@@ -63,7 +62,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     { name: '系统', img: themeSystem, id: '系统' },
   ];
 
-    const locale = ref<App.I18n.LangType>(localStg.get(APP_STORAGE_KEYS.LANG) || 'zh-CN');
+  const locale = ref<App.I18n.LangType>(localStg.get(APP_STORAGE_KEYS.LANG) || 'zh-CN');
 
   /**
    * 设置当前主题

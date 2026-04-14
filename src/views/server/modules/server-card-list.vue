@@ -64,6 +64,7 @@ const getMapPhaseText = (phase: string) => {
     'gameover': '游戏结束',
     'live': '对局中',
     'over': '已结束',
+    'freezetime': '暂停回合',
     'unknown': '未知'
   };
   return phaseMap[phase] || phase;

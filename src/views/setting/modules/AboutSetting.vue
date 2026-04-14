@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { NButton, NText } from 'naive-ui';
+import { $t } from '@/locales';
 
-const { t } = useI18n();
 
 const isCheckingUpdate = ref(false);
 const appVersion = ref('1.0.0');
@@ -68,7 +67,7 @@ const getAppVersion = async () => {
     const version = await window.ipcRenderer.getAppVersion();
     appVersion.value = version;
   } catch (error) {
-    console.error(t('settings.messages.versionFetchFailed'), error);
+    console.error($t('settings.messages.versionFetchFailed'), error);
   }
 };
 

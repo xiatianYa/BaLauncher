@@ -15,7 +15,7 @@ import {
     fetchAddKeyBind,
     fetchDeleteKeyBind,
     fetchUpdateKeyBind,
-} from '@/service/api/game/keyBind';
+} from '@/service/api';
 import { MdEditor } from 'md-editor-v3';
 import dayjs from 'dayjs';
 import {

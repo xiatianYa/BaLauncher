@@ -14,6 +14,7 @@ export default {
     tools: '工具箱',
     setting: '设置',
     updateLog: '更新日志',
+    hall: '大厅',
   },
   common: {
     loading: '正在加载...',

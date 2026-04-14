@@ -95,3 +95,12 @@ export function fetchUpdateMapSubscribe(params: Api.Game.UpdateMapSubscribeParam
     data: params
   });
 }
+
+// 获取地图游玩时长排行
+export function fetchGetMapPlayTimeList(params?: Api.Common.CommonSearchParams) {
+  return request<Api.Game.MapVo[]>({
+    url: '/gameMap/listMapPlayTime',
+    method: 'get',
+    params
+  });
+}

@@ -6,10 +6,10 @@ import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
 import { useAuthStore } from '@/store/modules/auth';
 import { useDict } from '@/hooks/business/dict';
-import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList, fetchUpdateMapSubscribe } from '@/service/api/game/map';
+import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList, fetchUpdateMapSubscribe } from '@/service/api';
 import { $t } from '@/locales';
 import dayjs from 'dayjs';
-import { fetchGetGroupList } from '@/service/api/game/group';
+import { fetchGetGroupList } from '@/service/api';
 import { fetchBindQQ, fetchBindQQGroup } from '@/service/api/system/user';
 
 defineOptions({

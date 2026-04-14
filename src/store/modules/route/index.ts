@@ -10,6 +10,7 @@ import icon939940 from '@/assets/imgs/menu/939940.png';
 import icon911476 from '@/assets/imgs/menu/911476.png';
 import icon207977 from '@/assets/imgs/menu/207977.png';
 import icon766184 from '@/assets/imgs/menu/766184.png';
+import icon451044 from '@/assets/imgs/menu/451044.png';
 
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
@@ -44,6 +45,13 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       img: icon940326,
       isPersistent: true
     },
+    // {
+    //   name: "routes.hall",
+    //   key: "hall",
+    //   icon: "tabler:home",
+    //   img: icon451044,
+    //   isPersistent: true
+    // },
     {
       name: "routes.server",
       key: "server",

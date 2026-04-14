@@ -12,23 +12,10 @@ const themeStore = useThemeStore();
 
 const naiveDarkTheme = computed(() => (themeStore.darkMode ? darkTheme : undefined));
 
-const themeOverrides = computed(() => ({
-  common: {
-    fontFamily: `
-      'Inter',
-      'Noto Sans SC',
-      'PingFang SC',
-      'Microsoft YaHei',
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      Roboto,
-      'Helvetica Neue',
-      Arial,
-      sans-serif
-    `
-  }
-}));
+const themeOverrides = computed(() => {
+  return {
+  };
+});
 </script>
 
 <template>

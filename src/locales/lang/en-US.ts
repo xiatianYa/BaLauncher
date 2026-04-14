@@ -14,6 +14,7 @@ export default {
     tools: 'Tools',
     setting: 'Settings',
     updateLog: 'VerLog',
+    hall: 'Hall',
   },
   common: {
     loading: 'Loading...',

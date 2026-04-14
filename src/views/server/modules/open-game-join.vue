@@ -3,7 +3,6 @@ import { useGameStore } from '@/store/modules/game';
 import { NModal, NText, NSpace, NTag, NButton, NSwitch, NSlider, NCollapse, NCollapseItem, NAvatar } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
 import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
-import { useI18n } from 'vue-i18n';
 import { $t } from '@/locales';
 
 const props = defineProps<{
@@ -16,7 +15,6 @@ const emit = defineEmits<{
 
 const gameStore = useGameStore();
 const { dictOptions } = useDict();
-const { t } = useI18n();
 
 type BounceState = {
     x: number;
@@ -242,11 +240,11 @@ const getTeamColor = (team: string) => {
 };
 
 const getTeamLabel = (team: string) => {
-    if (!team) return t('serverJoin.team.unknown');
+    if (!team) return $t('serverJoin.team.unknown');
     switch (team.toLowerCase()) {
-        case 'ct': return t('serverJoin.team.ct');
-        case 't': return t('serverJoin.team.t');
-        case 'spectator': return t('serverJoin.team.spectator');
+        case 'ct': return $t('serverJoin.team.ct');
+        case 't': return $t('serverJoin.team.t');
+        case 'spectator': return $t('serverJoin.team.spectator');
         default: return team;
     }
 };
@@ -366,10 +364,14 @@ const stopJoinServer = () => {
     gameStore.pauseAutomaticJoinServer();
     gameStore.sendAutomaticDynamic($t('serverJoin.dynamicPaused'));
     //清空记录
-    setTimeout(() => {
-        gameStore.currentAutomaticPlayerDynamicList.splice(0, gameStore.currentAutomaticPlayerDynamicList.length);
-    }, 500);
+    gameStore.currentAutomaticPlayerDynamicList.splice(0, gameStore.currentAutomaticPlayerDynamicList.length);
     gameStore.stopAutomaticJoinServer();
+};
+
+// 复制服务器IP
+const copyServerAddr = async () => {
+    navigator.clipboard.writeText(`connect ${gameStore.joinServerInfo?.addr}`);
+    window.$message?.success($t('server.copySuccess'));
 };
 
 // 启动游戏
@@ -555,7 +557,7 @@ onBeforeUnmount(() => {
                             <template #icon>
                                 <SvgIcon icon="hugeicons:start-up-02" />
                             </template>
-                            {{ gameStore.isGameLaunching ? t('serverJoin.launching') : t('serverJoin.startGame') }}
+                            {{ gameStore.isGameLaunching ? $t('serverJoin.launching') : $t('serverJoin.startGame') }}
                         </NButton>
                         <NButton type="success" ghost class="rounded-6px" v-if="gameStore.isGameRunning"
                             :disabled="true">
@@ -569,7 +571,8 @@ onBeforeUnmount(() => {
                             <template #icon>
                                 <SvgIcon icon="solar:gamepad-broken"></SvgIcon>
                             </template>
-                            {{ gameStore.isGameRunning ? t('serverJoin.startJoin') : t('serverJoin.pleaseStartGame') }}
+                            {{ gameStore.isGameRunning ? $t('serverJoin.startJoin') : $t('serverJoin.pleaseStartGame')
+                            }}
                         </NButton>
                     </NSpace>
                 </div>
@@ -650,10 +653,14 @@ onBeforeUnmount(() => {
                         </NTag>
                     </div>
                     <div class="flex items-center ml-8px mt-6px mb-6px position-relative font-bold">
-                        <SvgIcon icon="material-symbols:bring-your-own-ip"
-                            class="mr-5px font-size-12px color-#a5a5a5" />
+                        <div class="mr-5px cursor-pointer hover:opacity-80" @click="copyServerAddr">
+                            <SvgIcon icon="material-symbols:bring-your-own-ip" class="font-size-14px color-#a5a5a5" />
+                        </div>
                         <div class="font-size-12px color-#a5a5a5 font-bold">
                             {{ gameStore.joinServerInfo.addr }}
+                        </div>
+                        <div class="ml-5px cursor-pointer hover:opacity-80" @click="copyServerAddr">
+                            <SvgIcon icon="mdi:content-copy" class="font-size-14px color-#a5a5a5" />
                         </div>
                     </div>
                 </div>
@@ -669,7 +676,7 @@ onBeforeUnmount(() => {
                                                 fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
                                             <span class="ml-2 font-bold">{{ player.loginUser?.nickName ||
                                                 $t('serverJoin.unknownPlayer')
-                                                }}</span>
+                                            }}</span>
                                             <NTag size="small" :type="getTeamColor(player.team)" class="ml-2"
                                                 :bordered="false">
                                                 {{ getTeamLabel(player.team) }}

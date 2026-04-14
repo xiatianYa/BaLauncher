@@ -2,7 +2,6 @@
 import { useGameStore } from '@/store/modules/game';
 import { NModal, NButton } from 'naive-ui';
 import { onUnmounted } from 'vue';
-import { useI18n } from 'vue-i18n';
 
 const props = defineProps<{
   showGameConfirm: boolean;
@@ -14,7 +13,6 @@ const emit = defineEmits<{
 }>();
 
 const gameStore = useGameStore();
-const { t } = useI18n();
 
 // 取消退出：关闭弹窗
 const handleCancelExit = () => {
@@ -59,7 +57,7 @@ onUnmounted(() => {
           <template #icon>
             <SvgIcon icon="hugeicons:start-up-02" />
           </template>
-          {{ gameStore.isGameLaunching ? t('server.openGame.launching') : t('server.openGame.start') }}
+          {{ gameStore.isGameLaunching ? $t('server.openGame.launching') : $t('server.openGame.start') }}
         </NButton>
       </div>
     </div>

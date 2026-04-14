@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { NModal, NButton, NProgress } from 'naive-ui';
-
-
 import { useThemeStore } from '@/store/modules/theme';
 import { fetchGetUpdateLogByVersion } from '@/service/api/system/updateLog';
 import { useAuthStore } from '@/store/modules/auth';

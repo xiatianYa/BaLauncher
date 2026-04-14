@@ -8,21 +8,6 @@ body,
   height: 100%;
   /* 使用更小的光标，通过调整 URL 参数或使用不同大小的文件 */
   cursor: url('../../assets/pointer/WangXiaoTaoPoint.png') 8 8, auto;
-  font-family:
-    'Inter',
-    'Noto Sans SC',
-    'PingFang SC',
-    'Microsoft YaHei',
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    sans-serif;
-  font-feature-settings: 'liga' 1, 'calt' 1;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   letter-spacing: 0.01em;
 }
 

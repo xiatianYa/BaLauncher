@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
-import { DataTableColumn, NButton, NTag, NTooltip } from 'naive-ui';
+import { DataTableColumn, NButton, NTooltip } from 'naive-ui';
 import { ref, computed } from 'vue';
 import { useGameStore } from '@/store/modules/game';
 import { useThemeStore } from '@/store/modules/theme';
@@ -132,7 +132,7 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
     title: $t('server.ping'),
     key: 'ping',
     render: (row) => (
-      <div class="flex items-center">
+      <div class="text-12px font-bold">
         <span style={{ color: getPingColor(row.ping) }}>{row.ping ? `${row.ping}ms` : '??'}</span>
       </div>
     )
@@ -143,9 +143,17 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
     width: 100,
     render: (row) => (
       <div class="flex items-center">
-        <span class="text-12px" style={{ color: getSecondaryTextColor() }}>
-          {row.mapPhase ? `CT ${row.CTScore || 0} : ${row.TScore || 0} T` : '-'}
-        </span>
+        {row.mapPhase ? (
+          <>
+            <span class="text-12px font-bold" style={{ color: '#4096ff' }}>CT</span>
+            <span class="text-12px ml-4px mr-4px" style={{ color: '#4096ff' }}>{row.CTScore || 0}</span>
+            <span class="text-12px font-bold" style={{ color: getSecondaryTextColor() }}>:</span>
+            <span class="text-12px ml-4px mr-4px" style={{ color: '#faad14' }}>{row.TScore || 0}</span>
+            <span class="text-12px font-bold" style={{ color: '#faad14' }}>T</span>
+          </>
+        ) : (
+          <span class="text-12px" style={{ color: getSecondaryTextColor() }}>-</span>
+        )}
       </div>
     )
   },
@@ -160,7 +168,7 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
           <NTooltip trigger="hover" placement="bottom">
             {{
               trigger: () => (
-                <NButton text size="small" onClick={() => emit('join', row)}>
+                <NButton size="small" onClick={() => emit('join', row)}>
                   {{
                     icon: () => <SvgIcon icon="iconamoon:player-play-bold" />
                   }}
@@ -172,7 +180,7 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
           <NTooltip trigger="hover" placement="bottom">
             {{
               trigger: () => (
-                <NButton text size="small" onClick={() => emit('autoJoin', row)}>
+                <NButton size="small" onClick={() => emit('autoJoin', row)}>
                   {{
                     icon: () => <SvgIcon icon="iconamoon:player-next-bold" />
                   }}
@@ -185,7 +193,7 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
             <NTooltip trigger="hover" placement="bottom">
               {{
                 trigger: () => (
-                  <NButton text size="small" onClick={() => handleDelete(row)}>
+                  <NButton size="small" onClick={() => handleDelete(row)}>
                     {{
                       icon: () => <SvgIcon icon="mdi:delete-outline" />
                     }}

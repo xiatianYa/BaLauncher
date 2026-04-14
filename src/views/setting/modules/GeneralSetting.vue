@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useGameStore } from '@/store/modules/game';
-import { useI18n } from 'vue-i18n';
 import { NGrid, NGridItem, NButton, NInput, NText } from 'naive-ui';
 import type { GamePlatform } from '@/constants/app';
 import { START_ITEMS } from '@/constants/startItems';
+import { $t } from '@/locales';
 
-const { t } = useI18n();
 const gameStore = useGameStore();
 
 const isDetectingSteam = ref(false);
@@ -54,18 +53,18 @@ const addCustomStartItem = () => {
 };
 
 const selectCsgo2Path = async () => {
-  const result = await window.ipcRenderer.invoke('select-directory', t('settings.messages.selectCsgoPath'));
+  const result = await window.ipcRenderer.invoke('select-directory', $t('settings.messages.selectCsgoPath'));
   if (result) {
     csgo2Path.value = result;
-    window.$message?.success(t('settings.messages.csgoPathSaved'));
+    window.$message?.success($t('settings.messages.csgoPathSaved'));
   }
 };
 
 const selectSteamPath = async () => {
-  const result = await window.ipcRenderer.invoke('select-directory', t('settings.messages.selectSteamPath'));
+  const result = await window.ipcRenderer.invoke('select-directory', $t('settings.messages.selectSteamPath'));
   if (result) {
     steamPath.value = result;
-    window.$message?.success(t('settings.messages.steamPathSaved'));
+    window.$message?.success($t('settings.messages.steamPathSaved'));
   }
 };
 
@@ -75,12 +74,12 @@ const autoDetectSteamPath = async () => {
     const result = await window.ipcRenderer.invoke('auto-detect-paths');
     if (result.steamPath) {
       steamPath.value = result.steamPath;
-      window.$message?.success(t('settings.messages.autoDetectSteamSuccess'));
+      window.$message?.success($t('settings.messages.autoDetectSteamSuccess'));
     } else {
-      window.$message?.warning(t('settings.messages.autoDetectSteamMissing'));
+      window.$message?.warning($t('settings.messages.autoDetectSteamMissing'));
     }
   } catch (error) {
-    window.$message?.error(t('settings.messages.autoDetectFailed'));
+    window.$message?.error($t('settings.messages.autoDetectFailed'));
   } finally {
     isDetectingSteam.value = false;
   }
@@ -92,12 +91,12 @@ const autoDetectCsgo2Path = async () => {
     const result = await window.ipcRenderer.invoke('auto-detect-paths');
     if (result.csgo2Path) {
       csgo2Path.value = result.csgo2Path;
-      window.$message?.success(t('settings.messages.autoDetectCsgoSuccess'));
+      window.$message?.success($t('settings.messages.autoDetectCsgoSuccess'));
     } else {
-      window.$message?.warning(t('settings.messages.autoDetectCsgoMissing'));
+      window.$message?.warning($t('settings.messages.autoDetectCsgoMissing'));
     }
   } catch (error) {
-    window.$message?.error(t('settings.messages.autoDetectFailed'));
+    window.$message?.error($t('settings.messages.autoDetectFailed'));
   } finally {
     isDetectingCsgo.value = false;
   }

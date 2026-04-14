@@ -14,7 +14,7 @@ function createVueRoutes(): RouteRecordRaw[] {
             path: '/',
             name: 'root',
             // 使用BaseLayout作为父组件
-            component:() => import('@/layout/base-layout/index.vue'),
+            component: () => import('@/layout/windows-layout/index.vue'),
             children: [
                 {
                     path: '',
@@ -22,6 +22,15 @@ function createVueRoutes(): RouteRecordRaw[] {
                     component: () => import('@/views/home/index.vue'),
                     meta: {
                         title: '首页',
+                        requiresAuth: false
+                    }
+                },
+                {
+                    path: 'hall',
+                    name: 'hall',
+                    component: () => import('@/views/hall/index.vue'),
+                    meta: {
+                        title: '大厅',
                         requiresAuth: false
                     }
                 },

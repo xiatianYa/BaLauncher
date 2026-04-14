@@ -2,11 +2,10 @@
 import { ref, computed, watch } from 'vue';
 import { useThemeStore } from '@/store/modules/theme';
 import { localStg } from '@/utils/storage';
-import { useI18n } from 'vue-i18n';
 import { NModal, NGrid, NGridItem, NButton } from 'naive-ui';
 import { ROUTE_STORAGE_KEYS, APP_STORAGE_KEYS, GAME_STORAGE_KEYS, AUTH_STORAGE_KEYS, ALL_STORAGE_KEYS } from '@/constants/cache';
+import { $t } from '@/locales';
 
-const { t } = useI18n();
 const themeStore = useThemeStore();
 const isDarkMode = computed(() => themeStore.darkMode);
 
@@ -132,7 +131,7 @@ const handleClearCache = () => {
       window.location.reload();
     }, 1000);
   } catch (error) {
-    window.$message?.error(t('settings.messages.cacheClearFailed'));
+    window.$message?.error($t('settings.messages.cacheClearFailed'));
   }
 };
 

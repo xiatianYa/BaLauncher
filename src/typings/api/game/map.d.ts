@@ -70,6 +70,8 @@ declare namespace Api {
       systemOrder: string | null;
       /** QQ订阅 */
       qqOrder: string | null;
+      /** 游玩时长 */
+      playTime: number;
       /** 扩展地图 */
       exgMap: {
         /** 地图名称 */
