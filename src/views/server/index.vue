@@ -257,6 +257,7 @@ const saveAddServer = async () => {
   }
 
   const server: Api.Game.Server = {
+    id: Date.now(),
     serverName: serverRemark.value.trim() || serverAddress.value.trim(),
     communityId: gameStore.selectedCommunityId!,
     ip: ip,

@@ -93,6 +93,13 @@ export default {
     mapOrder: 'Map Subscription',
     mapOrderTitle: 'Map Subscription',
     mapOrderDesc: 'One-click subscribe and manage game maps',
+    serverMapRecord: 'Map Play Records',
+    serverMapRecordTitle: 'Map Play Records',
+    serverMapRecordDesc: 'View map play count ranking',
+    mapTimeline: 'Map Timeline',
+    noTimelineData: 'No timeline data',
+    selectServerTip: 'Select a server to view timeline',
+    allLoaded: 'All records loaded',
   },
   keyBind: {
     title: 'Key Bind Configuration',

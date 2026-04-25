@@ -96,11 +96,24 @@ export function fetchUpdateMapSubscribe(params: Api.Game.UpdateMapSubscribeParam
   });
 }
 
-// 获取地图游玩时长排行
-export function fetchGetMapPlayTimeList(params?: Api.Common.CommonSearchParams) {
-  return request<Api.Game.MapVo[]>({
-    url: '/gameMap/listMapPlayTime',
+// 获取地图游玩次数排行
+export function fetchGetMapPlayCountList(params?: Api.Common.CommonSearchParams) {
+  return request<Api.Game.GameMapPlayCountVo[]>({
+    url: '/gameServerMapRecord/getMapPlayCountTop',
     method: 'get',
     params
+  });
+}
+
+// 获取指定服务器的地图运行时间线
+export function fetchGetServerMapTimeline(serverId: number, params?: Api.Common.CommonSearchParams, mapId?: number) {
+  return request<Api.Game.GameServerMapTimelinePage>({
+    url: `/gameServerMapRecord/getServerMapTimeline`,
+    method: 'get',
+    params: {
+      ...params,
+      serverId,
+      mapId
+    }
   });
 }

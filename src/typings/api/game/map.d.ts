@@ -70,8 +70,6 @@ declare namespace Api {
       systemOrder: string | null;
       /** QQ订阅 */
       qqOrder: string | null;
-      /** 游玩时长 */
-      playTime: number;
       /** 扩展地图 */
       exgMap: {
         /** 地图名称 */
@@ -100,5 +98,42 @@ declare namespace Api {
       /** QQ订阅 */
       qqOrder: string | null;
     };
+
+    /** 地图游玩次数排行Vo */
+    type GameMapPlayCountVo = {
+      /** 地图ID */
+      mapId: number;
+      /** 地图名称 */
+      mapName: string;
+      /** 译名 */
+      mapLabel: string;
+      /** 图片路径 */
+      mapUrl: string;
+      /** 运行次数 */
+      playCount: number;
+    };
+
+    /** 服务器地图时间线Vo */
+    type GameServerMapTimelineVo = {
+      /** 地图ID */
+      mapId: number;
+      /** 地图名称 */
+      mapName: string;
+      /** 地图译名 */
+      mapLabel: string;
+      /** 地图图片 */
+      mapUrl: string;
+      /** 游玩开始时间 */
+      firstPlayTime: string;
+      /** 总游玩时间(分钟) */
+      totalPlayMinutes: number;
+      /** ECharts X轴时间数组 */
+      timeAxis?: Array<string>;
+      /** ECharts Y轴人数数组 */
+      playerCountAxis?: Array<number>;
+    };
+
+    /** 服务器地图时间线分页 */
+    type GameServerMapTimelinePage = Common.PaginatingQueryRecord<GameServerMapTimelineVo>;
   }
 }

@@ -93,6 +93,13 @@ export default {
     mapOrder: '地图订阅',
     mapOrderTitle: '地图订阅',
     mapOrderDesc: '一键订阅和管理游戏地图',
+    serverMapRecord: '地图游玩记录',
+    serverMapRecordTitle: '地图游玩记录',
+    serverMapRecordDesc: '查看地图游玩数据统计',
+    mapTimeline: '地图运行时间线',
+    noTimelineData: '暂无时间线数据',
+    selectServerTip: '请选择服务器查看时间线',
+    allLoaded: '已加载全部记录',
   },
   keyBind: {
     title: '按键绑定配置',

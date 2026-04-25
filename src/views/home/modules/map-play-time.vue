@@ -1,43 +1,37 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
-import { fetchGetMapPlayTimeList } from '@/service/api';
+import { fetchGetMapPlayCountList } from '@/service/api';
 import { useThemeStore } from '@/store/modules/theme';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 
 const themeStore = useThemeStore();
 const isDarkMode = computed(() => themeStore.darkMode);
 
-const mapPlayTimeList = ref<Api.Game.MapVo[]>([]);
+const mapPlayCountList = ref<Api.Game.GameMapPlayCountVo[]>([]);
 
 const rankColors = ['#ff4d4f', '#faad14', '#52c41a', '#4096ff', '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16'];
 
-const formatPlayTime = (seconds: number): string => {
-    if (seconds < 60) {
-        return `${seconds}秒`;
-    } else if (seconds < 3600) {
-        const minutes = Math.floor(seconds / 60);
-        return `${minutes}分钟`;
-    } else if (seconds < 86400) {
-        const hours = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        return minutes > 0 ? `${hours}小时${minutes}分钟` : `${hours}小时`;
-    } else {
-        const days = Math.floor(seconds / 86400);
-        const hours = Math.floor((seconds % 86400) / 3600);
-        return hours > 0 ? `${days}天${hours}小时` : `${days}天`;
+const formatPlayCount = (count: number): string => {
+    if (count >= 10000) {
+        const w = count / 10000;
+        return w.toFixed(1) + '万次';
+    } else if (count >= 1000) {
+        const k = count / 1000;
+        return k.toFixed(1) + 'k次';
     }
+    return count + '次';
 };
 
 const sortedMapList = computed(() => {
-    return [...mapPlayTimeList.value]
-        .sort((a, b) => (b.playTime || 0) - (a.playTime || 0))
+    return [...mapPlayCountList.value]
+        .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
         .slice(0, 100);
 });
 
 onMounted(async () => {
-    const { data, error } = await fetchGetMapPlayTimeList();
+    const { data, error } = await fetchGetMapPlayCountList();
     if (!error && data) {
-        mapPlayTimeList.value = data;
+        mapPlayCountList.value = data;
     }
 });
 </script>
@@ -46,7 +40,7 @@ onMounted(async () => {
     <NCard :bordered="true" size="small" class="card-wrapper h-400px" content-class="flex overflow-auto"
         content-style="padding:10px 10px 10px 10px" header-style="padding:5px 10px 5px 10px;">
         <div class="space-y-12px w-full">
-            <div v-for="(item, index) in sortedMapList" :key="item.id || index"
+            <div v-for="(item, index) in sortedMapList" :key="item.mapId || index"
                 class="flex items-center gap-12px p-12px rounded-12px transition-all duration-300 overflow-hidden relative" :class="{
                     'hover:translate-x-4px cursor-pointer': true
                 }" :style="{
@@ -87,7 +81,7 @@ onMounted(async () => {
                     <div class="flex items-center gap-8px">
                         <div class="text-right">
                             <div class="font-bold text-12px" :style="{ color: rankColors[index] }">
-                                {{ formatPlayTime(item.playTime || 0) }}
+                                {{ formatPlayCount(item.playCount || 0) }}
                             </div>
                         </div>
                     </div>

@@ -130,15 +130,13 @@ export function useEcharts<T extends ECOption>(optionsFactory: () => T, hooks: C
    * @param callback callback function
    */
   async function updateOptions(callback: (opts: T, optsFactory: () => T) => ECOption = () => chartOptions, delay: number = 2000) {
-    if (!isRendered()) return;
-
     const updatedOpts = callback(chartOptions, optionsFactory);
 
     Object.assign(chartOptions, updatedOpts);
 
-    if (isRendered()) {
-      chart?.clear();
-    }
+    if (!isRendered()) return;
+
+    chart?.clear();
 
     chart?.setOption({ ...updatedOpts, backgroundColor: 'transparent' });
 
@@ -161,6 +159,7 @@ export function useEcharts<T extends ECOption>(optionsFactory: () => T, hooks: C
       chart.setOption({ ...chartOptions, backgroundColor: 'transparent' });
 
       await onRender?.(chart);
+      await onUpdated?.(chart);
     }
   }
 

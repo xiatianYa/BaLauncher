@@ -184,21 +184,23 @@ declare namespace Api {
 
         // 服务器数据
         type Server = {
-            //服务器名称
+            /** 服务器ID */
+            id: number;
+            /** 服务器名称 */
             serverName?: string;
-            // 社区ID
+            /** 社区ID */
             communityId?: number;
-            // 服务器IP
+            /** 服务器IP */
             ip?: string;
-            // 服务器端口
+            /** 服务器端口 */
             port?: string;
-            // 排序值
+            /** 排序值 */
             sort?: number;
-            // 是否统计 
+            /** 是否统计 */
             isStatistics?: string;
-            // 是否查询 
+            /** 是否查询 */
             isQuery?: string;
-            // 连接指令
+            /** 连接指令 */
             connectStr?: string;
         }
 
