@@ -123,6 +123,7 @@ declare namespace Api {
             ping?: number;
             csgoPlayer?: CsgoPlayer[];
             sort?: number;
+            dateTimeOriginal: string;
         }
 
         type ServerInfoData = {

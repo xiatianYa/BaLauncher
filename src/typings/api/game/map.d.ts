@@ -32,6 +32,8 @@ declare namespace Api {
 
     /** map params */
     type MapParams = {
+      /** 记录ID */
+      id: number;
       /** 地图名称 */
       mapName: string;
       /** 译名 */
@@ -42,6 +44,8 @@ declare namespace Api {
       tag: Array<string>;
       /** 地图神器 */
       artifact: Artifact[];
+      /** 是否可以订阅 */
+      isOrder: string;
     };
 
     /** mapVo */

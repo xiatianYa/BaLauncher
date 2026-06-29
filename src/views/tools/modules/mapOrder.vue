@@ -5,8 +5,9 @@ import { useDebounceFn } from '@vueuse/core';
 import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
 import { useAuthStore } from '@/store/modules/auth';
+import { useAuth } from '@/hooks/business/auth';
 import { useDict } from '@/hooks/business/dict';
-import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList, fetchUpdateMapSubscribe } from '@/service/api';
+import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList, fetchUpdateMapSubscribe, fetchUpdateMap } from '@/service/api';
 import { $t } from '@/locales';
 import dayjs from 'dayjs';
 import { fetchGetGroupList } from '@/service/api';
@@ -27,7 +28,15 @@ const DEFAULT_PAGE_SIZE = 12; // 默认每页显示数量
 const themeStore = useThemeStore(); // 主题Store
 const gameStore = useGameStore(); // 游戏Store
 const authStore = useAuthStore(); // 认证Store
+const { hasRole } = useAuth(); // 权限Hook
 const { dictOptions } = useDict(); // 字典选项
+
+const isAdmin = computed(() => hasRole(['R_SUPER', 'R_ADMIN'])); // 是否管理员
+
+const isOrderOptions = [
+    { label: '是', value: '1' },
+    { label: '否', value: '0' }
+];
 
 /* ================================ Emits ================================ */
 
@@ -81,6 +90,18 @@ const bindQQGroup = ref<string | null>(null); // 绑定的QQ群
 const showEditModal = ref<boolean>(false); // 编辑弹框显示状态
 const currentEditMap = ref<Api.Game.MapVo | null>(null); // 当前编辑的地图
 
+const showMapEditModal = ref<boolean>(false); // 地图编辑弹框显示状态
+const mapEditForm = reactive<Api.Game.MapParams>({
+    id: 0,
+    mapName: '',
+    mapLabel: '',
+    type: '',
+    tag: [],
+    artifact: [],
+    isOrder: '0'
+});
+const mapEditLoading = ref<boolean>(false);
+
 const isCurrentEditSystemSubscribed = computed(() =>
     currentEditMap.value ? isSystemSubscribed(currentEditMap.value.id) : false // 编辑地图是否已系统订阅
 );
@@ -131,6 +152,36 @@ const handleDeleteSubscribe = async (): Promise<void> => {
     showEditModal.value = false; // 关闭编辑弹框
     currentEditMap.value = null; // 重置当前编辑地图
     await fetchSubscribeList(); // 刷新订阅列表
+};
+
+const handleOpenMapEdit = (map: Api.Game.MapVo): void => {
+    mapEditForm.id = map.id;
+    mapEditForm.mapName = map.mapName;
+    mapEditForm.mapLabel = map.mapLabel;
+    mapEditForm.type = map.type != null ? String(map.type) : '';
+    mapEditForm.tag = map.tag ? (Array.isArray(map.tag) ? map.tag : [map.tag]) : [];
+    mapEditForm.artifact = map.artifact ? (typeof map.artifact === 'string' ? JSON.parse(map.artifact || '[]') : map.artifact) : [];
+    mapEditForm.isOrder = map.isOrder || '0';
+    showMapEditModal.value = true;
+};
+
+const handleMapEditSubmit = async (): Promise<void> => {
+    mapEditLoading.value = true;
+    try {
+        const { error } = await fetchUpdateMap({
+            ...mapEditForm,
+            type: mapEditForm.type ? String(mapEditForm.type) : ''
+        });
+        if (!error) {
+            window.$message?.success($t('mapOrder.editSuccess') || '编辑成功');
+            showMapEditModal.value = false;
+            await fetchMapList(searchKeyword.value);
+        } else {
+            window.$message?.error($t('mapOrder.editFailed') || '编辑失败');
+        }
+    } finally {
+        mapEditLoading.value = false;
+    }
 };
 
 /* ================================ Event Handlers ================================ */
@@ -445,6 +496,13 @@ onMounted(async () => {
                                         {{ $t('mapOrder.notSubscribable') }}
                                     </NButton>
                                 </div>
+                                <div class="mt-5px" v-if="isAdmin">
+                                    <NButton type="warning" ghost size="small" class="w-full rounded-5px"
+                                        @click="handleOpenMapEdit(map)">
+                                        <SvgIcon icon="material-symbols:edit-outline" class="mr-3px" />
+                                        {{ $t('mapOrder.editMap') }}
+                                    </NButton>
+                                </div>
                             </template>
                         </NCard>
                     </NGridItem>
@@ -522,7 +580,7 @@ onMounted(async () => {
                                             {{
                                                 $t('mapOrder.yes') }}</NTag>
                                         <NTag v-else type="error" size="small" class="rounded-5px">{{ $t('mapOrder.no')
-                                        }}
+                                            }}
                                         </NTag>
                                     </div>
                                 </div>
@@ -650,6 +708,55 @@ onMounted(async () => {
                         <SvgIcon icon="material-symbols:delete-outline" />
                     </template>
                     {{ $t('mapOrder.deleteSubscribe') }}
+                </NButton>
+            </div>
+        </div>
+    </NModal>
+    <NModal v-model:show="showMapEditModal" :bordered="true" preset="card" class="w-500px rounded-20px"
+        :class="{ 'light-mode': !isDarkMode }" :closable="true" size="small">
+        <template #header>
+            <div class="flex items-center font-size-16px">
+                <SvgIcon icon="material-symbols:edit-outline" class="mr-5px" />
+                {{ $t('mapOrder.editMap') }}
+            </div>
+        </template>
+        <div class="map-edit-form p-10px">
+            <div class="form-item mb-10px">
+                <div class="form-label mb-5px font-bold">{{ $t('mapOrder.mapName') }}</div>
+                <NInput v-model:value="mapEditForm.mapName" :placeholder="$t('mapOrder.mapName')" />
+            </div>
+            <div class="form-item mb-10px">
+                <div class="form-label mb-5px font-bold">{{ $t('mapOrder.mapLabel') }}</div>
+                <NInput v-model:value="mapEditForm.mapLabel" :placeholder="$t('mapOrder.mapLabel')" />
+            </div>
+            <div class="form-item mb-10px">
+                <div class="form-label mb-5px font-bold">{{ $t('mapOrder.mapType') }}</div>
+                <NSelect v-model:value="mapEditForm.type" :options="dictOptions('game_type')" clearable
+                    :placeholder="$t('mapOrder.mapType')" />
+            </div>
+            <div class="form-item mb-10px">
+                <div class="form-label mb-5px font-bold">{{ $t('mapOrder.mapTag') }}</div>
+                <NSelect v-model:value="mapEditForm.tag" :options="dictOptions('game_tag')" multiple clearable
+                    :placeholder="$t('mapOrder.mapTag')" />
+            </div>
+            <div class="form-item mb-10px">
+                <div class="form-label mb-5px font-bold">{{ $t('mapOrder.isOrder') }}</div>
+                <NSelect v-model:value="mapEditForm.isOrder" :options="isOrderOptions" clearable
+                    :placeholder="$t('mapOrder.isOrder')" />
+            </div>
+            <div class="flex gap-10px mt-15px">
+                <NButton type="primary" class="flex-1 rounded-5px" :loading="mapEditLoading"
+                    @click="handleMapEditSubmit">
+                    <template #icon>
+                        <SvgIcon icon="material-symbols:check" />
+                    </template>
+                    {{ $t('mapOrder.confirm') }}
+                </NButton>
+                <NButton class="flex-1 rounded-5px" @click="showMapEditModal = false">
+                    <template #icon>
+                        <SvgIcon icon="material-symbols:close" />
+                    </template>
+                    {{ $t('mapOrder.cancel') }}
                 </NButton>
             </div>
         </div>

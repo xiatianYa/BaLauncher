@@ -400,7 +400,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       TScore: '0',
       mapStage: '',
       mapPhase: '',
-      csgoPlayer: []
+      csgoPlayer: [],
+      dateTimeOriginal: ''
     }))
   }
 
@@ -656,7 +657,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       mapStage: '',
       mapPhase: '',
       csgoPlayer: [],
-      sort: server.sort
+      sort: server.sort || 0,
+      dateTimeOriginal: ''
     }
   }
 

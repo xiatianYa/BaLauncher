@@ -2,6 +2,7 @@
 import { NGrid, NGridItem, NTag, NEllipsis, NTooltip } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
 import { useGameStore } from '@/store/modules/game';
+import dayjs from 'dayjs';
 
 const gameStore = useGameStore();
 
@@ -26,6 +27,14 @@ const { dictOptions } = useDict();
 // 根据地图名称获取地图信息
 const getMapByMapName = (mapName: string) => {
   return props.mapList.find(map => map.mapName === mapName);
+};
+
+// 计算目标时间到当前时间的分钟差
+const calculatePastMinutes = (targetTime: string) => {
+  const target = dayjs(targetTime);
+  const now = dayjs();
+  const minutesDiff = now.diff(target, 'minute');
+  return Math.max(minutesDiff, 0);
 };
 
 // 获取 Ping 值对应的颜色类型
@@ -164,6 +173,9 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
             </NTag>
             <NTag size="small" round class="mr-3px" ghost :type="getPingType(server.ping)">
               {{ server.ping ? `${server.ping}ms` : '???' }}
+            </NTag>
+            <NTag v-if="server.dateTimeOriginal" size="small" round class="mr-3px" ghost type="info">
+              {{ calculatePastMinutes(server.dateTimeOriginal) }}分钟
             </NTag>
           </div>
           <div class="server-card-button mt-6px">
