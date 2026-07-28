@@ -35,7 +35,7 @@ declare namespace Api {
 
         type GameCommunityServerInfoData = {
             // 源服务器信息
-            serverInfoData: InfoResponse[];
+            serverInfoData: SeverVo[];
         }
 
         // 游戏社区基础信息
@@ -86,44 +86,57 @@ declare namespace Api {
             minPlayers: number;
         }
 
-        type InfoResponseListResult = {
+        type SeverVoListResult = {
             success: boolean;
-            data: InfoResponse;
+            data: SeverVo;
         }
 
         // 源服务器数据
-        type InfoResponse = {
-            protocol?: number;
-            name: string;
-            map: string;
-            folder: string;
-            game: string;
-            appId: number;
-            players: number;
+        type SeverVo = {
+            /** 社区名称 */
+            communityName: string;
+            /** 社区ID */
+            communityId: number;
+            /** 地图ID */
+            mapId: number;
+            /** 地图名称 */
+            mapName: string;
+            /** 译名 */
+            mapLabel: string;
+            /** 地图预览图地址 */
+            mapUrl: string;
+            /** 地图难度 */
+            type: string;
+            /** 地图标签 */
+            tag: string[];
+            /** 地图神器 */
+            artifact: string;
+            /** 服务器名称 */
+            serverName: string;
+            /** 游玩人数 */
+            numPlayers: number;
+            /** 最大在线人数 */
             maxPlayers: number;
-            bots: number;
-            serverType: string;
-            environment: string;
-            visibility: number;
-            vac: number;
-            version: string;
-            port?: number;
-            serverId?: BigInt;
-            spectatorPort?: number;
-            spectatorName?: string;
-            keywords?: string;
-            gameId?: BigInt;
-            addr: string;
+            /** 连接地址 */
+            connectStr: string;
+            /** 最小连接人数 */
+            minPlayers: number;
+            /** 换图记录时间 */
+            dateTimeOriginal: LocalDateTime;
+            /** 服务器Ping值 */
+            ping: number;
+            /** 服务器在线状态 */
             isOnline: boolean;
+            /** 服务器回合 */
             round: string;
+            /** CT胜利回合 */
             CTScore: string;
+            /** T胜利回合 */
             TScore: string;
+            /** 游戏对局阶段 */
             mapStage: string;
+            /** 游戏回合阶段 */
             mapPhase: string;
-            ping?: number;
-            csgoPlayer?: CsgoPlayer[];
-            sort?: number;
-            dateTimeOriginal: string;
         }
 
         type ServerInfoData = {
@@ -203,6 +216,8 @@ declare namespace Api {
             isQuery?: string;
             /** 连接指令 */
             connectStr?: string;
+            /** Ping */
+            ping: number;
         }
 
         // 服务器消息类型

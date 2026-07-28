@@ -11,7 +11,7 @@ import ServerCardList from '@/views/server/modules/server-card-list.vue';
 import ServerTableList from '@/views/server/modules/server-table-list.vue';
 import { $t } from '@/locales';
 import type { Component } from 'vue';
-import { NModal, NInput, NButton, NTooltip } from 'naive-ui';
+import { NButton, NTooltip } from 'naive-ui';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 
 defineOptions({
@@ -19,20 +19,6 @@ defineOptions({
 });
 
 const gameStore = useGameStore();
-
-// 判断是否是自定义分类
-const isCustomCategory = computed(() => {
-  return gameStore.isCustomCategory(gameStore.selectedCommunityId!);
-});
-
-// 显示添加服务器弹窗
-const showAddServerModal = ref(false);
-
-// 服务器地址
-const serverAddress = ref('');
-
-// 服务器备注
-const serverRemark = ref('');
 
 // 服务器列表是否加载状态
 const serverLoading = ref<boolean>(false);
@@ -76,15 +62,6 @@ const selectCommunity = async (id: number) => {
   if (gameStore.selectedCommunityId === id || serverLoading.value || isRefreshing.value) return;
   serverLoading.value = true;
   gameStore.setSelectedCommunityId(id);
-
-  // 如果是自定义分类，直接获取本地存储的服务器列表
-  if (gameStore.isCustomCategory(id)) {
-    refreshCurrentServerList();
-    await queryServerInfos(true, false);
-    serverLoading.value = false;
-    return;
-  }
-
   await queryServerInfos(true, true);
   serverLoading.value = false;
 };
@@ -153,7 +130,6 @@ const queryServerInfos = async (showAnimationFlag: boolean = true, isCache: bool
 
   try {
     await gameStore.countServerServerNumber();
-    await gameStore.countServerPlayerNumber();
     if (gameStore.currentServerWsList.length > 0 && isCache) {
       await gameStore.queryWsServerInfosResponse();
     } else {
@@ -170,119 +146,50 @@ const queryServerInfos = async (showAnimationFlag: boolean = true, isCache: bool
 };
 
 // 加入服务器
-const joinServer = async (server: Api.Game.InfoResponse) => {
+const joinServer = async (server: Api.Game.SeverVo) => {
   gameStore.joinServerInfo = server;
   if (!gameStore.isGameRunning) {
     showOpenGameConfirm.value = true;
   } else {
-    gameStore.sendUserGisJoinAddr();
     // 连接服务器
     gameStore.connectServerUsingSteamUrl();
   }
 }
 
 // 打开自动连接服务器窗口
-const openAutoJoinServer = (server: Api.Game.InfoResponse) => {
+const openAutoJoinServer = (server: Api.Game.SeverVo) => {
   //如果正在挤服 则不能打开其他挤服窗口
   if (gameStore.isJoinServerTrayVisible) {
     window.$message?.error($t('server.joinBusy'));
     return;
   }
   gameStore.joinServerInfo = server;
-  gameStore.sendUserGisAddr();
   showJoinServerConfirm.value = true;
   gameStore.currentGisPlayerList = [];
 }
 
 // 复制服务器地址
-const copyServerAddr = (server: Api.Game.InfoResponse) => {
-  navigator.clipboard.writeText(`connect ${server.addr}`);
+const copyServerAddr = (server: Api.Game.SeverVo) => {
+  navigator.clipboard.writeText(`connect ${server.connectStr}`);
   window.$message?.success($t('server.copySuccess'));
 };
 
 // 刷新服务器信息
-const refreshServerInfo = async (server: Api.Game.InfoResponse) => {
+const refreshServerInfo = async (server: Api.Game.SeverVo) => {
   // 如果已经在刷新列表了 则不进行刷新
-  if (gameStore.refreshingServerAddrs.includes(server.addr)) return;
+  if (gameStore.refreshingServerAddrs.includes(server.connectStr)) return;
   // 刷新服务器信息时，添加到刷新列表中
-  gameStore.refreshingServerAddrs.push(server.addr);
-  await gameStore.queryServerInfoResponse(server);
+  gameStore.refreshingServerAddrs.push(server.connectStr);
+  await gameStore.queryServerSeverVo(server);
   // 刷新服务器信息完成后，从刷新列表中移除
-  const index = gameStore.refreshingServerAddrs.indexOf(server.addr);
+  const index = gameStore.refreshingServerAddrs.indexOf(server.connectStr);
   if (index > -1) {
     gameStore.refreshingServerAddrs.splice(index, 1);
   }
 };
 
 
-// 打开添加服务器弹窗
-const openAddServerModal = () => {
-  showAddServerModal.value = true;
-  serverAddress.value = '';
-  serverRemark.value = '';
-};
 
-// 关闭添加服务器弹窗
-const closeAddServerModal = () => {
-  showAddServerModal.value = false;
-  serverAddress.value = '';
-  serverRemark.value = '';
-};
-
-// 添加服务器
-const saveAddServer = async () => {
-  if (!serverAddress.value.trim()) {
-    window.$message?.error($t('server.pleaseEnterServerAddress'));
-    return;
-  }
-
-  const addrParts = serverAddress.value.trim().split(':');
-  if (addrParts.length !== 2) {
-    window.$message?.error($t('server.invalidServerAddressFormat'));
-    return;
-  }
-
-  const ip = addrParts[0].trim();
-  const port = addrParts[1].trim();
-
-  if (!ip) {
-    window.$message?.error($t('server.pleaseEnterServerAddress'));
-    return;
-  }
-
-  const portNum = parseInt(port, 10);
-  if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
-    window.$message?.error($t('server.invalidPort'));
-    return;
-  }
-
-  const server: Api.Game.Server = {
-    id: Date.now(),
-    serverName: serverRemark.value.trim() || serverAddress.value.trim(),
-    communityId: gameStore.selectedCommunityId!,
-    ip: ip,
-    port: port,
-    sort: Date.now(),
-    connectStr: serverAddress.value.trim()
-  };
-  gameStore.addServerToCategory(gameStore.selectedCommunityId!, server);
-  window.$message?.success($t('server.serverAdded'));
-  closeAddServerModal();
-  await queryServerInfos(true, false);
-};
-
-// 刷新当前服务器列表
-const refreshCurrentServerList = () => {
-  if (gameStore.isCustomCategory(gameStore.selectedCommunityId!)) {
-    const servers = gameStore.getCustomCategoryServers(gameStore.selectedCommunityId!);
-    gameStore.currentServerList.splice(0, gameStore.currentServerList.length, ...servers);
-  }
-};
-
-// 处理删除服务器
-const handleDeleteServer = async () => {
-  await queryServerInfos(true, false);
-};
 
 onMounted(async () => {
   await queryServerInfos(true, true);
@@ -315,13 +222,6 @@ onUnmounted(() => {
       </template>
       <template #header-extra>
         <div class="flex items-center gap-10px">
-          <NButton v-if="isCustomCategory" class="rounded-5px p-8px" type="primary" strong dashed
-            @click="openAddServerModal()">
-            <template #icon>
-              <SvgIcon icon="material-symbols:add" />
-            </template>
-            {{ $t('server.addServer') }}
-          </NButton>
           <NButton v-if="!gameStore.isGameRunning" class="rounded-5px p-8px" type="tertiary" strong dashed
             :loading="gameStore.isGameLaunching" @click="gameStore.startGame()">
             <template #icon>
@@ -413,8 +313,7 @@ onUnmounted(() => {
       <component :is="activeModule.component" @back="gameStore.serverViewModule = 'cardModel'"
         :servers="gameStore.currentServerList" :map-list="gameStore.mapList"
         :source-server-list="gameStore.serverDataList" :refreshing-addrs="gameStore.refreshingServerAddrs"
-        @join="joinServer" @copy="copyServerAddr" @auto-join="openAutoJoinServer" @refresh="refreshServerInfo"
-        @delete="handleDeleteServer" />
+        @join="joinServer" @copy="copyServerAddr" @auto-join="openAutoJoinServer" @refresh="refreshServerInfo" />
     </NCard>
     <NCard class="m-10px rounded-10px" content-style="padding:10px;" content-class="h-full flex flex-col flex-1" v-else>
       <LoadingSpinner :loading="serverLoading" />
@@ -424,45 +323,6 @@ onUnmounted(() => {
     <OpenGameJoin v-model:showJoinServer="showJoinServerConfirm" />
     <!-- 挤服悬浮托盘 -->
     <JoinServerTray @restore="restoreJoinServerWindow" />
-    <!-- 添加服务器弹窗 -->
-    <NModal v-model:show="showAddServerModal" :bordered="true" preset="card" class="w-500px rounded-10px"
-      :closable="false" size="medium">
-      <template #header>
-        <div class="flex items-center justify-between">
-          <div class="text-lg font-bold">{{ $t('server.addServer') }}</div>
-          <NButton quaternary size="tiny" @click="closeAddServerModal">
-            <SvgIcon icon="material-symbols:close" />
-          </NButton>
-        </div>
-      </template>
-      <div class="pt-20px pb-20px pl-20px pr-20px">
-        <div class="mb-20px">
-          <div class="text-sm font-medium mb-5px">{{ $t('server.serverAddress') }}</div>
-          <NInput v-model:value="serverAddress" :placeholder="$t('server.serverAddressPlaceholder')" clearable />
-        </div>
-        <div class="mb-20px">
-          <div class="text-sm font-medium mb-5px">{{ $t('server.serverRemark') }}</div>
-          <NInput v-model:value="serverRemark" :placeholder="$t('server.serverRemarkPlaceholder')" clearable
-            maxlength="15" />
-        </div>
-      </div>
-      <template #footer>
-        <div class="flex flex-wrap gap-10px">
-          <NButton type="warning" class="flex-1 rounded-8px" ghost @click="closeAddServerModal">
-            <template #icon>
-              <SvgIcon icon="material-symbols:close" />
-            </template>
-            {{ $t('server.cancel') }}
-          </NButton>
-          <NButton type="info" class="flex-1 rounded-8px" ghost @click="saveAddServer">
-            <template #icon>
-              <SvgIcon icon="material-symbols:check" />
-            </template>
-            {{ $t('server.add') }}
-          </NButton>
-        </div>
-      </template>
-    </NModal>
   </NCard>
 </template>
 

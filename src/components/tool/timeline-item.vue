@@ -81,15 +81,14 @@ const formatFullTime = (timeStr: string): string => {
 
 .timeline-card-item {
     width: 100%;
-    height: 130px;
-    border-radius: 12px;
-    overflow: visible;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
     position: relative;
-    transition: all 0.3s ease;
     display: flex;
-    gap: 12px;
+    gap: 10px;
+    border: 1px solid var(--n-border-color);
 
-    /** 左侧封面区 */
     .timeline-card-left {
         width: 35%;
         height: 100%;
@@ -115,44 +114,41 @@ const formatFullTime = (timeStr: string): string => {
         display: block;
     }
 
-    /** 从左到右的渐变遮罩，保证文字可读性 */
     .timeline-card-overlay {
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(90deg, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.1) 100%);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
     }
 
-    /** 信息叠加层，绝对定位于封面之上 */
     .timeline-map-info {
         position: absolute;
-        top: 0;
+        bottom: 0;
         left: 0;
-        padding: 5px;
+        padding: 8px 10px;
         display: flex;
         flex-direction: column;
-        gap: 3px;
+        gap: 4px;
         width: 100%;
-        height: 100%;
 
         .map-name {
-            font-size: 14px;
-            font-weight: bold;
+            font-size: 13px;
+            font-weight: 600;
             color: #fff;
-            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
         }
 
         .record-time {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.85);
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.8);
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
 
             .time-icon {
-                font-size: 14px;
+                font-size: 12px;
             }
         }
     }

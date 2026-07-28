@@ -67,12 +67,12 @@ const isDarkMode = computed(() => themeStore.darkMode);
 <style scoped lang="scss">
 .server-card {
     :deep(.n-card-header) {
-        padding: 12px 16px;
+        padding: 10px 14px;
         border-bottom: 1px solid var(--n-border-color);
     }
 
     :deep(.n-card__content) {
-        padding: 8px;
+        padding: 6px;
         overflow-y: auto;
         max-height: calc(100vh - 160px);
     }
@@ -81,44 +81,47 @@ const isDarkMode = computed(() => themeStore.darkMode);
 .server-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 
     .server-item {
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 12px;
-        border-radius: 8px;
+        padding: 10px 12px;
+        border-radius: 10px;
         cursor: pointer;
-        transition: all 0.25s ease;
-        border: 1.5px solid transparent;
-        background: rgba(102, 126, 234, 0.02);
+        transition: all 0.15s ease;
+        border: 1px solid var(--n-border-color);
+        background: var(--n-color);
 
         &:hover {
-            background: rgba(102, 126, 234, 0.08);
-            border-color: rgba(102, 126, 234, 0.2);
-            transform: translateX(3px);
+            border-color: var(--n-border-color-hover);
+            background: var(--n-color-hover);
         }
 
         &.server-item-selected {
-            background: rgba(102, 126, 234, 0.12);
-            border-color: rgba(102, 126, 234, 0.4);
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+            border-color: var(--n-primary-color);
+            background: var(--n-primary-color-suppl);
+
+            .server-name {
+                color: var(--n-primary-color);
+            }
         }
 
         .server-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: var(--n-color);
+            border: 1px solid var(--n-border-color);
             display: flex;
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
 
             .icon-svg {
-                font-size: 18px;
-                color: #fff;
+                font-size: 16px;
+                color: var(--n-text-color-2);
             }
         }
 
@@ -128,7 +131,7 @@ const isDarkMode = computed(() => themeStore.darkMode);
 
             .server-name {
                 font-size: 13px;
-                font-weight: 600;
+                font-weight: 500;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -138,47 +141,32 @@ const isDarkMode = computed(() => themeStore.darkMode);
             .server-addr {
                 font-size: 11px;
                 color: var(--n-text-color-3);
-                margin-top: 3px;
+                margin-top: 2px;
                 font-family: monospace;
             }
         }
 
         .server-arrow {
-            color: #667eea;
-            font-size: 18px;
-            animation: slideInRight 0.3s ease;
+            color: var(--n-text-color-3);
+            font-size: 16px;
         }
     }
 }
 
-/** 面板通用头部样式 */
 .panel-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 
     .panel-icon {
-        font-size: 16px;
-        color: #667eea;
+        font-size: 14px;
+        color: var(--n-text-color-2);
     }
 
     .panel-title {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
         color: var(--n-text-color);
-    }
-}
-
-/** 选中箭头入场动画 */
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(-5px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
     }
 }
 </style>

@@ -120,7 +120,7 @@ onMounted(() => {
 <style scoped lang="scss">
 .timeline-card {
     :deep(.n-card-header) {
-        padding: 12px 16px;
+        padding: 10px 14px;
         border-bottom: 1px solid var(--n-border-color);
     }
 
@@ -130,7 +130,6 @@ onMounted(() => {
     }
 }
 
-/** 时间线滚动容器 */
 .timeline-wrapper {
     height: 100%;
     overflow: hidden;
@@ -138,10 +137,9 @@ onMounted(() => {
 
 .timeline-scroll {
     height: 100%;
-    padding: 16px 20px;
+    padding: 14px 18px;
 }
 
-/** 未选择服务器时的占位引导 */
 .timeline-placeholder {
     display: flex;
     flex-direction: column;
@@ -149,19 +147,24 @@ onMounted(() => {
     justify-content: center;
     height: calc(100vh - 160px);
     color: var(--n-text-color-3);
-    gap: 12px;
+    gap: 8px;
 
     .placeholder-icon {
-        font-size: 48px;
-        opacity: 0.5;
+        font-size: 32px;
+        opacity: 0.4;
     }
 
     p {
-        font-size: 14px;
+        font-size: 13px;
+        margin: 0;
     }
 }
 
 .custom-timeline {
+    :deep(.n-timeline-item-content) {
+        padding-bottom: 18px;
+    }
+
     .timeline-item-header {
         display: flex;
         flex-direction: column;
@@ -176,12 +179,11 @@ onMounted(() => {
     }
 }
 
-/** 全部加载完毕提示 */
 .timeline-finished {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 16px;
+    padding: 12px;
     color: var(--n-text-color-3);
     font-size: 12px;
 }

@@ -1,33 +1,23 @@
 <script setup lang="ts">
-import { NGrid, NGridItem, NTag, NEllipsis, NTooltip } from 'naive-ui';
+import { NGrid, NGridItem, NTag } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
-import { useGameStore } from '@/store/modules/game';
 import dayjs from 'dayjs';
 
-const gameStore = useGameStore();
-
 const props = defineProps<{
-  servers: Api.Game.InfoResponse[];
+  servers: Api.Game.SeverVo[];
   mapList: Api.Game.Map[];
   sourceServerList: Api.Game.Server[];
   refreshingAddrs: string[];
 }>();
 
 const emit = defineEmits<{
-  (e: 'join', server: Api.Game.InfoResponse): void;
-  (e: 'copy', server: Api.Game.InfoResponse): void;
-  (e: 'autoJoin', server: Api.Game.InfoResponse): void;
-  (e: 'refresh', server: Api.Game.InfoResponse): void;
-  (e: 'delete', server: Api.Game.InfoResponse): void;
+  (e: 'join', server: Api.Game.SeverVo): void;
+  (e: 'copy', server: Api.Game.SeverVo): void;
+  (e: 'autoJoin', server: Api.Game.SeverVo): void;
+  (e: 'refresh', server: Api.Game.SeverVo): void;
 }>();
 
 const { dictOptions } = useDict();
-
-
-// 根据地图名称获取地图信息
-const getMapByMapName = (mapName: string) => {
-  return props.mapList.find(map => map.mapName === mapName);
-};
 
 // 计算目标时间到当前时间的分钟差
 const calculatePastMinutes = (targetTime: string) => {
@@ -46,21 +36,21 @@ const getPingType = (ping?: number) => {
 };
 
 // 格式化游戏时间计算进度颜色
-const getOnLineColor = (server: Api.Game.InfoResponse) => {
+const getOnLineColor = (server: Api.Game.SeverVo) => {
   if (!server) return '';
-  if (server.players <= 20) {
-    return `background-color: #00f91a;width: ${(server.players / server.maxPlayers) * 100}%;`;
-  } else if (server.players <= 40) {
-    return `background-color: #5470ee;width: ${(server.players / server.maxPlayers) * 100}%;`;
-  } else if (server.players <= 60) {
-    return `background-color: #ffa325;width: ${(server.players / server.maxPlayers) * 100}%;`;
-  } else if (server.players <= 80) {
-    return `background-color: #ff4f00;width: ${(server.players / server.maxPlayers) * 100}%;`;
+  if (server.numPlayers <= 20) {
+    return `background-color: #00f91a;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
+  } else if (server.numPlayers <= 40) {
+    return `background-color: #5470ee;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
+  } else if (server.numPlayers <= 60) {
+    return `background-color: #ffa325;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
+  } else if (server.numPlayers <= 80) {
+    return `background-color: #ff4f00;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
   }
-  return `background-color: #ff0000;width: ${(server.players / server.maxPlayers) * 100}%;`;
+  return `background-color: #ff0000;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
 };
 
-const getPlayersChipBg = (server: Api.Game.InfoResponse): string | undefined => {
+const getPlayersChipBg = (server: Api.Game.SeverVo): string | undefined => {
   const match = getOnLineColor(server).match(/background-color:\s*([^;]+);/);
   return match?.[1];
 };
@@ -80,49 +70,33 @@ const getMapPhaseText = (phase: string) => {
 };
 
 // 获取源服务器信息
-const getSourceServerInfo = (server: Api.Game.InfoResponse): Api.Game.Server | undefined => {
+const getSourceServerInfo = (server: Api.Game.SeverVo): Api.Game.Server | undefined => {
   return props.sourceServerList.find(s => {
-    if (s.connectStr === server.addr) return true;
+    if (s.connectStr === server.connectStr) return true;
     if (s.ip && s.port) {
       const serverAddr = `${s.ip}:${s.port}`;
-      if (serverAddr === server.addr) return true;
+      if (serverAddr === server.connectStr) return true;
     }
     return false;
   });
 };
 
-// 查询服务器地图类型
-const queryServerMapType = (mapName: string) => {
-  return getMapByMapName(mapName)?.type;
-};
-
-// 查询服务器地图标签
-const queryServerMapTag = (mapName: string) => {
-  return getMapByMapName(mapName)?.tag;
-};
-
-const handleJoin = (server: Api.Game.InfoResponse) => {
+const handleJoin = (server: Api.Game.SeverVo) => {
   emit('join', server);
 };
 
-const handleCopy = (server: Api.Game.InfoResponse) => {
+const handleCopy = (server: Api.Game.SeverVo) => {
   emit('copy', server);
 };
 
-const handleAutoJoin = (server: Api.Game.InfoResponse) => {
+const handleAutoJoin = (server: Api.Game.SeverVo) => {
   emit('autoJoin', server);
 };
 
-const handleRefresh = (server: Api.Game.InfoResponse) => {
+const handleRefresh = (server: Api.Game.SeverVo) => {
   emit('refresh', server);
 };
 
-const handleDelete = (server: Api.Game.InfoResponse) => {
-  if (gameStore.isCustomCategory(gameStore?.selectedCommunityId || 0)) {
-    gameStore.removeCustomServer(server.addr, gameStore.selectedCommunityId || 0);
-    emit('delete', server);
-  }
-};
 </script>
 
 <template>
@@ -131,44 +105,44 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
       <NGridItem v-for="(server, index) in servers" :key="index">
         <div class="sercer-card overflow-hidden flex flex-col"
           v-if="server.isOnline && getSourceServerInfo(server)?.serverName">
-          <img v-if="getMapByMapName(server.map)" class="server-card-bg" v-lazy="getMapByMapName(server.map)?.mapUrl" />
+          <img v-if="server.mapUrl" class="server-card-bg" v-lazy="server.mapUrl" />
           <div class="z-9 server-online" :style="`${getOnLineColor(server)}`"></div>
           <div class="server-card-mask"></div>
           <div
             class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold whitespace-nowrap text-ellipsis overflow-hidden">
-            {{ server.name }}
+            {{ server.serverName }}
           </div>
           <div class="flex justify-between">
             <NEllipsis
               class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold w-220px"
               :max-line="1">
-              {{ server.map }}
+              {{ server.mapName }}
             </NEllipsis>
-            <div class="stat-chip chip-players mr-5px" :style="{ '--chip-players-bg': getPlayersChipBg(server) }">
-              <SvgIcon icon="mdi:account-group" class="chip-icon" />
-              <span class="chip-text">{{ `${server.players}/${server.maxPlayers}` }}</span>
+            <div class="player-badge mr-5px" :style="{ '--player-color': getPlayersChipBg(server) }">
+              <SvgIcon icon="mdi:account-group" class="player-icon" />
+              <span class="player-num">{{ server.numPlayers }}<span class="player-sep">/</span>{{ server.maxPlayers }}</span>
             </div>
           </div>
           <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
             <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
             <NEllipsis class="flex items-center justify-center flex-1">
-              {{ getMapByMapName(server.map)?.mapLabel ? getMapByMapName(server.map)?.mapLabel :
+              {{ server.mapLabel ? server.mapLabel :
                 $t('server.noTranslation') }}
             </NEllipsis>
             <div class="stat-chip chip-score mr-5px w-160px flex items-center justify-center" v-show="server.mapPhase">
-              <span class="team team-ct">CT {{ server.CTScore || '0' }}</span>
-              <span>{{ getMapPhaseText(server.mapPhase || '') }}</span>
-              <span class="team team-t">T {{ server.TScore || '0' }}</span>
+              <span class="team team-ct">{{ server.CTScore || '0' }}</span>
+              <span class="score-phase">{{ getMapPhaseText(server.mapPhase || '') }}</span>
+              <span class="team team-t">{{ server.TScore || '0' }}</span>
             </div>
           </div>
           <div class="flex-y-center ml-5px mt-6px position-relative font-bold">
             <NTag size="small" round class="mr-3px" ghost
-              :type="dictOptions('game_type').find((item: any) => item.value === queryServerMapType(server.map))?.type"
-              v-show="queryServerMapType(server.map)">
-              {{dictOptions('game_type').find((item: any) => item.value === queryServerMapType(server.map))?.label}}
+              :type="dictOptions('game_type').find((item: any) => item.value === server.type)?.type || 'primary'"
+              v-show="server.type">
+              {{dictOptions('game_type').find((item: any) => item.value === server.type)?.label}}
             </NTag>
-            <NTag v-for="(tag, idx) in queryServerMapTag(server.map)" :key="idx" size="small" round class="mr-3px"
-              type="success" v-show="queryServerMapType(server.map)">
+            <NTag v-for="(tag, idx) in server.tag" :key="idx" size="small" round class="mr-3px" type="success"
+              v-show="server.tag.length > 0">
               {{dictOptions('game_tag').find((item: any) => item.value === tag)?.label}}
             </NTag>
             <NTag size="small" round class="mr-3px" ghost :type="getPingType(server.ping)">
@@ -188,15 +162,6 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
             <div class="three-btn h-30px" @click="handleAutoJoin(server)">
               <SvgIcon icon="material-symbols:alarm-smart-wake-outline" class="text-22px" />
             </div>
-            <NTooltip trigger="hover" placement="bottom"
-              v-if="gameStore.isCustomCategory(gameStore?.selectedCommunityId || 0)">
-              <template #trigger>
-                <div class="four-btn h-30px" @click="handleDelete(server)">
-                  <SvgIcon icon="mdi:delete-outline" class="text-22px" />
-                </div>
-              </template>
-              {{ $t('server.deleteServer') }}
-            </NTooltip>
           </div>
         </div>
         <div v-else class="sercer-card overflow-hidden flex flex-col">
@@ -215,23 +180,11 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
             {{ $t('server.waiting') }}
           </div>
           <div class="server-card-button mt-6px">
-            <div class="two-btn h-30px" @click="handleCopy(server)">
-              <SvgIcon icon="solar:copy-outline" class="text-22px" />
-            </div>
             <div class="three-btn h-30px" @click="handleRefresh(server)">
-              <div :class="{ 'refresh-icon-spinning': refreshingAddrs.includes(server.addr) }">
+              <div :class="{ 'refresh-icon-spinning': refreshingAddrs.includes(server.connectStr) }">
                 <SvgIcon icon="material-symbols:refresh" class="text-22px" />
               </div>
             </div>
-            <NTooltip trigger="hover" placement="bottom"
-              v-if="gameStore.isCustomCategory(gameStore?.selectedCommunityId || 0)">
-              <template #trigger>
-                <div class="four-btn h-30px" @click="handleDelete(server)">
-                  <SvgIcon icon="mdi:delete-outline" class="text-22px" />
-                </div>
-              </template>
-              {{ $t('server.deleteServer') }}
-            </NTooltip>
           </div>
         </div>
       </NGridItem>
@@ -244,10 +197,13 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
   position: relative;
   width: 100%;
   height: 155px;
-  border-radius: 10px;
+  border-radius: 12px;
   background-color: #a5aaa3;
   font-family: 'SimHei';
-  transition: all 0.2s ease;
+  overflow: hidden;
+  transition: box-shadow 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
 
   .server-card-bg {
     position: absolute;
@@ -255,19 +211,25 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
     height: 100%;
     object-fit: cover;
     z-index: 0;
+    transition: filter 0.3s ease;
+    filter: brightness(0.9);
   }
 
   .server-online {
-    height: 5px;
+    height: 3px;
     width: 100%;
     position: absolute;
+    z-index: 10;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+    transition: filter 0.3s ease, height 0.3s ease;
   }
 
   .server-offline {
-    height: 5px;
+    height: 3px;
     width: 100%;
     position: absolute;
     background: linear-gradient(90deg, #6b7280 0%, #9ca3af 50%, #6b7280 100%);
+    z-index: 10;
   }
 
   .server-offline-bg {
@@ -292,16 +254,21 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
     }
   }
 
-  /* 遮罩层样式 */
+  /* 遮罩层样式 - 底部加深渐变更有层次 */
   .server-card-mask {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    opacity: 1;
-    transition: opacity 0.2s ease;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.15) 0%,
+      rgba(0, 0, 0, 0.35) 50%,
+      rgba(0, 0, 0, 0.6) 100%
+    );
+    z-index: 1;
+    transition: opacity 0.25s ease;
   }
 
   .server-card-button {
@@ -312,6 +279,7 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
     position: sticky;
     width: 100%;
     color: #ffffff;
+    z-index: 2;
 
     /* 改为列方向布局 */
     .one-btn {
@@ -319,12 +287,19 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
       justify-content: center;
       align-items: center;
       flex: 3;
-      background-color: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
       cursor: pointer;
-      color: rgba(34, 197, 94, 0.7);
+      color: rgba(34, 197, 94, 0.85);
+      transition: all 0.2s ease;
 
       &:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background: rgba(34, 197, 94, 0.25);
+        color: #22c55e;
+      }
+
+      &:active {
+        transform: scale(0.95);
       }
     }
 
@@ -333,12 +308,21 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
       justify-content: center;
       align-items: center;
       flex-grow: 2;
-      background-color: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
       cursor: pointer;
-      color: rgba(59, 130, 246, 0.7);
+      color: rgba(59, 130, 246, 0.85);
+      transition: all 0.2s ease;
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
 
       &:hover {
-        background-color: rgba(150, 150, 150, 0.5);
+        background: rgba(59, 130, 246, 0.25);
+        color: #3b82f6;
+      }
+
+      &:active {
+        transform: scale(0.95);
       }
     }
 
@@ -347,12 +331,19 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
       justify-content: center;
       align-items: center;
       flex: 3;
-      background-color: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
       cursor: pointer;
-      color: rgba(249, 115, 22, 0.7);
+      color: rgba(249, 115, 22, 0.85);
+      transition: all 0.2s ease;
 
       &:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background: rgba(249, 115, 22, 0.25);
+        color: #f97316;
+      }
+
+      &:active {
+        transform: scale(0.95);
       }
     }
 
@@ -372,12 +363,67 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
   }
 
   &:hover {
-    box-shadow: 0 1px 2px -2px rgba(0, 0, 0, .08), 0 3px 6px 0 rgba(0, 0, 0, .06), 0 5px 12px 4px rgba(0, 0, 0, .04);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  &:hover .server-card-bg {
+    filter: brightness(1);
+  }
+
+  &:hover .server-online {
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
   }
 
   &:hover .server-card-mask {
-    opacity: 0.5;
+    background: linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.08) 0%,
+      rgba(0, 0, 0, 0.25) 50%,
+      rgba(0, 0, 0, 0.5) 100%
+    );
   }
+}
+
+.player-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.55);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+}
+
+.player-icon {
+  font-size: 13px;
+  color: var(--player-color, #22c55e);
+  opacity: 0.9;
+}
+
+.player-num {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.2px;
+}
+
+.player-sep {
+  margin: 0 2px;
+  opacity: 0.45;
+  font-weight: 400;
 }
 
 .stat-chip {
@@ -408,30 +454,56 @@ const handleDelete = (server: Api.Game.InfoResponse) => {
 }
 
 .chip-score {
-  background: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #ef4444 100%);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  gap: 8px;
 }
 
 .team {
   display: flex;
   align-items: center;
   gap: 4px;
+  font-weight: 600;
 }
 
-.team-ct::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #60a5fa;
-  display: inline-block;
+.team-ct {
+  color: #60a5fa;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #60a5fa;
+    display: inline-block;
+    box-shadow: 0 0 4px rgba(96, 165, 250, 0.6);
+  }
 }
 
-.team-t::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #f59e0b;
-  display: inline-block;
+.team-t {
+  color: #fbbf24;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #fbbf24;
+    display: inline-block;
+    box-shadow: 0 0 4px rgba(251, 191, 36, 0.6);
+  }
+}
+
+.score-phase {
+  font-size: 10px;
+  opacity: 0.6;
+  font-weight: 500;
+  padding: 1px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
 }
 </style>

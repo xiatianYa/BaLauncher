@@ -25,7 +25,7 @@ declare namespace Api {
       /** 地图难度 */
       type: string;
       /** 地图标签 */
-      tag: string;
+      tag: string[];
       /** 地图神器 */
       artifact: string;
     }>;

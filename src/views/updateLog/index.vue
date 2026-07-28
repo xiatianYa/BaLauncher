@@ -116,7 +116,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <NCard class="w-full h-full" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
+    <NCard class="w-full h-full" :class="{ 'light-mode': !isDarkMode }" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
         <NCard class="m-10px rounded-10px" content-style="padding:20px 25px 20px 25px;"
             content-class="h-full flex flex-col flex-1 overflow-auto" header-style="padding:10px" :segmented="{
                 content: true,
@@ -150,11 +150,10 @@ onMounted(() => {
                             <div v-for="(log, index) in updateLogs" :key="log.id" class="timeline-item"
                                 :class="{ 'new-item': isNewLog(log.id) }">
                                 <div class="timeline-dot" :class="{ 'top-dot': index === 0 }"></div>
-                                <div class="timeline-content" :class="{ 'light-mode': !isDarkMode }">
+                                <div class="timeline-content">
                                     <div class="log-header">
                                         <div class="log-title-row">
-                                            <h3 class="log-title" :class="{ 'light-mode': !isDarkMode }">{{ log.title }}
-                                            </h3>
+                                            <h3 class="log-title">{{ log.title }}</h3>
                                             <NTag type="info" size="small" :bordered="false" class="rounded-5px">
                                                 <template #icon>
                                                     <SvgIcon icon="lucide:tag" class="mr-5px" />
@@ -201,23 +200,8 @@ onMounted(() => {
                             <NSpin size="small" />
                         </div>
                         <div v-if="finished && updateLogs.length > 0" class="flex justify-center py-10px">
-                            <div class="finished-indicator" :class="{ 'light-mode': !isDarkMode }">
-                                <div class="indicator-content">
-                                    <div class="indicator-icon">
-                                        <SvgIcon icon="mdi:check-circle" />
-                                    </div>
-                                    <div class="indicator-text">
-                                        <span class="text-main">{{ $t('updateLog.allLoaded') }}</span>
-                                        <span class="text-sub" :class="{ 'light-mode': !isDarkMode }">{{
-                                            $t('updateLog.totalLogs', {
-                                                count: updateLogs.length
-                                            }) }}</span>
-                                    </div>
-                                </div>
-                                <div class="indicator-decoration">
-                                    <div class="decoration-line left"></div>
-                                    <div class="decoration-line right"></div>
-                                </div>
+                            <div class="finished-indicator">
+                                {{ $t('updateLog.allLoaded') }} · {{ $t('updateLog.totalLogs', { count: updateLogs.length }) }}
                             </div>
                         </div>
                     </NInfiniteScroll>
@@ -230,314 +214,192 @@ onMounted(() => {
 </template>
 
 <style scoped lang="scss">
-/**
- * 时间线容器样式
- */
 .timeline {
-    position: relative;
-    padding: 10px 0;
+  position: relative;
+  padding: 4px 0;
 
-    &::before {
-        content: '';
-        position: absolute;
-        left: 20px;
-        top: 10px;
-        bottom: 10px;
-        width: 2px;
-        background: linear-gradient(180deg, #667eea 0%, #764ba2 50%, rgba(102, 126, 234, 0.3) 100%);
-    }
-}
-
-/**
- * 时间线单个项目样式
- */
-.timeline-item {
-    position: relative;
-    padding-left: 50px;
-    margin-bottom: 24px;
-    opacity: 1;
-    transform: translateY(0);
-    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-
-    &.new-item {
-        opacity: 0;
-        transform: translateY(30px);
-        animation: slideInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    }
-}
-
-/**
- * 时间线节点样式
- */
-.timeline-dot {
+  &::before {
+    content: '';
     position: absolute;
-    left: 12px;
+    left: 19px;
     top: 8px;
-    width: 18px;
-    height: 18px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: 3px solid rgba(102, 126, 234, 0.3);
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-    z-index: 1;
+    bottom: 8px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.08);
+  }
 
-    &.top-dot {
-        background: linear-gradient(135deg, #faad14 0%, #ff7a45 100%);
-        border-color: rgba(250, 173, 20, 0.3);
-        box-shadow: 0 0 0 4px rgba(250, 173, 20, 0.1);
-    }
+  :deep(.light-mode) &::before {
+    background: rgba(0, 0, 0, 0.08);
+  }
 }
 
-/**
- * 时间线内容卡片样式
- */
+.timeline-item {
+  position: relative;
+  padding-left: 44px;
+  margin-bottom: 20px;
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+
+  &.new-item {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: fadeInUp 0.35s ease-out forwards;
+  }
+}
+
+.timeline-dot {
+  position: absolute;
+  left: 13px;
+  top: 10px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #667eea;
+  border: 2px solid rgba(102, 126, 234, 0.2);
+  z-index: 1;
+
+  &.top-dot {
+    background: #faad14;
+    border-color: rgba(250, 173, 20, 0.25);
+  }
+}
+
 .timeline-content {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  &:hover {
+    border-color: rgba(102, 126, 234, 0.25);
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
+  }
+
+  :deep(.light-mode) & {
+    background: #fff;
+    border-color: rgba(0, 0, 0, 0.06);
 
     &:hover {
-        border-color: rgba(102, 126, 234, 0.4);
-        background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(102, 126, 234, 0.2);
+      background: #fafafa;
     }
-
-    &.light-mode {
-        background: rgba(0, 0, 0, 0.02);
-        border-color: rgba(0, 0, 0, 0.06);
-
-        &:hover {
-            background: rgba(102, 126, 234, 0.05);
-            border-color: rgba(102, 126, 234, 0.2);
-        }
-    }
+  }
 }
 
-/**
- * 日志头部区域
- */
 .log-header {
-    margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .log-title-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-    flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
 
-    .edit-button {
-        margin-left: auto;
-        opacity: 0.7;
-        transition: opacity 0.3s;
+  .edit-button {
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
 
-        &:hover {
-            opacity: 1;
-        }
+  .timeline-content:hover & .edit-button {
+    opacity: 0.7;
+
+    &:hover {
+      opacity: 1;
     }
+  }
 }
 
-/**
- * 日志主体区域
- */
+.log-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+
+  :deep(.light-mode) & {
+    color: rgba(0, 0, 0, 0.88);
+  }
+}
+
 .log-body {
-    .log-title {
-        font-size: 16px;
-        font-weight: 600;
-        margin-bottom: 12px;
-        color: rgba(255, 255, 255, 0.9);
-
-        &.light-mode {
-            color: rgba(0, 0, 0, 0.85);
-        }
-    }
-}
-
-/**
- * 日志内容区域
- */
-.log-content {
-    line-height: 1.8;
+  .log-content {
+    line-height: 1.7;
     color: rgba(255, 255, 255, 0.7);
-    font-size: 14px;
+    font-size: 13px;
 
-    &.light-mode {
-        color: rgba(0, 0, 0, 0.7);
+    :deep(.light-mode) & {
+      color: rgba(0, 0, 0, 0.72);
     }
 
     p {
-        margin: 8px 0;
+      margin: 6px 0;
     }
 
     ul,
     ol {
-        margin: 12px 0;
-        padding-left: 24px;
+      margin: 10px 0;
+      padding-left: 20px;
     }
 
     li {
-        margin: 6px 0;
+      margin: 4px 0;
     }
 
     strong {
-        color: rgba(255, 255, 255, 0.9);
-        font-weight: 600;
+      color: rgba(255, 255, 255, 0.88);
+      font-weight: 600;
 
-        &.light-mode {
-            color: rgba(0, 0, 0, 0.85);
-        }
+      :deep(.light-mode) & {
+        color: rgba(0, 0, 0, 0.85);
+      }
     }
 
     code {
-        background: rgba(102, 126, 234, 0.2);
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-family: monospace;
-        font-size: 13px;
+      background: rgba(102, 126, 234, 0.15);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 12px;
     }
+  }
 }
 
-/**
- * 加载完成指示器
- */
 .finished-indicator {
-    position: relative;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
 
-    .indicator-content {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 24px;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.15) 0%, rgba(118, 75, 162, 0.15) 100%);
-        border-radius: 10px;
-        border: 1px solid rgba(102, 126, 234, 0.2);
-        backdrop-filter: blur(10px);
-        animation: fadeInUp 0.5s ease-out;
-        z-index: 1;
-    }
+  :deep(.light-mode) & {
+    color: rgba(0, 0, 0, 0.35);
+  }
 
-    .indicator-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        border-radius: 50%;
-        color: #fff;
-        font-size: 18px;
-        animation: pulse 2s ease-in-out infinite;
-    }
-
-    .indicator-text {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-
-        .text-main {
-            font-size: 14px;
-            font-weight: 600;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .text-sub {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
-
-            &.light-mode {
-                color: rgba(0, 0, 0, 0.4);
-            }
-        }
-    }
-
-    .indicator-decoration {
-        position: absolute;
-        top: 50%;
-        left: 0;
-        right: 0;
-        transform: translateY(-50%);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 0 20px;
-        pointer-events: none;
-
-        .decoration-line {
-            flex: 1;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
-        }
-
-        .decoration-line.left {
-            margin-right: 140px;
-        }
-
-        .decoration-line.right {
-            margin-left: 140px;
-        }
-    }
-
-    &.light-mode {
-        .indicator-content {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-            border-color: rgba(102, 126, 234, 0.15);
-        }
-
-        .indicator-decoration {
-            .decoration-line {
-                background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.2), transparent);
-            }
-        }
-    }
+  &::before,
+  &::after {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.5;
+  }
 }
 
-/**
- * 动画定义
- */
 @keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(30px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
-    }
-
-    50% {
-        box-shadow: 0 0 0 8px rgba(102, 126, 234, 0);
-    }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

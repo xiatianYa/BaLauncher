@@ -19,7 +19,7 @@ declare global {
       send: (channel: string, ...args: any[]) => void;
       invoke: (channel: string, ...args: any[]) => Promise<any>;
       queryGameServer: (host: string, port?: number) => Promise<any>;
-      queryGameServers: (gameServers: string[], attempts?: number, timeout?: number | number[]) => Promise<Api.Game.InfoResponseListResult[]>;
+      queryGameServers: (gameServers: string[], attempts?: number, timeout?: number | number[]) => Promise<Api.Game.SeverVoListResult[]>;
       checkCsgo2Running: () => Promise<{ isRunning: boolean }>;
       checkGsiConfig: (csgo2Path: string) => Promise<{ exists: boolean }>;
       createGsiConfig: (csgo2Path: string) => Promise<{ success: boolean }>;

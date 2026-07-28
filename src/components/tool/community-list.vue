@@ -68,12 +68,12 @@ const isDarkMode = computed(() => themeStore.darkMode);
 <style scoped lang="scss">
 .community-card {
     :deep(.n-card-header) {
-        padding: 12px 16px;
+        padding: 10px 14px;
         border-bottom: 1px solid var(--n-border-color);
     }
 
     :deep(.n-card__content) {
-        padding: 8px;
+        padding: 6px;
         overflow-y: auto;
         max-height: calc(100vh - 160px);
     }
@@ -82,42 +82,47 @@ const isDarkMode = computed(() => themeStore.darkMode);
 .community-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 
     .community-item {
         display: flex;
         align-items: center;
         gap: 10px;
         padding: 10px 12px;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
-        transition: all 0.25s ease;
-        border: 1.5px solid transparent;
+        transition: all 0.15s ease;
+        border: 1px solid var(--n-border-color);
+        background: var(--n-color);
 
         &:hover {
-            background: rgba(102, 126, 234, 0.08);
-            border-color: rgba(102, 126, 234, 0.2);
+            border-color: var(--n-border-color-hover);
+            background: var(--n-color-hover);
         }
 
         &.community-item-selected {
-            background: rgba(102, 126, 234, 0.12);
-            border-color: rgba(102, 126, 234, 0.4);
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+            border-color: var(--n-primary-color);
+            background: var(--n-primary-color-suppl);
+
+            .community-name {
+                color: var(--n-primary-color);
+            }
         }
 
         .community-logo {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
+            width: 36px;
+            height: 36px;
             border-radius: 6px;
             overflow: hidden;
             flex-shrink: 0;
-            background: rgba(102, 126, 234, 0.05);
+            background: var(--n-color);
+            border: 1px solid var(--n-border-color);
 
             img {
-                width: 40px;
+                width: 28px;
                 border-radius: 4px;
                 object-fit: cover;
             }
@@ -133,7 +138,7 @@ const isDarkMode = computed(() => themeStore.darkMode);
 
             .community-name {
                 font-size: 13px;
-                font-weight: 600;
+                font-weight: 500;
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
@@ -144,7 +149,7 @@ const isDarkMode = computed(() => themeStore.darkMode);
                 display: flex;
                 align-items: center;
                 gap: 6px;
-                margin-top: 4px;
+                margin-top: 2px;
 
                 .server-count {
                     font-size: 11px;
@@ -155,19 +160,18 @@ const isDarkMode = computed(() => themeStore.darkMode);
     }
 }
 
-/** 面板通用头部样式 */
 .panel-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
 
     .panel-icon {
-        font-size: 16px;
-        color: #667eea;
+        font-size: 14px;
+        color: var(--n-text-color-2);
     }
 
     .panel-title {
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
         color: var(--n-text-color);
     }

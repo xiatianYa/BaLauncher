@@ -209,55 +209,54 @@ onMounted(() => {
     height: 100%;
     width: 100%;
     gap: 12px;
-    animation: fadeIn 0.4s ease-out;
 
     .header-section {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 8px 0;
+        padding: 4px 2px 8px;
 
         .title-section {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 24px;
+            gap: 8px;
         }
 
         .back-btn {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            border-radius: 10px;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 6px;
             cursor: pointer;
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
+            font-size: 13px;
+            color: var(--n-text-color);
+            border: 1px solid var(--n-border-color);
+            transition: all 0.15s ease;
 
             &:hover {
-                color: #667eea;
-                background: rgba(102, 126, 234, 0.3);
+                border-color: var(--n-border-color-hover);
+                background: var(--n-color-hover);
             }
 
             .back-icon {
-                font-size: 20px;
+                font-size: 16px;
             }
         }
 
+        .title-icon {
+            font-size: 18px;
+            color: var(--n-text-color-2);
+        }
+
         .page-title {
-            font-size: 20px;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: 600;
             margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--n-text-color);
         }
     }
 
-    /** 三栏弹性布局 */
     .main-content {
         display: flex;
         flex: 1;
@@ -281,29 +280,6 @@ onMounted(() => {
             flex: 1;
             min-width: 0;
             height: 100%;
-        }
-    }
-}
-
-/** 页面入场动画 */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/** 浅色模式覆盖 */
-.light-mode {
-    .header-section {
-        .back-btn {
-            background: rgba(102, 126, 234, 0.1);
-            border-color: rgba(0, 0, 0, 0.06);
         }
     }
 }

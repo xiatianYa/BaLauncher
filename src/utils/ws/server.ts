@@ -49,34 +49,17 @@ const ServerWebsocket: ServerWebsocketType = {
         // 定义一个处理函数的映射对象
         const handlers: { [key: string]: (data: any) => void } = {
           '201': () => {
-            gameStore.automaticInfo!.numPlayers = data.players ?? gameStore.automaticInfo!.numPlayers;
-            gameStore.automaticInfo!.maxPlayers = data.maxPlayers ?? gameStore.automaticInfo!.maxPlayers;
-
-            if (!gameStore.isAutomatic) return;
-
-            if (!data.status) {
-              gameStore.automaticCount += 1;
-              setTimeout(() => {
-                gameStore.sendJoinServer(gameStore.automaticInfo);
-              }, 100);
-              return;
-            }
-            gameStore.isAutomatic = false;
-            gameStore.automaticCount = 0;
-            const aLink = document.createElement('a');
-            aLink.href = `steam://rungame/730/76561198977557298/+connect ${gameStore.automaticInfo?.connectStr}`;
-            aLink.click();
-          },
-          '203': () => {
             // 在线用户数据
             appStore.onlineUserList = data;
           },
-          '205': () => {
+          '202': () => {
+            // 服务器列表数据
             if (Array.isArray(data)) {
               gameStore.currentServerWsList.splice(0, gameStore.currentServerWsList.length, ...data);
+              console.log('服务器列表数据:', gameStore.currentServerWsList);
             }
           },
-          '206': () => {
+          '203': () => {
             // 地图订阅通知
             if (data && window.ipcRenderer) {
               // 播放连接成功音效
@@ -96,9 +79,9 @@ const ServerWebsocket: ServerWebsocketType = {
               });
             }
           },
-          '103': () => {
-            gameStore.currentGisServerList.splice(0, gameStore.currentGisServerList.length, ...data);
-          }
+          '204': () => {
+
+          },
         };
 
         // 根据 data.code 调用相应的处理函数

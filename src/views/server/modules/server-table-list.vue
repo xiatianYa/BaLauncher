@@ -3,10 +3,8 @@ import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
 import { DataTableColumn, NButton, NTooltip } from 'naive-ui';
 import { ref, computed } from 'vue';
-import { useGameStore } from '@/store/modules/game';
 import { useThemeStore } from '@/store/modules/theme';
 
-const gameStore = useGameStore();
 const themeStore = useThemeStore();
 
 const isDarkMode = computed(() => themeStore.darkMode);
@@ -24,18 +22,17 @@ const getOfflineRowBgColor = () => {
 };
 
 const props = defineProps<{
-  servers: Api.Game.InfoResponse[];
+  servers: Api.Game.SeverVo[];
   mapList: Api.Game.Map[];
   sourceServerList: Api.Game.Server[];
   refreshingAddrs: string[];
 }>();
 
 const emit = defineEmits<{
-  (e: 'join', server: Api.Game.InfoResponse): void;
-  (e: 'copy', server: Api.Game.InfoResponse): void;
-  (e: 'autoJoin', server: Api.Game.InfoResponse): void;
-  (e: 'refresh', server: Api.Game.InfoResponse): void;
-  (e: 'delete', server: Api.Game.InfoResponse): void;
+  (e: 'join', server: Api.Game.SeverVo): void;
+  (e: 'copy', server: Api.Game.SeverVo): void;
+  (e: 'autoJoin', server: Api.Game.SeverVo): void;
+  (e: 'refresh', server: Api.Game.SeverVo): void;
   (e: 'back'): void;
 }>();
 
@@ -62,24 +59,24 @@ const getPlayerColor = (players: number) => {
 };
 
 // 获取源服务器信息
-const getSourceServerInfo = (server: Api.Game.InfoResponse): Api.Game.Server | undefined => {
+const getSourceServerInfo = (server: Api.Game.SeverVo): Api.Game.Server | undefined => {
   return props.sourceServerList.find(s => {
-    if (s.connectStr === server.addr) return true;
+    if (s.connectStr === server.connectStr) return true;
     if (s.ip && s.port) {
       const serverAddr = `${s.ip}:${s.port}`;
-      if (serverAddr === server.addr) return true;
+      if (serverAddr === server.connectStr) return true;
     }
     return false;
   });
 };
 
 // 判断服务器是否离线
-const isServerOffline = (server: Api.Game.InfoResponse) => {
+const isServerOffline = (server: Api.Game.SeverVo) => {
   return !server.isOnline;
 };
 
 // 行样式
-const getRowProps = (row: Api.Game.InfoResponse) => {
+const getRowProps = (row: Api.Game.SeverVo) => {
   return {
     class: {
       'offline-row': isServerOffline(row)
@@ -88,29 +85,27 @@ const getRowProps = (row: Api.Game.InfoResponse) => {
   };
 };
 
-// 删除服务器
-const handleDelete = (server: Api.Game.InfoResponse) => {
-  gameStore.removeCustomServer(server.addr, gameStore.selectedCommunityId || 0);
-  emit('delete', server);
-};
-
-const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
+const columns = ref<DataTableColumn<Api.Game.SeverVo>[]>([
   {
     title: $t('server.serverName'),
     key: 'name',
-    render: (row) => row.name ? row.name : getSourceServerInfo(row)?.serverName + $t('server.offlineSuffix'),
+    render: (row) => row.serverName ? row.serverName : getSourceServerInfo(row)?.serverName + $t('server.offlineSuffix'),
   },
   {
     title: $t('server.map'),
     key: 'map',
-    render: (row) => <span style={{ color: getSecondaryTextColor() }}>{getMapByMapName(row.map)?.mapLabel || row.map}</span>,
+    render: (row) => {
+      const colorStyle = { color: getSecondaryTextColor() };
+      const text = row.mapLabel ? `${row.mapLabel} | ${row.mapName}` : row.mapName;
+      return <span style={colorStyle}>{text}</span>;
+    }
   },
   {
     title: $t('server.playerCountColumn'),
     key: 'players',
     sorter: (row1, row2) => {
-      const p1 = row1.players ?? -1;
-      const p2 = row2.players ?? -1;
+      const p1 = row1.numPlayers ?? -1;
+      const p2 = row2.numPlayers ?? -1;
       return p1 - p2;
     },
     render: (row) => (
@@ -119,12 +114,12 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
           <div
             class="h-full rounded-3px transition-all duration-300"
             style={{
-              width: `${(row.players / row.maxPlayers) * 100}%`,
-              backgroundColor: getPlayerColor(row.players)
+              width: `${(row.numPlayers / row.maxPlayers) * 100}%`,
+              backgroundColor: getPlayerColor(row.numPlayers)
             }}
           />
         </div>
-        <span class="text-12px whitespace-nowrap" style={{ color: getSecondaryTextColor() }}>{row.players || 0}/{row.maxPlayers || 0}</span>
+        <span class="text-12px whitespace-nowrap" style={{ color: getSecondaryTextColor() }}>{row.numPlayers || 0}/{row.maxPlayers || 0}</span>
       </div>
     )
   },
@@ -161,51 +156,34 @@ const columns = ref<DataTableColumn<Api.Game.InfoResponse>[]>([
     title: $t('server.operate'),
     key: 'operate',
     align: 'center',
-    render: (row) => {
-      const isCustom = gameStore.isCustomCategory(gameStore?.selectedCommunityId || 0);
-      return (
-        <div class="flex items-center flex-center gap-6px">
-          <NTooltip trigger="hover" placement="bottom">
-            {{
-              trigger: () => (
-                <NButton size="small" onClick={() => emit('join', row)}>
-                  {{
-                    icon: () => <SvgIcon icon="iconamoon:player-play-bold" />
-                  }}
-                </NButton>
-              ),
-              default: () => $t('server.joinServer')
-            }}
-          </NTooltip>
-          <NTooltip trigger="hover" placement="bottom">
-            {{
-              trigger: () => (
-                <NButton size="small" onClick={() => emit('autoJoin', row)}>
-                  {{
-                    icon: () => <SvgIcon icon="iconamoon:player-next-bold" />
-                  }}
-                </NButton>
-              ),
-              default: () => $t('server.autoJoin')
-            }}
-          </NTooltip>
-          {isCustom && (
-            <NTooltip trigger="hover" placement="bottom">
-              {{
-                trigger: () => (
-                  <NButton size="small" onClick={() => handleDelete(row)}>
-                    {{
-                      icon: () => <SvgIcon icon="mdi:delete-outline" />
-                    }}
-                  </NButton>
-                ),
-                default: () => $t('server.deleteServer')
-              }}
-            </NTooltip>
-          )}
-        </div>
-      );
-    }
+    render: (row) => (
+      <div class="flex items-center flex-center gap-6px">
+        <NTooltip trigger="hover" placement="bottom">
+          {{
+            trigger: () => (
+              <NButton size="small" onClick={() => emit('join', row)}>
+                {{
+                  icon: () => <SvgIcon icon="iconamoon:player-play-bold" />
+                }}
+              </NButton>
+            ),
+            default: () => $t('server.joinServer')
+          }}
+        </NTooltip>
+        <NTooltip trigger="hover" placement="bottom">
+          {{
+            trigger: () => (
+              <NButton size="small" onClick={() => emit('autoJoin', row)}>
+                {{
+                  icon: () => <SvgIcon icon="iconamoon:player-next-bold" />
+                }}
+              </NButton>
+            ),
+            default: () => $t('server.autoJoin')
+          }}
+        </NTooltip>
+      </div>
+    )
   }
 ]);
 </script>

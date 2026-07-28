@@ -370,7 +370,7 @@ const stopJoinServer = () => {
 
 // 复制服务器IP
 const copyServerAddr = async () => {
-    navigator.clipboard.writeText(`connect ${gameStore.joinServerInfo?.addr}`);
+    navigator.clipboard.writeText(`connect ${gameStore.joinServerInfo?.connectStr}`);
     window.$message?.success($t('server.copySuccess'));
 };
 
@@ -622,33 +622,34 @@ onBeforeUnmount(() => {
             </div>
             <div class="game-join-info" v-if="gameStore.joinServerInfo">
                 <div class="server-card overflow-hidden flex flex-col">
-                    <img v-if="getMapByMapName(gameStore.joinServerInfo.map)" class="server-card-bg"
-                        :src="getMapByMapName(gameStore.joinServerInfo.map)?.mapUrl" />
+                    <img v-if="gameStore.joinServerInfo.mapUrl" class="server-card-bg"
+                        :src="gameStore.joinServerInfo.mapUrl" />
                     <div class="server-online"
-                        :style="`${getOnLineColor(gameStore.joinServerInfo.players, gameStore.joinServerInfo.maxPlayers)}width: ${(gameStore.joinServerInfo.players / gameStore.joinServerInfo.maxPlayers) * 100}%;`">
+                        :style="`${getOnLineColor(gameStore.joinServerInfo.numPlayers, gameStore.joinServerInfo.maxPlayers)}width: ${(gameStore.joinServerInfo.numPlayers / gameStore.joinServerInfo.maxPlayers) * 100}%;`">
                     </div>
                     <div class="server-card-mask"></div>
                     <div class="mt-8px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
-                        {{ gameStore.joinServerInfo.name }}
+                        {{ gameStore.joinServerInfo.serverName }}
                     </div>
                     <div class="mt-6px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
                         <SvgIcon icon="tdesign:translate" class="mr-5px font-size-16px" />
-                        {{ getMapByMapName(gameStore.joinServerInfo.map)?.mapLabel || $t('server.noTranslation') }}
+                        {{ gameStore.joinServerInfo.mapLabel || $t('server.noTranslation') }}
                     </div>
                     <div class="mt-6px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
                         <SvgIcon icon="mdi:map-legend" class="mr-5px font-size-16px" />
-                        {{ gameStore.joinServerInfo.map }} ({{ gameStore.joinServerInfo.players }}/{{
+                        {{ gameStore.joinServerInfo.mapName }} ({{ gameStore.joinServerInfo.numPlayers }}/{{
                             gameStore.joinServerInfo.maxPlayers }})
                     </div>
                     <div class="flex items-center ml-8px mt-6px position-relative font-bold"
-                        v-if="queryServerMapType(gameStore?.joinServerInfo?.map)">
+                        v-if="queryServerMapType(gameStore?.joinServerInfo?.mapName)">
                         <NTag size="small" round class="mr-3px" ghost
-                            :type="dictOptions('game_type').find((item: any) => item.value === queryServerMapType(gameStore?.joinServerInfo?.map))?.type">
+                            :type="dictOptions('game_type').find((item: any) => item.value === gameStore?.joinServerInfo?.type)?.type || 'primary'"
+                            v-show="gameStore?.joinServerInfo.type">
                             {{dictOptions('game_type').find((item: any) => item.value ===
-                                queryServerMapType(gameStore?.joinServerInfo?.map))?.label}}
+                                gameStore?.joinServerInfo?.type)?.label}}
                         </NTag>
-                        <NTag v-for="(tag, index) in queryServerMapTag(gameStore.joinServerInfo.map)" :key="index"
-                            size="small" round class="mr-3px" type="success">
+                        <NTag v-for="(tag, index) in gameStore.joinServerInfo.tag" :key="index" size="small" round
+                            class="mr-3px" type="success">
                             {{dictOptions('game_tag').find((item: any) => item.value === tag)?.label}}
                         </NTag>
                     </div>
@@ -657,7 +658,7 @@ onBeforeUnmount(() => {
                             <SvgIcon icon="material-symbols:bring-your-own-ip" class="font-size-14px color-#a5a5a5" />
                         </div>
                         <div class="font-size-12px color-#a5a5a5 font-bold">
-                            {{ gameStore.joinServerInfo.addr }}
+                            {{ gameStore.joinServerInfo.connectStr }}
                         </div>
                         <div class="ml-5px cursor-pointer hover:opacity-80" @click="copyServerAddr">
                             <SvgIcon icon="mdi:content-copy" class="font-size-14px color-#a5a5a5" />
@@ -676,7 +677,7 @@ onBeforeUnmount(() => {
                                                 fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
                                             <span class="ml-2 font-bold">{{ player.loginUser?.nickName ||
                                                 $t('serverJoin.unknownPlayer')
-                                            }}</span>
+                                                }}</span>
                                             <NTag size="small" :type="getTeamColor(player.team)" class="ml-2"
                                                 :bordered="false">
                                                 {{ getTeamLabel(player.team) }}
