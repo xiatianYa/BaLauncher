@@ -50,9 +50,12 @@ const getOnLineColor = (server: Api.Game.SeverVo) => {
   return `background-color: #ff0000;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
 };
 
-const getPlayersChipBg = (server: Api.Game.SeverVo): string | undefined => {
-  const match = getOnLineColor(server).match(/background-color:\s*([^;]+);/);
-  return match?.[1];
+const getPlayerLevel = (server: Api.Game.SeverVo): string => {
+  if (server.numPlayers <= 20) return 'player-level-1';
+  if (server.numPlayers <= 40) return 'player-level-2';
+  if (server.numPlayers <= 60) return 'player-level-3';
+  if (server.numPlayers <= 80) return 'player-level-4';
+  return 'player-level-5';
 };
 
 // 服务器状态中文映射
@@ -118,7 +121,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
               :max-line="1">
               {{ server.mapName }}
             </NEllipsis>
-            <div class="player-badge mr-5px" :style="{ '--player-color': getPlayersChipBg(server) }">
+            <div class="player-badge mr-5px" :class="getPlayerLevel(server)">
               <SvgIcon icon="mdi:account-group" class="player-icon" />
               <span class="player-num">{{ server.numPlayers }}<span class="player-sep">/</span>{{ server.maxPlayers }}</span>
             </div>
@@ -409,8 +412,67 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 
 .player-icon {
   font-size: 13px;
-  color: var(--player-color, #22c55e);
   opacity: 0.9;
+}
+
+.player-badge.player-level-1 {
+  border-color: rgba(0, 249, 26, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(0, 249, 26, 0.2);
+  :deep(.player-icon) {
+    color: #00f91a;
+  }
+  &:hover {
+    border-color: rgba(0, 249, 26, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 14px rgba(0, 249, 26, 0.3);
+  }
+}
+
+.player-badge.player-level-2 {
+  border-color: rgba(84, 112, 238, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(84, 112, 238, 0.2);
+  :deep(.player-icon) {
+    color: #5470ee;
+  }
+  &:hover {
+    border-color: rgba(84, 112, 238, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 14px rgba(84, 112, 238, 0.3);
+  }
+}
+
+.player-badge.player-level-3 {
+  border-color: rgba(255, 163, 37, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(255, 163, 37, 0.2);
+  :deep(.player-icon) {
+    color: #ffa325;
+  }
+  &:hover {
+    border-color: rgba(255, 163, 37, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 14px rgba(255, 163, 37, 0.3);
+  }
+}
+
+.player-badge.player-level-4 {
+  border-color: rgba(255, 79, 0, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(255, 79, 0, 0.2);
+  :deep(.player-icon) {
+    color: #ff4f00;
+  }
+  &:hover {
+    border-color: rgba(255, 79, 0, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 14px rgba(255, 79, 0, 0.3);
+  }
+}
+
+.player-badge.player-level-5 {
+  border-color: rgba(255, 0, 0, 0.55);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 12px rgba(255, 0, 0, 0.28);
+  :deep(.player-icon) {
+    color: #ff0000;
+  }
+  &:hover {
+    border-color: rgba(255, 0, 0, 0.7);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 18px rgba(255, 0, 0, 0.4);
+  }
 }
 
 .player-num {

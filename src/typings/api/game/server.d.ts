@@ -93,6 +93,8 @@ declare namespace Api {
 
         // 源服务器数据
         type SeverVo = {
+            /** 服务器ID */
+            serverId: number;
             /** 社区名称 */
             communityName: string;
             /** 社区ID */

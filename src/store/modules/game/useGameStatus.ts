@@ -25,6 +25,7 @@ interface GameStatusDeps {
   stopLogReading: () => Promise<void>
   stopAutomaticJoinServer: () => Promise<void>
   connectServerUsingSteamUrl: () => Promise<void>
+  connectToServerById: (serverId: number) => void
 }
 
 /**
@@ -49,6 +50,7 @@ export function useGameStatus(deps: GameStatusDeps) {
     startLogReading,
     stopLogReading,
     stopAutomaticJoinServer,
+    connectToServerById,
   } = deps
 
   /** 游戏状态检查定时器 */
@@ -172,6 +174,8 @@ export function useGameStatus(deps: GameStatusDeps) {
     if (!ready) return
 
     unref(currentGisPlayerList).splice(0, unref(currentGisPlayerList).length)
+    console.log('joinInfo', joinInfo)
+    connectToServerById(joinInfo.serverId)
     const aLink = document.createElement('a')
     aLink.href = `steam://rungame/730/76561198977557298/+connect ${joinInfo.connectStr}`
     aLink.click()

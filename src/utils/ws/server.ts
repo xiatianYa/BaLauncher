@@ -14,6 +14,7 @@ interface ServerWebsocketType {
   onClose(): void;
   reconnect(): void;
   close(): void;
+  send(type: string, data: any): boolean;
 }
 
 // 定义ServerWebsocket实例
@@ -131,6 +132,17 @@ const ServerWebsocket: ServerWebsocketType = {
       this.ServerWebsocket.close();
       this.ServerWebsocket = null;
     }
+  },
+
+  // 发送消息
+  send(type: string, data: string): boolean {
+    if (!this.ServerWebsocket || this.ServerWebsocket.readyState !== WebSocket.OPEN) {
+      console.warn('WebSocket 未连接，无法发送消息:', { type, data });
+      return false;
+    }
+    const message = JSON.stringify({ type, data });
+    this.ServerWebsocket.send(message);
+    return true;
   }
 };
 
