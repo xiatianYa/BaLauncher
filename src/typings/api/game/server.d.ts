@@ -142,8 +142,6 @@ declare namespace Api {
         }
 
         type ServerInfoData = {
-            /** 地址 */
-            addr: string;
             /** 回合 */
             round: string;
             /** CT分数 */
@@ -157,12 +155,10 @@ declare namespace Api {
         }
 
         type CsgoPlayer = {
-            //系统用户信息
-            loginUser?: Api.Auth.LoginUser;
-            //服务器地址
-            addr: string;
             // 玩家阵营（ct/t/spectator）
             team: string;
+            // 玩家状态（alive/dead/spectator）
+            playStatus: string;
             // 生命值
             health: number;
             // 护甲值

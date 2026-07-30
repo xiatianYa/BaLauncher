@@ -135,19 +135,22 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /** 当前游戏服务器信息 */
   const gameServerInfo = ref<Api.Game.ServerInfoData>({
-    addr: '', round: '', CTScore: '', TScore: '', mapStage: '', mapPhase: ''
+    round: '', CTScore: '', TScore: '', mapStage: '', mapPhase: ''
   })
 
   /** 当前玩家游戏内信息 */
   const gamePlayerInfo = ref<Api.Game.CsgoPlayer>({
-    addr: '', team: '', health: 0, armor: 0, money: 0, equipValue: 0,
+    team: '', playStatus: '', health: 0, armor: 0, money: 0, equipValue: 0,
     weapon: '', clipAmmo: 0, reserveAmmo: 0, helmet: false, kills: 0, score: 0
   })
 
   /** GSI 数据发送定时器状态 */
   const gisSendState: GisDataSendTimerState = {
-    lastSentAt: 0, sendTimer: null, pendingData: null
+    lastSentAt: 0, sendTimer: null, pendingData: null, pendingServerData: null
   }
+
+  /** GSI 数据发送最小间隔（3秒） */
+  const GIS_SEND_MIN_INTERVAL = 3000
 
   // ==================== 工具函数 ====================
 
@@ -220,6 +223,47 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   })
 
   // 4. GSI 监听 - 通过 getter 延迟引用 autoJoin 的函数
+  /** 立即执行 WebSocket 发送（同时发送玩家和服务器数据） */
+  function flushGisSend(): void {
+    gisSendState.lastSentAt = Date.now()
+    if (gisSendState.sendTimer) {
+      clearTimeout(gisSendState.sendTimer)
+      gisSendState.sendTimer = null
+    }
+    if (gisSendState.pendingData) {
+      ServerWebsocket.send('110', JSON.stringify(gisSendState.pendingData))
+      gisSendState.pendingData = null
+    }
+    if (gisSendState.pendingServerData) {
+      ServerWebsocket.send('111', JSON.stringify(gisSendState.pendingServerData))
+      gisSendState.pendingServerData = null
+    }
+  }
+
+  /** 调度 GSI 数据发送：最快 3s 推送一次 */
+  function scheduleGisSend(): void {
+    if (gisSendState.sendTimer) return
+    const elapsed = Date.now() - gisSendState.lastSentAt
+    const remain = GIS_SEND_MIN_INTERVAL - elapsed
+    if (remain <= 0) {
+      flushGisSend()
+    } else {
+      gisSendState.sendTimer = setTimeout(flushGisSend, remain)
+    }
+  }
+
+  /** 通过 WebSocket 发送玩家数据（code 110），最快 3s 一次 */
+  function sendPlayerData(player: Api.Game.CsgoPlayer): void {
+    gisSendState.pendingData = { ...player }
+    scheduleGisSend()
+  }
+
+  /** 通过 WebSocket 发送服务器数据（code 111），最快 3s 一次 */
+  function sendServerData(server: Api.Game.ServerInfoData): void {
+    gisSendState.pendingServerData = { ...server }
+    scheduleGisSend()
+  }
+
   const gsiListener = useGsiListener({
     isGsiRunning,
     gameServerInfo,
@@ -231,6 +275,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     currentGisPlayerList,
     safeLog,
     stopAutomaticJoinServer: () => fnGetters.stopAutomaticJoinServer(),
+    sendPlayerData,
+    sendServerData,
   })
 
   // 5. 游戏状态检查与启动

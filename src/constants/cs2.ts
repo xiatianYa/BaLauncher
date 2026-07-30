@@ -24,4 +24,5 @@ export interface GisDataSendTimerState {
   lastSentAt: number
   sendTimer: ReturnType<typeof setTimeout> | null
   pendingData: Api.Game.CsgoPlayer | null
+  pendingServerData: Api.Game.ServerInfoData | null
 }

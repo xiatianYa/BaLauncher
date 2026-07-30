@@ -43,6 +43,7 @@ export function useServerQuery(deps: ServerQueryDeps) {
   /** 创建离线服务器数据 */
   function createOfflineServer(server: Api.Game.Server): Api.Game.SeverVo {
     return {
+      serverId: 0,
       communityName: '',
       communityId: 0,
       mapId: 0,
@@ -134,7 +135,6 @@ export function useServerQuery(deps: ServerQueryDeps) {
         infoResponseList.forEach((item: any) => {
           const listServer = unref(currentServerList).find(s => s.connectStr === item.addr)
           if (listServer) {
-            console.log(listServer);
             listServer.numPlayers = item.players
             listServer.mapName = item.map
             listServer.maxPlayers = item.maxPlayers
@@ -164,18 +164,10 @@ export function useServerQuery(deps: ServerQueryDeps) {
     const targetServers = unref(serverDataList).filter(server => server.connectStr && server.communityId === unref(selectedCommunityId))
 
     const allServers: Api.Game.SeverVo[] = targetServers.map(server => {
-      const wsServer = unref(currentServerWsList).find(item => item.connectStr === server.connectStr)
+    const wsServer = unref(currentServerWsList).find(item => item.connectStr === server.connectStr)
 
-      if (wsServer) {
+    if (wsServer) {
         wsServer.isOnline = true
-        const matchingServer = unref(currentGisServerList).find(gisServer => gisServer.addr === wsServer.connectStr)
-        if (matchingServer) {
-          wsServer.round = matchingServer.round
-          wsServer.CTScore = matchingServer.CTScore
-          wsServer.TScore = matchingServer.TScore
-          wsServer.mapStage = matchingServer.mapStage
-          wsServer.mapPhase = matchingServer.mapPhase
-        }
         return wsServer
       }
 
