@@ -2,22 +2,19 @@ import { unref } from 'vue'
 import type { Ref } from 'vue'
 import type { GamePlatform } from '@/constants/app'
 
-type MaybeRef<T> = T | Ref<T>
-
 /** 游戏状态检查间隔（毫秒） */
 const GAME_CHECK_INTERVAL = 10000
 
 interface GameStatusDeps {
-  isGameRunning: MaybeRef<boolean>
-  isGameLaunching: MaybeRef<boolean>
-  isGsiRunning: MaybeRef<boolean>
-  isLogReading: MaybeRef<boolean>
-  csgo2Path: MaybeRef<string>
-  steamPath: MaybeRef<string>
-  gamePlatform: MaybeRef<GamePlatform>
-  selectedStartItems: MaybeRef<string[]>
-  joinServerInfo: MaybeRef<Api.Game.SeverVo | undefined>
-  currentGisPlayerList: MaybeRef<Api.Game.CsgoPlayer[]>
+  isGameRunning: Ref<boolean>
+  isGameLaunching: Ref<boolean>
+  isGsiRunning: Ref<boolean>
+  isLogReading: Ref<boolean>
+  csgo2Path: Ref<string>
+  steamPath: Ref<string>
+  gamePlatform: Ref<GamePlatform>
+  selectedStartItems: Ref<string[]>
+  joinServerInfo: Ref<Api.Game.SeverVo | undefined>
   safeLog: (message: string, ...args: unknown[]) => void
   listenToGsiData: () => void
   removeGsiDataListener: () => void
@@ -43,7 +40,6 @@ export function useGameStatus(deps: GameStatusDeps) {
     gamePlatform,
     selectedStartItems,
     joinServerInfo,
-    currentGisPlayerList,
     safeLog,
     listenToGsiData,
     removeGsiDataListener,
@@ -60,7 +56,7 @@ export function useGameStatus(deps: GameStatusDeps) {
   async function checkGameRunning(): Promise<void> {
     try {
       const { isRunning } = await window.ipcRenderer.checkCsgo2Running()
-      ;(isGameRunning as Ref<boolean>).value = isRunning
+      isGameRunning.value = isRunning
 
       if (unref(isGameRunning)) {
         const { exists } = await window.ipcRenderer.checkGsiConfig(unref(csgo2Path))
@@ -80,7 +76,7 @@ export function useGameStatus(deps: GameStatusDeps) {
         stopAutomaticJoinServer()
         const gsiConnected = await window.ipcRenderer.stopGsiService()
         if (!gsiConnected && unref(isGsiRunning)) {
-          ;(isGsiRunning as Ref<boolean>).value = false
+          isGsiRunning.value = false
           removeGsiDataListener()
         }
         if (unref(isLogReading)) {
@@ -137,7 +133,7 @@ export function useGameStatus(deps: GameStatusDeps) {
     const ready = await ensureGameStartReady()
     if (!ready) return false
 
-    ;(isGameLaunching as Ref<boolean>).value = true
+    isGameLaunching.value = true
     const serverMode = unref(gamePlatform) === 'perfect' ? 'perfectworld' : 'worldwide'
     const startType: 'steamurl' | 'steamexe' = unref(isGameRunning) ? 'steamurl' : 'steamexe'
 
@@ -146,23 +142,23 @@ export function useGameStatus(deps: GameStatusDeps) {
       serverMode,
       startType,
       unref(steamPath),
-      [...unref(selectedStartItems)]
+      [...unref(selectedStartItems)],
     )
 
     if (!launchResult.success) {
       window.$message?.error('启动游戏失败: ' + launchResult.error)
-      ;(isGameLaunching as Ref<boolean>).value = false
+      isGameLaunching.value = false
       return false
     }
 
     const waitResult = await window.ipcRenderer.waitForCs2Launch(unref(csgo2Path))
     if (!waitResult.success) {
       window.$message?.error('等待游戏启动超时')
-      ;(isGameLaunching as Ref<boolean>).value = false
+      isGameLaunching.value = false
       return false
     }
 
-    ;(isGameLaunching as Ref<boolean>).value = false
+    isGameLaunching.value = false
     return true
   }
 
@@ -173,8 +169,6 @@ export function useGameStatus(deps: GameStatusDeps) {
     const ready = await ensureGameStartReady()
     if (!ready) return
 
-    unref(currentGisPlayerList).splice(0, unref(currentGisPlayerList).length)
-    console.log('joinInfo', joinInfo)
     connectToServerById(joinInfo.serverId)
     const aLink = document.createElement('a')
     aLink.href = `steam://rungame/730/76561198977557298/+connect ${joinInfo.connectStr}`

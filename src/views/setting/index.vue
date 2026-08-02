@@ -1,113 +1,94 @@
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue';
-import { animate } from 'animejs';
-import { NCard, NText } from 'naive-ui';
-import ThemeSetting from './modules/ThemeSetting.vue';
-import GeneralSetting from './modules/GeneralSetting.vue';
-import CacheSetting from './modules/CacheSetting.vue';
-import AboutSetting from './modules/AboutSetting.vue';
+import { ref, onMounted } from 'vue'
+import { NCard, NText } from 'naive-ui'
+import ThemeSetting from './modules/ThemeSetting.vue'
+import GeneralSetting from './modules/GeneralSetting.vue'
+import CacheSetting from './modules/CacheSetting.vue'
+import AboutSetting from './modules/AboutSetting.vue'
 
 defineOptions({
-  name: 'setting'
-});
+  name: 'setting',
+})
 
-const titleRef = ref<HTMLElement | null>(null);
-const cacheSettingRef = ref();
-const aboutSettingRef = ref();
+const cacheSettingRef = ref<InstanceType<typeof CacheSetting>>()
+const aboutSettingRef = ref<InstanceType<typeof AboutSetting>>()
 
 onMounted(() => {
-  if (cacheSettingRef.value) {
-    cacheSettingRef.value.calculateCacheSize();
-  }
-  if (aboutSettingRef.value) {
-    aboutSettingRef.value.getAppVersion();
-  }
-
-  nextTick(() => {
-    if (titleRef.value) {
-      const text = titleRef.value.textContent || '';
-      titleRef.value.innerHTML = '';
-
-      text.split('').forEach((char, index) => {
-        const span = document.createElement('span');
-        span.textContent = char === ' ' ? '\u00A0' : char;
-        span.className = 'title-char';
-        span.style.opacity = '0';
-        span.style.transform = 'translateY(-30px) rotate(-10deg)';
-        titleRef.value!.appendChild(span);
-      });
-
-      animate(titleRef.value, {
-        targets: '.title-char',
-        translateY: [-30, 0],
-        rotate: [-10, 0],
-        opacity: [0, 1],
-        delay: 80,
-        duration: 800,
-        easing: 'easeOutElastic(1, .8)'
-      });
-    }
-  });
-});
+  cacheSettingRef.value?.calculateCacheSize()
+  aboutSettingRef.value?.getAppVersion()
+})
 </script>
 
 <template>
-  <NCard class="w-full h-full" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
-    <NCard class="m-10px rounded-10px" content-style="padding:10px;"
-      content-class="h-full flex flex-col flex-1 overflow-y-auto" header-style="padding:10px 20px 10px 20px" :segmented="{
-        content: true,
-        footer: 'soft',
-      }">
-      <template #header>
-        <div class="title-container">
-          <div class="flex items-center">
-            <div class="setting-icon">⚙️</div>
-          </div>
-          <h1 class="title-text text-20px font-bold bg-gradient-to-r bg-clip-text text-transparent ml-5px">
-            <NText>
-              {{ $t('routes.setting') }}
-            </NText>
-          </h1>
-        </div>
-      </template>
-      <ThemeSetting />
-      <GeneralSetting />
-      <CacheSetting ref="cacheSettingRef" />
-      <AboutSetting ref="aboutSettingRef" />
-    </NCard>
-  </NCard>
+  <div class="setting-page">
+    <div class="setting-card">
+      <!-- 页面标题 -->
+      <div class="setting-header">
+        <SvgIcon icon="ic:twotone-settings" class="setting-icon" />
+        <h1 class="setting-title">
+          <NText>
+            {{ $t('routes.setting') }}
+          </NText>
+        </h1>
+      </div>
+
+      <!-- 设置内容 -->
+      <div class="setting-body">
+        <ThemeSetting />
+        <GeneralSetting />
+        <CacheSetting ref="cacheSettingRef" />
+        <AboutSetting ref="aboutSettingRef" />
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
-.title-container {
+.setting-page {
+  width: 100%;
+  height: 100%;
+  padding: 12px;
+  overflow: hidden;
+  background-color: var(--n-color);
+  color: var(--n-text-color);
+}
+
+.setting-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  border-radius: 14px;
+  background-color: var(--n-card-color);
+  border: 1px solid var(--n-border-color);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.setting-header {
   display: flex;
   align-items: center;
-  position: relative;
+  gap: 10px;
+  flex-shrink: 0;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--n-divider-color);
 
   .setting-icon {
-    font-size: 24px;
-    animation: rotate 10s linear infinite;
-    display: inline-block;
+    font-size: 22px;
+    color: var(--primary-color, #18a058);
   }
 
-  .title-text {
-    height: 100%;
-    display: inline-flex;
-    letter-spacing: 0.05em;
-
-    .title-char {
-      display: inline-block;
-    }
+  .setting-title {
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1;
+    color: var(--n-text-color);
   }
 }
 
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-
-  to {
-    transform: rotate(360deg);
-  }
+.setting-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px 24px;
 }
 </style>

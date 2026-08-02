@@ -342,7 +342,7 @@ export default {
       ct: 'CT',
       t: 'T',
       spectator: '观察者',
-      unknown: '未知',
+      unknown: '加载中',
     },
     stats: {
       health: '{value} 生命值',

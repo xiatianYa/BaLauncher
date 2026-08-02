@@ -165,7 +165,6 @@ const openAutoJoinServer = (server: Api.Game.SeverVo) => {
     return;
   }
   showJoinServerConfirm.value = true;
-  gameStore.currentGisPlayerList = [];
 }
 
 // 复制服务器地址

@@ -1,18 +1,18 @@
 import { unref } from 'vue'
 import type { Ref } from 'vue'
 
-type MaybeRef<T> = T | Ref<T>
-
 interface AutoJoinDeps {
-  joinServerInfo: MaybeRef<Api.Game.SeverVo | undefined>
-  automaticJoinConfig: MaybeRef<Api.Game.AutomaticJoinConfig>
-  isAutomatic: MaybeRef<boolean>
-  isAutomaticRetry: MaybeRef<boolean>
-  automaticCount: MaybeRef<number>
+  joinServerInfo: Ref<Api.Game.SeverVo | undefined>
+  automaticJoinConfig: Ref<Api.Game.AutomaticJoinConfig>
+  isAutomatic: Ref<boolean>
+  isAutomaticRetry: Ref<boolean>
+  automaticCount: Ref<number>
   safeLog: (message: string, ...args: unknown[]) => void
   ensureGameStartReady: () => Promise<boolean>
   connectServerUsingSteamUrl: () => Promise<void>
   resetRetryFlag: () => void
+  /** 上报玩家操作动态（CODE_PLAYER_ACTION）：参数为操作内容，服务器ID取自 joinServerInfo */
+  reportPlayerAction: (actionContent: string) => void
 }
 
 /**
@@ -30,6 +30,7 @@ export function useAutoJoin(deps: AutoJoinDeps) {
     ensureGameStartReady,
     connectServerUsingSteamUrl,
     resetRetryFlag,
+    reportPlayerAction,
   } = deps
 
   /** 连接检测定时器 */
@@ -46,8 +47,8 @@ export function useAutoJoin(deps: AutoJoinDeps) {
     const ready = await ensureGameStartReady()
     if (!ready) return
 
-    ;(isAutomatic as Ref<boolean>).value = true
-    ;(automaticCount as Ref<number>).value = 0
+    isAutomatic.value = true
+    automaticCount.value = 0
     resetRetryFlag()
 
     try {
@@ -56,14 +57,15 @@ export function useAutoJoin(deps: AutoJoinDeps) {
         serverAddr: joinInfo.connectStr,
         maxPlayers: automaticJoinConfigValue.joinServerPersonValue,
         threadCount: automaticJoinConfigValue.joinServerCountValue,
-        joinDelay: automaticJoinConfigValue.joinServerDelayValue
+        joinDelay: automaticJoinConfigValue.joinServerDelayValue,
       })
 
       if (result.success && result.found) {
-        ;(isAutomaticRetry as Ref<boolean>).value = true
+        isAutomaticRetry.value = true
 
         if (automaticJoinConfigValue.joinServerAutoRetryValue) {
           connectServerUsingSteamUrl()
+          reportPlayerAction('加入服务器')
 
           if (connectionCheckTimer) {
             clearTimeout(connectionCheckTimer)
@@ -77,10 +79,11 @@ export function useAutoJoin(deps: AutoJoinDeps) {
             }
           }, 60000)
         } else {
-          ;(isAutomatic as Ref<boolean>).value = false
-          ;(isAutomaticRetry as Ref<boolean>).value = false
+          isAutomatic.value = false
+          isAutomaticRetry.value = false
           connectServerUsingSteamUrl()
           window.$message?.success('连接成功')
+          reportPlayerAction('加入服务器')
         }
       } else if (result.stopped) {
         window.$message?.info('已停止自动挤服')
@@ -99,12 +102,12 @@ export function useAutoJoin(deps: AutoJoinDeps) {
       clearTimeout(connectionCheckTimer)
       connectionCheckTimer = null
     }
-    ;(isAutomaticRetry as Ref<boolean>).value = false
+    isAutomaticRetry.value = false
   }
 
   /** 停止自动挤服 */
   async function stopAutomaticJoinServer(): Promise<void> {
-    ;(isAutomaticRetry as Ref<boolean>).value = false
+    isAutomaticRetry.value = false
 
     if (connectionCheckTimer) {
       clearTimeout(connectionCheckTimer)
@@ -114,7 +117,7 @@ export function useAutoJoin(deps: AutoJoinDeps) {
     try {
       if (unref(isAutomatic)) {
         await window.ipcRenderer.invoke('stop-automatic-join')
-        ;(isAutomatic as Ref<boolean>).value = false
+        isAutomatic.value = false
       }
     } catch (error) {
       console.error('停止自动挤服失败:', error)

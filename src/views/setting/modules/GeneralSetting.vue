@@ -1,256 +1,314 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
-import { useGameStore } from '@/store/modules/game';
-import { NGrid, NGridItem, NButton, NInput, NText } from 'naive-ui';
-import type { GamePlatform } from '@/constants/app';
-import { START_ITEMS } from '@/constants/startItems';
-import { $t } from '@/locales';
+import { ref, computed } from 'vue'
+import { NGrid, NGridItem, NButton, NInput, NText } from 'naive-ui'
+import type { GamePlatform } from '@/constants/app'
+import { useGameStore } from '@/store/modules/game'
+import { START_ITEMS } from '@/constants/startItems'
+import { $t } from '@/locales'
 
-const gameStore = useGameStore();
+const gameStore = useGameStore()
 
-const isDetectingSteam = ref(false);
-const isDetectingCsgo = ref(false);
+const isDetectingSteam = ref(false)
+const isDetectingCsgo = ref(false)
 
 const GamePlatform = computed({
   get: () => gameStore.GamePlatform,
-  set: (val: GamePlatform) => gameStore.setGamePlatform(val)
-});
+  set: (val: GamePlatform) => gameStore.setGamePlatform(val),
+})
 
 const csgo2Path = computed({
   get: () => gameStore.csgo2Path,
-  set: (val: string) => gameStore.setCsgo2Path(val)
-});
+  set: (val: string) => gameStore.setCsgo2Path(val),
+})
 
 const steamPath = computed({
   get: () => gameStore.steamPath,
-  set: (val: string) => gameStore.setSteamPath(val)
-});
+  set: (val: string) => gameStore.setSteamPath(val),
+})
 
 const selectedStartItemsList = computed(() => {
-  const presetItems = START_ITEMS.filter((item: { value: string; }) => gameStore.selectedStartItems.includes(item.value));
+  const presetItems = START_ITEMS.filter((item: { value: string }) =>
+    gameStore.selectedStartItems.includes(item.value),
+  )
   const customValues = gameStore.selectedStartItems.filter(
-    value => !START_ITEMS.some((item: { value: string; }) => item.value === value)
-  );
-  const customItems = customValues.map(value => ({ label: value, value }));
-  return [...presetItems, ...customItems];
-});
+    value => !START_ITEMS.some((item: { value: string }) => item.value === value),
+  )
+  const customItems = customValues.map(value => ({ label: value, value }))
+  return [...presetItems, ...customItems]
+})
 
-const customStartItem = ref('');
+const customStartItem = ref('')
 
 const addCustomStartItem = () => {
-  const value = customStartItem.value.trim();
+  const value = customStartItem.value.trim()
   if (!value) {
-    window.$message?.warning('请输入启动选项');
-    return;
+    window.$message?.warning('请输入启动选项')
+    return
   }
   if (gameStore.selectedStartItems.includes(value)) {
-    window.$message?.warning('该启动选项已存在');
-    return;
+    window.$message?.warning('该启动选项已存在')
+    return
   }
-  gameStore.toggleStartItem(value);
-  customStartItem.value = '';
-  window.$message?.success('添加成功');
-};
+  gameStore.toggleStartItem(value)
+  customStartItem.value = ''
+  window.$message?.success('添加成功')
+}
 
 const selectCsgo2Path = async () => {
-  const result = await window.ipcRenderer.invoke('select-directory', $t('settings.messages.selectCsgoPath'));
+  const result = await window.ipcRenderer.invoke('select-directory', $t('settings.messages.selectCsgoPath'))
   if (result) {
-    csgo2Path.value = result;
-    window.$message?.success($t('settings.messages.csgoPathSaved'));
+    csgo2Path.value = result
+    window.$message?.success($t('settings.messages.csgoPathSaved'))
   }
-};
+}
 
 const selectSteamPath = async () => {
-  const result = await window.ipcRenderer.invoke('select-directory', $t('settings.messages.selectSteamPath'));
+  const result = await window.ipcRenderer.invoke('select-directory', $t('settings.messages.selectSteamPath'))
   if (result) {
-    steamPath.value = result;
-    window.$message?.success($t('settings.messages.steamPathSaved'));
+    steamPath.value = result
+    window.$message?.success($t('settings.messages.steamPathSaved'))
   }
-};
+}
 
 const autoDetectSteamPath = async () => {
-  isDetectingSteam.value = true;
+  isDetectingSteam.value = true
   try {
-    const result = await window.ipcRenderer.invoke('auto-detect-paths');
+    const result = await window.ipcRenderer.invoke('auto-detect-paths')
     if (result.steamPath) {
-      steamPath.value = result.steamPath;
-      window.$message?.success($t('settings.messages.autoDetectSteamSuccess'));
+      steamPath.value = result.steamPath
+      window.$message?.success($t('settings.messages.autoDetectSteamSuccess'))
     } else {
-      window.$message?.warning($t('settings.messages.autoDetectSteamMissing'));
+      window.$message?.warning($t('settings.messages.autoDetectSteamMissing'))
     }
   } catch (error) {
-    window.$message?.error($t('settings.messages.autoDetectFailed'));
+    window.$message?.error($t('settings.messages.autoDetectFailed'))
   } finally {
-    isDetectingSteam.value = false;
+    isDetectingSteam.value = false
   }
-};
+}
 
 const autoDetectCsgo2Path = async () => {
-  isDetectingCsgo.value = true;
+  isDetectingCsgo.value = true
   try {
-    const result = await window.ipcRenderer.invoke('auto-detect-paths');
+    const result = await window.ipcRenderer.invoke('auto-detect-paths')
     if (result.csgo2Path) {
-      csgo2Path.value = result.csgo2Path;
-      window.$message?.success($t('settings.messages.autoDetectCsgoSuccess'));
+      csgo2Path.value = result.csgo2Path
+      window.$message?.success($t('settings.messages.autoDetectCsgoSuccess'))
     } else {
-      window.$message?.warning($t('settings.messages.autoDetectCsgoMissing'));
+      window.$message?.warning($t('settings.messages.autoDetectCsgoMissing'))
     }
   } catch (error) {
-    window.$message?.error($t('settings.messages.autoDetectFailed'));
+    window.$message?.error($t('settings.messages.autoDetectFailed'))
   } finally {
-    isDetectingCsgo.value = false;
+    isDetectingCsgo.value = false
   }
-};
+}
 
 const selectPlatform = (platform: 'international' | 'perfect') => {
-  GamePlatform.value = platform;
-};
+  GamePlatform.value = platform
+}
 </script>
 
 <template>
-  <div class="game-setting-box">
-    <div class="game-setting-title">
-      <div class="flex font-size-24px">
-        <SvgIcon icon="solar:gamepad-broken" />
-      </div>
-      <div class="ml-10px font-size-16px font-semibold">
-        <NText>
-          {{ $t('settings.general') }}
-        </NText>
+  <section class="setting-section">
+    <div class="section-header">
+      <div class="section-title">
+        <SvgIcon icon="solar:gamepad-broken" class="section-icon" />
+        <NText>{{ $t('settings.general') }}</NText>
       </div>
     </div>
-    <div class="game-setting-item mt-10px">
-      <div class="font-size-14px font-semibold">
-        <NText>
-          {{ $t('settings.platform') }}
-        </NText>
-      </div>
-      <div class="flex-1 ml-10px">
-        <NButton class="mr-10px rounded-8px" :color="GamePlatform === 'international' ? '#18a058' : '#a5aaa3'" ghost
-          size="large" @click="selectPlatform('international')">
-          <template #icon>
-            <SvgIcon icon="mdi:steam" />
-          </template>
-          {{ $t('settings.international') }}
-        </NButton>
-        <NButton class="rounded-8px" :color="GamePlatform === 'perfect' ? '#18a058' : '#a5aaa3'" ghost size="large"
-          @click="selectPlatform('perfect')">
-          <template #icon>
-            <SvgIcon icon="mdi:earth" />
-          </template>
-          {{ $t('settings.perfect') }}
-        </NButton>
-      </div>
-    </div>
-    <div class="game-setting-item mt-10px">
-      <div class="font-size-14px font-semibold">
-        <NText>
-          {{ $t('settings.gamePath') }}
-        </NText>
-      </div>
-      <div class="flex-1 ml-10px">
-        <NInput v-model:value="csgo2Path" :placeholder="$t('settings.inputCsgoPath')" :disabled="true" />
-      </div>
-      <div class="ml-10px">
-        <NButton class="rounded-8px mr-10px" ghost @click="selectCsgo2Path">
-          {{ $t('settings.selectPath') }}
-        </NButton>
-        <NButton class="rounded-8px" ghost @click="autoDetectCsgo2Path" :loading="isDetectingCsgo">
-          {{ $t('settings.autoDetect') }}
-        </NButton>
-      </div>
-    </div>
-    <div class="game-setting-item mt-10px">
-      <div class="font-size-14px font-semibold">
-        <NText>
-          {{ $t('settings.steamPath') }}
-        </NText>
-      </div>
-      <div class="flex-1 ml-10px">
-        <NInput v-model:value="steamPath" :placeholder="$t('settings.inputSteamPath')" :disabled="true" />
-      </div>
-      <div class="ml-10px">
-        <NButton class="rounded-8px mr-10px" ghost @click="selectSteamPath">
-          {{ $t('settings.selectPath') }}
-        </NButton>
-        <NButton class="rounded-8px" ghost @click="autoDetectSteamPath" :loading="isDetectingSteam">
-          {{ $t('settings.autoDetect') }}
-        </NButton>
-      </div>
-    </div>
-    <div class="game-setting-item mt-10px">
-      <div class="font-size-14px font-semibold mr-5px w-120px">
-        <NText class="w-150px">
-          {{ $t('settings.customStartOptions') }}
-        </NText>
-      </div>
-      <div>
-        <NGrid :cols="3" :x-gap="12" :y-gap="12">
-          <NGridItem v-for="item in START_ITEMS" :key="item.value">
-            <NButton class="rounded-5px font-size-12px w-full" ghost
-              :type="gameStore.selectedStartItems.includes(item.value) ? 'primary' : 'tertiary'"
-              @click="gameStore.toggleStartItem(item.value)">
-              <template #icon>
-                <SvgIcon v-if="gameStore.selectedStartItems.includes(item.value)" icon="ic:sharp-clear" />
-              </template>
-              {{ item.label }}
-            </NButton>
-          </NGridItem>
-        </NGrid>
-        <div class="flex mt-10px">
-          <NInput v-model:value="customStartItem" class="rounded-5px mr-10px"
-            :placeholder="$t('settings.inputCustomStartOption')" @keyup.enter="addCustomStartItem" />
-          <NButton class="rounded-5px" type="info" @click="addCustomStartItem">{{ $t('settings.add') }}</NButton>
-        </div>
-        <div class="flex items-center mt-5px font-size-12px">
-          <SvgIcon icon="material-symbols:lightbulb-2-outline" class="color-#f0a020 mr-5px" />
-          {{ $t('settings.customStartOptionTip') }}
-        </div>
-      </div>
-    </div>
-    <div class="game-setting-item mt-10px">
-      <div class="font-size-14px font-semibold mr-5px w-120px">
-        <NText class="w-150px">
-          {{ $t('settings.currentSelectedItems') }}
-        </NText>
-      </div>
-      <NGrid :cols="3" :x-gap="12" :y-gap="12">
-        <NGridItem v-for="item in selectedStartItemsList" :key="item.value">
-          <NButton class="rounded-5px font-size-12px w-full" ghost type="warning">
-            {{ item.label }}
+
+    <div class="section-content">
+      <!-- 游戏平台 -->
+      <div class="setting-row">
+        <div class="row-label">{{ $t('settings.platform') }}</div>
+        <div class="row-control">
+          <NButton class="platform-btn" :type="GamePlatform === 'international' ? 'primary' : 'default'" ghost
+            size="large" @click="selectPlatform('international')">
+            <template #icon>
+              <SvgIcon icon="mdi:steam" />
+            </template>
+            {{ $t('settings.international') }}
           </NButton>
-        </NGridItem>
-      </NGrid>
+          <NButton class="platform-btn" :type="GamePlatform === 'perfect' ? 'primary' : 'default'" ghost size="large"
+            @click="selectPlatform('perfect')">
+            <template #icon>
+              <SvgIcon icon="mdi:earth" />
+            </template>
+            {{ $t('settings.perfect') }}
+          </NButton>
+        </div>
+      </div>
+
+      <!-- CS2 路径 -->
+      <div class="setting-row">
+        <div class="row-label">{{ $t('settings.gamePath') }}</div>
+        <div class="row-control path-control">
+          <NInput v-model:value="csgo2Path" :placeholder="$t('settings.inputCsgoPath')" disabled />
+          <NButton ghost @click="selectCsgo2Path">{{ $t('settings.selectPath') }}</NButton>
+          <NButton ghost :loading="isDetectingCsgo" @click="autoDetectCsgo2Path">{{ $t('settings.autoDetect') }}</NButton>
+        </div>
+      </div>
+
+      <!-- Steam 路径 -->
+      <div class="setting-row">
+        <div class="row-label">{{ $t('settings.steamPath') }}</div>
+        <div class="row-control path-control">
+          <NInput v-model:value="steamPath" :placeholder="$t('settings.inputSteamPath')" disabled />
+          <NButton ghost @click="selectSteamPath">{{ $t('settings.selectPath') }}</NButton>
+          <NButton ghost :loading="isDetectingSteam" @click="autoDetectSteamPath">{{ $t('settings.autoDetect') }}</NButton>
+        </div>
+      </div>
+
+      <!-- 启动项选择 -->
+      <div class="setting-row align-start">
+        <div class="row-label fixed-label">{{ $t('settings.customStartOptions') }}</div>
+        <div class="row-control flex-col">
+          <NGrid :cols="3" :x-gap="12" :y-gap="12">
+            <NGridItem v-for="item in START_ITEMS" :key="item.value">
+              <NButton class="w-full" ghost
+                :type="gameStore.selectedStartItems.includes(item.value) ? 'primary' : 'default'"
+                @click="gameStore.toggleStartItem(item.value)">
+                <template #icon>
+                  <SvgIcon v-if="gameStore.selectedStartItems.includes(item.value)" icon="ic:sharp-clear" />
+                </template>
+                {{ item.label }}
+              </NButton>
+            </NGridItem>
+          </NGrid>
+
+          <div class="custom-input-row">
+            <NInput v-model:value="customStartItem" :placeholder="$t('settings.inputCustomStartOption')"
+              @keyup.enter="addCustomStartItem" />
+            <NButton type="primary" @click="addCustomStartItem">{{ $t('settings.add') }}</NButton>
+          </div>
+
+          <div class="tip-row">
+            <SvgIcon icon="material-symbols:lightbulb-2-outline" class="tip-icon" />
+            <span>{{ $t('settings.customStartOptionTip') }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 已选启动项 -->
+      <div class="setting-row align-start">
+        <div class="row-label fixed-label">{{ $t('settings.currentSelectedItems') }}</div>
+        <div class="row-control">
+          <NGrid :cols="3" :x-gap="12" :y-gap="12">
+            <NGridItem v-for="item in selectedStartItemsList" :key="item.value">
+              <NButton class="w-full" ghost type="warning">{{ item.label }}</NButton>
+            </NGridItem>
+          </NGrid>
+        </div>
+      </div>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped lang="scss">
-.game-setting-box {
-  width: 100%;
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
-  border: 2px solid rgba(139, 92, 246, 0.3);
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(139, 92, 246, 0.1);
+.setting-section {
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: var(--n-color);
+  border: 1px solid var(--n-border-color);
+}
 
-  &:hover {
-    border-color: rgba(139, 92, 246, 0.6);
-    box-shadow: 0 6px 25px rgba(139, 92, 246, 0.2);
-  }
+.section-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
 
-  .game-setting-title {
+  .section-title {
     display: flex;
     align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--n-text-color);
+
+    .section-icon {
+      font-size: 20px;
+      color: var(--primary-color, #18a058);
+    }
+  }
+}
+
+.section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background-color: var(--n-color);
+  border: 1px solid var(--n-border-color);
+
+  &.align-start {
+    align-items: flex-start;
   }
 
-  .game-setting-item {
+  .row-label {
+    flex: 0 0 auto;
+    width: 100px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--n-text-color);
+  }
+
+  .row-label.fixed-label {
+    padding-top: 6px;
+  }
+
+  .row-control {
+    flex: 1;
     display: flex;
     align-items: center;
-    padding: 10px 20px 10px 0px;
-    border-bottom: 1px solid rgba(139, 92, 246, 0.6);
+    gap: 10px;
+
+    &.path-control {
+      .n-input {
+        flex: 1;
+      }
+    }
+
+    &.flex-col {
+      flex-direction: column;
+      align-items: stretch;
+    }
+  }
+}
+
+.platform-btn {
+  min-width: 120px;
+}
+
+.custom-input-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+
+  .n-input {
+    flex: 1;
+  }
+}
+
+.tip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--n-text-color-3);
+
+  .tip-icon {
+    font-size: 14px;
+    color: #f0a020;
   }
 }
 </style>

@@ -2,17 +2,13 @@ import { unref } from 'vue'
 import type { Ref } from 'vue'
 import { useAppStore } from '../app'
 
-type MaybeRef<T> = T | Ref<T>
-
 interface GsiListenerDeps {
-  isGsiRunning: MaybeRef<boolean>
-  gameServerInfo: MaybeRef<Api.Game.ServerInfoData>
-  gamePlayerInfo: MaybeRef<Api.Game.CsgoPlayer>
-  joinServerInfo: MaybeRef<Api.Game.SeverVo | undefined>
-  isAutomatic: MaybeRef<boolean>
-  isJoinServerTrayVisible: MaybeRef<boolean>
-  currentAutomaticPlayerDynamicList: MaybeRef<string[]>
-  currentGisPlayerList: MaybeRef<Api.Game.CsgoPlayer[]>
+  isGsiRunning: Ref<boolean>
+  gameServerInfo: Ref<Api.Game.ServerInfoData>
+  gamePlayerInfo: Ref<Api.Game.CsgoPlayer>
+  joinServerInfo: Ref<Api.Game.SeverVo | undefined>
+  isAutomatic: Ref<boolean>
+  isJoinServerTrayVisible: Ref<boolean>
   safeLog: (message: string, ...args: unknown[]) => void
   stopAutomaticJoinServer: () => Promise<void>
   sendPlayerData: (player: Api.Game.CsgoPlayer) => void
@@ -31,7 +27,6 @@ export function useGsiListener(deps: GsiListenerDeps) {
     joinServerInfo,
     isAutomatic,
     isJoinServerTrayVisible,
-    currentAutomaticPlayerDynamicList,
     safeLog,
     stopAutomaticJoinServer,
     sendPlayerData,
@@ -44,7 +39,7 @@ export function useGsiListener(deps: GsiListenerDeps) {
   /** 监听GSI数据 */
   function listenToGsiData(): void {
     safeLog('开始监听 GSI 数据')
-    ;(isGsiRunning as Ref<boolean>).value = true
+    isGsiRunning.value = true
 
     gsiDataHandler = (_event, res: any) => {
       const { eventName, data } = res
@@ -54,24 +49,24 @@ export function useGsiListener(deps: GsiListenerDeps) {
           safeLog('🗺️ [Map:地图名称变更] - 当前游戏地图已切换', {
             '原地图': data.previous || '无',
             '当前地图': data.current,
-            '目标服务器地图': unref(joinServerInfo)?.mapName || '未设置'
+            '目标服务器地图': unref(joinServerInfo)?.mapName || '未设置',
           })
-          const targetMap = unref(joinServerInfo)?.mapName
-          const currentMap = data.current
-          if (targetMap && currentMap && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) && unref(isAutomatic)) {
-            safeLog('✅ 用户已成功连接到目标服务器')
-            ;(isJoinServerTrayVisible as Ref<boolean>).value = false
-            const dynamicList = unref(currentAutomaticPlayerDynamicList)
-            dynamicList.splice(0, dynamicList.length)
-            stopAutomaticJoinServer()
+          {
+            const targetMap = unref(joinServerInfo)?.mapName
+            const currentMap = data.current
+            if (targetMap && currentMap && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) && unref(isAutomatic)) {
+              safeLog('✅ 用户已成功连接到目标服务器')
+              isJoinServerTrayVisible.value = false
+              stopAutomaticJoinServer()
 
-            const appStore = useAppStore()
-            const currentTheme = appStore.currentTheme
-            const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜']
-            const audio = new Audio(audioSrc)
-            audio.volume = appStore.volume
-            audio.play()
-            window.$message?.success('连接成功')
+              const appStore = useAppStore()
+              const currentTheme = appStore.currentTheme
+              const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜']
+              const audio = new Audio(audioSrc)
+              audio.volume = appStore.volume
+              audio.play()
+              window.$message?.success('连接成功')
+            }
           }
           break
 

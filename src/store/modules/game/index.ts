@@ -46,14 +46,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   /** GSI 服务端返回的服务器信息列表 */
   const currentGisServerList = reactive<Api.Game.ServerInfoData[]>([])
 
-  /** 当前 GSI 玩家列表 */
-  const currentGisPlayerList = reactive<Api.Game.CsgoPlayer[]>([])
-
-  /** 自动挤服玩家列表 */
-  const currentAutomaticPlayerList = reactive<Api.Game.AutomationPlayer[]>([])
-
-  /** 自动挤服动态消息列表 */
-  const currentAutomaticPlayerDynamicList = reactive<string[]>([])
+  /** WebSocket 推送的服务器游戏实时数据（key：服务器ID字符串） */
+  const serverGameDataMap = reactive<Api.Game.ServerGameDataVo>({
+    serverInfoMap: {},
+    userGameDataMap: {},
+    playerActionMap: {},
+  })
 
   // ==================== 用户设置 ====================
 
@@ -135,7 +133,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /** 当前游戏服务器信息 */
   const gameServerInfo = ref<Api.Game.ServerInfoData>({
-    round: '', CTScore: '', TScore: '', mapStage: '', mapPhase: ''
+    id: 0, round: '', CTScore: '', TScore: '', mapStage: '', mapPhase: ''
   })
 
   /** 当前玩家游戏内信息 */
@@ -163,11 +161,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     }
   }
 
-  /** 发送自动挤服动态消息 */
-  function sendAutomaticDynamic(text: string): void {
-    currentAutomaticPlayerDynamicList.push(text)
-  }
-
   // ==================== 循环依赖解决 ====================
   // 通过 getter 函数在调用时才解析真实实现，避免循环依赖
   // 所有 composable 通过 fnGetters 延迟获取彼此的函数
@@ -177,10 +170,10 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     connectServerUsingSteamUrl: (): Promise<void> => Promise.resolve(),
     stopAutomaticJoinServer: (): Promise<void> => Promise.resolve(),
     startAutomaticJoinServer: (): Promise<void> => Promise.resolve(),
-    listenToGsiData: (): void => {},
-    removeGsiDataListener: (): void => {},
-    resetRetryFlag: (): void => {},
-    connectToServerById: (serverId: number): void => {},
+    listenToGsiData: (): void => { },
+    removeGsiDataListener: (): void => { },
+    resetRetryFlag: (): void => { },
+    connectToServerById: (serverId: number): void => { },
   }
 
   // ==================== 组合各 Composable ====================
@@ -199,6 +192,25 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   })
 
   // 2. 自动挤服 - 通过 getter 延迟引用 game status 的函数
+  /**
+   * 通过 WebSocket 上报玩家操作动态（对应 Java CODE_PLAYER_ACTION → type=112）
+   * @param actionContent 动态内容（如：开始挤服 / 暂停挤服 / 加入服务器）
+   * @param serverIdOverwrite 可选：强制指定服务器ID（不传则使用 joinServerInfo.serverId）
+   */
+  function reportPlayerAction(actionContent: string, serverIdOverwrite?: number | string) {
+    const serverId = serverIdOverwrite != null
+      ? String(serverIdOverwrite)
+      : (joinServerInfo.value?.serverId != null ? String(joinServerInfo.value.serverId) : '')
+    if (!serverId) {
+      return;
+    }
+    if (!actionContent || !actionContent.trim()) {
+      return;
+    }
+    const payload = JSON.stringify({ serverId: Number(serverId), actionContent: String(actionContent).trim() })
+    ServerWebsocket.send('112', payload)
+  }
+
   const autoJoin = useAutoJoin({
     joinServerInfo,
     automaticJoinConfig,
@@ -209,6 +221,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     ensureGameStartReady: () => fnGetters.ensureGameStartReady(),
     connectServerUsingSteamUrl: () => fnGetters.connectServerUsingSteamUrl(),
     resetRetryFlag: () => fnGetters.resetRetryFlag(),
+    reportPlayerAction: (actionContent) => reportPlayerAction(actionContent),
   })
 
   // 3. 日志读取 - 通过 getter 延迟引用 autoJoin 的函数
@@ -271,8 +284,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     joinServerInfo,
     isAutomatic,
     isJoinServerTrayVisible,
-    currentAutomaticPlayerDynamicList,
-    currentGisPlayerList,
     safeLog,
     stopAutomaticJoinServer: () => fnGetters.stopAutomaticJoinServer(),
     sendPlayerData,
@@ -290,7 +301,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     gamePlatform: GamePlatform,
     selectedStartItems,
     joinServerInfo,
-    currentGisPlayerList,
     safeLog,
     listenToGsiData: () => fnGetters.listenToGsiData(),
     removeGsiDataListener: () => fnGetters.removeGsiDataListener(),
@@ -361,12 +371,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     currentServerWsList,
     /** GSI 服务端返回的服务器信息列表 */
     currentGisServerList,
-    /** 当前 GSI 玩家列表 */
-    currentGisPlayerList,
-    /** 自动挤服玩家列表 */
-    currentAutomaticPlayerList,
-    /** 自动挤服动态消息列表 */
-    currentAutomaticPlayerDynamicList,
+    /** WebSocket 推送的服务器游戏实时数据（服务器信息+玩家数据映射） */
+    serverGameDataMap,
 
     // ---- 用户设置 ----
     /** 按键绑定配置项 */
@@ -501,12 +507,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     stopAutomaticJoinServer: autoJoin.stopAutomaticJoinServer,
     /** 使用 Steam URL 连接服务器 */
     connectServerUsingSteamUrl: gameStatus.connectServerUsingSteamUrl,
-    /** 发送自动挤服动态消息 */
-    sendAutomaticDynamic,
 
     // ---- 方法 - 玩家动作 ----
     /** 根据服务器ID连接服务器（通过WebSocket） */
     connectToServerById: playerAction.connectToServerById,
+    /** 上报玩家操作动态（type=102 → CODE_PLAYER_ACTION） */
+    reportPlayerAction,
 
     // ---- 方法 - WebSocket ----
     /** 初始化服务器 WebSocket 连接 */

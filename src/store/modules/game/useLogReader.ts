@@ -2,14 +2,12 @@ import { unref } from 'vue'
 import type { Ref } from 'vue'
 import { LOG_PATTERNS, UserConnectionStatus } from '@/constants/cs2'
 
-type MaybeRef<T> = T | Ref<T>
-
 interface LogReaderDeps {
-  csgo2Path: MaybeRef<string>
-  isLogReading: MaybeRef<boolean>
-  userConnectionStatus: MaybeRef<UserConnectionStatus>
-  isAutomatic: MaybeRef<boolean>
-  automaticJoinConfig: MaybeRef<Api.Game.AutomaticJoinConfig>
+  csgo2Path: Ref<string>
+  isLogReading: Ref<boolean>
+  userConnectionStatus: Ref<UserConnectionStatus>
+  isAutomatic: Ref<boolean>
+  automaticJoinConfig: Ref<Api.Game.AutomaticJoinConfig>
   safeLog: (message: string, ...args: unknown[]) => void
   startAutomaticJoinServer: () => Promise<void>
 }
@@ -62,7 +60,7 @@ export function useLogReader(deps: LogReaderDeps) {
       return {
         status: 'map_loading',
         mapName: mapMatch[1],
-        message: `正在加载地图: ${mapMatch[1]}`
+        message: `正在加载地图: ${mapMatch[1]}`,
       }
     }
 
@@ -97,7 +95,7 @@ export function useLogReader(deps: LogReaderDeps) {
       const logContent = parseLogContent(logData)
 
       if (logContent) {
-        ;(userConnectionStatus as Ref<UserConnectionStatus>).value = logContent.status
+        userConnectionStatus.value = logContent.status
 
         switch (logContent.status) {
           case 'in_game':
@@ -146,7 +144,7 @@ export function useLogReader(deps: LogReaderDeps) {
     try {
       const result = await window.ipcRenderer.invoke('start-log-reader', unref(csgo2Path), delayMs)
       if (result.success) {
-        ;(isLogReading as Ref<boolean>).value = true
+        isLogReading.value = true
         listenToConsoleLog()
         safeLog('开始读取日志')
       }
@@ -161,8 +159,8 @@ export function useLogReader(deps: LogReaderDeps) {
 
     try {
       await window.ipcRenderer.invoke('stop-log-reader')
-      ;(isLogReading as Ref<boolean>).value = false
-      ;(userConnectionStatus as Ref<UserConnectionStatus>).value = 'idle'
+      isLogReading.value = false
+      userConnectionStatus.value = 'idle'
       removeConsoleLogListener()
     } catch (error) {
       console.error('停止读取日志失败:', error)

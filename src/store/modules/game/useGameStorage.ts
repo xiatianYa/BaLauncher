@@ -4,18 +4,16 @@ import { localStg } from '@/utils/storage'
 import { GAME_STORAGE_KEYS } from '@/constants/cache'
 import type { GamePlatform } from '@/constants/app'
 
-type MaybeRef<T> = T | Ref<T>
-
 interface StorageDeps {
-  gamePlatform: MaybeRef<GamePlatform>
-  csgo2Path: MaybeRef<string>
-  steamPath: MaybeRef<string>
-  automaticJoinConfig: MaybeRef<Api.Game.AutomaticJoinConfig>
-  applyKeyBindItems: MaybeRef<Api.Game.ApplyKeyBindItem[]>
-  selectedStartItems: MaybeRef<string[]>
-  isFullscreen: MaybeRef<boolean>
-  serverViewModule: MaybeRef<UnionKey.ServerLayoutModule>
-  selectedCommunityId: MaybeRef<number | null>
+  gamePlatform: Ref<GamePlatform>
+  csgo2Path: Ref<string>
+  steamPath: Ref<string>
+  automaticJoinConfig: Ref<Api.Game.AutomaticJoinConfig>
+  applyKeyBindItems: Ref<Api.Game.ApplyKeyBindItem[]>
+  selectedStartItems: Ref<string[]>
+  isFullscreen: Ref<boolean>
+  serverViewModule: Ref<UnionKey.ServerLayoutModule>
+  selectedCommunityId: Ref<number | null>
 }
 
 /**
@@ -37,30 +35,30 @@ export function useGameStorage(deps: StorageDeps) {
 
   /** 从本地存储加载设置 */
   function loadSettingsFromStorage(): void {
-    const savedPlatform = localStg.get(GAME_STORAGE_KEYS.GAME_PLATFORM)
-    const savedCsgo2Path = localStg.get(GAME_STORAGE_KEYS.CSGO2_PATH)
-    const savedSteamPath = localStg.get(GAME_STORAGE_KEYS.STEAM_PATH)
-    const savedAutomaticJoinConfig = localStg.get(GAME_STORAGE_KEYS.AUTOMATIC_JOIN_CONFIG)
-    const savedApplyKeyBindItems = localStg.get(GAME_STORAGE_KEYS.APPLY_KEY_BIND_ITEMS)
-    const savedSelectedStartItems = localStg.get(GAME_STORAGE_KEYS.SELECTED_START_ITEMS)
-    const savedIsFullscreen = localStg.get(GAME_STORAGE_KEYS.IS_FULLSCREEN)
-    const savedServerViewModule = localStg.get(GAME_STORAGE_KEYS.SERVER_VIEW_MODULE)
-    const savedSelectedCommunityId = localStg.get(GAME_STORAGE_KEYS.SELECTED_COMMUNITY_ID)
+    const savedPlatform = localStg.get(GAME_STORAGE_KEYS.GAME_PLATFORM) as GamePlatform | undefined
+    const savedCsgo2Path = localStg.get(GAME_STORAGE_KEYS.CSGO2_PATH) as string | undefined
+    const savedSteamPath = localStg.get(GAME_STORAGE_KEYS.STEAM_PATH) as string | undefined
+    const savedAutomaticJoinConfig = localStg.get(GAME_STORAGE_KEYS.AUTOMATIC_JOIN_CONFIG) as Partial<Api.Game.AutomaticJoinConfig> | undefined
+    const savedApplyKeyBindItems = localStg.get(GAME_STORAGE_KEYS.APPLY_KEY_BIND_ITEMS) as Api.Game.ApplyKeyBindItem[] | undefined
+    const savedSelectedStartItems = localStg.get(GAME_STORAGE_KEYS.SELECTED_START_ITEMS) as string[] | undefined
+    const savedIsFullscreen = localStg.get(GAME_STORAGE_KEYS.IS_FULLSCREEN) as boolean | null
+    const savedServerViewModule = localStg.get(GAME_STORAGE_KEYS.SERVER_VIEW_MODULE) as UnionKey.ServerLayoutModule | undefined
+    const savedSelectedCommunityId = localStg.get(GAME_STORAGE_KEYS.SELECTED_COMMUNITY_ID) as number | null
 
-    if (savedPlatform) (gamePlatform as Ref<GamePlatform>).value = savedPlatform as GamePlatform
-    if (savedCsgo2Path) (csgo2Path as Ref<string>).value = savedCsgo2Path
-    if (savedSteamPath) (steamPath as Ref<string>).value = savedSteamPath
+    if (savedPlatform) gamePlatform.value = savedPlatform
+    if (savedCsgo2Path) csgo2Path.value = savedCsgo2Path
+    if (savedSteamPath) steamPath.value = savedSteamPath
     if (savedAutomaticJoinConfig) {
-      ;(automaticJoinConfig as Ref<Api.Game.AutomaticJoinConfig>).value = {
+      automaticJoinConfig.value = {
         ...unref(automaticJoinConfig),
-        ...savedAutomaticJoinConfig
+        ...savedAutomaticJoinConfig,
       }
     }
-    if (savedApplyKeyBindItems) (applyKeyBindItems as Ref<Api.Game.ApplyKeyBindItem[]>).value = savedApplyKeyBindItems
-    if (savedSelectedStartItems) (selectedStartItems as Ref<string[]>).value = savedSelectedStartItems
-    if (savedIsFullscreen !== null) (isFullscreen as Ref<boolean>).value = savedIsFullscreen
-    if (savedServerViewModule) (serverViewModule as Ref<UnionKey.ServerLayoutModule>).value = savedServerViewModule
-    if (savedSelectedCommunityId !== null) (selectedCommunityId as Ref<number | null>).value = savedSelectedCommunityId
+    if (savedApplyKeyBindItems) applyKeyBindItems.value = savedApplyKeyBindItems
+    if (savedSelectedStartItems) selectedStartItems.value = savedSelectedStartItems
+    if (savedIsFullscreen !== null) isFullscreen.value = savedIsFullscreen
+    if (savedServerViewModule) serverViewModule.value = savedServerViewModule
+    if (savedSelectedCommunityId !== null) selectedCommunityId.value = savedSelectedCommunityId
   }
 
   /** 应用社区排序 */
@@ -103,13 +101,13 @@ export function useGameStorage(deps: StorageDeps) {
 
   /** 设置已应用的按键绑定项 */
   function setApplyKeyBindItems(items: Api.Game.ApplyKeyBindItem[]): void {
-    ;(applyKeyBindItems as Ref<Api.Game.ApplyKeyBindItem[]>).value = items
+    applyKeyBindItems.value = items
     localStg.set(GAME_STORAGE_KEYS.APPLY_KEY_BIND_ITEMS, items)
   }
 
   /** 设置已勾选的启动项 */
   function setSelectedStartItems(items: string[]): void {
-    ;(selectedStartItems as Ref<string[]>).value = items
+    selectedStartItems.value = items
     localStg.set(GAME_STORAGE_KEYS.SELECTED_START_ITEMS, items)
   }
 
@@ -127,38 +125,38 @@ export function useGameStorage(deps: StorageDeps) {
 
   /** 设置游戏平台 */
   function setGamePlatform(platform: GamePlatform): void {
-    ;(gamePlatform as Ref<GamePlatform>).value = platform
+    gamePlatform.value = platform
     saveSettingsToStorage()
   }
 
   /** 设置CS2路径 */
   function setCsgo2Path(path: string): void {
-    ;(csgo2Path as Ref<string>).value = path
+    csgo2Path.value = path
     saveSettingsToStorage()
   }
 
   /** 设置Steam路径 */
   function setSteamPath(path: string): void {
-    ;(steamPath as Ref<string>).value = path
+    steamPath.value = path
     saveSettingsToStorage()
   }
 
   /** 切换全屏状态 */
   function toggleFullscreen(): void {
-    ;(isFullscreen as Ref<boolean>).value = !unref(isFullscreen)
+    isFullscreen.value = !unref(isFullscreen)
     localStg.set(GAME_STORAGE_KEYS.IS_FULLSCREEN, unref(isFullscreen))
   }
 
   /** 切换服务器视图模式 */
   function toggleServerViewModule(): void {
     const currentModule = unref(serverViewModule)
-    ;(serverViewModule as Ref<UnionKey.ServerLayoutModule>).value = currentModule === 'cardModel' ? 'tableModal' : 'cardModel'
+    serverViewModule.value = currentModule === 'cardModel' ? 'tableModal' : 'cardModel'
     localStg.set(GAME_STORAGE_KEYS.SERVER_VIEW_MODULE, unref(serverViewModule))
   }
 
   /** 设置选中的社区ID */
   function setSelectedCommunityId(id: number): void {
-    ;(selectedCommunityId as Ref<number | null>).value = id
+    selectedCommunityId.value = id
     localStg.set(GAME_STORAGE_KEYS.SELECTED_COMMUNITY_ID, id)
   }
 

@@ -130,18 +130,20 @@ declare namespace Api {
             /** 服务器在线状态 */
             isOnline: boolean;
             /** 服务器回合 */
-            round: string;
+            round: string | null;
             /** CT胜利回合 */
-            CTScore: string;
+            CTScore: string | null;
             /** T胜利回合 */
-            TScore: string;
+            TScore: string | null;
             /** 游戏对局阶段 */
-            mapStage: string;
+            mapStage: string | null;
             /** 游戏回合阶段 */
-            mapPhase: string;
+            mapPhase: string | null;
         }
 
         type ServerInfoData = {
+            /** 服务器ID */
+            id: number;
             /** 回合 */
             round: string;
             /** CT分数 */
@@ -152,6 +154,94 @@ declare namespace Api {
             mapStage: string;
             /** 游戏阶段 */
             mapPhase: string;
+        }
+
+        /** CSGO 武器信息 */
+        type CsgoWeapon = {
+            /** 武器类型 */
+            type?: string | null;
+            /** 显示名称 */
+            displayName?: string | null;
+            /** 内部名称 */
+            name?: string | null;
+            /** 状态 */
+            state?: string | null;
+            /** 当前弹夹弹药 */
+            ammoClip?: number | null;
+            /** 弹夹容量 */
+            ammoClipMax?: number | null;
+            /** 后备弹药 */
+            ammoReserve?: number | null;
+        }
+
+        /** 玩家游戏内实时数据 */
+        type UserGameData = {
+            /** 玩家登录信息 */
+            loginUser: Api.Auth.LoginUser;
+            /** 阵营：CT / T / SPECTATOR */
+            team?: string;
+            /** 生命值 */
+            health?: number;
+            /** 护甲值 */
+            armor?: number;
+            /** 金钱 */
+            money?: number;
+            /** 装备价值 */
+            equipValue?: number;
+            /** 当前武器 */
+            weapon?: CsgoWeapon;
+            /** 弹夹内弹药 */
+            clipAmmo?: number;
+            /** 备用弹药 */
+            reserveAmmo?: number;
+            /** 是否有头盔 */
+            helmet?: boolean;
+            /** 击杀数 */
+            kills?: number;
+            /** 积分 */
+            score?: number;
+        }
+
+        /**
+         * 玩家操作动态记录（对应 Java PlayerActionLog）
+         * 记录挤服 / 暂停挤服 / 加入服务器等动作
+         */
+        type PlayerActionLog = {
+            /** 执行操作的玩家 */
+            loginUser: Api.Auth.LoginUser;
+            /** 操作时间（Java LocalDateTime → 前端字符串，如 yyyy-MM-dd HH:mm:ss） */
+            actionTime: string;
+            /** 操作动态内容（如：开始挤服、暂停挤服、加入服务器） */
+            actionContent: string;
+        }
+
+        /**
+         * 服务器游戏实时数据（Code 204 / 205 推送）
+         * key：服务器ID（字符串，保证 JSON key 合法）
+         */
+        type ServerGameDataVo = {
+            /** 服务器信息映射表（key：服务器ID字符串） */
+            serverInfoMap: Record<string, ServerInfoData>;
+            /** 玩家信息映射表（key：服务器ID字符串，value：该服务器单个玩家或列表；本地合并后统一为列表） */
+            userGameDataMap: Record<string, Api.Game.UserGameData | Api.Game.UserGameData[]>;
+            /** 玩家操作动态列表映射表（key：服务器ID字符串，value：单条或多条操作日志；本地合并后统一为列表） */
+            playerActionMap: Record<string, Api.Game.PlayerActionLog | Api.Game.PlayerActionLog[]>;
+        }
+
+        /**
+         * WebSocket 通用消息包装（对应 Java MessageVo）
+         */
+        type WsMessage<T = unknown> = {
+            /** 发送者（服务端推送时可能为空） */
+            sendUser?: Api.Auth.LoginUser | null;
+            /** 接收者ID（广播时为空） */
+            receiveId?: number | null;
+            /** 消息码，如 "200" "204" "205" */
+            code: string;
+            /** 业务数据 */
+            data: T;
+            /** 提示语 */
+            msg: string | null;
         }
 
         type CsgoPlayer = {
