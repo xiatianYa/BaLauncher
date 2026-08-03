@@ -20,8 +20,8 @@ const isDarkMode = computed(() => themeStore.darkMode);
 
 const { dictType, dictLabel } = useDict();
 
-const { hasRole } = useAuth();
-const canAddUpdateLog = computed(() => hasRole(['R_SUPER', 'R_ADMIN']));
+const { isAdmin } = useAuth();
+const canAddUpdateLog = isAdmin;
 
 const addModalVisible = ref(false);
 const editModalVisible = ref(false);

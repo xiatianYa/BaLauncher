@@ -57,8 +57,6 @@ declare namespace Api {
       avatar: string;
       roles: string[];
       buttons: string[];
-      qqId: string;
-      qqgroup: string;
     }
 
     interface LoginUser {

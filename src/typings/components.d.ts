@@ -9,6 +9,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     AppProvider: typeof import('./../components/common/app-provider.vue')['default']
+    BotBindModal: typeof import('./../components/tool/bot-bind-modal.vue')['default']
     ButtonIcon: typeof import('./../components/custom/button-icon.vue')['default']
     CloseConfirm: typeof import('./../components/common/close-confirm.vue')['default']
     CollapseFooter: typeof import('./../layout/windows-layout/modules/windows-footer/modules/collapse-footer.vue')['default']

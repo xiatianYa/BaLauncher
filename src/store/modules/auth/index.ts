@@ -28,9 +28,7 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
     userName: '',
     avatar: '',
     roles: [],
-    buttons: [],
-    qqId: "",
-    qqgroup: ""
+    buttons: []
   };
 
   const userInfo: Api.Auth.UserInfo = reactive({ ...initialUserInfo });

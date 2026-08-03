@@ -37,5 +37,21 @@ declare namespace Api {
       /** QQ群号 */
       groupId?: string;
     } & Api.Common.CommonSearchParams>;
+
+    /** 机器人群新增/修改参数 */
+    type BotGroupEdit = {
+      /** 主键ID（新增时为空） */
+      id?: string;
+      /** QQ群号 */
+      groupId: string;
+      /** 生效开始时间 */
+      startTime: string;
+      /** 到期时间 */
+      expireTime: string;
+      /** 是否开启换图通知(0:关闭,1:开启) */
+      isNotifyImage: number;
+      /** 偏好社区，多个使用逗号分隔 */
+      communitys: string;
+    };
   }
 }

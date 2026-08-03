@@ -1,4 +1,8 @@
+import { computed } from 'vue';
 import { useAuthStore } from '@/store/modules/auth';
+
+// 管理员角色：超管、管理员
+const ADMIN_ROLES = ['R_SUPER', 'R_ADMIN'];
 
 export function useAuth() {
   const authStore = useAuthStore();
@@ -27,8 +31,12 @@ export function useAuth() {
     return roles.some(role => authStore.userInfo.roles.includes(role));
   }
 
+  // 是否为管理员
+  const isAdmin = computed(() => hasRole(ADMIN_ROLES));
+
   return {
     hasAuth,
-    hasRole
+    hasRole,
+    isAdmin
   };
 }

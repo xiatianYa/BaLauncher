@@ -1,10 +1,4 @@
-<!--
- * @page ServerMapRecord
- * @description 地图游玩记录页面 —— 三栏布局：社区列表 → 服务器列表 → 时间线面板
- * @author BaLauncher
- * @architecture 容器组件模式：本页面负责状态管理与数据流编排，子组件仅负责 UI 渲染与事件上报
- * @dataflow  社区选择 → 过滤服务器列表 → 选择服务器 → 分页加载时间线 → NInfiniteScroll 触底加载更多
- -->
+<!-- 地图游玩记录：社区 → 服务器 → 时间线 三栏布局 -->
 <script setup lang="ts">
 import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
@@ -17,64 +11,44 @@ import localeData from 'dayjs/plugin/localeData';
 import weekday from 'dayjs/plugin/weekday';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 
-// 初始化 dayjs 中文 locale 与插件
 dayjs.extend(localeData);
 dayjs.extend(weekday);
 dayjs.locale('zh-cn');
 
 defineOptions({ name: 'ServerMapRecordPage' });
 
-const emit = defineEmits<{
-    /** 返回上一级页面 */
-    (e: 'back'): void;
-}>();
+const emit = defineEmits<{ back: [] }>();
 
 const themeStore = useThemeStore();
 const gameStore = useGameStore();
 const isDarkMode = computed(() => themeStore.darkMode);
 
-// ==================== 选择状态 ====================
+/* ===== 选择状态 ===== */
 
-/** 当前选中的社区 ID */
 const selectedCommunityId = ref<number | null>(null);
-/** 当前选中的服务器索引（基于 communityServers 数组下标） */
 const selectedServerIndex = ref<number | null>(null);
-/** 当前选中的服务器 ID，用于接口请求 */
 const selectedServerId = ref<number | null>(null);
 
-// ==================== 时间线分页状态 ====================
+/* ===== 时间线分页状态 ===== */
 
-/** 时间线数据列表 */
+const TIMELINE_PAGE_SIZE = 20;
 const timelineList = ref<Api.Game.GameServerMapTimelineVo[]>([]);
 const searchMapId = ref<number | null>(null);
-/** 是否正在请求接口 */
 const timelineLoading = ref(false);
-/** 是否已加载完全部数据 */
 const timelineFinished = ref(false);
-/** 当前分页页码 */
 const timelinePage = ref(1);
-/** 每页数据条数 */
-const TIMELINE_PAGE_SIZE = 20;
-/** 服务端返回的总条数，用于判断是否加载完毕 */
 const timelineTotal = ref(0);
 
-// ==================== 计算属性 ====================
+/* ===== 计算属性 ===== */
 
-/**
- * 根据当前选中的社区 ID 过滤服务器列表
- * 社区切换时自动联动刷新
- */
+/** 根据选中的社区 ID 过滤服务器列表 */
 const communityServers = computed(() => {
     if (!selectedCommunityId.value) return [];
     return gameStore.serverDataList.filter(s => s.communityId === selectedCommunityId.value);
 });
 
-// ==================== 交互逻辑 ====================
+/* ===== 交互逻辑 ===== */
 
-/**
- * 选择社区
- * 切换社区时重置服务器选择与时间线状态
- */
 const selectCommunity = (id: number) => {
     if (selectedCommunityId.value === id) return;
     selectedCommunityId.value = id;
@@ -83,10 +57,6 @@ const selectCommunity = (id: number) => {
     resetTimeline();
 };
 
-/**
- * 选择服务器
- * 切换服务器时重置时间线状态并立即加载首页数据
- */
 const selectServerByIndex = async (index: number) => {
     if (selectedServerIndex.value === index) return;
     const server = communityServers.value[index];
@@ -97,32 +67,21 @@ const selectServerByIndex = async (index: number) => {
     await loadTimeline();
 };
 
-/**
- * 搜索地图
- */
 const handleSearchMap = async (mapId: number | null) => {
     searchMapId.value = mapId;
     resetTimeline();
     await loadTimeline();
 };
 
-// ==================== 数据加载 ====================
+/* ===== 数据加载 ===== */
 
-/**
- * 重置时间线分页状态
- * 在社区/服务器切换时调用，确保数据从第一页重新加载
- */
 const resetTimeline = () => {
     timelineList.value = [];
     timelineFinished.value = false;
     timelinePage.value = 1;
 };
 
-/**
- * 加载时间线数据（分页）
- * 采用"追加"策略，新数据 push 到已有列表末尾
- * 加载完毕判断：列表长度 ≥ 服务端总条数时标记 finished
- */
+/** 分页加载时间线，追加到列表末尾，加载完毕时标记 finished */
 const loadTimeline = async () => {
     if (!selectedServerId.value || timelineLoading.value || timelineFinished.value) return;
 
@@ -142,7 +101,6 @@ const loadTimeline = async () => {
             } else {
                 timelineList.value.push(...records);
                 timelinePage.value++;
-
                 if (timelineList.value.length >= timelineTotal.value) {
                     timelineFinished.value = true;
                 }
@@ -153,12 +111,9 @@ const loadTimeline = async () => {
     }
 };
 
-// ==================== 生命周期 ====================
+/* ===== 生命周期 ===== */
 
-/**
- * 页面挂载时自动选中第一个社区
- * 避免用户进入页面后看到空白状态
- */
+/** 挂载后自动选中第一个社区，避免进入页面时空白 */
 onMounted(() => {
     if (gameStore.communityList.length > 0 && !selectedCommunityId.value) {
         selectCommunity(gameStore.communityList[0].id);

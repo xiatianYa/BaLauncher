@@ -5,7 +5,7 @@
  * @design 使用 NInfiniteScroll 实现滚动触底自动加载，NTimeline 作为骨架，TimelineItem 渲染每条记录
  -->
 <script setup lang="ts">
-import { NCard, NEmpty, NSpin, NTimeline, NTimelineItem, NInfiniteScroll, NSelect, NButton } from 'naive-ui';
+import { NCard, NEmpty, NSpin, NTimeline, NTimelineItem, NInfiniteScroll, NSelect } from 'naive-ui';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
 import TimelineItem from './timeline-item.vue';
@@ -65,7 +65,9 @@ onMounted(() => {
     <NCard size="small" :bordered="true" class="h-full timeline-card">
         <template #header>
             <div class="timeline-header">
-                <SvgIcon icon="mdi:timeline-clock-outline" class="timeline-header-icon" />
+                <div class="timeline-header-icon">
+                    <SvgIcon icon="mdi:history" />
+                </div>
                 <span class="timeline-header-title">{{ $t('tools.mapTimeline') }}</span>
                 <div class="timeline-header-search">
                     <NSelect
@@ -77,12 +79,12 @@ onMounted(() => {
                         style="width: 180px"
                         size="small"
                     />
-                    <NButton type="primary" size="small" ghost @click="handleSearchMap">
+                    <button class="timeline-search-btn" @click="handleSearchMap">
                         <SvgIcon icon="mdi:magnify" />
-                    </NButton>
-                    <NButton size="small" @click="handleResetSearch">
+                    </button>
+                    <button class="timeline-reset-btn" @click="handleResetSearch">
                         <SvgIcon icon="mdi:refresh" />
-                    </NButton>
+                    </button>
                 </div>
             </div>
         </template>
@@ -141,25 +143,67 @@ onMounted(() => {
 .timeline-header {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     width: 100%;
 
     .timeline-header-icon {
-        font-size: 15px;
-        color: var(--n-text-color-2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 9px;
+        font-size: 17px;
+        flex-shrink: 0;
+        color: var(--n-primary-color);
+        background: var(--n-primary-color-suppl);
     }
 
     .timeline-header-title {
         flex: 1;
         font-size: 14px;
         font-weight: 600;
+        letter-spacing: 0.02em;
         color: var(--n-text-color);
     }
 
     .timeline-header-search {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
+
+        // 图标按钮：统一 28px 高（与 NSelect small 对齐），8px 圆角，半透明灰底 + 描边，hover 变主色
+        .timeline-search-btn,
+        .timeline-reset-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            border: 1px solid var(--n-border-color);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            font-size: 16px;
+            color: var(--n-text-color-2);
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+
+            &:hover {
+                color: var(--n-primary-color);
+                border-color: var(--n-primary-color);
+                background: var(--n-primary-color-suppl);
+            }
+
+            &:active {
+                transform: scale(0.95);
+            }
+
+            svg {
+                font-size: inherit;
+            }
+        }
     }
 }
 

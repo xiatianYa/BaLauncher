@@ -16,6 +16,8 @@ const i18n = createI18n({
   messages,
 });
 
+export { i18n };
+
 export function setupI18n(app: App) {
   app.use(i18n);
 }

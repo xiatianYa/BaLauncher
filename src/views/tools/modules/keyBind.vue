@@ -1,21 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import {
-    NButton,
-    NCard,
-    NModal,
-    NGrid,
-    NGridItem,
-    NInput
-} from 'naive-ui';
+import { NButton, NCard, NModal, NGrid, NGridItem, NInput } from 'naive-ui';
 import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
-import {
-    fetchGetMyKeyBinds,
-    fetchAddKeyBind,
-    fetchDeleteKeyBind,
-    fetchUpdateKeyBind,
-} from '@/service/api';
+import { fetchGetMyKeyBinds, fetchAddKeyBind, fetchDeleteKeyBind, fetchUpdateKeyBind } from '@/service/api';
 import { MdEditor } from 'md-editor-v3';
 import dayjs from 'dayjs';
 import {
@@ -27,50 +15,32 @@ import {
 import { $t } from '@/locales';
 import Command from '@/assets/imgs/tool/Command.png';
 
-
-/**
- * 组件配置
- */
 defineOptions({ name: 'keyBind' });
 
-/**
- * 事件定义
- */
-const emit = defineEmits<{ back: []; }>();
+const emit = defineEmits<{ back: [] }>();
 
-// ============================================================================
-// 状态管理
-// ============================================================================
+/* ===== 状态 ===== */
 
-/** 主题相关 */
 const themeStore = useThemeStore();
+const gameStore = useGameStore();
 const isDarkMode = computed(() => themeStore.darkMode);
 
-/** Game Store */
-const gameStore = useGameStore();
-
-/** UI 状态 */
 const activeTab = ref<'library' | 'local' | 'user'>('library');
 const selectedSystemConfig = ref<string | null>(null);
-const showKeyCaptureModal = ref<boolean>(false);
-const localAutoexecCfg = ref<string>('');
-
-/**
-* 监听编辑器内容变化，同步到编辑器实例
-*/
-/** 按键绑定相关 */
-const capturedKey = ref<string>('');
-/** 滚轮事件节流 */
+const showKeyCaptureModal = ref(false);
+const localAutoexecCfg = ref('');
+const capturedKey = ref('');
 const wheelThrottleTimer = ref<number | null>(null);
-const WHEEL_THROTTLE_MS = 300; // 滚轮事件节流时间（毫秒）
-/** 配置库相关 */
+const WHEEL_THROTTLE_MS = 300; // 滚轮事件节流（毫秒）
+
+// 系统配置库
 const systemLibraryItems = ref<Api.Game.SystemBindVO[]>(systemLibraryItemsConst);
-//系统武器配置库
 const GunLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>(GunLibaryCfgOptionConst);
-//系统道具配置库
 const PropLibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>(PropLibaryCfgOptionConst);
-// ZE配置库
 const ZELibaryCfgOption = ref<Api.Game.SystemBindCfgVO[]>(ZELibaryCfgOptionConst);
+// 用户个人配置库
+const LocalConfigItems = ref<Api.Game.SystemBindCfgVO[]>([]);
+
 // 根据选中的系统配置返回对应的配置选项
 const currentCfgOptions = computed(() => {
     switch (selectedSystemConfig.value) {
@@ -87,30 +57,19 @@ const currentCfgOptions = computed(() => {
     }
 });
 
-// 引用的数据库配置
-const LocalConfigItems = ref<Api.Game.SystemBindCfgVO[]>([]);
-// 用户应用的按键绑定项 - 从 gameStore 获取
+// 用户已应用的按键绑定项（来自 gameStore）
 const applyKeyBindItems = computed({
     get: () => gameStore.applyKeyBindItems,
     set: (items) => gameStore.setApplyKeyBindItems(items)
 });
 
-// ============================================================================
-// 工具函数
-// ============================================================================
-/**
- * 替换编辑器中的按键占位符
- */
-const replaceKeyPlaceholders = (content: string, bindKey: string): string => {
-    let result = content;
-    const regex = new RegExp(`\\[按键:[^\\]]+\\]`, 'g');
-    result = result.replace(regex, bindKey);
-    return result;
-};
+/* ===== 工具函数 ===== */
 
-/**
- * 构建配置写入日志头部
- */
+/** 替换编辑器中的按键占位符 */
+const replaceKeyPlaceholders = (content: string, bindKey: string): string =>
+    content.replace(/\[按键:[^\]]+\]/g, bindKey);
+
+/** 构建配置写入日志头部 */
 const buildLogHeader = (desc: string, key: string): string => {
     const writeTime = dayjs().format('YYYY-MM-DD HH:mm:ss');
     return `// ========================================
@@ -120,21 +79,27 @@ const buildLogHeader = (desc: string, key: string): string => {
 // ========================================`;
 };
 
+/** 拼接修饰键前缀（Ctrl/Shift/Alt） */
+const buildKey = (e: KeyboardEvent | MouseEvent, key: string): string => {
+    let result = '';
+    if (e.ctrlKey) result += 'Ctrl+';
+    if (e.shiftKey) result += 'Shift+';
+    if (e.altKey) result += 'Alt+';
+    return result + key;
+};
 
-// ============================================================================
-// 配置管理
-// ============================================================================
-// 读取本地配置文件
+/* ===== 配置管理 ===== */
+
+/** 读取本地 autoexec.cfg */
 const loadLocalAutoexecCfg = async () => {
     try {
         const paths = await window.ipcRenderer.invoke('auto-detect-paths');
-        if (paths.csgo2Path) {
-            const result = await window.ipcRenderer.invoke('read-autoexec-cfg', paths.csgo2Path);
-            if (result.success) {
-                localAutoexecCfg.value = result.content || '';
-            } else {
-                window.$message?.error($t('keyBind.messages.readFailed') + ': ' + (result.error || 'Unknown error'));
-            }
+        if (!paths.csgo2Path) return;
+        const result = await window.ipcRenderer.invoke('read-autoexec-cfg', paths.csgo2Path);
+        if (result.success) {
+            localAutoexecCfg.value = result.content || '';
+        } else {
+            window.$message?.error($t('keyBind.messages.readFailed') + ': ' + (result.error || 'Unknown error'));
         }
     } catch (error) {
         console.error('Failed to read local config:', error);
@@ -142,150 +107,68 @@ const loadLocalAutoexecCfg = async () => {
     }
 };
 
-// 切换标签页
-const handleTabChangeFn = async (value: 'library' | 'local' | 'user') => {
+const handleTabChange = async (value: 'library' | 'local' | 'user') => {
     activeTab.value = value;
-    selectedSystemConfig.value = null;
     selectedSystemConfig.value = '';
     await loadLocalAutoexecCfg();
 };
 
-// 检查配置项是否已应用
-const isItemApplied = (systemName: string): boolean => {
-    return applyKeyBindItems.value.some(item => item.systemBindCfgVO?.systemName === systemName);
-};
-
-// 处理个人配置项点击
-const handleUserConfigClickFn = (systemName: string | undefined) => {
+const handleUserConfigClick = (systemName: string | undefined) => {
     if (!systemName) return;
     selectedSystemConfig.value = systemName;
 };
 
-// 移除已应用的绑定
+/** 检查配置项是否已应用 */
+const isItemApplied = (systemName: string): boolean =>
+    applyKeyBindItems.value.some(item => item.systemBindCfgVO?.systemName === systemName);
+
+/** 移除已应用的绑定 */
 const removeAppliedBinding = async (systemName: string | undefined) => {
     if (!systemName) return;
     const index = applyKeyBindItems.value.findIndex(item => item.systemBindCfgVO?.systemName === systemName);
-    if (index !== -1) {
-        const item = applyKeyBindItems.value[index];
+    if (index === -1) return;
+    const item = applyKeyBindItems.value[index];
 
-        // 从cfg文件中移除配置
-        const paths = await window.ipcRenderer.invoke('auto-detect-paths');
-        if (paths.csgo2Path && item.renderKeyConfigJson) {
-            const { success } = await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, item.renderKeyConfigJson);
-            if (!success) {
-                window.$message?.error($t('keyBind.messages.removeFromCfgFailed'));
-                return;
-            }
+    // 从 cfg 文件中移除配置
+    const paths = await window.ipcRenderer.invoke('auto-detect-paths');
+    if (paths.csgo2Path && item.renderKeyConfigJson) {
+        const { success } = await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, item.renderKeyConfigJson);
+        if (!success) {
+            window.$message?.error($t('keyBind.messages.removeFromCfgFailed'));
+            return;
         }
-        // 使用 filter 创建新数组，触发计算属性 setter
-        applyKeyBindItems.value = applyKeyBindItems.value.filter((_, i) => i !== index);
-        window.$message?.success($t('keyBind.messages.bindingRemoved'));
     }
+    // 用 filter 创建新数组，触发计算属性 setter
+    applyKeyBindItems.value = applyKeyBindItems.value.filter((_, i) => i !== index);
+    window.$message?.success($t('keyBind.messages.bindingRemoved'));
 };
 
-// 当前要重置的绑定项
-const currentResetItem = ref<Api.Game.ApplyKeyBindItem | null>(null);
-
-// 是否正在捕获按键（防止重复触发）
-const isCapturing = ref<boolean>(false);
-
-// 重置已应用的绑定按键
+/** 重置已应用的绑定按键 */
 const resetAppliedBindingKey = async (systemName: string | undefined) => {
     if (!systemName) return;
-
-    // 找到对应的绑定项
     const item = applyKeyBindItems.value.find(i => i.systemBindCfgVO?.systemName === systemName);
     if (!item) {
         window.$message?.error($t('keyBind.messages.itemNotFound'));
         return;
     }
-
-    // 保存当前要重置的项
     currentResetItem.value = item;
-
-    // 打开重新绑定弹窗
-    openResetKeyCaptureFn();
+    openResetKeyCapture();
 };
 
+/* ===== 按键捕获 ===== */
 
-
-// ============================================================================
-// 按键捕获
-// ============================================================================
-
-// 处理按键按下事件
-const handleKeyDownFn = (e: KeyboardEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    let key = '';
-    if (e.ctrlKey) key += 'Ctrl+';
-    if (e.shiftKey) key += 'Shift+';
-    if (e.altKey) key += 'Alt+';
-
-    if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
-        // 区分小键盘按键，CS2配置格式为 KP_1, KP_2 等
-        if (e.code.startsWith('Numpad')) {
-            const numpadKey = e.code.replace('Numpad', 'kp_');
-            key += numpadKey.toUpperCase();
-        } else {
-            key += e.key.toUpperCase();
-        }
-        capturedKey.value = key;
-        saveAndCloseCaptureFn();
-    }
-};
-
-// 处理鼠标按下事件
-const handleMouseDownFn = (e: MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // 不记录鼠标左键(0)和右键(2)点击
-    if (e.button === 0 || e.button === 2) {
-        return;
-    }
-
-    let key = '';
-    if (e.ctrlKey) key += 'Ctrl+';
-    if (e.shiftKey) key += 'Shift+';
-    if (e.altKey) key += 'Alt+';
-
-    switch (e.button) {
-        case 1:
-            key += 'MOUSE3';
-            break;
-        case 3:
-            key += 'MOUSE4';
-            break;
-        case 4:
-            key += 'MOUSE5';
-            break;
-        default:
-            return;
-    }
-
-    capturedKey.value = key;
-    saveAndCloseCaptureFn();
-};
-
-// 当前选中的配置项
+const currentResetItem = ref<Api.Game.ApplyKeyBindItem | null>(null);
+const isCapturing = ref(false); // 防止重复触发
 const currentSelectedItem = ref<Api.Game.SystemBindCfgVO | null>(null);
-// 是否是个人配置库
 const isPersonalConfig = ref(false);
-// 新增/编辑配置弹框状态
 const showAddConfigModal = ref(false);
-// 是否是编辑模式
 const isEditMode = ref(false);
-// 当前编辑的配置ID
 const editingConfigId = ref<number | null>(null);
-// 配置名称
 const newConfigName = ref('');
-// 配置JSON
 const newConfigJson = ref('');
 
-// 打开按键捕获弹窗
-const openKeyCaptureFn = (item: Api.Game.SystemBindCfgVO) => {
+/** 打开按键捕获弹窗 */
+const openKeyCapture = (item: Api.Game.SystemBindCfgVO) => {
     currentSelectedItem.value = item;
     isPersonalConfig.value = selectedSystemConfig.value === '个人配置库';
     if (isPersonalConfig.value) {
@@ -294,244 +177,194 @@ const openKeyCaptureFn = (item: Api.Game.SystemBindCfgVO) => {
     }
     capturedKey.value = '';
     showKeyCaptureModal.value = true;
-    window.addEventListener('keydown', handleKeyDownFn);
-    window.addEventListener('mousedown', handleMouseDownFn);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('mousedown', handleMouseDown);
 };
 
-// 关闭按键捕获弹窗
-const closeKeyCaptureFn = () => {
+/** 关闭按键捕获弹窗 */
+const closeKeyCapture = () => {
     showKeyCaptureModal.value = false;
     capturedKey.value = '';
     currentSelectedItem.value = null;
-    // 清理滚轮节流定时器
-    if (wheelThrottleTimer.value) {
-        clearTimeout(wheelThrottleTimer.value);
-        wheelThrottleTimer.value = null;
-    }
-    window.removeEventListener('keydown', handleKeyDownFn);
-    window.removeEventListener('mousedown', handleMouseDownFn);
+    clearWheelThrottle();
+    window.removeEventListener('keydown', handleKeyDown);
+    window.removeEventListener('mousedown', handleMouseDown);
 };
 
-// 打开重新绑定弹窗
-const openResetKeyCaptureFn = () => {
+/** 打开重新绑定弹窗 */
+const openResetKeyCapture = () => {
     showKeyCaptureModal.value = true;
     capturedKey.value = '';
     isCapturing.value = false;
-    window.addEventListener('keydown', handleKeyDownResetFn);
-    window.addEventListener('mousedown', handleMouseDownResetFn);
-    window.addEventListener('wheel', handleWheelResetFn, { passive: false });
+    window.addEventListener('keydown', handleKeyDownReset);
+    window.addEventListener('mousedown', handleMouseDownReset);
+    window.addEventListener('wheel', handleWheelReset, { passive: false });
 };
 
-// 关闭重新绑定弹窗
-const closeResetKeyCaptureFn = () => {
+/** 关闭重新绑定弹窗 */
+const closeResetKeyCapture = () => {
     showKeyCaptureModal.value = false;
     capturedKey.value = '';
     isCapturing.value = false;
     currentResetItem.value = null;
-    // 清理滚轮节流定时器
+    clearWheelThrottle();
+    window.removeEventListener('keydown', handleKeyDownReset);
+    window.removeEventListener('mousedown', handleMouseDownReset);
+    window.removeEventListener('wheel', handleWheelReset);
+};
+
+/** 清理滚轮节流定时器 */
+const clearWheelThrottle = () => {
     if (wheelThrottleTimer.value) {
         clearTimeout(wheelThrottleTimer.value);
         wheelThrottleTimer.value = null;
     }
-    window.removeEventListener('keydown', handleKeyDownResetFn);
-    window.removeEventListener('mousedown', handleMouseDownResetFn);
-    window.removeEventListener('wheel', handleWheelResetFn);
 };
 
-// 处理重置时的鼠标滚轮事件（带节流）
-const handleWheelResetFn = (e: WheelEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+/** 滚轮节流 */
+const throttleWheel = () => {
+    wheelThrottleTimer.value = window.setTimeout(() => {
+        wheelThrottleTimer.value = null;
+    }, WHEEL_THROTTLE_MS);
+};
 
-    // 防止重复触发
-    if (isCapturing.value) return;
-
-    // 节流检查
-    if (wheelThrottleTimer.value) {
-        return;
-    }
-
-    // 检查滚轮按键是否已被其他配置使用
-    const wheelKey = e.deltaY < 0 ? 'MWHEELUP' : 'MWHEELDOWN';
-    const keyExistsIndex = applyKeyBindItems.value.findIndex(
-        item => item.key === wheelKey && item.systemBindCfgVO?.systemName !== currentResetItem.value?.systemBindCfgVO?.systemName
+/** 检查按键是否已被其他配置使用，占用时给出提示 */
+const isKeyInUse = (key: string, excludeName?: string | null): boolean => {
+    const existingItem = applyKeyBindItems.value.find(
+        item => item.key === key && item.systemBindCfgVO?.systemName !== excludeName
     );
-    if (keyExistsIndex !== -1) {
-        const existingItem = applyKeyBindItems.value[keyExistsIndex];
-        window.$message?.warning($t('keyBind.messages.keyInUse', { key: wheelKey, name: existingItem.systemBindCfgVO?.systemName || '' }));
-        return;
-    }
+    if (!existingItem) return false;
+    window.$message?.warning($t('keyBind.messages.keyInUse', { key, name: existingItem.systemBindCfgVO?.systemName || '' }));
+    return true;
+};
 
-    if (e.deltaY < 0) {
-        capturedKey.value = 'MWHEELUP';
-    } else if (e.deltaY > 0) {
-        capturedKey.value = 'MWHEELDOWN';
-    }
+/** 处理按键按下 */
+const handleKeyDown = (e: KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
+    // 区分小键盘按键，CS2 配置格式为 KP_1、KP_2 等
+    const key = e.code.startsWith('Numpad') ? e.code.replace('Numpad', 'kp_').toUpperCase() : e.key.toUpperCase();
+    capturedKey.value = buildKey(e, key);
+    saveAndCloseCapture();
+};
 
-    // 设置节流定时器
-    wheelThrottleTimer.value = window.setTimeout(() => {
-        wheelThrottleTimer.value = null;
-    }, WHEEL_THROTTLE_MS);
+/** 处理鼠标按下（不记录左右键） */
+const handleMouseDown = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.button === 0 || e.button === 2) return;
+    const mouseKey = { 1: 'MOUSE3', 3: 'MOUSE4', 4: 'MOUSE5' }[e.button];
+    if (!mouseKey) return;
+    capturedKey.value = buildKey(e, mouseKey);
+    saveAndCloseCapture();
+};
 
+/** 处理按键按下（重新绑定） */
+const handleKeyDownReset = (e: KeyboardEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return;
+    const key = e.code.startsWith('Numpad') ? e.code.replace('Numpad', 'kp_').toUpperCase() : e.key.toUpperCase();
+    capturedKey.value = buildKey(e, key);
+    saveResetKeyAndClose();
+};
+
+/** 处理鼠标按下（重新绑定，不记录左右键） */
+const handleMouseDownReset = (e: MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.button === 0 || e.button === 2) return;
+    const mouseKey = { 1: 'MOUSE3', 3: 'MOUSE4', 4: 'MOUSE5' }[e.button];
+    if (!mouseKey) return;
+    capturedKey.value = buildKey(e, mouseKey);
+    saveResetKeyAndClose();
+};
+
+/** 处理重置时的滚轮事件（带节流 + 按键占用检测） */
+const handleWheelReset = (e: WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isCapturing.value || wheelThrottleTimer.value) return;
+
+    const wheelKey = e.deltaY < 0 ? 'MWHEELUP' : 'MWHEELDOWN';
+    if (isKeyInUse(wheelKey, currentResetItem.value?.systemBindCfgVO?.systemName)) return;
+
+    capturedKey.value = wheelKey;
+    throttleWheel();
     isCapturing.value = true;
-    saveResetKeyAndCloseFn();
+    saveResetKeyAndClose();
 };
 
-// 处理重置时的按键按下事件
-const handleKeyDownResetFn = (e: KeyboardEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    let key = '';
-    if (e.ctrlKey) key += 'Ctrl+';
-    if (e.shiftKey) key += 'Shift+';
-    if (e.altKey) key += 'Alt+';
-
-    if (!['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) {
-        // 区分小键盘按键，CS2配置格式为 KP_1, KP_2 等
-        if (e.code.startsWith('Numpad')) {
-            const numpadKey = e.code.replace('Numpad', 'kp_');
-            key += numpadKey.toUpperCase();
-        } else {
-            key += e.key.toUpperCase();
-        }
-        capturedKey.value = key;
-        saveResetKeyAndCloseFn();
-    }
-};
-
-// 处理重置时的鼠标按下事件
-const handleMouseDownResetFn = (e: MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // 不记录鼠标左键(0)和右键(2)点击
-    if (e.button === 0 || e.button === 2) {
+/** 保存重置的按键并关闭弹窗 */
+const saveResetKeyAndClose = async () => {
+    if (!currentResetItem.value || !capturedKey.value) {
+        closeResetKeyCapture();
         return;
     }
+    if (isKeyInUse(capturedKey.value, currentResetItem.value.systemBindCfgVO?.systemName)) return;
 
-    let key = '';
-    if (e.ctrlKey) key += 'Ctrl+';
-    if (e.shiftKey) key += 'Shift+';
-    if (e.altKey) key += 'Alt+';
+    const newRenderKeyConfigJson = replaceKeyPlaceholders(currentResetItem.value.keyConfigJson, capturedKey.value);
+    const index = applyKeyBindItems.value.findIndex(
+        item => item.systemBindCfgVO?.systemName === currentResetItem.value?.systemBindCfgVO?.systemName
+    );
+    if (index !== -1) {
+        const oldItem = applyKeyBindItems.value[index];
+        applyKeyBindItems.value[index] = {
+            ...currentResetItem.value,
+            key: capturedKey.value,
+            renderKeyConfigJson: newRenderKeyConfigJson
+        };
 
-    switch (e.button) {
-        case 1:
-            key += 'MOUSE3';
-            break;
-        case 3:
-            key += 'MOUSE4';
-            break;
-        case 4:
-            key += 'MOUSE5';
-            break;
-        default:
-            return;
-    }
-
-    capturedKey.value = key;
-    saveResetKeyAndCloseFn();
-};
-
-// 保存重置的按键并关闭弹窗
-const saveResetKeyAndCloseFn = async () => {
-    if (currentResetItem.value && capturedKey.value) {
-        // 检查按键是否已被其他配置使用
-        const keyExistsIndex = applyKeyBindItems.value.findIndex(
-            item => item.key === capturedKey.value && item.systemBindCfgVO?.systemName !== currentResetItem.value?.systemBindCfgVO?.systemName
-        );
-        if (keyExistsIndex !== -1) {
-            const existingItem = applyKeyBindItems.value[keyExistsIndex];
-            window.$message?.warning($t('keyBind.messages.keyInUse', { key: capturedKey.value, name: existingItem.systemBindCfgVO?.systemName || '' }));
-            return;
-        }
-
-        // 生成新的配置
-        const newRenderKeyConfigJson = replaceKeyPlaceholders(currentResetItem.value.keyConfigJson, capturedKey.value);
-
-        // 更新绑定项
-        const index = applyKeyBindItems.value.findIndex(
-            item => item.systemBindCfgVO?.systemName === currentResetItem.value?.systemBindCfgVO?.systemName
-        );
-        if (index !== -1) {
-            const oldItem = applyKeyBindItems.value[index];
-
-            applyKeyBindItems.value[index] = {
-                ...currentResetItem.value,
-                key: capturedKey.value,
-                renderKeyConfigJson: newRenderKeyConfigJson
-            };
-
-            // 将修改后的配置写入 cfg 文件
-            const paths = await window.ipcRenderer.invoke('auto-detect-paths');
-            if (paths.csgo2Path) {
-                // 先移除旧的配置
-                if (oldItem.renderKeyConfigJson) {
-                    await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, oldItem.renderKeyConfigJson);
-                }
-                // 写入新的配置
-                const header = buildLogHeader(currentResetItem.value.systemBindCfgVO?.systemName || '', capturedKey.value);
-                const cfgContent = header + '\n' + newRenderKeyConfigJson;
-                const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, cfgContent);
-                if (success) {
-                    window.$message?.success($t('keyBind.messages.resetSuccess'));
-                } else {
-                    window.$message?.error($t('keyBind.messages.writeCfgFailed'));
-                }
-            } else {
-                window.$message?.error($t('keyBind.messages.csgoPathNotFound'));
+        // 将修改后的配置写入 cfg 文件
+        const paths = await window.ipcRenderer.invoke('auto-detect-paths');
+        if (paths.csgo2Path) {
+            // 先移除旧配置，再写入新配置
+            if (oldItem.renderKeyConfigJson) {
+                await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, oldItem.renderKeyConfigJson);
             }
+            const header = buildLogHeader(currentResetItem.value.systemBindCfgVO?.systemName || '', capturedKey.value);
+            const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, header + '\n' + newRenderKeyConfigJson);
+            if (success) {
+                window.$message?.success($t('keyBind.messages.resetSuccess'));
+            } else {
+                window.$message?.error($t('keyBind.messages.writeCfgFailed'));
+            }
+        } else {
+            window.$message?.error($t('keyBind.messages.csgoPathNotFound'));
         }
     }
-    closeResetKeyCaptureFn();
+    closeResetKeyCapture();
 };
 
-/**
- * 处理鼠标滚轮事件（带节流）
- */
-const handleWheelFn = (e: WheelEvent) => {
+/** 处理滚轮事件（带节流） */
+const handleWheel = (e: WheelEvent) => {
     e.preventDefault();
-
-    // 节流检查
-    if (wheelThrottleTimer.value) {
-        return;
-    }
-
+    if (wheelThrottleTimer.value) return;
     if (e.deltaY < 0) {
         capturedKey.value = 'MWHEELUP';
     } else if (e.deltaY > 0) {
         capturedKey.value = 'MWHEELDOWN';
     }
-
-    // 设置节流定时器
-    wheelThrottleTimer.value = window.setTimeout(() => {
-        wheelThrottleTimer.value = null;
-    }, WHEEL_THROTTLE_MS);
-
-    saveAndCloseCaptureFn();
+    throttleWheel();
+    saveAndCloseCapture();
 };
 
-/**
- * 复制配置代码
- */
+/* ===== 个人配置弹窗 ===== */
+
+/** 复制配置代码 */
 const copyConfigCode = (code: string) => {
     navigator.clipboard.writeText(code);
     window.$message?.success($t('keyBind.messages.copySuccess'));
 };
 
-/**
- * 复制个人配置
- */
+/** 复制个人配置 */
 const copyPersonalConfig = () => {
-    if (currentSelectedItem.value) {
-        copyConfigCode(currentSelectedItem.value.keyConfigJson);
-        showKeyCaptureModal.value = false;
-    }
+    if (!currentSelectedItem.value) return;
+    copyConfigCode(currentSelectedItem.value.keyConfigJson);
+    showKeyCaptureModal.value = false;
 };
 
-/**
- * 打开新增配置弹框
- */
 const openAddConfigModal = () => {
     isEditMode.value = false;
     editingConfigId.value = null;
@@ -540,23 +373,16 @@ const openAddConfigModal = () => {
     showAddConfigModal.value = true;
 };
 
-/**
- * 打开编辑配置弹框
- */
 const openEditConfigModal = () => {
-    if (currentSelectedItem.value && currentSelectedItem.value.id) {
-        isEditMode.value = true;
-        editingConfigId.value = currentSelectedItem.value.id;
-        newConfigName.value = currentSelectedItem.value.systemName;
-        newConfigJson.value = currentSelectedItem.value.keyConfigJson;
-        showAddConfigModal.value = true;
-        showKeyCaptureModal.value = false;
-    }
+    if (!currentSelectedItem.value?.id) return;
+    isEditMode.value = true;
+    editingConfigId.value = currentSelectedItem.value.id;
+    newConfigName.value = currentSelectedItem.value.systemName;
+    newConfigJson.value = currentSelectedItem.value.keyConfigJson;
+    showAddConfigModal.value = true;
+    showKeyCaptureModal.value = false;
 };
 
-/**
- * 关闭新增/编辑配置弹框
- */
 const closeAddConfigModal = () => {
     showAddConfigModal.value = false;
     isEditMode.value = false;
@@ -565,9 +391,7 @@ const closeAddConfigModal = () => {
     newConfigJson.value = '';
 };
 
-/**
- * 保存配置（新增或编辑）
- */
+/** 保存配置（新增或编辑） */
 const saveAddConfig = async () => {
     if (!newConfigName.value.trim()) {
         window.$message?.warning($t('keyBind.pleaseEnterConfigName'));
@@ -578,77 +402,42 @@ const saveAddConfig = async () => {
         return;
     }
 
-    let error;
-    if (isEditMode.value && editingConfigId.value) {
-        // 编辑模式
-        ({ error } = await fetchUpdateKeyBind({
-            id: editingConfigId.value,
-            configName: newConfigName.value.trim(),
-            keyConfigJson: newConfigJson.value.trim()
-        }));
-        if (!error) {
-            window.$message?.success($t('keyBind.configUpdated'));
-        }
-    } else {
-        // 新增模式
-        ({ error } = await fetchAddKeyBind({
-            configName: newConfigName.value.trim(),
-            keyConfigJson: newConfigJson.value.trim()
-        }));
-        if (!error) {
-            window.$message?.success($t('keyBind.configAdded'));
-        }
-    }
-
-    if (!error) {
-        closeAddConfigModal();
-        await fetchLocalConfigLibrary();
-    }
+    const configName = newConfigName.value.trim();
+    const keyConfigJson = newConfigJson.value.trim();
+    const { error } = isEditMode.value && editingConfigId.value
+        ? await fetchUpdateKeyBind({ id: editingConfigId.value, configName, keyConfigJson })
+        : await fetchAddKeyBind({ configName, keyConfigJson });
+    if (error) return;
+    window.$message?.success(isEditMode.value ? $t('keyBind.configUpdated') : $t('keyBind.configAdded'));
+    closeAddConfigModal();
+    await fetchLocalConfigLibrary();
 };
 
-/**
- * 删除个人配置
- */
+/** 删除个人配置 */
 const removePersonalConfig = async () => {
-    if (currentSelectedItem.value && currentSelectedItem.value.id) {
-        const { error } = await fetchDeleteKeyBind(currentSelectedItem.value.id);
-        if (!error) {
-            window.$message?.success($t('keyBind.configDeleted'));
-            showKeyCaptureModal.value = false;
-            await fetchLocalConfigLibrary();
-        }
-    }
+    if (!currentSelectedItem.value?.id) return;
+    const { error } = await fetchDeleteKeyBind(currentSelectedItem.value.id);
+    if (error) return;
+    window.$message?.success($t('keyBind.configDeleted'));
+    showKeyCaptureModal.value = false;
+    await fetchLocalConfigLibrary();
 };
 
-/**
- * 保存按键并关闭弹窗
- */
-const saveAndCloseCaptureFn = () => {
+/** 保存按键并关闭弹窗 */
+const saveAndCloseCapture = () => {
     if (currentSelectedItem.value && capturedKey.value) {
-        //保存系统配置
+        // 系统配置库
         if (selectedSystemConfig.value === '武器类' || selectedSystemConfig.value === '道具类' || selectedSystemConfig.value === 'ZE常用') {
-            // 检查是否已存在相同配置项的绑定
-            const existingIndex = applyKeyBindItems.value.findIndex(
-                item => item.systemBindCfgVO?.systemName === currentSelectedItem.value?.systemName
-            );
-            if (existingIndex != -1) return;
-
-            // 检查按键是否已被其他配置使用
-            const keyExistsIndex = applyKeyBindItems.value.findIndex(
-                item => item.key === capturedKey.value
-            );
-            if (keyExistsIndex !== -1) {
-                const existingItem = applyKeyBindItems.value[keyExistsIndex];
-                window.$message?.warning($t('keyBind.messages.keyInUse', { key: capturedKey.value, name: existingItem.systemBindCfgVO?.systemName || '' }));
-                return;
-            }
+            // 同一配置项已存在时忽略
+            if (applyKeyBindItems.value.some(item => item.systemBindCfgVO?.systemName === currentSelectedItem.value?.systemName)) return;
+            // 按键已被其他配置占用
+            if (isKeyInUse(capturedKey.value)) return;
 
             const renderKeyConfigJson = replaceKeyPlaceholders(currentSelectedItem.value.keyConfigJson, capturedKey.value);
-
             const newBindItem: Api.Game.ApplyKeyBindItem = {
                 key: capturedKey.value,
                 keyConfigJson: currentSelectedItem.value.keyConfigJson,
-                renderKeyConfigJson: renderKeyConfigJson,
+                renderKeyConfigJson,
                 configType: 'system',
                 systemBindCfgVO: {
                     systemName: currentSelectedItem.value.systemName,
@@ -656,30 +445,23 @@ const saveAndCloseCaptureFn = () => {
                     keyConfigJson: currentSelectedItem.value.keyConfigJson
                 }
             };
-
-            // 使用展开运算符创建新数组，触发计算属性 setter
+            // 用展开运算符创建新数组，触发计算属性 setter
             applyKeyBindItems.value = [...applyKeyBindItems.value, newBindItem];
 
-            // 构建cfg内容：头部 + 渲染后的配置
             const header = buildLogHeader(currentSelectedItem.value.configDesc || currentSelectedItem.value.systemName, capturedKey.value);
-            const cfgContent = header + '\n' + renderKeyConfigJson;
-            applyKeyBindsFn(cfgContent);
+            applyKeyBinds(header + '\n' + renderKeyConfigJson);
         }
     } else {
-        //使用自定义配置
-        applyKeyBindsFn("");
+        // 使用自定义配置
+        applyKeyBinds('');
     }
-    closeKeyCaptureFn();
+    closeKeyCapture();
 };
 
-// ============================================================================
-// 配置应用
-// ============================================================================
+/* ===== 配置应用 ===== */
 
-/**
- * 写入Cfg文件
- */
-const applyKeyBindsFn = async (content: string) => {
+/** 写入 Cfg 文件 */
+const applyKeyBinds = async (content: string) => {
     const paths = await window.ipcRenderer.invoke('auto-detect-paths');
     if (!paths.csgo2Path) {
         window.$message?.error($t('keyBind.messages.csgoPathNotFound'));
@@ -693,16 +475,13 @@ const applyKeyBindsFn = async (content: string) => {
     }
 };
 
-/**
- * 保存本地配置
- */
+/** 保存本地 autoexec.cfg（覆盖整个文件） */
 const saveLocalAutoexecCfg = async () => {
     const paths = await window.ipcRenderer.invoke('auto-detect-paths');
     if (!paths.csgo2Path) {
         window.$message?.error($t('keyBind.messages.csgoPathNotFound'));
         return;
     }
-    // 传入 true 表示覆盖整个文件
     const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, localAutoexecCfg.value, true);
     if (success) {
         window.$message?.success($t('keyBind.messages.saveSuccess'));
@@ -711,53 +490,35 @@ const saveLocalAutoexecCfg = async () => {
     }
 };
 
+/* ===== 数据获取 ===== */
 
-
-// ============================================================================
-// 数据获取
-// ============================================================================
-
-/**
- * 获取个人配置库
- */
+/** 获取个人配置库 */
 const fetchLocalConfigLibrary = async () => {
     const { error, data } = await fetchGetMyKeyBinds();
-    if (!error && data) {
-        LocalConfigItems.value = data.map(item => ({
-            id: item.id,
-            systemName: item.configName,
-            systemIcon: Command,
-            keyConfigJson: item.keyConfigJson,
-            configDesc: '用户个人配置库'
-        }));
-    }
+    if (error || !data) return;
+    LocalConfigItems.value = data.map(item => ({
+        id: item.id,
+        systemName: item.configName,
+        systemIcon: Command,
+        keyConfigJson: item.keyConfigJson,
+        configDesc: '用户个人配置库'
+    }));
 };
 
-/**
- * 返回工具箱
- */
-const handleBackFn = () => emit('back');
+const handleBack = () => emit('back');
 
-// ============================================================================
-// 监听与生命周期
-// ============================================================================
+/* ===== 监听与生命周期 ===== */
 
-/**
- * 监听弹窗关闭，确保所有绑定的事件监听都被移除
- * NModal 可能通过 ESC、点击蒙层、v-model 等方式关闭，不会主动调用 close 函数
- */
+/** 监听弹窗关闭，确保移除所有事件监听（ESC / 蒙层 / v-model 关闭时不会主动调用 close） */
 watch(showKeyCaptureModal, (visible) => {
     if (!visible) {
-        closeKeyCaptureFn();
-        closeResetKeyCaptureFn();
+        closeKeyCapture();
+        closeResetKeyCapture();
     }
 });
 
-/**
- * 组件挂载时初始化
- */
 onMounted(() => {
-    Promise.all([fetchLocalConfigLibrary()]);
+    fetchLocalConfigLibrary();
 });
 </script>
 
@@ -768,7 +529,7 @@ onMounted(() => {
                 <SvgIcon icon="material-symbols:keyboard-alt-outline" />
                 <h1 class="page-title">{{ $t('keyBind.title') }}</h1>
             </div>
-            <div class="back-btn" @click="handleBackFn">
+            <div class="back-btn" @click="handleBack">
                 <SvgIcon icon="material-symbols:arrow-back" class="back-icon" />
                 <span>{{ $t('keyBind.back') }}</span>
             </div>
@@ -776,19 +537,19 @@ onMounted(() => {
         <div class="main-content">
             <NCard class="left-panel" content-class="h-full overflow-auto" content-style="padding:10px;">
                 <div class="flex flex-col gap-10px">
-                    <div class="flex justify-center gap-5px">
-                        <NButton :type="activeTab === 'library' ? 'primary' : 'default'"
-                            @click="activeTab = 'library'; handleTabChangeFn('library')">
-                            <span class="text-12px">{{ $t('keyBind.tabs.library') }}</span>
-                        </NButton>
-                        <NButton :type="activeTab === 'user' ? 'primary' : 'default'"
-                            @click="activeTab = 'user'; handleTabChangeFn('user')">
-                            <span class="text-12px">{{ $t('keyBind.tabs.user') }}</span>
-                        </NButton>
-                        <NButton :type="activeTab === 'local' ? 'primary' : 'default'"
-                            @click="activeTab = 'local'; handleTabChangeFn('local')">
-                            <span class="text-12px">{{ $t('keyBind.tabs.local') }}</span>
-                        </NButton>
+                    <div class="tab-switch">
+                        <button class="tab-btn" :class="{ active: activeTab === 'library' }"
+                            @click="activeTab = 'library'; handleTabChange('library')">
+                            {{ $t('keyBind.tabs.library') }}
+                        </button>
+                        <button class="tab-btn" :class="{ active: activeTab === 'user' }"
+                            @click="activeTab = 'user'; handleTabChange('user')">
+                            {{ $t('keyBind.tabs.user') }}
+                        </button>
+                        <button class="tab-btn" :class="{ active: activeTab === 'local' }"
+                            @click="activeTab = 'local'; handleTabChange('local')">
+                            {{ $t('keyBind.tabs.local') }}
+                        </button>
                     </div>
                     <div v-show="activeTab === 'library'">
                         <NGrid :y-gap="10" :cols="1">
@@ -811,7 +572,7 @@ onMounted(() => {
                     <div v-show="activeTab === 'user'">
                         <NGrid x-gap="10" y-gap="10" :cols="1">
                             <NGridItem v-for="item in applyKeyBindItems" :key="item.systemBindCfgVO?.systemName"
-                                @click="handleUserConfigClickFn(item.systemBindCfgVO?.systemName)">
+                                @click="handleUserConfigClick(item.systemBindCfgVO?.systemName)">
                                 <div class="applied-binding-item"
                                     :class="{ 'selected': selectedSystemConfig === item.systemBindCfgVO?.systemName }">
                                     <div class="applied-binding-img">
@@ -850,20 +611,17 @@ onMounted(() => {
                         </NCard>
                     </NGridItem>
                     <NGridItem v-for="item in currentCfgOptions" :key="item.systemName"
-                        @click="!isItemApplied(item.systemName) && openKeyCaptureFn(item)">
+                        @click="!isItemApplied(item.systemName) && openKeyCapture(item)">
                         <NCard class="rounded-10px"
                             :class="{ 'applied': isItemApplied(item.systemName), 'selected': selectedSystemConfig === item.systemName }"
                             content-style="padding:10px"
                             :content-class="isItemApplied(item.systemName) ? 'flex flex-col items-center justify-center' : 'cursor-pointer flex flex-col items-center justify-center'">
                             <img :src="item.systemIcon || Command" class="w-48px h-48px object-contain mb-8px" />
                             <span class="text-12px">{{ item.systemName }}</span>
-                            <NButton class="copy-btn" size="tiny" quaternary
-                                @click.stop="copyConfigCode(item.keyConfigJson)">
-                                <template #icon>
-                                    <SvgIcon icon="mdi:content-copy" />
-                                </template>
-                                {{ $t('keyBind.copyCommand') }}
-                            </NButton>
+                            <button class="config-copy-btn" @click.stop="copyConfigCode(item.keyConfigJson)">
+                                <SvgIcon icon="mdi:content-copy" />
+                                <span>{{ $t('keyBind.copyCommand') }}</span>
+                            </button>
                         </NCard>
                     </NGridItem>
                 </NGrid>
@@ -922,13 +680,13 @@ onMounted(() => {
             </template>
             <template #header-extra>
                 <div class="flex items-center justify-between font-size-18px">
-                    <NButton quaternary size="tiny" @click="closeKeyCaptureFn">
+                    <NButton quaternary size="tiny" @click="closeKeyCapture">
                         <SvgIcon icon="material-symbols:close" />
                     </NButton>
                 </div>
             </template>
             <div v-if="!isPersonalConfig" class="key-capture-modal-new pt-20px pb-20px pl-20px pr-20px"
-                @wheel="handleWheelFn" @mousedown="handleMouseDownFn">
+                @wheel="handleWheel" @mousedown="handleMouseDown">
                 <!-- 顶部装饰区域 -->
                 <div class="capture-header mb-20px">
                     <div class="character-image">
@@ -1041,6 +799,13 @@ onMounted(() => {
 </template>
 
 <style scoped lang="scss">
+// ==================== 页面主色 ====================
+// 清爽天蓝色系（对应 Blue Archive 品牌色），替代紫色系 AI 味配色   
+$accent: #4b9ef8; // 主色（天蓝）
+$accent-deep: #3a86e0; // 主色深（渐变末端 / hover）
+$accent-hover: #3f8fe8; // hover 渐变起点
+$accent-hover-deep: #2e72c4; // hover 渐变末端
+
 .key-bind-container {
     display: flex;
     flex-direction: column;
@@ -1069,14 +834,14 @@ onMounted(() => {
             padding: 10px 16px;
             border-radius: 10px;
             cursor: pointer;
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.15);
+            color: $accent;
+            background: rgba($accent, 0.15);
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
 
             &:hover {
-                color: #667eea;
-                background: rgba(102, 126, 234, 0.3);
+                color: $accent;
+                background: rgba($accent, 0.3);
             }
 
             .back-icon {
@@ -1111,6 +876,41 @@ onMounted(() => {
             background: var(--n-color);
             transition: all 0.2s ease;
 
+            // 分段式 Tab 切换器
+            .tab-switch {
+                display: flex;
+                gap: 4px;
+                padding: 4px;
+                margin-bottom: 4px;
+                border-radius: 12px;
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+
+                .tab-btn {
+                    flex: 1;
+                    padding: 7px 0;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 12.5px;
+                    font-weight: 500;
+                    white-space: nowrap;
+                    transition: all 0.2s ease;
+                    background: transparent;
+                    color: rgba(255, 255, 255, 0.55);
+
+                    &:hover {
+                        color: rgba(255, 255, 255, 0.9);
+                    }
+
+                    &.active {
+                        background: linear-gradient(135deg, $accent 0%, $accent-deep 100%);
+                        color: #fff;
+                        box-shadow: 0 4px 12px rgba($accent, 0.35);
+                    }
+                }
+            }
+
             .config-card,
             .applied-binding-item {
                 display: flex;
@@ -1141,19 +941,19 @@ onMounted(() => {
 
                 &:hover {
                     background: rgba(255, 255, 255, 0.07);
-                    border-color: rgba(102, 126, 234, 0.35);
+                    border-color: rgba($accent, 0.35);
                     transform: translateY(-2px);
                     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
                 }
 
                 &.selected {
-                    background: rgba(102, 126, 234, 0.08);
-                    border-color: rgba(102, 126, 234, 0.6);
-                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+                    background: rgba($accent, 0.08);
+                    border-color: rgba($accent, 0.6);
+                    box-shadow: 0 8px 24px rgba($accent, 0.2);
                     transform: translateY(-2px);
 
                     &::before {
-                        background: #667eea;
+                        background: $accent;
                     }
                 }
 
@@ -1210,13 +1010,13 @@ onMounted(() => {
                 &.selected {
                     .config-card-content-img,
                     .applied-binding-img {
-                        background: rgba(102, 126, 234, 0.15);
-                        box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.25);
+                        background: rgba($accent, 0.15);
+                        box-shadow: 0 0 0 1px rgba($accent, 0.25);
                     }
 
                     .config-card-title,
                     .applied-binding-name {
-                        color: #667eea;
+                        color: $accent;
                     }
                 }
             }
@@ -1234,14 +1034,45 @@ onMounted(() => {
 
             :deep(.n-card) {
                 &.applied {
-                    border: 2px solid #667eea;
-                    box-shadow: 0 0 10px rgba(102, 126, 234, 0.4);
+                    border: 2px solid $accent;
+                    box-shadow: 0 0 10px rgba($accent, 0.4);
                 }
 
                 &.selected {
-                    border-color: #667eea;
-                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-                    background: rgba(102, 126, 234, 0.05);
+                    border-color: $accent;
+                    box-shadow: 0 0 0 2px rgba($accent, 0.2);
+                    background: rgba($accent, 0.05);
+                }
+            }
+
+            // 配置卡片复制按钮（参考 botGroup 的 action-btn 风格）
+            .config-copy-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                width: 100%;
+                margin-top: 8px;
+                padding: 7px 2px;
+                border: none;
+                border-radius: 9px;
+                cursor: pointer;
+                font-size: 12.5px;
+                font-weight: 500;
+                white-space: nowrap;
+                transition: all 0.2s ease;
+                background: rgba(255, 255, 255, 0.06);
+                color: rgba(255, 255, 255, 0.8);
+
+                svg {
+                    font-size: 14px;
+                    flex-shrink: 0;
+                }
+
+                &:hover {
+                    background: rgba($accent, 0.2);
+                    color: $accent;
+                    transform: translateY(-2px);
                 }
             }
 
@@ -1269,6 +1100,25 @@ onMounted(() => {
 .key-bind-container.light-mode {
     .main-content {
         .left-panel {
+            .tab-switch {
+                background: rgba(0, 0, 0, 0.04);
+                border-color: rgba(0, 0, 0, 0.08);
+
+                .tab-btn {
+                    color: rgba(0, 0, 0, 0.5);
+
+                    &:hover {
+                        color: rgba(0, 0, 0, 0.8);
+                    }
+
+                    &.active {
+                        background: linear-gradient(135deg, $accent 0%, $accent-deep 100%);
+                        color: #fff;
+                        box-shadow: 0 4px 12px rgba($accent, 0.3);
+                    }
+                }
+            }
+
             .config-card,
             .applied-binding-item {
                 border-color: rgba(0, 0, 0, 0.08);
@@ -1276,14 +1126,14 @@ onMounted(() => {
 
                 &:hover {
                     background: rgba(0, 0, 0, 0.05);
-                    border-color: rgba(102, 126, 234, 0.3);
-                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.1);
+                    border-color: rgba($accent, 0.3);
+                    box-shadow: 0 8px 24px rgba($accent, 0.1);
                 }
 
                 &.selected {
-                    background: rgba(102, 126, 234, 0.06);
-                    border-color: rgba(102, 126, 234, 0.5);
-                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+                    background: rgba($accent, 0.06);
+                    border-color: rgba($accent, 0.5);
+                    box-shadow: 0 8px 24px rgba($accent, 0.15);
                 }
 
                 .config-card-content-img,
@@ -1307,13 +1157,25 @@ onMounted(() => {
                 &.selected {
                     .config-card-content-img,
                     .applied-binding-img {
-                        background: rgba(102, 126, 234, 0.12);
+                        background: rgba($accent, 0.12);
                     }
 
                     .config-card-title,
                     .applied-binding-name {
-                        color: #667eea;
+                        color: $accent;
                     }
+                }
+            }
+        }
+
+        .right-panel {
+            .config-copy-btn {
+                background: rgba(0, 0, 0, 0.04);
+                color: rgba(0, 0, 0, 0.65);
+
+                &:hover {
+                    background: rgba($accent, 0.18);
+                    color: $accent;
                 }
             }
         }
@@ -1338,44 +1200,44 @@ onMounted(() => {
 
             .capture-header {
                 .character-image {
-                    border-color: rgba(102, 126, 234, 0.6);
-                    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+                    border-color: rgba($accent, 0.6);
+                    box-shadow: 0 0 20px rgba($accent, 0.3);
                 }
 
                 .header-glow {
-                    background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+                    background: radial-gradient(circle, rgba($accent, 0.2) 0%, transparent 70%);
                 }
             }
 
             .capture-display-area {
                 .key-display-box {
-                    background: rgba(102, 126, 234, 0.05);
-                    border-color: rgba(102, 126, 234, 0.3);
+                    background: rgba($accent, 0.05);
+                    border-color: rgba($accent, 0.3);
 
                     .captured-key-text {
-                        color: #667eea;
+                        color: $accent;
                         text-shadow: none;
                     }
 
                     .waiting-text .dots span {
-                        background: #667eea;
+                        background: $accent;
                     }
                 }
 
                 &.has-key .key-display-box {
-                    background: rgba(102, 126, 234, 0.1);
-                    border-color: #667eea;
-                    box-shadow: 0 0 20px rgba(102, 126, 234, 0.2);
+                    background: rgba($accent, 0.1);
+                    border-color: $accent;
+                    box-shadow: 0 0 20px rgba($accent, 0.2);
                 }
             }
 
             .capture-tips {
                 .tip-item {
-                    background: rgba(102, 126, 234, 0.05);
-                    border-color: rgba(102, 126, 234, 0.15);
+                    background: rgba($accent, 0.05);
+                    border-color: rgba($accent, 0.15);
 
                     .tip-icon {
-                        color: #667eea;
+                        color: $accent;
                     }
 
                     .tip-text {
@@ -1411,8 +1273,8 @@ onMounted(() => {
             height: 80px;
             border-radius: 50%;
             overflow: hidden;
-            border: 3px solid rgba(102, 126, 234, 0.5);
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+            border: 3px solid rgba($accent, 0.5);
+            box-shadow: 0 0 20px rgba($accent, 0.4);
 
             img {
                 width: 100%;
@@ -1428,7 +1290,7 @@ onMounted(() => {
             transform: translate(-50%, -50%);
             width: 150px;
             height: 150px;
-            background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
+            background: radial-gradient(circle, rgba($accent, 0.3) 0%, transparent 70%);
             z-index: 1;
         }
     }
@@ -1446,7 +1308,7 @@ onMounted(() => {
             align-items: center;
             justify-content: center;
             background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(102, 126, 234, 0.3);
+            border: 2px solid rgba($accent, 0.3);
             border-radius: 12px;
             padding: 0 20px;
             transition: all 0.3s ease;
@@ -1454,8 +1316,8 @@ onMounted(() => {
             .captured-key-text {
                 font-size: 24px;
                 font-weight: 700;
-                color: #667eea;
-                text-shadow: 0 0 20px rgba(102, 126, 234, 0.5);
+                color: $accent;
+                text-shadow: 0 0 20px rgba($accent, 0.5);
             }
 
             .waiting-text {
@@ -1466,7 +1328,7 @@ onMounted(() => {
                     span {
                         width: 10px;
                         height: 10px;
-                        background: #667eea;
+                        background: $accent;
                         border-radius: 50%;
                         animation: dotPulse 1.4s ease-in-out infinite;
 
@@ -1484,9 +1346,9 @@ onMounted(() => {
 
         &.has-key {
             .key-display-box {
-                background: rgba(102, 126, 234, 0.1);
-                border-color: #667eea;
-                box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+                background: rgba($accent, 0.1);
+                border-color: $accent;
+                box-shadow: 0 0 20px rgba($accent, 0.3);
             }
         }
     }
@@ -1510,13 +1372,13 @@ onMounted(() => {
             gap: 4px;
 
             &:hover {
-                background: rgba(102, 126, 234, 0.1);
-                border-color: rgba(102, 126, 234, 0.3);
+                background: rgba($accent, 0.1);
+                border-color: rgba($accent, 0.3);
             }
 
             .tip-icon {
                 font-size: 22px;
-                color: #667eea;
+                color: $accent;
             }
 
             .tip-text {
@@ -1553,13 +1415,13 @@ onMounted(() => {
         }
 
         .apply-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, $accent 0%, $accent-deep 100%);
             border: none;
             color: white;
 
             &:hover:not(:disabled) {
-                background: linear-gradient(135deg, #5a6fd6 0%, #6a4190 100%);
-                box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+                background: linear-gradient(135deg, $accent-hover 0%, $accent-hover-deep 100%);
+                box-shadow: 0 4px 15px rgba($accent, 0.4);
             }
 
             &:disabled {

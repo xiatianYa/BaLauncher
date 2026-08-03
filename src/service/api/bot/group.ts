@@ -8,3 +8,29 @@ export function fetchGetBotGroupPageList(params?: Api.Bot.BotGroupSearchDTO) {
     params
   });
 }
+
+/** 新增机器人群 */
+export function fetchInsertBotGroup(params: Api.Bot.BotGroupEdit) {
+  return request({
+    url: '/botGroup/save',
+    method: 'post',
+    data: params
+  });
+}
+
+/** 修改机器人群 */
+export function fetchUpdateBotGroup(params: Api.Bot.BotGroupEdit) {
+  return request({
+    url: '/botGroup/update',
+    method: 'put',
+    data: params
+  });
+}
+
+/** 删除机器人群 */
+export function fetchRemoveBotGroup(id: string) {
+  return request({
+    url: `/botGroup/remove/${id}`,
+    method: 'delete'
+  });
+}

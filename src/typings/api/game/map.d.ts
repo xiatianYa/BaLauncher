@@ -38,6 +38,8 @@ declare namespace Api {
       mapName: string;
       /** 译名 */
       mapLabel: string;
+      /** 地图图片 */
+      mapUrl: string;
       /** 地图难度 */
       type: string;
       /** 地图标签 */
@@ -139,5 +141,48 @@ declare namespace Api {
 
     /** 服务器地图时间线分页 */
     type GameServerMapTimelinePage = Common.PaginatingQueryRecord<GameServerMapTimelineVo>;
+
+    /** 地图订阅 分页查询 DTO */
+    type GameMapOrderSearchDTO = CommonType.RecordNullable<{
+      /** 用户ID（为空时查询当前登录用户的订阅） */
+      userId?: string;
+    }>;
+
+    /** 游戏地图实体（订阅VO内嵌） */
+    type GameMapOrderGameMap = {
+      /** 地图名称 */
+      mapName: string;
+      /** 译名 */
+      mapLabel: string;
+      /** 图片路径 */
+      mapUrl: string;
+      /** 地图难度 */
+      type: number;
+      /** 地图标签 */
+      tag: string;
+      /** 地图神器 */
+      artifact: string;
+      /** 是否可以订阅 */
+      isOrder: string;
+    };
+
+    /** 地图订阅 VO */
+    type GameMapOrderVo = {
+      /** ID */
+      id: number;
+      /** 用户ID */
+      userId: number;
+      /** 地图ID */
+      mapId: number;
+      /** 系统订阅 */
+      systemOrder: string;
+      /** QQ订阅 */
+      qqOrder: string;
+      /** 地图数据 */
+      gameMap: GameMapOrderGameMap;
+    };
+
+    /** 地图订阅分页 */
+    type GameMapOrderPageList = Common.PaginatingQueryRecord<GameMapOrderVo>;
   }
 }

@@ -1,379 +1,284 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch, onMounted } from 'vue';
-import { NInput, NModal, NButton, NSelect } from 'naive-ui';
+import { NInput, NModal, NButton, NSelect, NUpload } from 'naive-ui';
+import type { UploadCustomRequestOptions } from 'naive-ui';
 import { useDebounceFn } from '@vueuse/core';
 import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
-import { useAuthStore } from '@/store/modules/auth';
 import { useAuth } from '@/hooks/business/auth';
 import { useDict } from '@/hooks/business/dict';
-import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList, fetchUpdateMapSubscribe, fetchUpdateMap } from '@/service/api';
+import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList, fetchUpdateMapSubscribe, fetchUpdateMap, fetchInsertMap, fetchUploadFile } from '@/service/api';
 import { $t } from '@/locales';
 import dayjs from 'dayjs';
-import { fetchGetGroupList } from '@/service/api';
-import { fetchBindQQ, fetchBindQQGroup } from '@/service/api';
 
-defineOptions({
-    name: 'MapOrder'
-});
+defineOptions({ name: 'MapOrder' });
 
-/* ================================ Constants ================================ */
+/* ===== 基础配置 ===== */
 
-const DEBOUNCE_DELAY = 300; // 防抖延迟时间（毫秒）
-const LOADING_DELAY = 500; // 加载延迟时间（毫秒）
-const DEFAULT_PAGE_SIZE = 12; // 默认每页显示数量
+const DEBOUNCE_DELAY = 300; // 搜索防抖（毫秒）
+const LOADING_DELAY = 500; // 列表加载动画时长（毫秒）
+const DEFAULT_PAGE_SIZE = 12;
 
-/* ================================ Composables ================================ */
+const themeStore = useThemeStore();
+const gameStore = useGameStore();
+const { isAdmin } = useAuth();
+const { dictOptions } = useDict();
+const emit = defineEmits<{ back: [] }>();
 
-const themeStore = useThemeStore(); // 主题Store
-const gameStore = useGameStore(); // 游戏Store
-const authStore = useAuthStore(); // 认证Store
-const { hasRole } = useAuth(); // 权限Hook
-const { dictOptions } = useDict(); // 字典选项
-
-const isAdmin = computed(() => hasRole(['R_SUPER', 'R_ADMIN'])); // 是否管理员
-
+const isDarkMode = computed(() => themeStore.darkMode);
 const isOrderOptions = [
     { label: '是', value: '1' },
     { label: '否', value: '0' }
 ];
 
-/* ================================ Emits ================================ */
+/* ===== 数据状态 ===== */
 
-const emit = defineEmits<{ back: [] }>(); // 定义事件
+const searchKeyword = ref('');
+const mapList = ref<Api.Game.MapVo[]>([]);
+const subscribeList = ref<Api.Game.MapVo[]>([]);
+const mapLoading = ref(false);
+const subscribeLoading = ref(false);
+const pagination = reactive<Api.Common.PaginatingCommonParams>({ current: 1, size: DEFAULT_PAGE_SIZE, total: 0 });
 
-/* ================================ Reactive State ================================ */
+/* ===== 弹窗状态 ===== */
 
-const isDarkMode = computed(() => themeStore.darkMode); // 是否为深色模式
+const showSubscribeModal = ref(false);
+const currentSubscribeMap = ref<Api.Game.MapVo | null>(null);
+const showEditModal = ref(false);
+const currentEditMap = ref<Api.Game.MapVo | null>(null);
+const showMapEditModal = ref(false);
+const isMapAddMode = ref(false);
+const mapEditForm = reactive<Api.Game.MapParams>({ id: 0, mapName: '', mapLabel: '', mapUrl: '', type: '', tag: [], artifact: [], isOrder: '0' });
+const mapEditLoading = ref(false);
+const mapUploadLoading = ref(false);
 
-const searchKeyword = ref<string>(''); // 搜索关键词
-const mapList = ref<Api.Game.MapVo[]>([]); // 地图列表
-const subscribeList = ref<Api.Game.MapVo[]>([]); // 订阅列表
-const mapLoading = ref<boolean>(false); // 地图加载状态
-const subscribeLoading = ref<boolean>(false); // 订阅加载状态
-const qqGroupOptions = ref<CommonType.Option<string>[]>([]); // QQ群配置项
+/* ===== 订阅状态判断 ===== */
 
-const pagination = reactive<Api.Common.PaginatingCommonParams>({
-    current: 1, // 当前页码
-    size: DEFAULT_PAGE_SIZE, // 每页数量
-    total: 0 // 总数
-});
+const getSubscribedMap = (mapId: number) => subscribeList.value.find(map => map.id === mapId);
+const isSystemSubscribed = (mapId: number) => getSubscribedMap(mapId)?.systemOrder === '1';
+const isQQSubscribed = (mapId: number) => getSubscribedMap(mapId)?.qqOrder === '1';
+const isCurrentSystemSubscribed = computed(() => (currentSubscribeMap.value ? isSystemSubscribed(currentSubscribeMap.value.id) : false));
+const isCurrentQQSubscribed = computed(() => (currentSubscribeMap.value ? isQQSubscribed(currentSubscribeMap.value.id) : false));
+const isCurrentEditSystemSubscribed = computed(() => (currentEditMap.value ? isSystemSubscribed(currentEditMap.value.id) : false));
+const isCurrentEditQQSubscribed = computed(() => (currentEditMap.value ? isQQSubscribed(currentEditMap.value.id) : false));
 
-const getSubscribedMap = (mapId: number) =>
-    subscribeList.value.find(map => map.id === mapId); // 获取已订阅地图
+/* ===== 订阅编辑 ===== */
 
-const isSystemSubscribed = (mapId: number) => {
-    const subscribedMap = getSubscribedMap(mapId);
-    return subscribedMap?.systemOrder === '1'; // 检查是否已系统订阅
+const handleEditSubscribe = (map: Api.Game.MapVo) => {
+    currentEditMap.value = map;
+    showEditModal.value = true;
 };
 
-const isQQSubscribed = (mapId: number) => {
-    const subscribedMap = getSubscribedMap(mapId);
-    return subscribedMap?.qqOrder === '1'; // 检查是否已QQ订阅
-};
-
-const isCurrentSystemSubscribed = computed(() =>
-    currentSubscribeMap.value ? isSystemSubscribed(currentSubscribeMap.value.id) : false // 当前地图是否已系统订阅
-);
-
-const isCurrentQQSubscribed = computed(() =>
-    currentSubscribeMap.value ? isQQSubscribed(currentSubscribeMap.value.id) : false // 当前地图是否已QQ订阅
-);
-
-const showSubscribeModal = ref<boolean>(false); // 订阅弹框显示状态
-const currentSubscribeMap = ref<Api.Game.MapVo | null>(null); // 当前订阅的地图
-
-const showBindQQModal = ref<boolean>(false); // 绑定QQ弹框显示状态
-const bindQQId = ref<string | null>(null); // 绑定的QQ号
-const bindQQGroup = ref<string | null>(null); // 绑定的QQ群
-
-const showEditModal = ref<boolean>(false); // 编辑弹框显示状态
-const currentEditMap = ref<Api.Game.MapVo | null>(null); // 当前编辑的地图
-
-const showMapEditModal = ref<boolean>(false); // 地图编辑弹框显示状态
-const mapEditForm = reactive<Api.Game.MapParams>({
-    id: 0,
-    mapName: '',
-    mapLabel: '',
-    type: '',
-    tag: [],
-    artifact: [],
-    isOrder: '0'
-});
-const mapEditLoading = ref<boolean>(false);
-
-const isCurrentEditSystemSubscribed = computed(() =>
-    currentEditMap.value ? isSystemSubscribed(currentEditMap.value.id) : false // 编辑地图是否已系统订阅
-);
-
-const isCurrentEditQQSubscribed = computed(() =>
-    currentEditMap.value ? isQQSubscribed(currentEditMap.value.id) : false // 编辑地图是否已QQ订阅
-);
-
-/* ================================ 编辑相关函数 ================================ */
-
-const handleEditSubscribe = (map: Api.Game.MapVo): void => {
-    currentEditMap.value = map; // 设置当前编辑的地图
-    showEditModal.value = true; // 显示编辑弹框
-};
-
-const handleEditSystemSubscribe = async (): Promise<void> => {
+const handleEditSystemSubscribe = async () => {
     if (!currentEditMap.value) return;
-    await handleSystemSubscribeDirect(currentEditMap.value); // 直接系统订阅
-    showEditModal.value = false; // 关闭编辑弹框
-    currentEditMap.value = null; // 重置当前编辑地图
+    await handleSystemSubscribeDirect(currentEditMap.value);
+    showEditModal.value = false;
+    currentEditMap.value = null;
 };
 
-const handleEditQQSubscribe = async (): Promise<void> => {
+const handleEditQQSubscribe = async () => {
     if (!currentEditMap.value) return;
-    await handleQQSubscribeDirect(currentEditMap.value); // 直接QQ订阅
-    showEditModal.value = false; // 关闭编辑弹框
-    currentEditMap.value = null; // 重置当前编辑地图
+    await handleQQSubscribeDirect(currentEditMap.value);
+    showEditModal.value = false;
+    currentEditMap.value = null;
 };
 
-const handleEditUnsubscribeSystem = async (): Promise<void> => {
+const handleEditUnsubscribeSystem = async () => {
     if (!currentEditMap.value) return;
-    await handleUnsubscribeSystem(currentEditMap.value); // 取消系统订阅
+    await handleUnsubscribeSystem(currentEditMap.value);
 };
 
-const handleEditUnsubscribeQQ = async (): Promise<void> => {
+const handleEditUnsubscribeQQ = async () => {
     if (!currentEditMap.value) return;
-    await handleUnsubscribeQQ(currentEditMap.value); // 取消QQ订阅
+    await handleUnsubscribeQQ(currentEditMap.value);
 };
 
-const handleDeleteSubscribe = async (): Promise<void> => {
+const handleDeleteSubscribe = async () => {
     if (!currentEditMap.value) return;
-    const { error } = await fetchDeleteMapSubscribe(currentEditMap.value!.id); // 删除订阅
-    if (error) {
-        window.$message?.error($t('mapOrder.unsubscribeFailed')); // 提示失败
-    }
-    showEditModal.value = false; // 关闭编辑弹框
-    currentEditMap.value = null; // 重置当前编辑地图
-    await fetchSubscribeList(); // 刷新订阅列表
+    const { error } = await fetchDeleteMapSubscribe(currentEditMap.value.id);
+    if (error) window.$message?.error($t('mapOrder.unsubscribeFailed'));
+    showEditModal.value = false;
+    currentEditMap.value = null;
+    await fetchSubscribeList();
 };
 
-const handleOpenMapEdit = (map: Api.Game.MapVo): void => {
+/* ===== 地图新增 / 编辑 ===== */
+
+const resetMapEditForm = () => {
+    mapEditForm.id = 0;
+    mapEditForm.mapName = '';
+    mapEditForm.mapLabel = '';
+    mapEditForm.mapUrl = '';
+    mapEditForm.type = '';
+    mapEditForm.tag = [];
+    mapEditForm.artifact = [];
+    mapEditForm.isOrder = '0';
+};
+
+const handleOpenMapAdd = () => {
+    resetMapEditForm();
+    isMapAddMode.value = true;
+    showMapEditModal.value = true;
+};
+
+const handleOpenMapEdit = (map: Api.Game.MapVo) => {
+    isMapAddMode.value = false;
     mapEditForm.id = map.id;
     mapEditForm.mapName = map.mapName;
     mapEditForm.mapLabel = map.mapLabel;
+    mapEditForm.mapUrl = map.mapUrl || '';
     mapEditForm.type = map.type != null ? String(map.type) : '';
-    mapEditForm.tag = map.tag ? (Array.isArray(map.tag) ? map.tag : [map.tag]) : [];
-    mapEditForm.artifact = map.artifact ? (typeof map.artifact === 'string' ? JSON.parse(map.artifact || '[]') : map.artifact) : [];
+    mapEditForm.tag = Array.isArray(map.tag) ? map.tag : (map.tag ? [map.tag] : []);
+    mapEditForm.artifact = typeof map.artifact === 'string' ? JSON.parse(map.artifact || '[]') : (map.artifact || []);
     mapEditForm.isOrder = map.isOrder || '0';
     showMapEditModal.value = true;
 };
 
-const handleMapEditSubmit = async (): Promise<void> => {
+const handleUploadImage = async ({ file, onFinish, onError }: UploadCustomRequestOptions) => {
+    mapUploadLoading.value = true;
+    try {
+        const { data, error } = await fetchUploadFile(file.file as File);
+        if (error || !data) {
+            window.$message?.error($t('mapOrder.uploadFailed'));
+            onError();
+            return;
+        }
+        mapEditForm.mapUrl = data.url;
+        window.$message?.success($t('mapOrder.uploadSuccess'));
+        onFinish();
+    } finally {
+        mapUploadLoading.value = false;
+    }
+};
+
+const handleMapEditSubmit = async () => {
+    if (mapEditLoading.value) return;
     mapEditLoading.value = true;
     try {
-        const { error } = await fetchUpdateMap({
-            ...mapEditForm,
-            type: mapEditForm.type ? String(mapEditForm.type) : ''
-        });
-        if (!error) {
-            window.$message?.success($t('mapOrder.editSuccess') || '编辑成功');
-            showMapEditModal.value = false;
-            await fetchMapList(searchKeyword.value);
-            // 刷新 gameStore.mapList，否则页面上的地图类型/标签等依赖 gameStore 的显示不会更新
-            await gameStore.initServerList();
-        } else {
-            window.$message?.error($t('mapOrder.editFailed') || '编辑失败');
+        const params = { ...mapEditForm, type: mapEditForm.type ? String(mapEditForm.type) : '' };
+        const { error } = isMapAddMode.value ? await fetchInsertMap(params) : await fetchUpdateMap(params);
+        if (error) {
+            window.$message?.error(isMapAddMode.value ? $t('mapOrder.addFailed') : $t('mapOrder.editFailed'));
+            return;
         }
+        window.$message?.success(isMapAddMode.value ? $t('mapOrder.addSuccess') : $t('mapOrder.editSuccess'));
+        showMapEditModal.value = false;
+        // 等待编辑完成后再刷新地图列表
+        await fetchMapList(searchKeyword.value);
+        await gameStore.initServerList();
     } finally {
         mapEditLoading.value = false;
     }
 };
 
-/* ================================ Event Handlers ================================ */
+/* ===== 订阅操作 ===== */
 
-const handleBack = (): void => emit('back'); // 返回
+const handleBack = () => emit('back');
 
-const handlePageChange = (page: number): void => {
-    pagination.current = page; // 更新当前页码
-    fetchMapList(searchKeyword.value); // 获取地图列表
+const handlePageChange = (page: number) => {
+    pagination.current = page;
+    fetchMapList(searchKeyword.value);
 };
 
-const handleSystemSubscribe = async (): Promise<void> => {
+const handleSystemSubscribe = async () => {
     if (!currentSubscribeMap.value) return;
-    const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, "1", null); // 添加系统订阅
-    if (error) {
-        window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
-    }
-    showSubscribeModal.value = false; // 关闭订阅弹框
-    currentSubscribeMap.value = null; // 重置当前订阅地图
-    await fetchSubscribeList(); // 刷新订阅列表
+    const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, '1', null);
+    if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
+    showSubscribeModal.value = false;
+    currentSubscribeMap.value = null;
+    await fetchSubscribeList();
 };
 
-const onGetOption = async () => {
-    const { data, error } = await fetchGetGroupList(); // 获取QQ群列表
-    if (!error) {
-        qqGroupOptions.value = data; // 设置QQ群选项
-    }
-};
-
-const handleQQSubscribe = async (): Promise<void> => {
+const handleQQSubscribe = async () => {
     if (!currentSubscribeMap.value) return;
-
-    if (!authStore.userInfo.qqId || !authStore.userInfo.qqgroup) {
-        showSubscribeModal.value = false; // 关闭订阅弹框
-        bindQQId.value = authStore.userInfo.qqId; // 设置QQ号
-        bindQQGroup.value = authStore.userInfo.qqgroup; // 设置QQ群
-        showBindQQModal.value = true; // 显示绑定QQ弹框
-        return;
-    }
-    const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, null, "1"); // 添加QQ订阅
-    if (error) {
-        window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
-    }
-
-    showSubscribeModal.value = false; // 关闭订阅弹框
-    currentSubscribeMap.value = null; // 重置当前订阅地图
-    await fetchSubscribeList(); // 刷新订阅列表
+    const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, null, '1');
+    if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
+    showSubscribeModal.value = false;
+    currentSubscribeMap.value = null;
+    await fetchSubscribeList();
 };
 
-const handleBindQQ = async (): Promise<void> => {
-    if (!bindQQId.value || !bindQQGroup.value) {
-        window.$message?.error($t('mapOrder.qqAndGroupCannotBeEmpty')); // 提示QQ号和QQ群不能为空
-        return;
-    }
-    const { error } = await fetchBindQQ(bindQQId.value); // 绑定QQ号
-    const { error: error2 } = await fetchBindQQGroup(bindQQGroup.value); // 绑定QQ群
-    if (!error && !error2) {
-        window.$message?.success($t('mapOrder.bindSuccess')); // 提示绑定成功
-        await authStore.getUserInfo(); // 刷新用户信息
-    } else if (error) {
-        window.$message?.error(error.message); // 提示绑定QQ失败
-    } else if (error2) {
-        window.$message?.error(error2.message); // 提示绑定QQ群失败
-    }
-    showBindQQModal.value = false; // 关闭绑定QQ弹框
+const handleSystemSubscribeDirect = async (map: Api.Game.MapVo) => {
+    const { error } = await fetchAddMapSubscribe(map.id, '1', null);
+    if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
+    await fetchSubscribeList();
 };
 
-const handleSystemSubscribeDirect = async (map: Api.Game.MapVo): Promise<void> => {
-    const { error } = await fetchAddMapSubscribe(map.id, "1", null); // 直接添加系统订阅
-    if (error) {
-        window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
-    }
-    await fetchSubscribeList(); // 刷新订阅列表
+const handleQQSubscribeDirect = async (map: Api.Game.MapVo) => {
+    const { error } = await fetchAddMapSubscribe(map.id, null, '1');
+    if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
+    await fetchSubscribeList();
 };
 
-const handleQQSubscribeDirect = async (map: Api.Game.MapVo): Promise<void> => {
-    if (!authStore.userInfo.qqId || !authStore.userInfo.qqgroup) {
-        currentSubscribeMap.value = map; // 设置当前订阅地图
-        bindQQId.value = authStore.userInfo.qqId; // 设置QQ号
-        bindQQGroup.value = authStore.userInfo.qqgroup; // 设置QQ群
-        showBindQQModal.value = true; // 显示绑定QQ弹框
-        return;
-    }
-    const { error } = await fetchAddMapSubscribe(map.id, null, "1"); // 直接添加QQ订阅
-    if (error) {
-        window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
-    }
-    await fetchSubscribeList(); // 刷新订阅列表
-};
-
-const handleUnsubscribeSystem = async (map: Api.Game.MapVo): Promise<void> => {
-    const params: Api.Game.UpdateMapSubscribeParams = {
-        mapId: map.id,
-        systemOrder: "0",
-        qqOrder: null,
-    };
-    const { error } = await fetchUpdateMapSubscribe(params); // 更新订阅（取消系统订阅）
-    if (error) {
-        window.$message?.error($t('mapOrder.unsubscribeFailed')); // 提示失败
-    }
-    await fetchSubscribeList(); // 刷新订阅列表
+const handleUnsubscribe = async (map: Api.Game.MapVo, systemOrder: string | null, qqOrder: string | null) => {
+    const { error } = await fetchUpdateMapSubscribe({ mapId: map.id, systemOrder, qqOrder });
+    if (error) window.$message?.error($t('mapOrder.unsubscribeFailed'));
+    await fetchSubscribeList();
     if (showEditModal.value && currentEditMap.value?.id === map.id) {
-        showEditModal.value = false; // 关闭编辑弹框
-        currentEditMap.value = null; // 重置当前编辑地图
+        showEditModal.value = false;
+        currentEditMap.value = null;
     }
 };
 
-const handleUnsubscribeQQ = async (map: Api.Game.MapVo): Promise<void> => {
-    const params: Api.Game.UpdateMapSubscribeParams = {
-        mapId: map.id,
-        systemOrder: null,
-        qqOrder: "0",
-    };
-    const { error } = await fetchUpdateMapSubscribe(params); // 更新订阅（取消QQ订阅）
-    if (error) {
-        window.$message?.error($t('mapOrder.unsubscribeFailed')); // 提示失败
-    }
-    await fetchSubscribeList(); // 刷新订阅列表
-    if (showEditModal.value && currentEditMap.value?.id === map.id) {
-        showEditModal.value = false; // 关闭编辑弹框
-        currentEditMap.value = null; // 重置当前编辑地图
-    }
-};
+const handleUnsubscribeSystem = (map: Api.Game.MapVo) => handleUnsubscribe(map, '0', null);
+const handleUnsubscribeQQ = (map: Api.Game.MapVo) => handleUnsubscribe(map, null, '0');
 
-/* ================================ Data Fetching ================================ */
-// 获取地图列表
-const fetchMapList = async (keyword: string): Promise<void> => {
-    mapLoading.value = true; // 开始加载
+/* ===== 数据请求 ===== */
 
+const fetchMapList = async (keyword: string) => {
+    mapLoading.value = true;
     try {
-        const { data } = await fetchGetMapPage(pagination, keyword.trim()); // 获取地图分页数据
-        mapList.value = data?.records || []; // 设置地图列表
-        pagination.total = data?.total || 0; // 设置总数
+        const { data } = await fetchGetMapPage(pagination, keyword.trim());
+        mapList.value = data?.records || [];
+        pagination.total = data?.total || 0;
     } catch (error) {
-        window.$message?.error($t('mapOrder.searchFailed')); // 提示搜索失败
+        window.$message?.error($t('mapOrder.searchFailed'));
         console.error('[MapOrder] Failed to fetch map list:', error);
     } finally {
         setTimeout(() => {
-            mapLoading.value = false; // 结束加载
+            mapLoading.value = false;
         }, LOADING_DELAY);
     }
 };
 
-// 获取用户订阅列表
-const fetchSubscribeList = async (): Promise<void> => {
-    subscribeLoading.value = true; // 开始加载
+const fetchSubscribeList = async () => {
+    subscribeLoading.value = true;
     try {
-        const { data } = await fetchGetUserSubscribeList(); // 获取用户订阅列表
-        subscribeList.value = data || []; // 设置订阅列表
+        const { data } = await fetchGetUserSubscribeList();
+        subscribeList.value = data || [];
     } catch (error) {
-        window.$message?.error($t('mapOrder.fetchSubscribeListFailed')); // 提示获取失败
+        window.$message?.error($t('mapOrder.fetchSubscribeListFailed'));
         console.error('[MapOrder] Failed to fetch subscribe list:', error);
     } finally {
-        subscribeLoading.value = false; // 结束加载
+        subscribeLoading.value = false;
     }
 };
 
-/* ================================ Utility Functions ================================ */
-const getMapTypeInfo = (mapName: string | undefined): Api.Game.Map | undefined => {
-    if (!mapName) return undefined;
-    return gameStore.mapList.find(map => map.mapName === mapName); // 获取地图类型信息
+/* ===== 工具函数 ===== */
+
+const getMapTypeInfo = (mapName?: string) => (mapName ? gameStore.mapList.find(map => map.mapName === mapName) : undefined);
+const getMapType = (mapName?: string) => getMapTypeInfo(mapName)?.type;
+const getMapTags = (mapName?: string) => {
+    const tags = getMapTypeInfo(mapName)?.tag;
+    return tags ? (Array.isArray(tags) ? tags : [tags]) : [];
 };
+const getGameTypeOption = (type?: string) => (type ? dictOptions('game_type').find(item => item.value === type) : undefined);
+const getGameTagOption = (tag?: string) => (tag ? dictOptions('game_tag').find(item => item.value === tag) : undefined);
 
-const getMapType = (mapName: string | undefined): string | undefined => getMapTypeInfo(mapName)?.type; // 获取地图类型
+/* ===== 搜索监听 ===== */
 
-const getMapTags = (mapName: string | undefined): string[] => {
-    const mapInfo = getMapTypeInfo(mapName);
-    if (!mapInfo?.tag) return [];
-    return Array.isArray(mapInfo.tag) ? mapInfo.tag : [mapInfo.tag]; // 获取地图标签
-};
+const debouncedSearch = useDebounceFn(fetchMapList, DEBOUNCE_DELAY);
 
-const getGameTypeOption = (type: string | undefined) =>
-    type ? dictOptions('game_type').find((item: any) => item.value === type) : undefined; // 获取游戏类型选项
-
-const getGameTagOption = (tag: string | undefined) =>
-    tag ? dictOptions('game_tag').find((item: any) => item.value === tag) : undefined; // 获取游戏标签选项
-
-/* ================================ Watchers ================================ */
-
-const debouncedSearch = useDebounceFn(fetchMapList, DEBOUNCE_DELAY); // 防抖搜索
-
-watch(searchKeyword, (newValue) => {
-    pagination.current = 1; // 重置到第一页
-    debouncedSearch(newValue); // 执行搜索
+watch(searchKeyword, (value) => {
+    pagination.current = 1;
+    debouncedSearch(value);
 });
 
-/* ================================ Lifecycle ================================ */
+/* ===== 初始化 ===== */
 
-onMounted(async () => {
-    fetchMapList(''); // 获取地图列表
-    fetchSubscribeList(); // 获取订阅列表
-    onGetOption(); // 获取QQ群选项
+onMounted(() => {
+    fetchMapList('');
+    fetchSubscribeList();
 });
 </script>
 
@@ -384,9 +289,15 @@ onMounted(async () => {
                 <SvgIcon icon="material-symbols:map-outline" />
                 <h1 class="page-title">{{ $t('mapOrder.title') }}</h1>
             </div>
-            <div class="back-btn" @click="handleBack">
-                <SvgIcon icon="material-symbols:arrow-back" class="back-icon" />
-                <span>{{ $t('mapOrder.back') }}</span>
+            <div class="header-actions">
+                <div v-if="isAdmin" class="add-map-btn" @click="handleOpenMapAdd">
+                    <SvgIcon icon="material-symbols:add" class="add-icon" />
+                    <span>{{ $t('mapOrder.addMap') }}</span>
+                </div>
+                <div class="back-btn" @click="handleBack">
+                    <SvgIcon icon="material-symbols:arrow-back" class="back-icon" />
+                    <span>{{ $t('mapOrder.back') }}</span>
+                </div>
             </div>
         </div>
         <div class="main-content">
@@ -394,12 +305,11 @@ onMounted(async () => {
                 footer-style="padding:10px">
                 <template #header>
                     <div class="search-container">
-                        <NInput v-model:value="searchKeyword" type="text"
-                            :placeholder="$t('mapOrder.searchPlaceholder')" clearable class="search-input">
-                            <template #prefix>
-                                <SvgIcon icon="material-symbols:search" class="search-icon" />
-                            </template>
-                        </NInput>
+                        <div class="search-box">
+                            <SvgIcon icon="material-symbols:search" class="search-icon" />
+                            <NInput v-model:value="searchKeyword" type="text"
+                                :placeholder="$t('mapOrder.searchPlaceholder')" clearable class="search-input" />
+                        </div>
                     </div>
                 </template>
                 <NGrid :cols="2" x-gap="12px" y-gap="12px" v-if="!mapLoading">
@@ -487,9 +397,9 @@ onMounted(async () => {
             </NCard>
             <NCard class="right-panel" content-class="h-full overflow-auto" content-style="padding:10px;">
                 <template #header>
-                    <div class="flex items-center justify-center font-size-16px">
-                        <SvgIcon icon="fluent-emoji-high-contrast:package" class="search-icon mr-5px" />
-                        {{ $t('mapOrder.subscribeList') }} ({{ subscribeList.length }})
+                    <div class="subscribe-list-title">
+                        <SvgIcon icon="fluent-emoji-high-contrast:package" class="subscribe-list-icon" />
+                        <span>{{ $t('mapOrder.subscribeList') }}</span>
                     </div>
                 </template>
                 <LoadingSpinner :loading="subscribeLoading" v-if="subscribeLoading" />
@@ -578,42 +488,6 @@ onMounted(async () => {
             </div>
         </div>
     </NModal>
-    <NModal v-model:show="showBindQQModal" :bordered="true" preset="card"
-        class="w-400px rounded-20px bind-qq-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
-        size="small">
-        <template #header>
-            <div class="flex items-center font-size-18px">
-                <div class="font-size-16px">{{ $t('mapOrder.bindQQInfo') }}</div>
-            </div>
-        </template>
-        <div class="bind-qq-modal-new">
-            <div class="subscribe-header">
-                <div class="character-image">
-                    <img src="@/assets/imgs/tool/418392.png" alt="character" />
-                </div>
-                <div class="header-glow"></div>
-            </div>
-            <div class="bind-qq-form">
-                <div class="form-item">
-                    <div class="form-label">{{ $t('mapOrder.qqId') }}</div>
-                    <NInput v-model:value="bindQQId" :placeholder="$t('mapOrder.pleaseInputQQId')" class="form-input" />
-                </div>
-                <div class="form-item">
-                    <div class="form-label">{{ $t('mapOrder.qqGroupId') }}</div>
-                    <NSelect v-model:value="bindQQGroup" :options="qqGroupOptions"
-                        :placeholder="$t('mapOrder.pleaseSelectQQGroup')" class="form-input" clearable />
-                </div>
-            </div>
-            <div class="bind-buttons">
-                <NButton type="primary" class="w-full rounded-10px" @click="handleBindQQ">
-                    <template #icon>
-                        <SvgIcon icon="material-symbols:check" />
-                    </template>
-                    {{ $t('mapOrder.confirmBind') }}
-                </NButton>
-            </div>
-        </div>
-    </NModal>
     <NModal v-model:show="showEditModal" :bordered="true" preset="card"
         class="w-400px rounded-20px subscribe-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
         size="small">
@@ -664,11 +538,24 @@ onMounted(async () => {
         :class="{ 'light-mode': !isDarkMode }" :closable="true" size="small">
         <template #header>
             <div class="flex items-center font-size-16px">
-                <SvgIcon icon="material-symbols:edit-outline" class="mr-5px" />
-                {{ $t('mapOrder.editMap') }}
+                <SvgIcon :icon="isMapAddMode ? 'material-symbols:add' : 'material-symbols:edit-outline'" class="mr-5px" />
+                {{ isMapAddMode ? $t('mapOrder.addMap') : $t('mapOrder.editMap') }}
             </div>
         </template>
         <div class="map-edit-form p-10px">
+            <div class="form-item mb-10px">
+                <div class="form-label mb-5px font-bold">{{ $t('mapOrder.mapImage') }}</div>
+                <NUpload accept="image/*" :max="1" :show-file-list="false"
+                    :custom-request="handleUploadImage">
+                    <div class="map-upload-trigger">
+                        <img v-if="mapEditForm.mapUrl" :src="mapEditForm.mapUrl" class="map-upload-preview" alt="map" />
+                        <div v-else class="map-upload-placeholder">
+                            <SvgIcon icon="material-symbols:add-photo-alternate-outlined" class="placeholder-icon" />
+                            <span>{{ mapUploadLoading ? $t('mapOrder.uploading') : $t('mapOrder.uploadMapImage') }}</span>
+                        </div>
+                    </div>
+                </NUpload>
+            </div>
             <div class="form-item mb-10px">
                 <div class="form-label mb-5px font-bold">{{ $t('mapOrder.mapName') }}</div>
                 <NInput v-model:value="mapEditForm.mapName" :placeholder="$t('mapOrder.mapName')" />
@@ -731,6 +618,36 @@ onMounted(async () => {
             align-items: center;
             gap: 12px;
             font-size: 24px;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .add-map-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 9px 18px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.25);
+
+            &:hover {
+                background: rgba(102, 126, 234, 0.18);
+                border-color: rgba(102, 126, 234, 0.4);
+            }
+
+            .add-icon {
+                font-size: 18px;
+            }
         }
 
         .back-btn {
@@ -1023,8 +940,8 @@ onMounted(async () => {
             }
 
             ::v-deep(.n-card-header) {
-                height: 35px;
-                padding: 0 0 10px 0;
+                height: auto;
+                padding: 2px 0 12px;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             }
         }
@@ -1040,8 +957,8 @@ onMounted(async () => {
             transition: all 0.3 ease;
 
             ::v-deep(.n-card-header) {
-                height: 35px;
-                padding: 0 0 10px 0;
+                height: auto;
+                padding: 2px 0 12px;
                 border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             }
 
@@ -1205,11 +1122,119 @@ onMounted(async () => {
     }
 }
 
+/* ==================== 搜索框 ==================== */
+.search-container {
+    width: 100%;
+    padding: 2px 0;
+
+    .search-box {
+        position: relative;
+        display: flex;
+        align-items: center;
+        height: 36px;
+        padding: 0 10px 0 36px;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        transition: all 0.25s ease;
+
+        &:focus-within {
+            border-color: rgba(102, 126, 234, 0.55);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            font-size: 17px;
+            color: rgba(102, 126, 234, 0.8);
+            transition: color 0.25s ease;
+        }
+
+        &:focus-within .search-icon {
+            color: rgba(102, 126, 234, 1);
+        }
+
+        ::v-deep(.n-input) {
+            background: transparent;
+            --n-border: none !important;
+            --n-border-focus: none !important;
+            --n-border-hover: none !important;
+            --n-box-shadow-focus: none !important;
+
+            .n-input__input-el {
+                color: rgba(255, 255, 255, 0.9);
+                font-size: 13px;
+            }
+
+            .n-input__placeholder {
+                color: rgba(255, 255, 255, 0.35);
+            }
+        }
+    }
+}
+
+/* ==================== 订阅列表标题 ==================== */
+.subscribe-list-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: rgba(255, 255, 255, 0.9);
+
+    .subscribe-list-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 9px;
+        background: rgba(102, 126, 234, 0.16);
+        border: 1px solid rgba(102, 126, 234, 0.25);
+        color: rgba(102, 126, 234, 0.95);
+        font-size: 15px;
+        transition: all 0.25s ease;
+    }
+}
+
 // 浅色模式适配
 .light-mode {
-    .search-container {
+    .search-box {
+        background: rgba(0, 0, 0, 0.03);
+        border-color: rgba(0, 0, 0, 0.09);
+
+        &:focus-within {
+            border-color: rgba(102, 126, 234, 0.45);
+            background: rgba(0, 0, 0, 0.05);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
         .search-icon {
-            color: rgba(0, 0, 0, 0.4);
+            color: rgba(102, 126, 234, 0.75);
+        }
+
+        ::v-deep(.n-input) {
+            .n-input__input-el {
+                color: rgba(0, 0, 0, 0.85);
+            }
+
+            .n-input__placeholder {
+                color: rgba(0, 0, 0, 0.3);
+            }
+        }
+    }
+
+    .subscribe-list-title {
+        color: rgba(0, 0, 0, 0.85);
+
+        .subscribe-list-icon {
+            background: rgba(102, 126, 234, 0.12);
+            border-color: rgba(102, 126, 234, 0.2);
+            color: rgba(102, 126, 234, 0.9);
         }
     }
 
@@ -1807,6 +1832,53 @@ onMounted(async () => {
     .bind-buttons {
         width: 100%;
         padding: 0 20px;
+    }
+}
+
+/* ===== 地图图片上传 ===== */
+.map-upload-trigger {
+    width: 100%;
+    height: 140px;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    border: 1px dashed rgba(102, 126, 234, 0.4);
+    background: rgba(102, 126, 234, 0.04);
+    transition: border-color 0.2s ease, background 0.2s ease;
+
+    &:hover {
+        border-color: rgba(102, 126, 234, 0.7);
+        background: rgba(102, 126, 234, 0.08);
+    }
+
+    .map-upload-preview {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .map-upload-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 150px;
+        height: 100%;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.55);
+
+        .placeholder-icon {
+            font-size: 28px;
+        }
+    }
+}
+
+.light-mode {
+    .map-upload-trigger {
+        .map-upload-placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
     }
 }
 </style>

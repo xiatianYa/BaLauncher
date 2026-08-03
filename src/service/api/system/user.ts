@@ -1,17 +1,9 @@
 import { request } from '@/service/request';
 
-/** 绑定用户QQ号 */
-export function fetchBindQQ(qq: string | null) {
-  return request<boolean>({
-    url: `/sysUser/bindQQ/${qq}`,
-    method: 'put'
-  });
-}
-
-/** 绑定用户QQ群号 */
-export function fetchBindQQGroup(group: string | null) {
-  return request<boolean>({
-    url: `/sysUser/bindQqGroup/${group}`,
-    method: 'put'
+/** 生成当前登录用户的绑定令牌（在QQ群内发送「用户绑定 令牌」完成绑定） */
+export function fetchGetBindToken() {
+  return request<string>({
+    url: '/sysUser/getBindToken',
+    method: 'get'
   });
 }

@@ -35,19 +35,17 @@ const getPingType = (ping?: number) => {
   return 'error';
 };
 
-// 格式化游戏时间计算进度颜色
-const getOnLineColor = (server: Api.Game.SeverVo) => {
-  if (!server) return '';
-  if (server.numPlayers <= 20) {
-    return `background-color: #00f91a;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
-  } else if (server.numPlayers <= 40) {
-    return `background-color: #5470ee;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
-  } else if (server.numPlayers <= 60) {
-    return `background-color: #ffa325;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
-  } else if (server.numPlayers <= 80) {
-    return `background-color: #ff4f00;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
-  }
-  return `background-color: #ff0000;width: ${(server.numPlayers / server.maxPlayers) * 100}%;`;
+// 在线人数方格：1 名玩家 = 1 个方格，铺满卡片宽度
+const getDotTotal = (server: Api.Game.SeverVo) => server.maxPlayers || 1;
+const getDotFilled = (server: Api.Game.SeverVo) => Math.min(server.numPlayers || 0, getDotTotal(server));
+
+// 在线人数对应的格子颜色等级
+const getDotLevel = (server: Api.Game.SeverVo) => {
+  if (server.numPlayers <= 20) return 1;
+  if (server.numPlayers <= 40) return 2;
+  if (server.numPlayers <= 60) return 3;
+  if (server.numPlayers <= 80) return 4;
+  return 5;
 };
 
 const getPlayerLevel = (server: Api.Game.SeverVo): string => {
@@ -109,7 +107,10 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
         <div class="sercer-card overflow-hidden flex flex-col"
           v-if="server.isOnline && getSourceServerInfo(server)?.serverName">
           <img v-if="server.mapUrl" class="server-card-bg" v-lazy="server.mapUrl" />
-          <div class="z-9 server-online" :style="`${getOnLineColor(server)}`"></div>
+          <div class="z-9 server-dots" :class="`level-${getDotLevel(server)}`">
+            <span v-for="i in getDotTotal(server)" :key="i" class="server-dot"
+              :class="{ filled: i <= getDotFilled(server) }"></span>
+          </div>
           <div class="server-card-mask"></div>
           <div
             class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold whitespace-nowrap text-ellipsis overflow-hidden">
@@ -123,7 +124,8 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
             </NEllipsis>
             <div class="player-badge mr-5px" :class="getPlayerLevel(server)">
               <SvgIcon icon="mdi:account-group" class="player-icon" />
-              <span class="player-num">{{ server.numPlayers }}<span class="player-sep">/</span>{{ server.maxPlayers }}</span>
+              <span class="player-num">{{ server.numPlayers }}<span class="player-sep">/</span>{{ server.maxPlayers
+                }}</span>
             </div>
           </div>
           <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
@@ -218,13 +220,48 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
     filter: brightness(0.9);
   }
 
-  .server-online {
-    height: 3px;
-    width: 100%;
+  .server-dots {
     position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    gap: 2px;
     z-index: 10;
-    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
-    transition: filter 0.3s ease, height 0.3s ease;
+    overflow: hidden;
+
+    .server-dot {
+      flex: 1 1 0;
+      min-width: 0;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+    }
+
+    &.level-1 .server-dot.filled {
+      background: #00f91a;
+      box-shadow: 0 0 4px rgba(0, 249, 26, 0.6);
+    }
+
+    &.level-2 .server-dot.filled {
+      background: #5470ee;
+      box-shadow: 0 0 4px rgba(84, 112, 238, 0.6);
+    }
+
+    &.level-3 .server-dot.filled {
+      background: #ffa325;
+      box-shadow: 0 0 4px rgba(255, 163, 37, 0.6);
+    }
+
+    &.level-4 .server-dot.filled {
+      background: #ff4f00;
+      box-shadow: 0 0 4px rgba(255, 79, 0, 0.6);
+    }
+
+    &.level-5 .server-dot.filled {
+      background: #ff0000;
+      box-shadow: 0 0 4px rgba(255, 0, 0, 0.6);
+    }
   }
 
   .server-offline {
@@ -264,12 +301,10 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(
-      180deg,
-      rgba(0, 0, 0, 0.15) 0%,
-      rgba(0, 0, 0, 0.35) 50%,
-      rgba(0, 0, 0, 0.6) 100%
-    );
+    background: linear-gradient(180deg,
+        rgba(0, 0, 0, 0.15) 0%,
+        rgba(0, 0, 0, 0.35) 50%,
+        rgba(0, 0, 0, 0.6) 100%);
     z-index: 1;
     transition: opacity 0.25s ease;
   }
@@ -373,17 +408,15 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
     filter: brightness(1);
   }
 
-  &:hover .server-online {
+  &:hover .server-dots {
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
   }
 
   &:hover .server-card-mask {
-    background: linear-gradient(
-      180deg,
-      rgba(0, 0, 0, 0.08) 0%,
-      rgba(0, 0, 0, 0.25) 50%,
-      rgba(0, 0, 0, 0.5) 100%
-    );
+    background: linear-gradient(180deg,
+        rgba(0, 0, 0, 0.08) 0%,
+        rgba(0, 0, 0, 0.25) 50%,
+        rgba(0, 0, 0, 0.5) 100%);
   }
 }
 
@@ -418,9 +451,11 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 .player-badge.player-level-1 {
   border-color: rgba(0, 249, 26, 0.45);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(0, 249, 26, 0.2);
+
   :deep(.player-icon) {
     color: #00f91a;
   }
+
   &:hover {
     border-color: rgba(0, 249, 26, 0.6);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 14px rgba(0, 249, 26, 0.3);
@@ -430,9 +465,11 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 .player-badge.player-level-2 {
   border-color: rgba(84, 112, 238, 0.45);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(84, 112, 238, 0.2);
+
   :deep(.player-icon) {
     color: #5470ee;
   }
+
   &:hover {
     border-color: rgba(84, 112, 238, 0.6);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 14px rgba(84, 112, 238, 0.3);
@@ -442,9 +479,11 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 .player-badge.player-level-3 {
   border-color: rgba(255, 163, 37, 0.45);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(255, 163, 37, 0.2);
+
   :deep(.player-icon) {
     color: #ffa325;
   }
+
   &:hover {
     border-color: rgba(255, 163, 37, 0.6);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 14px rgba(255, 163, 37, 0.3);
@@ -454,9 +493,11 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 .player-badge.player-level-4 {
   border-color: rgba(255, 79, 0, 0.45);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(255, 79, 0, 0.2);
+
   :deep(.player-icon) {
     color: #ff4f00;
   }
+
   &:hover {
     border-color: rgba(255, 79, 0, 0.6);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 14px rgba(255, 79, 0, 0.3);
@@ -466,9 +507,11 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 .player-badge.player-level-5 {
   border-color: rgba(255, 0, 0, 0.55);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 12px rgba(255, 0, 0, 0.28);
+
   :deep(.player-icon) {
     color: #ff0000;
   }
+
   &:hover {
     border-color: rgba(255, 0, 0, 0.7);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 18px rgba(255, 0, 0, 0.4);
