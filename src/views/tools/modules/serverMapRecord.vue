@@ -214,46 +214,48 @@ onMounted(() => {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 4px 2px 8px;
+        padding: 8px 0;
 
         .title-section {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 12px;
+            font-size: 24px;
         }
 
         .back-btn {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border-radius: 6px;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 10px;
             cursor: pointer;
-            font-size: 13px;
-            color: var(--n-text-color);
-            border: 1px solid var(--n-border-color);
-            transition: all 0.15s ease;
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
 
             &:hover {
-                border-color: var(--n-border-color-hover);
-                background: var(--n-color-hover);
+                color: #667eea;
+                background: rgba(102, 126, 234, 0.3);
             }
 
             .back-icon {
-                font-size: 16px;
+                font-size: 20px;
             }
         }
 
         .title-icon {
-            font-size: 18px;
-            color: var(--n-text-color-2);
+            font-size: 24px;
+            color: #667eea;
         }
 
         .page-title {
-            font-size: 16px;
-            font-weight: 600;
+            font-size: 20px;
+            font-weight: 700;
             margin: 0;
             color: var(--n-text-color);
+            letter-spacing: 0.5px;
         }
     }
 

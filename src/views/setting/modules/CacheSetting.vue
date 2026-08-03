@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { NModal, NGrid, NGridItem, NButton } from 'naive-ui'
+import { NButton } from 'naive-ui'
 import { useThemeStore } from '@/store/modules/theme'
 import { localStg } from '@/utils/storage'
 import { $t } from '@/locales'
@@ -174,46 +174,42 @@ defineExpose({
     </div>
   </section>
 
-  <NModal v-model:show="cacheModalVisible" preset="card" class="cache-modal" :class="{ 'light-mode': !isDarkMode }"
-    :closable="false" size="small">
-    <template #header>
-      <div class="modal-header">清理缓存</div>
-    </template>
-
-    <div class="modal-body">
-      <p class="modal-tip">请选择要清理的缓存类型</p>
-      <NGrid :cols="2" :x-gap="12" :y-gap="12">
-        <NGridItem v-for="type in cacheTypes" :key="type.value">
-          <NButton class="cache-type-btn" ghost :dashed="!selectedCacheTypes.includes(type.value)"
-            :class="{ selected: selectedCacheTypes.includes(type.value) }" :type="type.type"
-            @click="toggleCacheType(type.value)">
-            <div class="cache-type-inner">
-              <SvgIcon :icon="type.icon" class="cache-type-icon" />
-              <span class="cache-type-label">{{ type.label }}</span>
-              <span class="cache-type-size">{{ getCacheTypeSize(type.value) }}</span>
-            </div>
-          </NButton>
-        </NGridItem>
-      </NGrid>
-    </div>
-
-    <template #footer>
-      <div class="modal-footer">
-        <NButton ghost type="info" class="modal-footer-btn" @click="cacheModalVisible = false">
-          <template #icon>
-            <SvgIcon icon="mdi:close" />
-          </template>
-          取消
-        </NButton>
-        <NButton ghost type="error" class="modal-footer-btn" @click="handleClearCache">
-          <template #icon>
-            <SvgIcon icon="material-symbols:delete-outline" />
-          </template>
-          确认清理
-        </NButton>
+  <div v-if="cacheModalVisible" class="cache-modal-overlay" @click.self="cacheModalVisible = false">
+    <div class="cache-modal" :class="{ 'light-mode': !isDarkMode }">
+      <div class="cache-modal-header">
+        <div class="cache-modal-title">
+          <SvgIcon icon="mdi:broom" class="cache-modal-title-icon" />
+          <span>清理缓存</span>
+        </div>
+        <div class="cache-modal-close" @click="cacheModalVisible = false">
+          <SvgIcon icon="mdi:close" />
+        </div>
       </div>
-    </template>
-  </NModal>
+
+      <div class="cache-modal-body">
+        <div class="cache-type-grid">
+          <div v-for="type in cacheTypes" :key="type.value" class="cache-type-card"
+            :class="{ selected: selectedCacheTypes.includes(type.value), [type.type]: true }"
+            @click="toggleCacheType(type.value)">
+            <SvgIcon :icon="type.icon" class="cache-type-card-icon" />
+            <span class="cache-type-card-label">{{ type.label }}</span>
+            <span class="cache-type-card-size">{{ getCacheTypeSize(type.value) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cache-modal-footer">
+        <button class="cache-btn cache-btn-cancel" @click="cacheModalVisible = false">
+          <SvgIcon icon="mdi:close" />
+          <span>取消</span>
+        </button>
+        <button class="cache-btn cache-btn-confirm" @click="handleClearCache">
+          <SvgIcon icon="material-symbols:delete-outline" />
+          <span>确认清理</span>
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped lang="scss">
@@ -272,78 +268,165 @@ defineExpose({
   }
 }
 
+.cache-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+}
+
 .cache-modal {
-  :deep(.n-card) {
-    background-color: var(--n-color);
-    border: 1px solid var(--n-border-color);
-    border-radius: 12px;
-    overflow: hidden;
-  }
+  width: 420px;
+  max-width: 90vw;
+  background-color: var(--n-color);
+  border: 1px solid var(--n-border-color);
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
 
-  :deep(.n-card__content) {
-    padding: 16px 20px;
-  }
+.cache-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--n-border-color);
+}
 
-  .modal-header {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--n-text-color);
-  }
+.cache-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--n-text-color);
 
-  .modal-body {
-    color: var(--n-text-color);
-
-    .modal-tip {
-      margin-bottom: 12px;
-      text-align: center;
-      font-size: 13px;
-      color: var(--n-text-color-2);
-    }
-  }
-
-  .modal-footer {
-    display: flex;
-    gap: 12px;
-
-    .modal-footer-btn {
-      flex: 1;
-    }
+  .cache-modal-title-icon {
+    font-size: 20px;
+    color: var(--primary-color, #18a058);
   }
 }
 
-.cache-type-btn {
-  width: 100%;
-  height: auto;
-  padding: 10px 12px;
+.cache-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  color: var(--n-text-color-3);
+  cursor: pointer;
+  transition: all 0.2s ease;
 
-  :deep(.n-button__content) {
-    width: 100%;
+  &:hover {
+    color: var(--n-text-color);
+    background-color: var(--n-close-color-hover, rgba(128, 128, 128, 0.12));
+  }
+}
+
+.cache-modal-body {
+  padding: 20px;
+  color: var(--n-text-color);
+}
+
+.cache-type-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.cache-type-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  border: 1px dashed var(--n-border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+
+  &.info { --type-color: #2080f0; --type-rgb: 32, 128, 240; }
+  &.primary { --type-color: #18a058; --type-rgb: 24, 160, 88; }
+  &.warning { --type-color: #f0a020; --type-rgb: 240, 160, 32; }
+  &.success { --type-color: #18a058; --type-rgb: 24, 160, 88; }
+  &.error { --type-color: #d03050; --type-rgb: 208, 48, 80; }
+
+  &:hover {
+    border-color: var(--type-color);
+    background-color: rgba(var(--type-rgb), 0.06);
   }
 
   &.selected {
     border-style: solid;
+    border-color: var(--type-color);
+    background-color: rgba(var(--type-rgb), 0.12);
+  }
+
+  .cache-type-card-icon {
+    font-size: 26px;
+    color: var(--type-color);
+  }
+
+  .cache-type-card-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--n-text-color);
+  }
+
+  .cache-type-card-size {
+    font-size: 12px;
+    color: var(--n-text-color-3);
   }
 }
 
-.cache-type-inner {
+.cache-modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px 20px;
+}
+
+.cache-btn {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
 
-  .cache-type-icon {
-    font-size: 18px;
+  span {
+    line-height: 1;
   }
+}
 
-  .cache-type-label {
-    flex: 1;
-    font-size: 13px;
-    font-weight: 500;
+.cache-btn-cancel {
+  color: var(--n-text-color);
+  background-color: transparent;
+  border: 1px solid var(--n-border-color);
+
+  &:hover {
+    background-color: var(--n-close-color-hover, rgba(128, 128, 128, 0.12));
   }
+}
 
-  .cache-type-size {
-    font-size: 12px;
-    opacity: 0.8;
+.cache-btn-confirm {
+  color: #fff;
+  background-color: #d03050;
+
+  &:hover {
+    background-color: #b92542;
   }
 }
 </style>

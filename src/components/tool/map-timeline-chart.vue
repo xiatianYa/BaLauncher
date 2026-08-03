@@ -97,6 +97,8 @@ const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
     },
     yAxis: {
         type: 'value',
+        min: 0,
+        max: 64,
         axisLine: {
             show: false
         },
@@ -123,6 +125,10 @@ const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
  */
 function updateChartData() {
     if (!props.timeAxis || !props.playerCountAxis) return;
+
+    // 计算 Y 轴上限：默认 64，超出则取数据中的最大值
+    const maxCount = Math.max(...props.playerCountAxis, 0);
+    const yMax = maxCount > 64 ? maxCount : 64;
 
     const newSeries = [{
         name: '在线人数',
@@ -160,6 +166,11 @@ function updateChartData() {
                 xAxis.axisLabel.formatter = formatTimeLabel;
                 xAxis.axisLabel.interval = (index: number) => computeLabelInterval(index, dataLength);
             }
+        }
+        const yAxis = opts.yAxis;
+        if (yAxis && !Array.isArray(yAxis)) {
+            yAxis.min = 0;
+            yAxis.max = yMax;
         }
         opts.series = newSeries;
         return opts;

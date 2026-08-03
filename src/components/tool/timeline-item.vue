@@ -6,7 +6,6 @@
  -->
 <script setup lang="ts">
 import { useThemeStore } from '@/store/modules/theme';
-import { computed } from 'vue';
 import { NCard, NEllipsis } from 'naive-ui';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import dayjs from 'dayjs';
@@ -22,7 +21,6 @@ const props = defineProps<{
 }>();
 
 const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 
 /** 中文星期映射表 */
 const WEEKDAY_MAP = ['日', '一', '二', '三', '四', '五', '六'] as const;
@@ -41,14 +39,14 @@ const formatFullTime = (timeStr: string): string => {
 <template>
     <div>
         <!-- 完整时间标注 -->
-        <div class="timeline-full-time mb-5px">
+        <div class="timeline-full-time mb-6px">
             {{ formatFullTime(item.firstPlayTime) }}
         </div>
 
         <!-- 卡片主体：封面 + 图表 -->
         <div class="timeline-card-item" :class="{ 'timeline-card-first': index === 0 }">
             <!-- 左侧：地图封面 -->
-            <NCard size="small" :bordered="true" class="timeline-card-left rounded-8px overflow-hidden">
+            <div class="timeline-card-left">
                 <img v-if="item.mapUrl" :src="item.mapUrl" :alt="item.mapLabel || item.mapName" class="map-image" />
                 <!-- 渐变遮罩层 -->
                 <div class="timeline-card-overlay"></div>
@@ -61,10 +59,10 @@ const formatFullTime = (timeStr: string): string => {
                     </NEllipsis>
                     <div class="record-time">
                         <SvgIcon icon="mdi:clock-outline" class="time-icon" />
-                        游玩时长 : {{ item.totalPlayMinutes }}分钟
+                        游玩时长 {{ item.totalPlayMinutes }}分钟
                     </div>
                 </div>
-            </NCard>
+            </div>
 
             <!-- 右侧：在线人数折线图 -->
             <MapTimelineChart :time-axis="item.timeAxis" :player-count-axis="item.playerCountAxis" />
@@ -77,34 +75,31 @@ const formatFullTime = (timeStr: string): string => {
     font-size: 12px;
     color: var(--n-text-color-3);
     margin-top: 4px;
+    font-weight: 500;
 }
 
 .timeline-card-item {
     width: 100%;
-    height: 120px;
-    border-radius: 8px;
+    height: 130px;
+    border-radius: 12px;
     overflow: hidden;
     position: relative;
     display: flex;
     gap: 10px;
-    border: 1px solid var(--n-border-color);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
 
     .timeline-card-left {
         width: 35%;
         height: 100%;
         position: relative;
         flex-shrink: 0;
-        padding: 0;
-
-        :deep(.n-card) {
-            height: 100%;
-            padding: 0;
-        }
-
-        :deep(.n-card__content) {
-            height: 100%;
-            padding: 0;
-        }
+        border-radius: 12px;
+        overflow: hidden;
     }
 
     .map-image {
@@ -120,29 +115,29 @@ const formatFullTime = (timeStr: string): string => {
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.5) 100%);
+        background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.55) 100%);
     }
 
     .timeline-map-info {
         position: absolute;
         bottom: 0;
         left: 0;
-        padding: 8px 10px;
+        padding: 10px 12px;
         display: flex;
         flex-direction: column;
         gap: 4px;
         width: 100%;
 
         .map-name {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 600;
             color: #fff;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
         }
 
         .record-time {
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.85);
             display: flex;
             align-items: center;
             gap: 4px;

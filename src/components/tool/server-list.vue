@@ -82,6 +82,7 @@ const isDarkMode = computed(() => themeStore.darkMode);
     display: flex;
     flex-direction: column;
     gap: 8px;
+    padding-top: 8px;
 
     .server-item {
         display: flex;

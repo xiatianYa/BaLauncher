@@ -6,11 +6,13 @@ import { useThemeStore } from '@/store/modules/theme';
 import KeyBind from './modules/keyBind.vue';
 import MapOrder from './modules/mapOrder.vue';
 import ServerMapRecord from './modules/serverMapRecord.vue';
+import BotGroup from './modules/botGroup.vue';
 import { $t } from '@/locales';
 
 import KeyBindIcon from '@/assets/imgs/tool/keyBind.png';
 import MapOrderIcon from '@/assets/imgs/tool/mapOrder.png';
 import ServerMapRecordIcon from '@/assets/imgs/tool/serverMapRecord.png';
+import BotGroupIcon from '@/assets/imgs/tool/botGroup.png';
 
 defineOptions({
   name: 'tools'
@@ -28,6 +30,7 @@ const moduleMap: Record<UnionKey.ToolModule, ToolModule> = {
   'keyBind': { label: $t('tools.keyBind'), component: KeyBind },
   'mapOrder': { label: $t('tools.mapOrder'), component: MapOrder },
   'serverMapRecord': { label: $t('tools.serverMapRecord'), component: ServerMapRecord },
+  'botGroup': { label: $t('tools.botGroup'), component: BotGroup },
 };
 
 const activeModuleKey = ref<UnionKey.ToolModule | null>(null);
@@ -62,6 +65,13 @@ const tools = ref<ToolItem[]>([
     gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
     color: '#4facfe',
     delay: 0.2
+  },
+  {
+    id: 'botGroup',
+    icon: BotGroupIcon,
+    gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    color: '#43e97b',
+    delay: 0.3
   }
 ]);
 
@@ -69,7 +79,8 @@ const getToolTitle = (id: UnionKey.ToolModule) => {
   const keyMap: Record<UnionKey.ToolModule, string> = {
     'keyBind': 'tools.keyBindTitle',
     'mapOrder': 'tools.mapOrderTitle',
-    'serverMapRecord': 'tools.serverMapRecordTitle'
+    'serverMapRecord': 'tools.serverMapRecordTitle',
+    'botGroup': 'tools.botGroupTitle'
   };
   return $t(keyMap[id]);
 };
@@ -78,7 +89,8 @@ const getToolDescription = (id: UnionKey.ToolModule) => {
   const keyMap: Record<UnionKey.ToolModule, string> = {
     'keyBind': 'tools.keyBindDesc',
     'mapOrder': 'tools.mapOrderDesc',
-    'serverMapRecord': 'tools.serverMapRecordDesc'
+    'serverMapRecord': 'tools.serverMapRecordDesc',
+    'botGroup': 'tools.botGroupDesc'
   };
   return $t(keyMap[id]);
 };

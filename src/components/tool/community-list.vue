@@ -26,7 +26,6 @@ const emit = defineEmits<{
 
 const themeStore = useThemeStore();
 const gameStore = useGameStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 </script>
 
 <template>
@@ -83,6 +82,7 @@ const isDarkMode = computed(() => themeStore.darkMode);
     display: flex;
     flex-direction: column;
     gap: 8px;
+    padding-top: 8px;
 
     .community-item {
         display: flex;

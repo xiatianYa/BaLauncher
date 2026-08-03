@@ -15,7 +15,7 @@ declare namespace UnionKey {
   type ThemeScheme = 'light' | 'dark';
 
   /** The tool module */
-  type ToolModule = 'keyBind' | 'mapOrder' | 'serverMapRecord';
+  type ToolModule = 'keyBind' | 'mapOrder' | 'serverMapRecord' | 'botGroup';
 
   /** The server layout module */
   type ServerLayoutModule = 'cardModel' | 'tableModal';

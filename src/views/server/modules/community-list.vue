@@ -31,7 +31,7 @@ const handleSelect = (id: number) => {
 </script>
 
 <template>
-  <NCard class="m-10px w-380px rounded-10px" content-style="padding:10px;"
+  <NCard class="m-10px w-380px rounded-10px max-w-[270px]" content-style="padding:10px;"
     content-class="h-full flex flex-col overflow-hidden" header-style="padding:10px 10px 0px 10px;">
     <template #header>
       <h3 class="text-lg font-bold mb-10px">{{ $t('server.communityList') }}</h3>

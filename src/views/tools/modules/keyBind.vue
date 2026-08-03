@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import {
     NButton,
     NCard,
@@ -743,6 +743,17 @@ const handleBackFn = () => emit('back');
 // ============================================================================
 
 /**
+ * 监听弹窗关闭，确保所有绑定的事件监听都被移除
+ * NModal 可能通过 ESC、点击蒙层、v-model 等方式关闭，不会主动调用 close 函数
+ */
+watch(showKeyCaptureModal, (visible) => {
+    if (!visible) {
+        closeKeyCaptureFn();
+        closeResetKeyCaptureFn();
+    }
+});
+
+/**
  * 组件挂载时初始化
  */
 onMounted(() => {
@@ -782,20 +793,17 @@ onMounted(() => {
                     <div v-show="activeTab === 'library'">
                         <NGrid :y-gap="10" :cols="1">
                             <NGridItem v-for="systemConfig in systemLibraryItems" :key="systemConfig.systemName">
-                                <NCard class="config-card" content-style="padding:10px;"
+                                <div class="config-card"
                                     :class="{ 'selected': selectedSystemConfig === systemConfig.systemName }"
                                     @click="selectedSystemConfig = systemConfig.systemName">
-                                    <div class="config-card-content">
-                                        <div class="w-64px h-64px config-card-content-img">
-                                            <img class="w-48px h-48px" :src="systemConfig.systemIcon">
-                                        </div>
-                                        <div class="flex-1">
-                                            <div class="font-size-16px font-bold">{{ systemConfig.systemName }}
-                                            </div>
-                                            <div class="font-size-12px">{{ systemConfig.configDesc }}</div>
-                                        </div>
+                                    <div class="config-card-content-img">
+                                        <img :src="systemConfig.systemIcon">
                                     </div>
-                                </NCard>
+                                    <div class="config-card-text">
+                                        <div class="config-card-title">{{ systemConfig.systemName }}</div>
+                                        <div class="config-card-desc">{{ systemConfig.configDesc }}</div>
+                                    </div>
+                                </div>
                             </NGridItem>
                         </NGrid>
                     </div>
@@ -804,21 +812,16 @@ onMounted(() => {
                         <NGrid x-gap="10" y-gap="10" :cols="1">
                             <NGridItem v-for="item in applyKeyBindItems" :key="item.systemBindCfgVO?.systemName"
                                 @click="handleUserConfigClickFn(item.systemBindCfgVO?.systemName)">
-                                <NCard class="applied-binding-item rounded-10px cursor-pointer"
-                                    content-style="padding:10px">
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center gap-10px">
-                                            <img :src="item.systemBindCfgVO?.systemIcon"
-                                                class="w-48px h-48px object-contain" />
-                                            <div class="flex flex-col">
-                                                <span class="text-14px font-bold">{{ item.systemBindCfgVO?.systemName
-                                                }}</span>
-                                                <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }}: {{
-                                                    item.key }}</span>
-                                            </div>
-                                        </div>
+                                <div class="applied-binding-item"
+                                    :class="{ 'selected': selectedSystemConfig === item.systemBindCfgVO?.systemName }">
+                                    <div class="applied-binding-img">
+                                        <img :src="item.systemBindCfgVO?.systemIcon" />
                                     </div>
-                                </NCard>
+                                    <div class="applied-binding-text">
+                                        <div class="applied-binding-name">{{ item.systemBindCfgVO?.systemName }}</div>
+                                        <div class="applied-binding-key">{{ $t('keyBind.bindingKey') }}: {{ item.key }}</div>
+                                    </div>
+                                </div>
                             </NGridItem>
                         </NGrid>
                     </div>
@@ -1086,10 +1089,8 @@ onMounted(() => {
             font-size: 20px;
             font-weight: 700;
             margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--n-text-color);
+            letter-spacing: 0.5px;
         }
     }
 
@@ -1104,46 +1105,120 @@ onMounted(() => {
             height: 100%;
             display: flex;
             flex-direction: column;
-            padding: 16px;
-            border-radius: 5px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--n-border-color);
+            background: var(--n-color);
+            transition: all 0.2s ease;
 
-            .config-card {
+            .config-card,
+            .applied-binding-item {
                 display: flex;
-                flex-direction: column;
+                align-items: center;
                 width: 100%;
-                height: 84px;
-                border-radius: 8px;
+                height: 74px;
+                border-radius: 14px;
                 cursor: pointer;
-                transition: all 0.2s ease;
+                pointer-events: auto;
+                transition: all 0.25s ease;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: rgba(255, 255, 255, 0.04);
+                position: relative;
+                overflow: hidden;
+                padding: 10px;
+                gap: 12px;
 
-                .config-card-content {
-                    display: flex;
-                    align-items: center;
-
-                    .config-card-content-img {
-                        padding: 8px;
-                        border-radius: 6px;
-                        margin-right: 12px;
-                    }
+                &::before {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    width: 3px;
+                    background: transparent;
+                    transition: background 0.2s ease;
                 }
 
                 &:hover {
-                    border-color: #667eea;
-                    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-                    transform: translateY(-1px);
+                    background: rgba(255, 255, 255, 0.07);
+                    border-color: rgba(102, 126, 234, 0.35);
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
                 }
 
                 &.selected {
-                    border-color: #667eea;
-                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-                    background: rgba(102, 126, 234, 0.05);
-                }
-            }
+                    background: rgba(102, 126, 234, 0.08);
+                    border-color: rgba(102, 126, 234, 0.6);
+                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2);
+                    transform: translateY(-2px);
 
-            .applied-binding-item {
-                transition: all 0.2s ease;
+                    &::before {
+                        background: #667eea;
+                    }
+                }
+
+                .config-card-content-img,
+                .applied-binding-img {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 48px;
+                    height: 48px;
+                    padding: 8px;
+                    border-radius: 10px;
+                    margin-left: 3px;
+                    background: rgba(255, 255, 255, 0.05);
+                    flex-shrink: 0;
+                    transition: all 0.2s ease;
+
+                    img {
+                        width: 32px;
+                        height: 32px;
+                        object-fit: contain;
+                    }
+                }
+
+                .config-card-text,
+                .applied-binding-text {
+                    flex: 1;
+                    min-width: 0;
+
+                    .config-card-title,
+                    .applied-binding-name {
+                        font-size: 14px;
+                        font-weight: 600;
+                        color: #fff;
+                        line-height: 1.4;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        transition: color 0.2s ease;
+                    }
+
+                    .config-card-desc,
+                    .applied-binding-key {
+                        font-size: 11px;
+                        color: rgba(255, 255, 255, 0.5);
+                        line-height: 1.4;
+                        margin-top: 2px;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                }
+
+                &.selected {
+                    .config-card-content-img,
+                    .applied-binding-img {
+                        background: rgba(102, 126, 234, 0.15);
+                        box-shadow: 0 0 0 1px rgba(102, 126, 234, 0.25);
+                    }
+
+                    .config-card-title,
+                    .applied-binding-name {
+                        color: #667eea;
+                    }
+                }
             }
         }
 
@@ -1185,6 +1260,60 @@ onMounted(() => {
 
                 .empty-text {
                     font-size: 14px;
+                }
+            }
+        }
+    }
+}
+
+.key-bind-container.light-mode {
+    .main-content {
+        .left-panel {
+            .config-card,
+            .applied-binding-item {
+                border-color: rgba(0, 0, 0, 0.08);
+                background: rgba(0, 0, 0, 0.02);
+
+                &:hover {
+                    background: rgba(0, 0, 0, 0.05);
+                    border-color: rgba(102, 126, 234, 0.3);
+                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.1);
+                }
+
+                &.selected {
+                    background: rgba(102, 126, 234, 0.06);
+                    border-color: rgba(102, 126, 234, 0.5);
+                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+                }
+
+                .config-card-content-img,
+                .applied-binding-img {
+                    background: rgba(0, 0, 0, 0.04);
+                }
+
+                .config-card-text,
+                .applied-binding-text {
+                    .config-card-title,
+                    .applied-binding-name {
+                        color: rgba(0, 0, 0, 0.85);
+                    }
+
+                    .config-card-desc,
+                    .applied-binding-key {
+                        color: rgba(0, 0, 0, 0.5);
+                    }
+                }
+
+                &.selected {
+                    .config-card-content-img,
+                    .applied-binding-img {
+                        background: rgba(102, 126, 234, 0.12);
+                    }
+
+                    .config-card-title,
+                    .applied-binding-name {
+                        color: #667eea;
+                    }
                 }
             }
         }

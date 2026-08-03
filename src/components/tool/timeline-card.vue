@@ -62,29 +62,32 @@ onMounted(() => {
 </script>
 
 <template>
-    <NCard size="small" :bordered="true" class="h-full timeline-card p-5px">
+    <NCard size="small" :bordered="true" class="h-full timeline-card">
         <template #header>
-            <div class="flex items-center gap-3">
-                <NSelect
-                    v-model:value="selectedMapId"
-                    :options="mapOptions"
-                    :filterable="true"
-                    clearable
-                    placeholder="搜索地图"
-                    style="width: 200px"
-                />
-                <NButton type="primary" size="small" @click="handleSearchMap">
-                    <SvgIcon icon="mdi:magnify" class="mr-1" />
-                    查询
-                </NButton>
-                <NButton size="small" @click="handleResetSearch">
-                    <SvgIcon icon="mdi:refresh" class="mr-1" />
-                    重置
-                </NButton>
+            <div class="timeline-header">
+                <SvgIcon icon="mdi:timeline-clock-outline" class="timeline-header-icon" />
+                <span class="timeline-header-title">{{ $t('tools.mapTimeline') }}</span>
+                <div class="timeline-header-search">
+                    <NSelect
+                        v-model:value="selectedMapId"
+                        :options="mapOptions"
+                        :filterable="true"
+                        clearable
+                        placeholder="搜索地图"
+                        style="width: 180px"
+                        size="small"
+                    />
+                    <NButton type="primary" size="small" ghost @click="handleSearchMap">
+                        <SvgIcon icon="mdi:magnify" />
+                    </NButton>
+                    <NButton size="small" @click="handleResetSearch">
+                        <SvgIcon icon="mdi:refresh" />
+                    </NButton>
+                </div>
             </div>
         </template>
         <!-- 已选择服务器 → 展示时间线 -->
-        <div v-if="selectedServerIndex !== null" class="timeline-wrapper">
+        <div v-if="selectedServerIndex !== null" class="timeline-wrapper mt-8px">
             <NInfiniteScroll v-if="timelineList.length > 0" :distance="100" @load="emit('load')"
                 class="timeline-scroll">
                 <NTimeline class="custom-timeline">
@@ -119,14 +122,44 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .timeline-card {
+    height: 100%;
+    border-radius: 12px;
+    overflow-y: auto;
+
     :deep(.n-card-header) {
-        padding: 10px 14px;
+        padding: 12px 14px;
         border-bottom: 1px solid var(--n-border-color);
+        background: var(--n-color-embedded);
     }
 
     :deep(.n-card__content) {
         padding: 0;
         overflow: hidden;
+    }
+}
+
+.timeline-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+
+    .timeline-header-icon {
+        font-size: 15px;
+        color: var(--n-text-color-2);
+    }
+
+    .timeline-header-title {
+        flex: 1;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--n-text-color);
+    }
+
+    .timeline-header-search {
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 }
 
@@ -137,7 +170,7 @@ onMounted(() => {
 
 .timeline-scroll {
     height: 100%;
-    padding: 14px 18px;
+    padding: 16px 20px;
 }
 
 .timeline-placeholder {
@@ -147,10 +180,10 @@ onMounted(() => {
     justify-content: center;
     height: calc(100vh - 160px);
     color: var(--n-text-color-3);
-    gap: 8px;
+    gap: 10px;
 
     .placeholder-icon {
-        font-size: 32px;
+        font-size: 28px;
         opacity: 0.4;
     }
 
@@ -162,7 +195,7 @@ onMounted(() => {
 
 .custom-timeline {
     :deep(.n-timeline-item-content) {
-        padding-bottom: 18px;
+        padding-bottom: 20px;
     }
 
     .timeline-item-header {
@@ -183,7 +216,7 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 12px;
+    padding: 14px;
     color: var(--n-text-color-3);
     font-size: 12px;
 }

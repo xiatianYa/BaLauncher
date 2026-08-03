@@ -97,30 +97,29 @@ watch(() => props.loading, (newVal) => {
   width: 150px;
   height: 225px;
   object-fit: contain;
-  animation: float 2s ease-in-out infinite;
+  animation: float 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.3));
 }
 
 .loading-text {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
-  letter-spacing: 3px;
-  text-shadow: 
-    0 0 10px rgba(255, 255, 255, 0.6),
-    0 0 20px rgba(255, 255, 255, 0.4),
-    0 0 30px rgba(255, 255, 255, 0.2),
-    0 2px 4px rgba(0, 0, 0, 0.6);
-  animation: pulse 1.5s ease-in-out infinite;
+  letter-spacing: 2px;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow:
+    0 0 8px rgba(255, 255, 255, 0.4),
+    0 2px 4px rgba(0, 0, 0, 0.5);
+  animation: pulse 1.8s ease-in-out infinite;
 }
 
 @keyframes float {
-
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 
   50% {
-    transform: translateY(-20px);
+    transform: translateY(-16px) scale(1.02);
   }
 }
 
@@ -130,7 +129,7 @@ watch(() => props.loading, (newVal) => {
     opacity: 1;
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.55;
   }
 }
 </style>

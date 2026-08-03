@@ -1,4 +1,5 @@
 export * from './auth';
+export * from './bot/group';
 export * from './game/statistics';
 export * from './system/dict';
 export * from './game/map';

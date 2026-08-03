@@ -144,9 +144,7 @@ const handleEditUnsubscribeQQ = async (): Promise<void> => {
 const handleDeleteSubscribe = async (): Promise<void> => {
     if (!currentEditMap.value) return;
     const { error } = await fetchDeleteMapSubscribe(currentEditMap.value!.id); // 删除订阅
-    if (!error) {
-        window.$message?.success($t('mapOrder.unsubscribeSuccess')); // 提示成功
-    } else {
+    if (error) {
         window.$message?.error($t('mapOrder.unsubscribeFailed')); // 提示失败
     }
     showEditModal.value = false; // 关闭编辑弹框
@@ -176,6 +174,8 @@ const handleMapEditSubmit = async (): Promise<void> => {
             window.$message?.success($t('mapOrder.editSuccess') || '编辑成功');
             showMapEditModal.value = false;
             await fetchMapList(searchKeyword.value);
+            // 刷新 gameStore.mapList，否则页面上的地图类型/标签等依赖 gameStore 的显示不会更新
+            await gameStore.initServerList();
         } else {
             window.$message?.error($t('mapOrder.editFailed') || '编辑失败');
         }
@@ -196,9 +196,7 @@ const handlePageChange = (page: number): void => {
 const handleSystemSubscribe = async (): Promise<void> => {
     if (!currentSubscribeMap.value) return;
     const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, "1", null); // 添加系统订阅
-    if (!error) {
-        window.$message?.success($t('mapOrder.subscribeSuccess')); // 提示成功
-    } else {
+    if (error) {
         window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
     }
     showSubscribeModal.value = false; // 关闭订阅弹框
@@ -224,9 +222,7 @@ const handleQQSubscribe = async (): Promise<void> => {
         return;
     }
     const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, null, "1"); // 添加QQ订阅
-    if (!error) {
-        window.$message?.success($t('mapOrder.subscribeSuccess')); // 提示成功
-    } else {
+    if (error) {
         window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
     }
 
@@ -255,9 +251,7 @@ const handleBindQQ = async (): Promise<void> => {
 
 const handleSystemSubscribeDirect = async (map: Api.Game.MapVo): Promise<void> => {
     const { error } = await fetchAddMapSubscribe(map.id, "1", null); // 直接添加系统订阅
-    if (!error) {
-        window.$message?.success($t('mapOrder.subscribeSuccess')); // 提示成功
-    } else {
+    if (error) {
         window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
     }
     await fetchSubscribeList(); // 刷新订阅列表
@@ -272,9 +266,7 @@ const handleQQSubscribeDirect = async (map: Api.Game.MapVo): Promise<void> => {
         return;
     }
     const { error } = await fetchAddMapSubscribe(map.id, null, "1"); // 直接添加QQ订阅
-    if (!error) {
-        window.$message?.success($t('mapOrder.subscribeSuccess')); // 提示成功
-    } else {
+    if (error) {
         window.$message?.error($t('mapOrder.subscribeFailed')); // 提示失败
     }
     await fetchSubscribeList(); // 刷新订阅列表
@@ -287,9 +279,7 @@ const handleUnsubscribeSystem = async (map: Api.Game.MapVo): Promise<void> => {
         qqOrder: null,
     };
     const { error } = await fetchUpdateMapSubscribe(params); // 更新订阅（取消系统订阅）
-    if (!error) {
-        window.$message?.success($t('mapOrder.unsubscribeSystemSuccess')); // 提示已取消系统订阅
-    } else {
+    if (error) {
         window.$message?.error($t('mapOrder.unsubscribeFailed')); // 提示失败
     }
     await fetchSubscribeList(); // 刷新订阅列表
@@ -306,9 +296,7 @@ const handleUnsubscribeQQ = async (map: Api.Game.MapVo): Promise<void> => {
         qqOrder: "0",
     };
     const { error } = await fetchUpdateMapSubscribe(params); // 更新订阅（取消QQ订阅）
-    if (!error) {
-        window.$message?.success($t('mapOrder.unsubscribeQQSuccess')); // 提示已取消QQ订阅
-    } else {
+    if (error) {
         window.$message?.error($t('mapOrder.unsubscribeFailed')); // 提示失败
     }
     await fetchSubscribeList(); // 刷新订阅列表
@@ -414,97 +402,78 @@ onMounted(async () => {
                         </NInput>
                     </div>
                 </template>
-                <NGrid :cols="2" x-gap="10px" y-gap="10px" v-if="!mapLoading">
+                <NGrid :cols="2" x-gap="12px" y-gap="12px" v-if="!mapLoading">
                     <NGridItem v-for="map in mapList" :key="map.id">
-                        <NCard class="map-card" content-style="padding:10px" footer-style="padding: 0px 10px 10px 10px">
+                        <div class="map-card">
                             <div class="map-card-img">
-                                <img class="w-full h-full max-h-160px object-cover" v-lazy="map.mapUrl" alt="map" />
-                            </div>
-                            <div class="map-card-info">
-                                <div class="map-card-name">{{ map.mapName }}</div>
-                                <div class="map-card-label">{{ map.mapLabel }}</div>
-                            </div>
-                            <div class="flex-y-center mt-5px position-relative font-bold flex-1">
-                                <NTag size="small" class="mr-3px rounded-5px" ghost
-                                    :type="getGameTypeOption(getMapType(map.mapName))?.type"
-                                    v-show="getMapType(map.mapName)">
-                                    {{ getGameTypeOption(getMapType(map.mapName))?.label }}
-                                </NTag>
-                                <NTag v-for="(tag, index) in getMapTags(map.mapName)" :key="index" size="small"
-                                    class="mr-3px rounded-5px" type="success" v-show="getMapType(map.mapName)">
-                                    {{ getGameTagOption(tag)?.label }}
-                                </NTag>
-                            </div>
-                            <div class="text-12px mt-5px">
-                                <div class="flex justify-between">
-                                    <span class="color-#999">{{ $t('mapOrder.achievement') }}:</span>
-                                    <NTag size="small" class="rounded-5px" type="info">
-                                        {{ map.exgMap?.achievement10 || '-' }}
-                                    </NTag>
-                                </div>
-                                <div class="flex justify-between mt-5px">
-                                    <span class="color-#999">{{ $t('mapOrder.lastRun') }}:</span>
-                                    <NTag size="small" class="rounded-5px" type="info">
-                                        {{ dayjs(map.exgMap?.lastRun).format('YYYY-MM-DD HH:mm:ss') || '-'
-                                        }}</NTag>
-                                </div>
-                                <div class="flex justify-between mt-5px">
-                                    <span class="color-#999">{{ $t('mapOrder.cooldown') }}:</span>
-                                    <NTag size="small" class="rounded-5px" type="info">
-                                        {{ map.exgMap?.cooldownMinute || '-' }} {{ $t('mapOrder.minutes') }}</NTag>
-                                </div>
-                                <div class="flex justify-between mt-5px">
-                                    <span class="color-#999">{{ $t('mapOrder.deadline') }}:</span>
-                                    <NTag size="small" class="rounded-5px" type="info">
-                                        {{ dayjs(map.exgMap?.deadline).format('YYYY-MM-DD HH:mm:ss') || '-'
-                                        }}</NTag>
-                                </div>
-                                <div class="flex justify-between mt-5px">
-                                    <span class="color-#999">{{ $t('mapOrder.isOrderable') }}:</span>
-                                    <NTag v-if="map.exgMap?.isOrder" type="success" size="small" class="rounded-5px">{{
-                                        $t('mapOrder.yes') }}</NTag>
-                                    <NTag v-else type="error" size="small" class="rounded-5px">{{ $t('mapOrder.no') }}
-                                    </NTag>
+                                <img v-lazy="map.mapUrl" alt="map" />
+                                <div class="map-card-overlay">
+                                    <div class="map-card-tags">
+                                        <span v-if="getMapType(map.mapName)" class="map-type-tag"
+                                            :class="'type-' + getGameTypeOption(getMapType(map.mapName))?.type">
+                                            {{ getGameTypeOption(getMapType(map.mapName))?.label }}
+                                        </span>
+                                        <span v-for="(tag, index) in getMapTags(map.mapName)" :key="index"
+                                            class="map-tag">
+                                            {{ getGameTagOption(tag)?.label }}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                            <template #footer>
-                                <div class="flex flex-wrap gap-5px mt-5px" v-if="map.isOrder === '1'">
-                                    <NButton v-if="!isSystemSubscribed(map.id)" type="info" ghost size="small"
-                                        class="flex-1 rounded-5px" @click="handleSystemSubscribeDirect(map)">
-                                        <SvgIcon icon="tabler:device-desktop" class="mr-3px" />
-                                        {{ $t('mapOrder.systemSubscribe') }}
-                                    </NButton>
-                                    <NButton v-else type="info" size="small" class="flex-1 rounded-5px"
-                                        @click="handleUnsubscribeSystem(map)">
-                                        <SvgIcon icon="tabler:device-desktop" class="mr-3px" />
-                                        {{ $t('mapOrder.unsubscribeSystem') }}
-                                    </NButton>
-                                    <NButton v-if="!isQQSubscribed(map.id)" type="success" ghost size="small"
-                                        class="flex-1 rounded-5px" @click="handleQQSubscribeDirect(map)">
-                                        <SvgIcon icon="basil:qq-outline" class="mr-3px" />
-                                        {{ $t('mapOrder.qqSubscribe') }}
-                                    </NButton>
-                                    <NButton v-else type="success" size="small" class="flex-1 rounded-5px"
-                                        @click="handleUnsubscribeQQ(map)">
-                                        <SvgIcon icon="basil:qq-outline" class="mr-3px" />
-                                        {{ $t('mapOrder.unsubscribeQQ') }}
-                                    </NButton>
+                            <div class="map-card-content">
+                                <div class="map-card-info">
+                                    <div class="map-card-name">{{ map.mapName }}</div>
+                                    <div class="map-card-label">{{ map.mapLabel }}</div>
                                 </div>
-                                <div class="flex mt-5px" v-else>
-                                    <NButton type="error" ghost size="small" class="w-full rounded-5px"
-                                        :disabled="true">
-                                        {{ $t('mapOrder.notSubscribable') }}
-                                    </NButton>
+                                <div class="map-card-stats">
+                                    <div class="stat-item">
+                                        <span class="stat-label">{{ $t('mapOrder.achievement') }}</span>
+                                        <span class="stat-value">{{ map.exgMap?.achievement10 || '-' }}</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">{{ $t('mapOrder.cooldown') }}</span>
+                                        <span class="stat-value">{{ map.exgMap?.cooldownMinute || '-' }} {{ $t('mapOrder.minutes') }}</span>
+                                    </div>
+                                    <div class="stat-item">
+                                        <span class="stat-label">{{ $t('mapOrder.isOrderable') }}</span>
+                                        <span class="stat-value" :class="{ 'is-order': map.exgMap?.isOrder, 'not-order': !map.exgMap?.isOrder }">
+                                            {{ map.exgMap?.isOrder ? $t('mapOrder.yes') : $t('mapOrder.no') }}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div class="mt-5px" v-if="isAdmin">
-                                    <NButton type="warning" ghost size="small" class="w-full rounded-5px"
-                                        @click="handleOpenMapEdit(map)">
-                                        <SvgIcon icon="material-symbols:edit-outline" class="mr-3px" />
-                                        {{ $t('mapOrder.editMap') }}
-                                    </NButton>
+                                <div class="map-card-actions">
+                                    <template v-if="map.isOrder === '1'">
+                                        <div v-if="!isSystemSubscribed(map.id)" class="action-btn system"
+                                            @click="handleSystemSubscribeDirect(map)">
+                                            <SvgIcon icon="tabler:device-desktop" />
+                                            <span>{{ $t('mapOrder.systemSubscribe') }}</span>
+                                        </div>
+                                        <div v-else class="action-btn system subscribed"
+                                            @click="handleUnsubscribeSystem(map)">
+                                            <SvgIcon icon="tabler:device-desktop" />
+                                            <span>{{ $t('mapOrder.unsubscribeSystem') }}</span>
+                                        </div>
+                                        <div v-if="!isQQSubscribed(map.id)" class="action-btn qq"
+                                            @click="handleQQSubscribeDirect(map)">
+                                            <SvgIcon icon="basil:qq-outline" />
+                                            <span>{{ $t('mapOrder.qqSubscribe') }}</span>
+                                        </div>
+                                        <div v-else class="action-btn qq subscribed"
+                                            @click="handleUnsubscribeQQ(map)">
+                                            <SvgIcon icon="basil:qq-outline" />
+                                            <span>{{ $t('mapOrder.unsubscribeQQ') }}</span>
+                                        </div>
+                                    </template>
+                                    <div v-else class="action-btn disabled">
+                                        <span>{{ $t('mapOrder.notSubscribable') }}</span>
+                                    </div>
+                                    <div v-if="isAdmin" class="action-btn edit" @click="handleOpenMapEdit(map)">
+                                        <SvgIcon icon="material-symbols:edit-outline" />
+                                        <span>{{ $t('mapOrder.editMap') }}</span>
+                                    </div>
                                 </div>
-                            </template>
-                        </NCard>
+                            </div>
+                        </div>
                     </NGridItem>
                 </NGrid>
                 <LoadingSpinner :loading="mapLoading" v-else="mapLoading" />
@@ -531,61 +500,48 @@ onMounted(async () => {
                 </div>
                 <div v-else class="subscribe-list">
                     <div v-for="map in subscribeList" :key="map.id" class="subscribe-item">
-                        <div class="subscribe-item-header">
+                        <div class="subscribe-item-main">
                             <div class="subscribe-item-img">
                                 <img :src="map.mapUrl" :alt="map.mapName" />
                             </div>
-                            <div class="subscribe-item-info">
-                                <div class="subscribe-item-name">{{ map.mapName }}</div>
-                                <div class="subscribe-item-label">{{ map.mapLabel }}</div>
-                            </div>
-                            <NButton type="info" ghost class="subscribe-item-remove rounded-5px"
-                                @click="handleEditSubscribe(map)">
-                                <template #icon>
-                                    <SvgIcon icon="material-symbols:left-panel-open-outline" />
-                                </template>
-                                {{ $t('mapOrder.edit') }}
-                            </NButton>
-                        </div>
-                        <NCollapse class="subscribe-item-collapse">
-                            <NCollapseItem :title="$t('mapOrder.mapCD')" name="mapCd">
-                                <div class="text-12px mt-5px">
-                                    <div class="flex justify-between">
-                                        <span class="color-#999">{{ $t('mapOrder.achievement') }}:</span>
-                                        <NTag size="small" class="rounded-5px" type="info">
-                                            {{ map.exgMap.achievement10 || '-' }}
-                                        </NTag>
-                                    </div>
-                                    <div class="flex justify-between mt-5px">
-                                        <span class="color-#999">{{ $t('mapOrder.lastRun') }}:</span>
-                                        <NTag size="small" class="rounded-5px" type="info">
-                                            {{ dayjs(map.exgMap.lastRun).format('YYYY-MM-DD HH:mm:ss') || '-'
-                                            }}</NTag>
-                                    </div>
-                                    <div class="flex justify-between mt-5px">
-                                        <span class="color-#999">{{ $t('mapOrder.cooldown') }}:</span>
-                                        <NTag size="small" class="rounded-5px" type="info">
-                                            {{ map.exgMap.cooldownMinute }} {{ $t('mapOrder.minutes') }}</NTag>
-                                    </div>
-                                    <div class="flex justify-between mt-5px">
-                                        <span class="color-#999">{{ $t('mapOrder.deadline') }}:</span>
-                                        <NTag size="small" class="rounded-5px" type="info">
-                                            {{ dayjs(map.exgMap.deadline).format('YYYY-MM-DD HH:mm:ss') || '-'
-                                            }}</NTag>
-                                    </div>
-                                    <div class="flex justify-between mt-5px">
-                                        <span class="color-#999">{{ $t('mapOrder.isOrderable') }}:</span>
-                                        <NTag v-if="map.exgMap?.isOrder" type="success" size="small"
-                                            class="rounded-5px">
-                                            {{
-                                                $t('mapOrder.yes') }}</NTag>
-                                        <NTag v-else type="error" size="small" class="rounded-5px">{{ $t('mapOrder.no')
-                                            }}
-                                        </NTag>
+                            <div class="subscribe-item-content">
+                                <div class="subscribe-item-title-row">
+                                    <div class="subscribe-item-name">{{ map.mapName }}</div>
+                                    <div class="subscribe-item-actions">
+                                        <div class="icon-btn edit-btn" @click="handleEditSubscribe(map)">
+                                            <SvgIcon icon="material-symbols:left-panel-open-outline" />
+                                        </div>
                                     </div>
                                 </div>
-                            </NCollapseItem>
-                        </NCollapse>
+                                <div class="subscribe-item-label">{{ map.mapLabel }}</div>
+                                <div class="subscribe-item-meta">
+                                    <div class="meta-item">
+                                        <span class="meta-label">{{ $t('mapOrder.achievement') }}</span>
+                                        <span class="meta-value">{{ map.exgMap.achievement10 || '-' }}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-label">{{ $t('mapOrder.cooldown') }}</span>
+                                        <span class="meta-value">{{ map.exgMap.cooldownMinute }} {{ $t('mapOrder.minutes') }}</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-label">{{ $t('mapOrder.isOrderable') }}</span>
+                                        <span class="meta-value" :class="{ 'is-order': map.exgMap?.isOrder, 'not-order': !map.exgMap?.isOrder }">
+                                            {{ map.exgMap?.isOrder ? $t('mapOrder.yes') : $t('mapOrder.no') }}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="subscribe-item-extra">
+                                    <div class="extra-item">
+                                        <span class="extra-label">{{ $t('mapOrder.lastRun') }}:</span>
+                                        <span class="extra-value">{{ dayjs(map.exgMap.lastRun).format('YYYY-MM-DD HH:mm:ss') || '-' }}</span>
+                                    </div>
+                                    <div class="extra-item">
+                                        <span class="extra-label">{{ $t('mapOrder.deadline') }}:</span>
+                                        <span class="extra-value">{{ dayjs(map.exgMap.deadline).format('YYYY-MM-DD HH:mm:ss') || '-' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </NCard>
@@ -658,57 +614,49 @@ onMounted(async () => {
             </div>
         </div>
     </NModal>
-
     <NModal v-model:show="showEditModal" :bordered="true" preset="card"
         class="w-400px rounded-20px subscribe-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
         size="small">
         <template #header>
-            <div class="flex items-center font-size-18px">
-                <div class="font-size-16px">{{ $t('mapOrder.editSubscribe') }}</div>
-            </div>
+            <div class="font-size-16px">{{ $t('mapOrder.editSubscribe') }}</div>
         </template>
-        <div class="subscribe-modal-new">
-            <div class="subscribe-header">
+        <template #header-extra>
+            <NButton quaternary size="tiny" @click="showEditModal = false">
+                <SvgIcon icon="material-symbols:close" />
+            </NButton>
+        </template>
+        <div class="subscribe-modal-new pt-20px pb-20px pl-20px pr-20px">
+            <div class="subscribe-header mb-20px">
                 <div class="character-image">
                     <img src="@/assets/imgs/tool/3594431.png" alt="character" />
                 </div>
                 <div class="header-glow"></div>
             </div>
-            <div class="flex flex-wrap gap-10px mt-20px">
-                <NButton v-if="!isCurrentEditSystemSubscribed" type="info" ghost class="flex-1 rounded-5px"
-                    @click="handleEditSystemSubscribe()">
-                    <template #icon>
-                        <SvgIcon icon="tabler:device-desktop" />
-                    </template>
-                    {{ $t('mapOrder.systemSubscribe') }}
-                </NButton>
-                <NButton v-else type="info" class="flex-1 rounded-5px" @click="handleEditUnsubscribeSystem()">
-                    <template #icon>
-                        <SvgIcon icon="tabler:device-desktop" />
-                    </template>
-                    {{ $t('mapOrder.unsubscribeSystem') }}
-                </NButton>
-                <NButton v-if="!isCurrentEditQQSubscribed" type="success" ghost class="flex-1 rounded-5px"
-                    @click="handleEditQQSubscribe()">
-                    <template #icon>
-                        <SvgIcon icon="basil:qq-outline" />
-                    </template>
-                    {{ $t('mapOrder.qqSubscribe') }}
-                </NButton>
-                <NButton v-else type="success" class="flex-1 rounded-5px" @click="handleEditUnsubscribeQQ()">
-                    <template #icon>
-                        <SvgIcon icon="basil:qq-outline" />
-                    </template>
-                    {{ $t('mapOrder.unsubscribeQQ') }}
-                </NButton>
+            <div class="edit-map-name text-18px font-bold mb-20px text-center">
+                {{ currentEditMap?.mapName }}
             </div>
-            <div class="mt-20px">
-                <NButton type="error" ghost class="w-full rounded-5px" @click="handleDeleteSubscribe">
-                    <template #icon>
-                        <SvgIcon icon="material-symbols:delete-outline" />
-                    </template>
-                    {{ $t('mapOrder.deleteSubscribe') }}
-                </NButton>
+            <div class="edit-actions">
+                <div v-if="!isCurrentEditSystemSubscribed" class="action-card system-card"
+                    @click="handleEditSystemSubscribe()">
+                    <SvgIcon icon="tabler:device-desktop" class="action-icon" />
+                    <span class="action-text">{{ $t('mapOrder.systemSubscribe') }}</span>
+                </div>
+                <div v-else class="action-card system-card subscribed" @click="handleEditUnsubscribeSystem()">
+                    <SvgIcon icon="tabler:device-desktop" class="action-icon" />
+                    <span class="action-text">{{ $t('mapOrder.unsubscribeSystem') }}</span>
+                </div>
+                <div v-if="!isCurrentEditQQSubscribed" class="action-card qq-card" @click="handleEditQQSubscribe()">
+                    <SvgIcon icon="basil:qq-outline" class="action-icon" />
+                    <span class="action-text">{{ $t('mapOrder.qqSubscribe') }}</span>
+                </div>
+                <div v-else class="action-card qq-card subscribed" @click="handleEditUnsubscribeQQ()">
+                    <SvgIcon icon="basil:qq-outline" class="action-icon" />
+                    <span class="action-text">{{ $t('mapOrder.unsubscribeQQ') }}</span>
+                </div>
+                <div class="action-card delete-card" @click="handleDeleteSubscribe">
+                    <SvgIcon icon="material-symbols:delete-outline" class="action-icon" />
+                    <span class="action-text">{{ $t('mapOrder.deleteSubscribe') }}</span>
+                </div>
             </div>
         </div>
     </NModal>
@@ -811,10 +759,8 @@ onMounted(async () => {
             font-size: 20px;
             font-weight: 700;
             margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--n-text-color);
+            letter-spacing: 0.5px;
         }
     }
 
@@ -837,33 +783,241 @@ onMounted(async () => {
             .map-card {
                 display: flex;
                 flex-direction: column;
-                justify-content: space-between;
                 height: 100%;
-                border-radius: 5px;
+                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 14px;
                 overflow: hidden;
+                transition: all 0.25s ease;
+
+                &:hover {
+                    background: rgba(255, 255, 255, 0.07);
+                    border-color: rgba(102, 126, 234, 0.35);
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+
+                    .map-card-img img {
+                        transform: scale(1.05);
+                    }
+                }
 
                 .map-card-img {
+                    position: relative;
                     width: 100%;
-                    object-fit: cover;
+                    height: 120px;
                     overflow: hidden;
-                    border-radius: 10px;
+
+                    img {
+                        width: 100%;
+                        height: 100%;
+                        object-fit: cover;
+                        transition: transform 0.3s ease;
+                    }
+
+                    .map-card-overlay {
+                        position: absolute;
+                        inset: 0;
+                        background: linear-gradient(to top, rgba(0, 0, 0, 0.7) 0%, transparent 55%);
+                        display: flex;
+                        align-items: flex-end;
+                        padding: 10px;
+                        pointer-events: none;
+
+                        .map-card-tags {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 5px;
+
+                            .map-type-tag,
+                            .map-tag {
+                                padding: 2px 7px;
+                                border-radius: 5px;
+                                font-size: 10px;
+                                font-weight: 500;
+                                color: #fff;
+                                background: rgba(255, 255, 255, 0.15);
+                                border: 1px solid rgba(255, 255, 255, 0.2);
+                                backdrop-filter: blur(4px);
+                            }
+
+                            .map-type-tag {
+                                &.type-info {
+                                    background: rgba(112, 192, 232, 0.35);
+                                    border-color: rgba(112, 192, 232, 0.55);
+                                }
+
+                                &.type-success {
+                                    background: rgba(99, 226, 183, 0.35);
+                                    border-color: rgba(99, 226, 183, 0.55);
+                                }
+
+                                &.type-warning {
+                                    background: rgba(240, 160, 32, 0.35);
+                                    border-color: rgba(240, 160, 32, 0.55);
+                                }
+
+                                &.type-error {
+                                    background: rgba(232, 128, 128, 0.35);
+                                    border-color: rgba(232, 128, 128, 0.55);
+                                }
+                            }
+
+                            .map-tag {
+                                background: rgba(99, 226, 183, 0.3);
+                                border-color: rgba(99, 226, 183, 0.45);
+                            }
+                        }
+                    }
+                }
+
+                .map-card-content {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    padding: 12px;
+                    flex: 1;
                 }
 
                 .map-card-info {
-                    font-size: 14px;
-
                     .map-card-name {
+                        font-size: 14px;
+                        font-weight: 600;
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
-                        font-size: 14px;
-                        font-weight: bold;
                     }
 
                     .map-card-label {
-                        font-size: 12px;
-                        color: #888;
-                        font-weight: bold;
+                        font-size: 11px;
+                        color: rgba(255, 255, 255, 0.45);
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                }
+
+                .map-card-stats {
+                    display: flex;
+                    gap: 6px;
+
+                    .stat-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 3px;
+                        padding: 2px 7px;
+                        border-radius: 6px;
+                        background: rgba(255, 255, 255, 0.05);
+                        font-size: 10px;
+
+                        .stat-label {
+                            color: rgba(255, 255, 255, 0.4);
+                        }
+
+                        .stat-value {
+                            color: rgba(255, 255, 255, 0.8);
+                            font-weight: 500;
+
+                            &.is-order {
+                                color: #63e2b7;
+                            }
+
+                            &.not-order {
+                                color: #e88080;
+                            }
+                        }
+                    }
+                }
+
+                .map-card-actions {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 6px;
+                    margin-top: auto;
+
+                    .action-btn {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 4px;
+                        flex: 1;
+                        min-width: 0;
+                        height: 30px;
+                        padding: 0 8px;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        pointer-events: auto;
+                        font-size: 11px;
+                        font-weight: 500;
+                        transition: all 0.2s ease;
+                        border: 1px solid transparent;
+                        user-select: none;
+
+                        svg {
+                            font-size: 14px;
+                            flex-shrink: 0;
+                        }
+
+                        span {
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+
+                        &.system {
+                            color: #70c0e8;
+                            background: rgba(112, 192, 232, 0.08);
+                            border-color: rgba(112, 192, 232, 0.2);
+
+                            &:hover {
+                                background: rgba(112, 192, 232, 0.15);
+                                border-color: rgba(112, 192, 232, 0.35);
+                            }
+
+                            &.subscribed {
+                                color: #fff;
+                                background: rgba(112, 192, 232, 0.55);
+                                border-color: rgba(112, 192, 232, 0.7);
+                            }
+                        }
+
+                        &.qq {
+                            color: #63e2b7;
+                            background: rgba(99, 226, 183, 0.08);
+                            border-color: rgba(99, 226, 183, 0.2);
+
+                            &:hover {
+                                background: rgba(99, 226, 183, 0.15);
+                                border-color: rgba(99, 226, 183, 0.35);
+                            }
+
+                            &.subscribed {
+                                color: #fff;
+                                background: rgba(99, 226, 183, 0.55);
+                                border-color: rgba(99, 226, 183, 0.7);
+                            }
+                        }
+
+                        &.edit {
+                            width: 100%;
+                            flex: none;
+                            color: #f0a020;
+                            background: rgba(240, 160, 32, 0.08);
+                            border-color: rgba(240, 160, 32, 0.2);
+
+                            &:hover {
+                                background: rgba(240, 160, 32, 0.15);
+                                border-color: rgba(240, 160, 32, 0.35);
+                            }
+                        }
+
+                        &.disabled {
+                            width: 100%;
+                            flex: none;
+                            color: rgba(255, 255, 255, 0.4);
+                            background: rgba(255, 255, 255, 0.05);
+                            border-color: rgba(255, 255, 255, 0.1);
+                            cursor: not-allowed;
+                        }
                     }
                 }
             }
@@ -876,7 +1030,7 @@ onMounted(async () => {
         }
 
         .right-panel {
-            width: 300px;
+            width: 450px;
             height: 100%;
             display: flex;
             flex-direction: column;
@@ -894,31 +1048,34 @@ onMounted(async () => {
             .subscribe-list {
                 display: flex;
                 flex-direction: column;
-                gap: 10px;
+                gap: 12px;
 
                 .subscribe-item {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                    padding: 8px;
-                    border-radius: 8px;
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    transition: all 0.3s ease;
+                    background: rgba(255, 255, 255, 0.04);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 14px;
+                    padding: 12px;
+                    transition: all 0.25s ease;
 
-                    .subscribe-item-header {
+                    &:hover {
+                        background: rgba(255, 255, 255, 0.07);
+                        border-color: rgba(102, 126, 234, 0.35);
+                        transform: translateY(-2px);
+                        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+                    }
+
+                    .subscribe-item-main {
                         display: flex;
-                        align-items: center;
-                        gap: 10px;
-                        width: 100%;
+                        gap: 12px;
                     }
 
                     .subscribe-item-img {
-                        width: 50px;
-                        height: 50px;
-                        border-radius: 5px;
+                        width: 60px;
+                        height: 60px;
+                        border-radius: 10px;
                         overflow: hidden;
                         flex-shrink: 0;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 
                         img {
                             width: 100%;
@@ -927,29 +1084,120 @@ onMounted(async () => {
                         }
                     }
 
-                    .subscribe-item-info {
+                    .subscribe-item-content {
                         flex: 1;
                         min-width: 0;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 5px;
+                    }
 
-                        .subscribe-item-name {
-                            font-size: 13px;
-                            font-weight: 600;
-                            white-space: nowrap;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                        }
+                    .subscribe-item-title-row {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 8px;
+                    }
 
-                        .subscribe-item-label {
-                            font-size: 11px;
-                            color: #888;
-                            white-space: nowrap;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
+                    .subscribe-item-name {
+                        font-size: 14px;
+                        font-weight: 600;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+
+                    .subscribe-item-actions {
+                        display: flex;
+                        gap: 6px;
+
+                        .icon-btn {
+                            width: 26px;
+                            height: 26px;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            border-radius: 7px;
+                            cursor: pointer;
+                            pointer-events: auto;
+                            color: rgba(255, 255, 255, 0.65);
+                            background: rgba(255, 255, 255, 0.06);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            transition: all 0.2s ease;
+
+                            &:hover {
+                                background: rgba(102, 126, 234, 0.15);
+                                border-color: rgba(102, 126, 234, 0.4);
+                                color: #667eea;
+                            }
                         }
                     }
 
-                    .subscribe-item-collapse {
-                        width: 100%;
+                    .subscribe-item-label {
+                        font-size: 11px;
+                        color: rgba(255, 255, 255, 0.45);
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+
+                    .subscribe-item-meta {
+                        display: flex;
+                        gap: 6px;
+                        margin-top: 2px;
+
+                        .meta-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 3px;
+                            padding: 2px 7px;
+                            border-radius: 6px;
+                            background: rgba(255, 255, 255, 0.05);
+                            font-size: 10px;
+
+                            .meta-label {
+                                color: rgba(255, 255, 255, 0.4);
+                            }
+
+                            .meta-value {
+                                color: rgba(255, 255, 255, 0.8);
+                                font-weight: 500;
+
+                                &.is-order {
+                                    color: #63e2b7;
+                                }
+
+                                &.not-order {
+                                    color: #e88080;
+                                }
+                            }
+                        }
+                    }
+
+                    .subscribe-item-extra {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 2px;
+                        margin-top: 2px;
+
+                        .extra-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 5px;
+                            font-size: 10px;
+
+                            .extra-label {
+                                color: rgba(255, 255, 255, 0.4);
+                                flex-shrink: 0;
+                            }
+
+                            .extra-value {
+                                color: rgba(255, 255, 255, 0.65);
+                                white-space: nowrap;
+                                overflow: hidden;
+                                text-overflow: ellipsis;
+                            }
+                        }
                     }
                 }
             }
@@ -970,6 +1218,96 @@ onMounted(async () => {
             ::v-deep(.n-card-header) {
                 border-bottom-color: rgba(0, 0, 0, 0.06);
             }
+
+            .map-card {
+                background: rgba(0, 0, 0, 0.02);
+                border-color: rgba(0, 0, 0, 0.08);
+
+                &:hover {
+                    background: rgba(0, 0, 0, 0.05);
+                    border-color: rgba(102, 126, 234, 0.3);
+                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.1);
+                }
+
+                .map-card-info {
+                    .map-card-name {
+                        color: rgba(0, 0, 0, 0.85);
+                    }
+
+                    .map-card-label {
+                        color: rgba(0, 0, 0, 0.45);
+                    }
+                }
+
+                .map-card-stats {
+                    .stat-item {
+                        background: rgba(0, 0, 0, 0.04);
+
+                        .stat-label {
+                            color: rgba(0, 0, 0, 0.45);
+                        }
+
+                        .stat-value {
+                            color: rgba(0, 0, 0, 0.75);
+                        }
+                    }
+                }
+
+                .map-card-actions {
+                    .action-btn {
+                        &.system {
+                            color: #2080f0;
+                            background: rgba(32, 128, 240, 0.08);
+                            border-color: rgba(32, 128, 240, 0.2);
+
+                            &:hover {
+                                background: rgba(32, 128, 240, 0.15);
+                                border-color: rgba(32, 128, 240, 0.35);
+                            }
+
+                            &.subscribed {
+                                color: #fff;
+                                background: rgba(32, 128, 240, 0.85);
+                                border-color: rgba(32, 128, 240, 1);
+                            }
+                        }
+
+                        &.qq {
+                            color: #18a058;
+                            background: rgba(24, 160, 88, 0.08);
+                            border-color: rgba(24, 160, 88, 0.2);
+
+                            &:hover {
+                                background: rgba(24, 160, 88, 0.15);
+                                border-color: rgba(24, 160, 88, 0.35);
+                            }
+
+                            &.subscribed {
+                                color: #fff;
+                                background: rgba(24, 160, 88, 0.85);
+                                border-color: rgba(24, 160, 88, 1);
+                            }
+                        }
+
+                        &.edit {
+                            color: #f0a020;
+                            background: rgba(240, 160, 32, 0.08);
+                            border-color: rgba(240, 160, 32, 0.2);
+
+                            &:hover {
+                                background: rgba(240, 160, 32, 0.15);
+                                border-color: rgba(240, 160, 32, 0.35);
+                            }
+                        }
+
+                        &.disabled {
+                            color: rgba(0, 0, 0, 0.4);
+                            background: rgba(0, 0, 0, 0.04);
+                            border-color: rgba(0, 0, 0, 0.08);
+                        }
+                    }
+                }
+            }
         }
 
         .right-panel {
@@ -985,6 +1323,55 @@ onMounted(async () => {
                     &:hover {
                         background: rgba(0, 0, 0, 0.05);
                         border-color: rgba(102, 126, 234, 0.3);
+                        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.1);
+                    }
+
+                    .subscribe-item-name {
+                        color: rgba(0, 0, 0, 0.85);
+                    }
+
+                    .subscribe-item-label {
+                        color: rgba(0, 0, 0, 0.45);
+                    }
+
+                    .subscribe-item-actions {
+                        .icon-btn {
+                            color: rgba(0, 0, 0, 0.55);
+                            background: rgba(0, 0, 0, 0.04);
+                            border-color: rgba(0, 0, 0, 0.08);
+
+                            &:hover {
+                                background: rgba(102, 126, 234, 0.1);
+                                border-color: rgba(102, 126, 234, 0.35);
+                                color: #667eea;
+                            }
+                        }
+                    }
+
+                    .subscribe-item-meta {
+                        .meta-item {
+                            background: rgba(0, 0, 0, 0.04);
+
+                            .meta-label {
+                                color: rgba(0, 0, 0, 0.45);
+                            }
+
+                            .meta-value {
+                                color: rgba(0, 0, 0, 0.75);
+                            }
+                        }
+                    }
+
+                    .subscribe-item-extra {
+                        .extra-item {
+                            .extra-label {
+                                color: rgba(0, 0, 0, 0.45);
+                            }
+
+                            .extra-value {
+                                color: rgba(0, 0, 0, 0.65);
+                            }
+                        }
                     }
                 }
             }
@@ -1029,6 +1416,58 @@ onMounted(async () => {
 
                 .header-glow {
                     background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
+                }
+            }
+
+            .edit-actions {
+                .action-card {
+                    background: rgba(102, 126, 234, 0.05);
+                    border-color: rgba(102, 126, 234, 0.15);
+
+                    &:hover {
+                        background: rgba(102, 126, 234, 0.1);
+                    }
+
+                    .action-text {
+                        color: rgba(0, 0, 0, 0.6);
+                    }
+                }
+
+                .system-card {
+                    color: #2080f0;
+
+                    &:hover {
+                        background: rgba(32, 128, 240, 0.1);
+                        border-color: rgba(32, 128, 240, 0.3);
+                    }
+
+                    &.subscribed {
+                        background: rgba(32, 128, 240, 0.12);
+                        border-color: rgba(32, 128, 240, 0.35);
+                    }
+                }
+
+                .qq-card {
+                    color: #18a058;
+
+                    &:hover {
+                        background: rgba(24, 160, 88, 0.1);
+                        border-color: rgba(24, 160, 88, 0.3);
+                    }
+
+                    &.subscribed {
+                        background: rgba(24, 160, 88, 0.12);
+                        border-color: rgba(24, 160, 88, 0.35);
+                    }
+                }
+
+                .delete-card {
+                    color: #d03050;
+
+                    &:hover {
+                        background: rgba(208, 48, 80, 0.1);
+                        border-color: rgba(208, 48, 80, 0.3);
+                    }
                 }
             }
 
@@ -1111,6 +1550,83 @@ onMounted(async () => {
             height: 150px;
             background: radial-gradient(circle, rgba(102, 126, 234, 0.3) 0%, transparent 70%);
             z-index: 1;
+        }
+    }
+
+    .edit-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        width: 100%;
+
+        .action-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 90px;
+            height: 75px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            pointer-events: auto;
+            gap: 6px;
+            user-select: none;
+
+            &:hover {
+                transform: translateY(-2px);
+            }
+
+            .action-icon {
+                font-size: 22px;
+            }
+
+            .action-text {
+                font-size: 11px;
+                font-weight: 500;
+                color: rgba(255, 255, 255, 0.7);
+                text-align: center;
+                line-height: 1.2;
+            }
+        }
+
+        .system-card {
+            color: #70c0e8;
+
+            &:hover {
+                background: rgba(112, 192, 232, 0.1);
+                border-color: rgba(112, 192, 232, 0.3);
+            }
+
+            &.subscribed {
+                background: rgba(112, 192, 232, 0.15);
+                border-color: rgba(112, 192, 232, 0.4);
+            }
+        }
+
+        .qq-card {
+            color: #63e2b7;
+
+            &:hover {
+                background: rgba(99, 226, 183, 0.1);
+                border-color: rgba(99, 226, 183, 0.3);
+            }
+
+            &.subscribed {
+                background: rgba(99, 226, 183, 0.15);
+                border-color: rgba(99, 226, 183, 0.4);
+            }
+        }
+
+        .delete-card {
+            color: #e88080;
+
+            &:hover {
+                background: rgba(232, 128, 128, 0.1);
+                border-color: rgba(232, 128, 128, 0.3);
+            }
         }
     }
 
