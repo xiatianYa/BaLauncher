@@ -3,7 +3,6 @@ import { computed, watch, ref } from 'vue';
 import { useAppStore } from '@/store/modules/app';
 import { useEcharts } from '@/hooks/common/echarts';
 import { $t } from '@/locales';
-import { fetchGetPieChart } from '@/service/api';
 import { useThemeStore } from '@/store/modules/theme';
 
 defineOptions({
@@ -125,35 +124,10 @@ const { domRef, updateOptions } = useEcharts(() => ({
   ]
 }));
 
-async function mockData() {
-  const { data } = await fetchGetPieChart();
-  if (!data) return;
-
-  // 预计算数据并缓存
-  const processedData = data.map((item, index) => ({
-    name: item.name,
-    value: item.value,
-    itemStyle: getItemStyle(index, isDarkMode.value)
-  }));
-
-  cachedData.value = processedData;
-
-  updateOptions(opts => {
-    if (opts.series && opts.series[0]) {
-      opts.series[0].data = processedData;
-    }
-    return opts;
-  });
-}
-
 function updateLocale() {
   updateOptions((opts) => {
     return opts;
   });
-}
-
-async function init() {
-  mockData();
 }
 
 watch(
@@ -204,9 +178,6 @@ watch(
     });
   }
 );
-
-// init
-init();
 </script>
 
 <template>

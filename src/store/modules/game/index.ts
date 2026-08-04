@@ -479,8 +479,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     queryServerSeverVo: serverQuery.queryServerSeverVo,
     /** 统计各社区服务器数量 */
     countServerServerNumber: serverQuery.countServerServerNumber,
-    /** 统计各社区玩家数量 */
-    countServerPlayerNumber: serverQuery.countServerPlayerNumber,
     /** 更新社区列表排序 */
     updateCommunityList: serverQuery.updateCommunityList,
     /** 查询 WebSocket 服务器列表信息 */

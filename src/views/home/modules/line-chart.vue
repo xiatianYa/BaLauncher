@@ -3,7 +3,6 @@ import { watch, computed } from 'vue';
 import { useAppStore } from '@/store/modules/app';
 import { useThemeStore } from '@/store/modules/theme';
 import { ECOption, useEcharts } from '@/hooks/common/echarts';
-import { fetchGetLineChart } from '@/service/api';
 
 defineOptions({
   name: 'LineChart'
@@ -14,15 +13,6 @@ const themeStore = useThemeStore();
 
 // 判断是否为深色模式
 const isDarkMode = computed(() => themeStore.darkMode);
-
-// 配色方案
-const colorPalette = [
-  { line: '#5470c6', start: 'rgba(84, 112, 198, 0.3)', end: 'rgba(84, 112, 198, 0.01)' },
-  { line: '#91cc75', start: 'rgba(145, 204, 117, 0.3)', end: 'rgba(145, 204, 117, 0.01)' },
-  { line: '#fac858', start: 'rgba(250, 200, 88, 0.3)', end: 'rgba(250, 200, 88, 0.01)' },
-  { line: '#ee6666', start: 'rgba(238, 102, 102, 0.3)', end: 'rgba(238, 102, 102, 0.01)' },
-  { line: '#73c0de', start: 'rgba(115, 192, 222, 0.3)', end: 'rgba(115, 192, 222, 0.01)' }
-];
 
 // 在useEcharts中指定泛型类型
 const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
@@ -95,64 +85,6 @@ const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
   animationEasing: 'cubicOut'
 }));
 
-async function mockData() {
-  const { data } = await fetchGetLineChart();
-  if (!data) return;
-
-  const newSeries = data.communityNames?.map((name, index) => {
-    const colors = colorPalette[index % colorPalette.length];
-    const communityStatistics = data.communityStatistics[index];
-
-    return {
-      name,
-      type: 'line' as const,
-      data: communityStatistics,
-      smooth: true,
-      symbol: 'circle',
-      symbolSize: 6,
-      lineStyle: {
-        width: 3,
-        shadowColor: colors.line,
-        shadowBlur: 10,
-        shadowOffsetY: 5
-      },
-      areaStyle: {
-        opacity: 0.8,
-        color: {
-          type: 'linear' as const,
-          x: 0,
-          y: 0,
-          x2: 0,
-          y2: 1,
-          colorStops: [
-            { offset: 0, color: colors.start },
-            { offset: 1, color: colors.end }
-          ]
-        }
-      },
-      emphasis: {
-        focus: 'series' as const,
-        blurScope: 'coordinateSystem' as const
-      }
-    };
-  }) || [];
-
-  updateOptions((opts) => {
-    if (opts.legend) {
-      const legend = opts.legend;
-      if (legend && !Array.isArray(legend)) {
-        legend.data = data.communityNames || [];
-      }
-    }
-    const xAxis = opts.xAxis;
-    if (xAxis && !Array.isArray(xAxis) && 'data' in xAxis) {
-      xAxis.data = data.timeMinutes || [];
-    }
-    opts.series = newSeries;
-    return opts;
-  });
-}
-
 function updateLocale() {
   updateOptions((opts, factory) => {
     const originOpts = factory();
@@ -178,10 +110,6 @@ function updateLocale() {
 
     return opts;
   });
-}
-
-async function init() {
-  mockData();
 }
 
 // 监听主题变化，更新图表颜色
@@ -251,9 +179,6 @@ watch(
     updateLocale();
   }
 );
-
-// init
-init();
 </script>
 
 <template>

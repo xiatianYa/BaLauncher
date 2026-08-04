@@ -1,7 +1,6 @@
 export * from './auth';
 export * from './bot/group';
 export * from './bot/groupMember';
-export * from './game/statistics';
 export * from './system/dict';
 export * from './game/map';
 export * from './game/mapOrder';

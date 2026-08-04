@@ -3,7 +3,6 @@ import type { Ref } from 'vue'
 import { fetchGetCommunityList } from '@/service/api'
 import { fetchGetServerList } from '@/service/api'
 import { fetchGetMapList } from '@/service/api'
-import { fetchGetPieChart } from '@/service/api'
 
 type MaybeRef<T> = T | Ref<T>
 
@@ -77,16 +76,6 @@ export function useServerQuery(deps: ServerQueryDeps) {
     }
   }
 
-  /** 统计各社区的在线玩家数量 */
-  async function countServerPlayerNumber(): Promise<void> {
-    const { data: pieChartData } = await fetchGetPieChart()
-    for (const community of unref(communityList)) {
-      community.playerNumber = 0
-      if (!pieChartData) continue
-      community.playerNumber = pieChartData.find(item => item.name === community.communityName)?.value || 0
-    }
-  }
-
   /** 初始化服务器列表 */
   async function initServerList(): Promise<void> {
     loadSettingsFromStorage()
@@ -105,7 +94,6 @@ export function useServerQuery(deps: ServerQueryDeps) {
     }
 
     countServerServerNumber()
-    await countServerPlayerNumber()
   }
 
   /** 更新社区列表排序 */
@@ -122,7 +110,6 @@ export function useServerQuery(deps: ServerQueryDeps) {
         unref(serverDataList).splice(0, unref(serverDataList).length, ...serverData)
       }
       countServerServerNumber()
-      await countServerPlayerNumber()
       return
     }
 
@@ -153,7 +140,6 @@ export function useServerQuery(deps: ServerQueryDeps) {
       }
     } finally {
       countServerServerNumber()
-      await countServerPlayerNumber()
     }
   }
 
@@ -176,7 +162,6 @@ export function useServerQuery(deps: ServerQueryDeps) {
 
     unref(currentServerList).splice(0, unref(currentServerList).length, ...allServers)
     countServerServerNumber()
-    await countServerPlayerNumber()
   }
 
   /** 查询服务器Ping值 */
@@ -223,7 +208,6 @@ export function useServerQuery(deps: ServerQueryDeps) {
     queryWsServerInfosResponse,
     queryServerSeverVo,
     countServerServerNumber,
-    countServerPlayerNumber,
     createOfflineServer,
   }
 }
