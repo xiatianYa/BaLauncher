@@ -10,6 +10,7 @@ import { useDict } from '@/hooks/business/dict';
 import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList, fetchUpdateMapSubscribe, fetchUpdateMap, fetchInsertMap, fetchUploadFile } from '@/service/api';
 import { $t } from '@/locales';
 import dayjs from 'dayjs';
+import { useBotBind } from '@/hooks/business/botBind';
 
 defineOptions({ name: 'MapOrder' });
 
@@ -23,6 +24,7 @@ const themeStore = useThemeStore();
 const gameStore = useGameStore();
 const { isAdmin } = useAuth();
 const { dictOptions } = useDict();
+const { ensureBound } = useBotBind(); // 添加订阅时需要先绑定QQ群成员
 const emit = defineEmits<{ back: [] }>();
 
 const isDarkMode = computed(() => themeStore.darkMode);
@@ -182,6 +184,9 @@ const handlePageChange = (page: number) => {
 
 const handleSystemSubscribe = async () => {
     if (!currentSubscribeMap.value) return;
+    // 添加订阅前需先绑定QQ群成员，未绑定则弹出绑定模态框
+    const bound = await ensureBound();
+    if (!bound) return;
     const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, '1', null);
     if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
     showSubscribeModal.value = false;
@@ -191,6 +196,9 @@ const handleSystemSubscribe = async () => {
 
 const handleQQSubscribe = async () => {
     if (!currentSubscribeMap.value) return;
+    // 添加订阅前需先绑定QQ群成员，未绑定则弹出绑定模态框
+    const bound = await ensureBound();
+    if (!bound) return;
     const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, null, '1');
     if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
     showSubscribeModal.value = false;
@@ -199,12 +207,18 @@ const handleQQSubscribe = async () => {
 };
 
 const handleSystemSubscribeDirect = async (map: Api.Game.MapVo) => {
+    // 添加订阅前需先绑定QQ群成员，未绑定则弹出绑定模态框
+    const bound = await ensureBound();
+    if (!bound) return;
     const { error } = await fetchAddMapSubscribe(map.id, '1', null);
     if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
     await fetchSubscribeList();
 };
 
 const handleQQSubscribeDirect = async (map: Api.Game.MapVo) => {
+    // 添加订阅前需先绑定QQ群成员，未绑定则弹出绑定模态框
+    const bound = await ensureBound();
+    if (!bound) return;
     const { error } = await fetchAddMapSubscribe(map.id, null, '1');
     if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
     await fetchSubscribeList();

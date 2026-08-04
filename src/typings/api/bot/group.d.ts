@@ -6,6 +6,8 @@ declare namespace Api {
       id: string;
       /** QQ群号 */
       groupId: string;
+      /** 群名称 */
+      groupName: string;
       /** 生效开始时间 */
       startTime: string;
       /** 到期时间 */
@@ -44,6 +46,8 @@ declare namespace Api {
       id?: string;
       /** QQ群号 */
       groupId: string;
+      /** 群名称（后端自动获取，编辑时无需传入） */
+      groupName?: string;
       /** 生效开始时间 */
       startTime: string;
       /** 到期时间 */

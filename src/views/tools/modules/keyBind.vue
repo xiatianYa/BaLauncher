@@ -580,7 +580,8 @@ onMounted(() => {
                                     </div>
                                     <div class="applied-binding-text">
                                         <div class="applied-binding-name">{{ item.systemBindCfgVO?.systemName }}</div>
-                                        <div class="applied-binding-key">{{ $t('keyBind.bindingKey') }}: {{ item.key }}</div>
+                                        <div class="applied-binding-key">{{ $t('keyBind.bindingKey') }}: {{ item.key }}
+                                        </div>
                                     </div>
                                 </div>
                             </NGridItem>
@@ -637,7 +638,7 @@ onMounted(() => {
                                     <div class="flex-1 flex flex-col align-center justify-between">
                                         <span class="text-14px font-bold">{{ $t('keyBind.configName') }} : {{
                                             item.systemBindCfgVO?.systemName
-                                            }}</span>
+                                        }}</span>
                                         <span class="text-12px text-gray-500">{{ $t('keyBind.bindingKey') }} : {{
                                             item.key }}</span>
                                     </div>
@@ -1008,6 +1009,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                 }
 
                 &.selected {
+
                     .config-card-content-img,
                     .applied-binding-img {
                         background: rgba($accent, 0.15);
@@ -1143,6 +1145,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
 
                 .config-card-text,
                 .applied-binding-text {
+
                     .config-card-title,
                     .applied-binding-name {
                         color: rgba(0, 0, 0, 0.85);
@@ -1155,6 +1158,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                 }
 
                 &.selected {
+
                     .config-card-content-img,
                     .applied-binding-img {
                         background: rgba($accent, 0.12);

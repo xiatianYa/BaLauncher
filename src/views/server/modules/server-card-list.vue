@@ -1,7 +1,15 @@
 <script setup lang="ts">
-import { NGrid, NGridItem, NTag } from 'naive-ui';
+import { NGrid, NGridItem, NTag, NEllipsis } from 'naive-ui';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useDict } from '@/hooks/business/dict';
 import dayjs from 'dayjs';
+
+// 虚拟滚动配置
+const ITEMS_PER_ROW = 2; // 每行 2 张卡片
+const CARD_HEIGHT = 155; // 卡片高度（px）
+const ROW_GAP = 12; // 行间距（px）
+const ROW_HEIGHT = CARD_HEIGHT + ROW_GAP; // 每行占用高度
+const BUFFER_ROWS = 3; // 上下缓冲行数
 
 const props = defineProps<{
   servers: Api.Game.SeverVo[];
@@ -18,6 +26,51 @@ const emit = defineEmits<{
 }>();
 
 const { dictOptions } = useDict();
+
+// 虚拟滚动状态
+const listRef = ref<HTMLElement | null>(null);
+const containerHeight = ref(0);
+const scrollTop = ref(0);
+
+const totalRows = computed(() => Math.ceil(props.servers.length / ITEMS_PER_ROW));
+
+const startRow = computed(() => {
+  const row = Math.floor(scrollTop.value / ROW_HEIGHT);
+  return Math.max(0, row - BUFFER_ROWS);
+});
+
+const endRow = computed(() => {
+  const visibleRows = Math.ceil(containerHeight.value / ROW_HEIGHT);
+  const row = Math.floor(scrollTop.value / ROW_HEIGHT);
+  return Math.min(totalRows.value, row + visibleRows + BUFFER_ROWS);
+});
+
+const visibleServers = computed(() => {
+  const startIndex = startRow.value * ITEMS_PER_ROW;
+  const endIndex = Math.min(props.servers.length, endRow.value * ITEMS_PER_ROW);
+  return props.servers.slice(startIndex, endIndex);
+});
+
+const paddingTop = computed(() => startRow.value * ROW_HEIGHT);
+const paddingBottom = computed(() => (totalRows.value - endRow.value) * ROW_HEIGHT);
+
+const updateVisibleRange = () => {
+  const el = listRef.value;
+  if (!el) return;
+  scrollTop.value = el.scrollTop;
+  containerHeight.value = el.clientHeight;
+};
+
+onMounted(() => {
+  updateVisibleRange();
+  listRef.value?.addEventListener('scroll', updateVisibleRange, { passive: true });
+  window.addEventListener('resize', updateVisibleRange);
+});
+
+onUnmounted(() => {
+  listRef.value?.removeEventListener('scroll', updateVisibleRange);
+  window.removeEventListener('resize', updateVisibleRange);
+});
 
 // 计算目标时间到当前时间的分钟差
 const calculatePastMinutes = (targetTime: string) => {
@@ -101,9 +154,10 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 </script>
 
 <template>
-  <div class="h-full overflow-auto p-5px relative">
-    <NGrid :x-gap="12" :y-gap="12" :cols="2">
-      <NGridItem v-for="(server, index) in servers" :key="index">
+  <div ref="listRef" class="h-full overflow-auto p-5px relative">
+    <div class="virtual-scroll-spacer" :style="{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px` }">
+      <NGrid :x-gap="12" :y-gap="12" :cols="2">
+        <NGridItem v-for="(server, index) in visibleServers" :key="server.connectStr || index">
         <div class="sercer-card overflow-hidden flex flex-col"
           v-if="server.isOnline && getSourceServerInfo(server)?.serverName">
           <img v-if="server.mapUrl" class="server-card-bg" v-lazy="server.mapUrl" />
@@ -194,6 +248,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
         </div>
       </NGridItem>
     </NGrid>
+    </div>
   </div>
 </template>
 

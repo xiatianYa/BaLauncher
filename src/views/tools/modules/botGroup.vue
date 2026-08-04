@@ -44,6 +44,16 @@ const formatDate = (date?: string | null) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm');
 };
 
+/** 成员身份中文映射 */
+const getMemberRoleText = (role?: string | null) => {
+  const map: Record<string, string> = {
+    owner: '群主',
+    admin: '管理员',
+    member: '成员'
+  };
+  return map[role || ''] || role || '成员';
+};
+
 /**
  * 根据社区列表解析偏好社区名称
  * communitys 为逗号分隔的社区ID字符串（如 "1,3"），映射为社区名称，多个用顿号连接
@@ -420,7 +430,10 @@ onMounted(() => {
             <div class="card-header">
               <div class="group-id">
                 <SvgIcon icon="mdi:qqchat" class="qq-icon" />
-                <span class="group-number">{{ row.groupId }}</span>
+                <div class="group-title">
+                  <span class="group-name" :title="row.groupName">{{ row.groupName || '未命名群' }}</span>
+                  <span class="group-number">{{ row.groupId }}</span>
+                </div>
               </div>
               <div class="remaining-badge"
                 :class="{ danger: getRemainingDays(row.expireTime) === '已过期' || getRemainingDays(row.expireTime) === '今天到期' }">
@@ -518,9 +531,9 @@ onMounted(() => {
             <SvgIcon icon="mdi:account-group" class="member-modal-icon" />
           </div>
           <span>群成员管理</span>
-          <span class="member-modal-group">
+          <span class="member-modal-group" :title="currentMemberGroup?.groupName">
             <SvgIcon icon="mdi:qqchat" class="group-tag-icon" />
-            {{ currentMemberGroup?.groupId }}
+            {{ currentMemberGroup?.groupName || currentMemberGroup?.groupId }}
           </span>
         </div>
       </template>
@@ -549,10 +562,16 @@ onMounted(() => {
                 </div>
                 <div class="member-meta">
                   <span class="member-qq">{{ member.qq }}</span>
+                  <span class="member-role-tag" :class="member.memberRole || 'member'">
+                    {{ getMemberRoleText(member.memberRole) }}
+                  </span>
                   <span class="member-bind-status" :class="{ bound: !!member.sysUserId }">
                     <span class="bind-dot" />
                     {{ member.sysUserId ? '已绑定' : '未绑定' }}
                   </span>
+                </div>
+                <div v-if="member.joinTime" class="member-join-time">
+                  入群：{{ formatDate(member.joinTime) }}
                 </div>
               </div>
               <SvgIcon v-if="selectedMember?.id === member.id" icon="mdi:check-circle" class="member-check" />
@@ -597,6 +616,9 @@ onMounted(() => {
                   <span class="member-detail-name">{{ selectedMember.nickname || selectedMember.groupCard ||
                     selectedMember.qq
                     }}</span>
+                  <span class="member-detail-role" :class="selectedMember.memberRole || 'member'">
+                    {{ getMemberRoleText(selectedMember.memberRole) }}
+                  </span>
                   <span class="member-detail-badge" :class="{ bound: !!selectedMember.sysUserId }">
                     {{ selectedMember.sysUserId ? '已绑定' : '未绑定' }}
                   </span>
@@ -609,6 +631,10 @@ onMounted(() => {
                   <span v-if="selectedMember.groupCard" class="detail-meta-item">
                     <SvgIcon icon="mdi:card-account-details" />
                     群名片：{{ selectedMember.groupCard }}
+                  </span>
+                  <span v-if="selectedMember.joinTime" class="detail-meta-item">
+                    <SvgIcon icon="mdi:clock-outline" />
+                    入群：{{ formatDate(selectedMember.joinTime) }}
                   </span>
                 </div>
               </div>
@@ -975,13 +1001,27 @@ onMounted(() => {
           flex-shrink: 0;
         }
 
-        .group-number {
-          font-size: 15px;
-          font-weight: 700;
-          color: var(--n-text-color);
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
+        .group-title {
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+
+          .group-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--n-text-color);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+
+          .group-number {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.45);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
         }
       }
 
@@ -1326,6 +1366,14 @@ onMounted(() => {
 
       &.expired {
         border-color: rgba(245, 87, 108, 0.2);
+      }
+
+      .card-header {
+        .group-title {
+          .group-number {
+            color: rgba(0, 0, 0, 0.45);
+          }
+        }
       }
 
       .card-meta {
@@ -1738,6 +1786,32 @@ onMounted(() => {
               }
             }
           }
+
+          .member-role-tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 5px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.55);
+            background: rgba(255, 255, 255, 0.08);
+
+            &.owner {
+              color: #f5576c;
+              background: rgba(245, 87, 108, 0.12);
+            }
+
+            &.admin {
+              color: #f0a020;
+              background: rgba(240, 160, 32, 0.12);
+            }
+          }
+        }
+
+        .member-join-time {
+          font-size: 10px;
+          color: rgba(255, 255, 255, 0.35);
         }
       }
 
@@ -1919,6 +1993,26 @@ onMounted(() => {
               &.bound {
                 color: #43e97b;
                 background: rgba(67, 233, 123, 0.12);
+              }
+            }
+
+            .member-detail-role {
+              flex-shrink: 0;
+              padding: 1px 8px;
+              border-radius: 10px;
+              font-size: 11px;
+              font-weight: 500;
+              color: rgba(255, 255, 255, 0.55);
+              background: rgba(255, 255, 255, 0.08);
+
+              &.owner {
+                color: #f5576c;
+                background: rgba(245, 87, 108, 0.12);
+              }
+
+              &.admin {
+                color: #f0a020;
+                background: rgba(240, 160, 32, 0.12);
               }
             }
           }
@@ -2231,6 +2325,25 @@ onMounted(() => {
             background: rgba(0, 0, 0, 0.25);
           }
         }
+
+        .member-meta .member-role-tag {
+          color: rgba(0, 0, 0, 0.5);
+          background: rgba(0, 0, 0, 0.06);
+
+          &.owner {
+            color: #d03050;
+            background: rgba(208, 48, 80, 0.1);
+          }
+
+          &.admin {
+            color: #f0a020;
+            background: rgba(240, 160, 32, 0.1);
+          }
+        }
+
+        .member-join-time {
+          color: rgba(0, 0, 0, 0.4);
+        }
       }
     }
 
@@ -2289,6 +2402,21 @@ onMounted(() => {
               &.bound {
                 color: #2ecc71;
                 background: rgba(46, 204, 113, 0.12);
+              }
+            }
+
+            .member-detail-role {
+              color: rgba(0, 0, 0, 0.55);
+              background: rgba(0, 0, 0, 0.06);
+
+              &.owner {
+                color: #d03050;
+                background: rgba(208, 48, 80, 0.1);
+              }
+
+              &.admin {
+                color: #f0a020;
+                background: rgba(240, 160, 32, 0.1);
               }
             }
 

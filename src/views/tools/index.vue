@@ -8,7 +8,6 @@ import MapOrder from './modules/mapOrder.vue';
 import ServerMapRecord from './modules/serverMapRecord.vue';
 import BotGroup from './modules/botGroup.vue';
 import { $t } from '@/locales';
-import { useBotBind } from '@/hooks/business/botBind';
 
 import KeyBindIcon from '@/assets/imgs/tool/keyBind.png';
 import MapOrderIcon from '@/assets/imgs/tool/mapOrder.png';
@@ -26,8 +25,6 @@ interface ToolModule {
 
 const themeStore = useThemeStore();
 const isDarkMode = computed(() => themeStore.darkMode);
-
-const { ensureBound } = useBotBind(); // 地图订阅需要先绑定QQ群成员
 
 const moduleMap: Record<UnionKey.ToolModule, ToolModule> = {
   'keyBind': { label: $t('tools.keyBind'), component: KeyBind },
@@ -98,14 +95,7 @@ const getToolDescription = (id: UnionKey.ToolModule) => {
   return $t(keyMap[id]);
 };
 
-const handleToolClick = async (tool: ToolItem) => {
-  // 地图订阅需要先绑定QQ群成员，未绑定则弹出绑定模态框
-  if (tool.id === 'mapOrder') {
-    const bound = await ensureBound();
-    if (!bound) {
-      return;
-    }
-  }
+const handleToolClick = (tool: ToolItem) => {
   activeModuleKey.value = tool.id;
 };
 </script>

@@ -151,7 +151,8 @@ onMounted(() => {
             <!-- 右栏：时间线面板 -->
             <div class="timeline-panel">
                 <TimelineCard :selected-server-index="selectedServerIndex" :timeline-list="timelineList"
-                    :timeline-loading="timelineLoading" :timeline-finished="timelineFinished" @load="loadTimeline" @search-map="handleSearchMap" />
+                    :timeline-loading="timelineLoading" :timeline-finished="timelineFinished" @load="loadTimeline"
+                    @search-map="handleSearchMap" />
             </div>
         </div>
     </div>

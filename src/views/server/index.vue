@@ -2,7 +2,6 @@
 import { useGameStore } from '@/store/modules/game';
 import LoadingSpinner from '@/components/custom/loading-spinner.vue';
 import { ref, onUnmounted, nextTick, onMounted, computed } from 'vue';
-import { animate } from 'animejs';
 import OpenGameConfirm from '@/views/server/modules/open-game-confirm.vue';
 import OpenGameJoin from '@/views/server/modules/open-game-join.vue';
 import JoinServerTray from '@/views/server/modules/join-server-tray.vue';
@@ -29,20 +28,14 @@ const showOpenGameConfirm = ref<boolean>(false);
 // 是否显示加入服务器确认弹窗
 const showJoinServerConfirm = ref<boolean>(false);
 
-// 刷新服务器列表倒计时
-const countdownTextRef = ref<HTMLElement>();
-
-// 刷新服务器列表进度环
-const progressRingRef = ref<HTMLElement>();
-
-// 刷新服务器列表倒计时值
-const countdownValue = ref(10);
-
 // 刷新服务器列表是否正在刷新状态
 const isRefreshing = ref(false);
 
 // 刷新服务器列表倒计时定时器
 let countdownInterval: number | null = null;
+
+// 用于重启 SVG 环形动画的 key
+const countdownTick = ref(0);
 
 interface ServerLayoutModule {
   label: string;
@@ -72,25 +65,14 @@ const restoreJoinServerWindow = () => {
   showJoinServerConfirm.value = true;
 };
 
-// 开始倒计时
+// 开始倒计时（仅保留 10 秒一次的数据刷新定时器，动画交给 CSS/SVG）
 const startCountdown = (reset: boolean = true) => {
   isRefreshing.value = false;
-  if (reset) {
-    countdownValue.value = 10;
-  }
 
   nextTick(() => {
-    if (progressRingRef.value && reset) {
-      progressRingRef.value.style.strokeDashoffset = '0';
-    }
-    if (progressRingRef.value && reset) {
-      animate(progressRingRef.value, {
-        strokeDashoffset: [0, 100.5],
-        easing: 'linear',
-        duration: 10000,
-      });
-
-      animateNumber(countdownValue.value);
+    if (reset) {
+      // 通过改变 key 强制 SVG 圆环重新挂载，从而重启 CSS 动画
+      countdownTick.value++;
     }
   });
 
@@ -98,25 +80,12 @@ const startCountdown = (reset: boolean = true) => {
     clearInterval(countdownInterval);
   }
 
+  // 每 10 秒触发一次服务器信息刷新，不再每秒更新 Vue 响应式状态
   countdownInterval = window.setInterval(() => {
-    if (countdownValue.value > 0 && !isRefreshing.value) {
-      countdownValue.value--;
-      animateNumber(countdownValue.value);
-    } else if (countdownValue.value <= 0 && !isRefreshing.value) {
+    if (!isRefreshing.value) {
       queryServerInfos(false, false);
     }
-  }, 1000);
-};
-
-// 动画数字
-const animateNumber = (num: number) => {
-  if (countdownTextRef.value) {
-    animate(countdownTextRef.value, {
-      scale: [0.8, 1.2, 1],
-      duration: 300,
-      easing: 'easeOutElastic(1, .5)',
-    });
-  }
+  }, 10000);
 };
 
 // 查询服务器列表 源服务器
@@ -158,7 +127,7 @@ const joinServer = async (server: Api.Game.SeverVo) => {
 
 // 打开自动连接服务器窗口
 const openAutoJoinServer = (server: Api.Game.SeverVo) => {
-    gameStore.joinServerInfo = server;
+  gameStore.joinServerInfo = server;
   //如果正在挤服 则不能打开其他挤服窗口
   if (gameStore.isJoinServerTrayVisible) {
     window.$message?.error($t('server.joinBusy'));
@@ -262,7 +231,7 @@ onUnmounted(() => {
                 </linearGradient>
               </defs>
               <circle class="countdown-bg" cx="20" cy="20" r="16" stroke-width="3" fill="none" />
-              <circle class="countdown-progress" ref="progressRingRef" cx="20" cy="20" r="16" stroke-width="3"
+              <circle class="countdown-progress" :key="countdownTick" cx="20" cy="20" r="16" stroke-width="3"
                 fill="none" stroke-dasharray="100.5" stroke-dashoffset="0" transform="rotate(-90 20 20)" />
             </svg>
             <svg v-else class="speed-svg" width="40" height="40" viewBox="0 0 40 40">
@@ -286,9 +255,8 @@ onUnmounted(() => {
                   stroke-linecap="round" />
               </g>
             </svg>
-            <div class="countdown-text" ref="countdownTextRef">
-              <span v-if="!isRefreshing">{{ countdownValue }}</span>
-            </div>
+            <div class="countdown-text"></div>
+
           </div>
           <div class="countdown-container cursor-pointer" v-else>
             <svg class="spinner-svg" width="40" height="40" viewBox="0 0 40 40">
@@ -346,6 +314,18 @@ onUnmounted(() => {
   stroke: url(#countdownGradient);
   stroke-linecap: round;
   transition: stroke 0.3s ease;
+  // 10 秒环形进度动画，由 CSS 驱动，不触发 Vue 重新渲染
+  animation: countdownProgress 10s linear infinite;
+}
+
+@keyframes countdownProgress {
+  from {
+    stroke-dashoffset: 0;
+  }
+
+  to {
+    stroke-dashoffset: 100.5;
+  }
 }
 
 .countdown-refresh {
@@ -367,6 +347,57 @@ onUnmounted(() => {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   z-index: 1;
+
+  &::before {
+    content: '10';
+    animation: countdownNumber 10s steps(10) infinite;
+  }
+}
+
+@keyframes countdownNumber {
+  0% {
+    content: '10';
+  }
+
+  10% {
+    content: '9';
+  }
+
+  20% {
+    content: '8';
+  }
+
+  30% {
+    content: '7';
+  }
+
+  40% {
+    content: '6';
+  }
+
+  50% {
+    content: '5';
+  }
+
+  60% {
+    content: '4';
+  }
+
+  70% {
+    content: '3';
+  }
+
+  80% {
+    content: '2';
+  }
+
+  90% {
+    content: '1';
+  }
+
+  100% {
+    content: '1';
+  }
 }
 
 .speed-svg {

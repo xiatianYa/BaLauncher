@@ -14,6 +14,10 @@ declare namespace Api {
       nickname?: string;
       /** 群名片 */
       groupCard?: string;
+      /** 入群时间 */
+      joinTime?: string;
+      /** 成员身份：owner群主, admin管理员, member普通成员 */
+      memberRole?: string;
       /** 创建用户ID */
       createUserId?: string;
       /** 创建时间 */
