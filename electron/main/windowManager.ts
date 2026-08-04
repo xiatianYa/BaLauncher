@@ -16,11 +16,11 @@ async function createWindow(onDidFinishLoad?: (win: BrowserWindow) => void) {
   win = new BrowserWindow({
     title: '蔚蓝档案登录器',
     icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
-    width: 1300,
+    width: 1400,
     height: 820,
-    minWidth: 1300,
+    minWidth: 1400,
     minHeight: 820,
-    maxWidth: 1300,
+    maxWidth: 1400,
     maxHeight: 820,
     resizable: false,
     webPreferences: {
