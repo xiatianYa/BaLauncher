@@ -72,6 +72,12 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   closeMapOrderNotification() {
     return ipcRenderer.invoke('close-notification');
   },
+  getImageCacheInfo() {
+    return ipcRenderer.invoke('image-cache:get-info');
+  },
+  clearImageCache() {
+    return ipcRenderer.invoke('image-cache:clear');
+  },
 });
 
 // --------- Preload scripts loading ---------

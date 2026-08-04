@@ -32,7 +32,31 @@ const cacheTypes: CacheType[] = [
   { label: '系统数据', value: 'appSettings', key: 'appSettings', icon: 'mdi:cog', type: 'primary' },
   { label: '用户数据', value: 'authData', key: 'authData', icon: 'mdi:shield-account', type: 'warning' },
   { label: '路由数据', value: 'routeData', key: 'routeData', icon: 'mdi:routes', type: 'info' },
+  { label: '图片缓存', value: 'imageCache', key: 'imageCache', icon: 'mdi:image-multiple', type: 'info' },
 ]
+
+/** 图片磁盘缓存大小（通过 IPC 查询） */
+const imageCacheSize = ref('0 KB')
+
+/** 查询图片缓存大小 */
+const loadImageCacheSize = async () => {
+  try {
+    const info = await window.ipcRenderer.getImageCacheInfo()
+    imageCacheSize.value = formatBytes(info.totalSize)
+  } catch {
+    imageCacheSize.value = '0 KB'
+  }
+}
+
+/** 格式化字节大小 */
+const formatBytes = (size: number) => {
+  if (size < 1024) {
+    return `${size}B`
+  } else if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(2)}KB`
+  }
+  return `${(size / (1024 * 1024)).toFixed(2)}MB`
+}
 
 const getCacheTypeSize = (type: string) => {
   let size = 0
@@ -57,6 +81,8 @@ const getCacheTypeSize = (type: string) => {
     case 'routeData':
       Object.values(ROUTE_STORAGE_KEYS).forEach(getKeySize)
       break
+    case 'imageCache':
+      return imageCacheSize.value
   }
 
   if (size < 1024) {
@@ -102,7 +128,7 @@ const clearCache = () => {
   cacheModalVisible.value = true
 }
 
-const handleClearCache = () => {
+const handleClearCache = async () => {
   if (selectedCacheTypes.value.length === 0) {
     window.$message?.warning('请选择要清理的缓存类型')
     return
@@ -126,11 +152,17 @@ const handleClearCache = () => {
       }
     })
 
+    // 清理图片磁盘缓存
+    if (selectedCacheTypes.value.includes('imageCache')) {
+      await window.ipcRenderer.clearImageCache()
+    }
+
     cacheModalVisible.value = false
     window.$message?.success('缓存清理成功')
 
     cacheUpdateTrigger.value++
     calculateCacheSize()
+    loadImageCacheSize()
 
     setTimeout(() => {
       window.location.reload()
@@ -142,10 +174,15 @@ const handleClearCache = () => {
 
 watch(() => cacheUpdateTrigger.value, () => {
   calculateCacheSize()
+  loadImageCacheSize()
 })
+
+// 初始化时加载图片缓存大小
+loadImageCacheSize()
 
 defineExpose({
   calculateCacheSize,
+  loadImageCacheSize,
 })
 </script>
 
