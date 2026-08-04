@@ -104,7 +104,7 @@ const toggleCacheType = (type: string) => {
   }
 }
 
-const calculateCacheSize = () => {
+const calculateCacheSize = async () => {
   let size = 0
   Object.values(ALL_STORAGE_KEYS).forEach((key) => {
     const value = localStg.get(key as keyof StorageType.Local)
@@ -112,6 +112,14 @@ const calculateCacheSize = () => {
       size += (key.length + JSON.stringify(value).length) * 2
     }
   })
+
+  // 加上图片磁盘缓存大小
+  try {
+    const info = await window.ipcRenderer.getImageCacheInfo()
+    size += info.totalSize
+  } catch {
+    // 忽略 IPC 调用失败
+  }
 
   if (size < 1024) {
     cacheSize.value = `${size} B`
@@ -172,9 +180,9 @@ const handleClearCache = async () => {
   }
 }
 
-watch(() => cacheUpdateTrigger.value, () => {
-  calculateCacheSize()
-  loadImageCacheSize()
+watch(() => cacheUpdateTrigger.value, async () => {
+  await calculateCacheSize()
+  await loadImageCacheSize()
 })
 
 // 初始化时加载图片缓存大小

@@ -555,10 +555,7 @@ onMounted(() => {
               </div>
               <div class="member-info">
                 <div class="member-name-row">
-                  <span class="member-name">{{ member.nickname || member.groupCard || member.qq }}</span>
-                  <span v-if="member.groupCard && member.nickname" class="member-card-tag" :title="member.groupCard">
-                    {{ member.groupCard }}
-                  </span>
+                  <span class="member-name">{{ member.nickName || member.qq }}</span>
                 </div>
                 <div class="member-meta">
                   <span class="member-qq">{{ member.qq }}</span>
@@ -570,11 +567,7 @@ onMounted(() => {
                     {{ member.sysUserId ? '已绑定' : '未绑定' }}
                   </span>
                 </div>
-                <div v-if="member.joinTime" class="member-join-time">
-                  入群：{{ formatDate(member.joinTime) }}
-                </div>
               </div>
-              <SvgIcon v-if="selectedMember?.id === member.id" icon="mdi:check-circle" class="member-check" />
             </div>
             <div v-if="!memberLoading && memberList.length === 0" class="member-empty">
               <SvgIcon icon="mdi:account-off" class="member-empty-icon" />
@@ -613,9 +606,7 @@ onMounted(() => {
               </div>
               <div class="member-detail-info">
                 <div class="member-detail-name-row">
-                  <span class="member-detail-name">{{ selectedMember.nickname || selectedMember.groupCard ||
-                    selectedMember.qq
-                    }}</span>
+                  <span class="member-detail-name">{{ selectedMember.nickName || selectedMember.qq }}</span>
                   <span class="member-detail-role" :class="selectedMember.memberRole || 'member'">
                     {{ getMemberRoleText(selectedMember.memberRole) }}
                   </span>
@@ -627,10 +618,6 @@ onMounted(() => {
                   <span class="detail-meta-item">
                     <SvgIcon icon="mdi:qqchat" />
                     QQ：{{ selectedMember.qq }}
-                  </span>
-                  <span v-if="selectedMember.groupCard" class="detail-meta-item">
-                    <SvgIcon icon="mdi:card-account-details" />
-                    群名片：{{ selectedMember.groupCard }}
                   </span>
                   <span v-if="selectedMember.joinTime" class="detail-meta-item">
                     <SvgIcon icon="mdi:clock-outline" />
@@ -1702,6 +1689,7 @@ onMounted(() => {
       &.selected {
         background: rgba(102, 126, 234, 0.12);
         border-color: rgba(102, 126, 234, 0.4);
+        box-shadow: inset 3px 0 0 #667eea;
       }
 
       .member-avatar {
@@ -1734,19 +1722,6 @@ onMounted(() => {
             font-size: 13px;
             font-weight: 500;
             color: rgba(255, 255, 255, 0.88);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-
-          .member-card-tag {
-            flex-shrink: 0;
-            max-width: 90px;
-            padding: 0 6px;
-            border-radius: 5px;
-            font-size: 10px;
-            color: rgba(255, 255, 255, 0.5);
-            background: rgba(255, 255, 255, 0.08);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -1808,17 +1783,6 @@ onMounted(() => {
             }
           }
         }
-
-        .member-join-time {
-          font-size: 10px;
-          color: rgba(255, 255, 255, 0.35);
-        }
-      }
-
-      .member-check {
-        font-size: 18px;
-        color: #667eea;
-        flex-shrink: 0;
       }
     }
 
@@ -2302,16 +2266,12 @@ onMounted(() => {
       &.selected {
         background: rgba(102, 126, 234, 0.1);
         border-color: rgba(102, 126, 234, 0.35);
+        box-shadow: inset 3px 0 0 #667eea;
       }
 
       .member-info {
         .member-name-row .member-name {
           color: rgba(0, 0, 0, 0.8);
-        }
-
-        .member-name-row .member-card-tag {
-          color: rgba(0, 0, 0, 0.5);
-          background: rgba(0, 0, 0, 0.06);
         }
 
         .member-meta .member-qq {
@@ -2339,10 +2299,6 @@ onMounted(() => {
             color: #f0a020;
             background: rgba(240, 160, 32, 0.1);
           }
-        }
-
-        .member-join-time {
-          color: rgba(0, 0, 0, 0.4);
         }
       }
     }

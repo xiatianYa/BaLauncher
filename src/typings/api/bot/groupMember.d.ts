@@ -11,9 +11,7 @@ declare namespace Api {
       /** 绑定的系统用户ID */
       sysUserId?: string;
       /** QQ昵称 */
-      nickname?: string;
-      /** 群名片 */
-      groupCard?: string;
+      nickName?: string;
       /** 入群时间 */
       joinTime?: string;
       /** 成员身份：owner群主, admin管理员, member普通成员 */

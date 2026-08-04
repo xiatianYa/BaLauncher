@@ -22,7 +22,7 @@ let notificationIdCounter = 0
 // 通知窗口配置
 const NOTIFICATION_CONFIG = {
   width: 360,
-  height: 140,
+  height: 144,
   gap: 10, // 通知之间的间距
   maxNotifications: 5, // 最大显示通知数量
   displayDuration: 30000, // 显示时长 30秒
@@ -147,6 +147,7 @@ export function closeNotificationWindow(): void {
 
 function generateNotificationHtml(data: NotificationData, notificationId: number): string {
   const hasChineseName = data.mapChineseName && data.mapChineseName.trim() !== ''
+  const mapLabel = hasChineseName ? data.mapChineseName : data.mapName
 
   return `<!DOCTYPE html>
 <html lang="zh-CN">
@@ -184,16 +185,12 @@ function generateNotificationHtml(data: NotificationData, notificationId: number
     }
 
     @keyframes progress {
-      from {
-        width: 100%;
-      }
-      to {
-        width: 0%;
-      }
+      from { width: 100%; }
+      to { width: 0%; }
     }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
       background: transparent;
       overflow: hidden;
       user-select: none;
@@ -201,28 +198,17 @@ function generateNotificationHtml(data: NotificationData, notificationId: number
 
     .notification-card {
       width: 360px;
-      min-height: 120px;
-      background: linear-gradient(135deg, rgba(30, 30, 40, 0.95) 0%, rgba(40, 40, 55, 0.95) 100%);
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.1);
-      padding: 16px;
+      height: 136px;
+      background: rgba(35, 38, 45, 0.96);
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      padding: 14px;
       display: flex;
-      align-items: center;
-      gap: 12px;
-      animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      gap: 14px;
+      animation: slideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
       position: relative;
       overflow: hidden;
-      backdrop-filter: blur(20px);
-    }
-
-    .notification-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+      backdrop-filter: blur(18px);
     }
 
     .progress-bar {
@@ -230,88 +216,143 @@ function generateNotificationHtml(data: NotificationData, notificationId: number
       bottom: 0;
       left: 0;
       height: 2px;
-      background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+      background: #4b9afa;
       animation: progress 30s linear forwards;
-      opacity: 0.6;
+      opacity: 0.75;
     }
 
     .icon-wrapper {
+      width: 60px;
       height: 60px;
       border-radius: 10px;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       flex-shrink: 0;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+      background: rgba(255, 255, 255, 0.05);
     }
 
     .tool-icon {
       width: 100%;
       height: 100%;
-      object-fit: contain;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+      object-fit: cover;
     }
 
     .notification-content {
       display: flex;
       flex-direction: column;
-      gap: 4px;
       flex: 1;
+      min-width: 0;
     }
 
     .notification-title {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 600;
-      color: #ffffff;
-      margin: 0;
+      color: rgba(255, 255, 255, 0.92);
+      line-height: 1.35;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .notification-message {
-      font-size: 14px;
+    .notification-subtitle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 3px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .notification-subtitle .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #3b82f6;
+    }
+
+    .notification-map {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 6px;
+      font-size: 13px;
       color: rgba(255, 255, 255, 0.7);
-      margin: 0;
-      line-height: 1.4;
+    }
+
+    .notification-map .label {
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 12px;
+    }
+
+    .notification-map .name {
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.85);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .notification-actions {
       display: flex;
       gap: 8px;
-      margin-top: 8px;
+      margin-top: auto;
+      padding-top: 10px;
     }
 
     .btn {
-      padding: 6px 12px;
+      flex: 1;
+      height: 28px;
       border-radius: 6px;
       font-size: 12px;
       font-weight: 500;
       cursor: pointer;
       border: none;
-      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
     }
 
     .btn-close {
-      background: rgba(255, 255, 255, 0.1);
-      color: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .btn-close:hover {
+      background: rgba(255, 255, 255, 0.14);
+      color: rgba(255, 255, 255, 0.85);
     }
 
     .btn-join {
-      background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+      background: #3b82f6;
       color: #ffffff;
+    }
+
+    .btn-join:hover {
+      background: #2563eb;
     }
   </style>
 </head>
 <body>
-  <div class="notification-card" onclick="window.close()">
+  <div class="notification-card">
     <div class="icon-wrapper">
       <img src="${escapeHtml(data.mapImage || '')}" class="tool-icon" onerror="this.style.display='none'" />
     </div>
     <div class="notification-content">
       <h3 class="notification-title">${escapeHtml(data.serverName || data.title)}</h3>
-      <p class="notification-message">${escapeHtml(data.mapName || data.message)}</p>
-      ${hasChineseName ? `<p class="notification-message">${escapeHtml(data.mapChineseName)}</p>` : ''}
+      <div class="notification-subtitle">
+        <span class="dot"></span>
+        <span>你订阅的地图正在该服务器运行</span>
+      </div>
+      <div class="notification-map">
+        <span class="label">当前地图</span>
+        <span class="name">${escapeHtml(mapLabel || data.message)}</span>
+      </div>
       <div class="notification-actions">
-        <button class="btn btn-close" onclick="event.stopPropagation(); window.close();">关闭通知</button>
+        <button class="btn btn-close" onclick="event.stopPropagation(); window.close();">关闭</button>
         <button class="btn btn-join" onclick="event.stopPropagation(); joinServer('${escapeHtml(data.connectStr || '')}');">立即进服</button>
       </div>
     </div>
@@ -319,26 +360,21 @@ function generateNotificationHtml(data: NotificationData, notificationId: number
   </div>
 
   <script>
-    // 点击任意位置关闭
-    document.addEventListener('click', () => {
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('.btn')) return;
       window.close();
     });
 
-    // ESC 键关闭
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        window.close();
-      }
+      if (e.key === 'Escape') window.close();
     });
 
-    // 立即进服
     function joinServer(connectStr) {
       if (connectStr) {
         const aLink = document.createElement('a');
         aLink.href = 'steam://rungame/730/76561198977557298/+connect ' + connectStr;
         aLink.click();
       }
-      console.log('正在连接服务器...');
       window.close();
     }
   </script>

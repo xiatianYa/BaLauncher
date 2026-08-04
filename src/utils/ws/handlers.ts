@@ -26,7 +26,6 @@ export function createMessageHandlers(): MessageHandlers {
     '202': (data) => {
       if (Array.isArray(data)) {
         gameStore.currentServerWsList.splice(0, gameStore.currentServerWsList.length, ...data);
-        console.log('服务器列表数据:', gameStore.currentServerWsList);
       }
     },
 
@@ -45,9 +44,9 @@ export function createMessageHandlers(): MessageHandlers {
           message: '您订阅的服务器地图已更新',
           serverName: data.serverName,
           connectStr: data.connectStr,
-          mapName: data.gameMap?.name || data.gameMap?.mapName,
-          mapChineseName: data.gameMap?.mapLabel,
-          mapImage: data.gameMap?.mapUrl,
+          mapName: data.mapName,
+          mapChineseName: data.mapLabel,
+          mapImage: data.mapUrl,
         });
       }
     },
