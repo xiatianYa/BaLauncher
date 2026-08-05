@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { NConfigProvider, darkTheme, zhCN, dateZhCN, enUS, dateEnUS } from 'naive-ui';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useThemeStore } from '@/store/modules/theme';
 import { i18n } from '@/locales';
+import ThemeTransition from '@/components/common/theme-transition.vue';
 
 defineOptions({
   name: 'App'
@@ -16,6 +17,25 @@ const naiveDarkTheme = computed(() => (themeStore.darkMode ? darkTheme : undefin
 /** naive-ui 组件语言跟随应用 i18n */
 const naiveLocale = computed(() => (i18n.global.locale.value === 'zh-CN' ? zhCN : enUS));
 const naiveDateLocale = computed(() => (i18n.global.locale.value === 'zh-CN' ? dateZhCN : dateEnUS));
+
+/** 主题切换遮罩状态：记录旧主题背景色，由 ThemeTransition 组件播放 X 光扫描过渡 */
+const themeTransition = ref<string | null>(null);
+
+/** 监听主题切换：瞬间切换主题，旧主题色遮罩以 X 光扫描线扫过，逐列揭出新主题 */
+watch(
+  () => themeStore.darkMode,
+  isDark => {
+    // 动画进行中忽略连续切换，避免遮罩重叠
+    if (themeTransition.value) return;
+    // 旧主题背景色作为遮罩填充，扫描线扫过后露出新主题
+    themeTransition.value = isDark ? '#fbf1f1' : '#161a26';
+  }
+);
+
+/** 动画播放完毕后移除覆盖层 */
+function handleTransitionFinished() {
+  themeTransition.value = null;
+}
 
 const themeOverrides = computed(() => {
   if (themeStore.darkMode) {
@@ -120,6 +140,12 @@ const themeOverrides = computed(() => {
 </script>
 
 <template>
+  <!-- 主题切换遮罩：X 光扫描线扫过，逐列揭出新主题 -->
+  <ThemeTransition
+    v-if="themeTransition"
+    :color="themeTransition"
+    @finished="handleTransitionFinished"
+  />
   <NConfigProvider
     :theme="naiveDarkTheme"
     :theme-overrides="themeOverrides"

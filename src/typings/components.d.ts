@@ -51,6 +51,7 @@ declare module 'vue' {
     RouterView: typeof import('vue-router')['RouterView']
     ServerList: typeof import('./../components/tool/server-list.vue')['default']
     SvgIcon: typeof import('./../components/custom/svg-icon.vue')['default']
+    ThemeTransition: typeof import('./../components/common/theme-transition.vue')['default']
     TimelineCard: typeof import('./../components/tool/timeline-card.vue')['default']
     TimelineItem: typeof import('./../components/tool/timeline-item.vue')['default']
     UpdateConfirm: typeof import('./../components/common/update-confirm.vue')['default']
