@@ -121,6 +121,7 @@ const editForm = reactive({
   groupId: '',
   communityIds: [] as string[],
   isNotifyImage: 0,
+  joinGroupUrl: '',
   startTime: null as number | null,
   expireTime: null as number | null
 });
@@ -143,6 +144,7 @@ const handleCreate = () => {
     groupId: '',
     communityIds: [],
     isNotifyImage: 0,
+    joinGroupUrl: '',
     startTime: null,
     expireTime: null
   });
@@ -157,6 +159,7 @@ const handleEdit = (row: Api.Bot.BotGroupVo) => {
     groupId: String(row.groupId ?? ''),
     communityIds: row.communitys ? row.communitys.split(',').filter(Boolean) : [],
     isNotifyImage: row.isNotifyImage,
+    joinGroupUrl: row.joinGroupUrl || '',
     startTime: toTimestamp(row.startTime),
     expireTime: toTimestamp(row.expireTime)
   });
@@ -175,6 +178,7 @@ const handleEditSubmit = async () => {
     groupId,
     communitys: Array.isArray(editForm.communityIds) ? editForm.communityIds.join(',') : '',
     isNotifyImage: editForm.isNotifyImage,
+    joinGroupUrl: String(editForm.joinGroupUrl ?? '').trim(),
     startTime: editForm.startTime ? formatDateTime(editForm.startTime) : '',
     expireTime: editForm.expireTime ? formatDateTime(editForm.expireTime) : ''
   };
@@ -204,10 +208,22 @@ const deleteLoading = ref(false);
 /** 当前待删除行 */
 const currentDeleteRow = ref<Api.Bot.BotGroupVo | null>(null);
 
-/** 申请入群（复制群号，引导用户前往QQ搜索申请加群） */
-const handleApplyJoin = async (row: Api.Bot.BotGroupVo) => {
-  await navigator.clipboard.writeText(row.groupId);
+/** 申请入群（优先通过 Electron 新窗口打开入群链接，无链接则复制群号引导前往QQ搜索） */
+const handleApplyJoin = (row: Api.Bot.BotGroupVo) => {
+  if (row.joinGroupUrl) {
+    window.ipcRenderer.openExternalWindow(row.joinGroupUrl);
+    return;
+  }
+  navigator.clipboard.writeText(row.groupId);
   window.$message?.success(`群号 ${row.groupId} 已复制，请前往QQ搜索并申请入群`);
+};
+
+/** 复制入群链接 */
+const handleCopyJoinUrl = async () => {
+  const url = editForm.joinGroupUrl?.trim();
+  if (!url) return;
+  await navigator.clipboard.writeText(url);
+  window.$message?.success('入群链接已复制');
 };
 
 /** 打开删除确认弹窗 */
@@ -413,8 +429,9 @@ onMounted(() => {
         <NInput v-model:value="pagination.groupId" placeholder="搜索 QQ 群号" clearable size="small"
           @keyup.enter="handleSearch" @clear="handleSearch" />
       </div>
-      <button class="icon-btn primary" title="新增群" @click="handleCreate">
+      <button class="icon-btn primary add-group-btn" @click="handleCreate">
         <SvgIcon icon="mdi:plus" />
+        <span>邀请机器人入群</span>
       </button>
     </div>
 
@@ -484,9 +501,9 @@ onMounted(() => {
                 <span>删除</span>
               </button>
             </div>
-            <button class="action-btn apply" @click="handleApplyJoin(row)">
-              <SvgIcon icon="mdi:login" />
-              <span>申请入群</span>
+            <button class="action-btn apply" :class="{ link: row.joinGroupUrl }" @click="handleApplyJoin(row)">
+              <SvgIcon :icon="row.joinGroupUrl ? 'mdi:link-variant' : 'mdi:login'" />
+              <span>{{ row.joinGroupUrl ? '一键入群' : '申请入群' }}</span>
             </button>
           </div>
         </NGridItem>
@@ -748,9 +765,28 @@ onMounted(() => {
         </div>
       </template>
       <div class="modal-form">
+        <div v-if="!isEditMode" class="form-tip">
+          <SvgIcon icon="mdi:information-outline" class="form-tip-icon" />
+          <div class="form-tip-text">
+            <span>1. 免费送 3 个月，之后 5 元/月</span>
+            <span>2. 机器人会自动申请入群</span>
+            <span>3. 申请成功后，主动邀请机器人 2680785606 入群，自动加群</span>
+          </div>
+        </div>
         <div class="form-item">
           <label class="form-label">QQ 群号</label>
           <NInput v-model:value="editForm.groupId" placeholder="请输入 QQ 群号" clearable />
+        </div>
+        <div class="form-item">
+          <label class="form-label">入群链接</label>
+          <div class="input-with-copy">
+            <NInput v-model:value="editForm.joinGroupUrl"
+              placeholder="复制 QQ 群邀请的网址链接，粘贴到此（选填）" clearable />
+            <button class="copy-link-btn" title="复制入群链接" :disabled="!editForm.joinGroupUrl"
+              @click="handleCopyJoinUrl">
+              <SvgIcon icon="mdi:content-copy" />
+            </button>
+          </div>
         </div>
         <div class="form-item">
           <label class="form-label">偏好社区</label>
@@ -764,12 +800,12 @@ onMounted(() => {
             <span class="switch-text">{{ editForm.isNotifyImage === 1 ? '开启' : '关闭' }}</span>
           </div>
         </div>
-        <div class="form-item">
+        <div v-if="isEditMode" class="form-item">
           <label class="form-label">生效时间</label>
           <NDatePicker v-model:value="editForm.startTime" type="datetime" clearable placeholder="选择生效时间"
             class="w-full" />
         </div>
-        <div class="form-item">
+        <div v-if="isEditMode" class="form-item">
           <label class="form-label">到期时间</label>
           <NDatePicker v-model:value="editForm.expireTime" type="datetime" clearable placeholder="选择到期时间"
             class="w-full" />
@@ -917,6 +953,19 @@ onMounted(() => {
         &:hover {
           background: rgba(102, 126, 234, 0.22);
         }
+      }
+    }
+
+    .add-group-btn {
+      width: auto;
+      padding: 0 14px;
+      gap: 6px;
+      font-size: 13px;
+      white-space: nowrap;
+
+      span {
+        font-weight: 500;
+        line-height: 1;
       }
     }
   }
@@ -1220,6 +1269,16 @@ onMounted(() => {
         transform: translateY(-2px);
         background: rgba(79, 172, 254, 0.2);
         color: #4facfe;
+      }
+
+      &.link {
+        color: #43e97b;
+        background: rgba(67, 233, 123, 0.08);
+
+        &:hover {
+          background: rgba(67, 233, 123, 0.18);
+          color: #43e97b;
+        }
       }
     }
   }
@@ -2085,6 +2144,31 @@ onMounted(() => {
   gap: 14px;
   padding: 4px 0;
 
+  .form-tip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+
+    :deep(.form-tip-icon) {
+      flex-shrink: 0;
+      font-size: 20px;
+      color: #667eea;
+    }
+
+    .form-tip-text {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+  }
+
   .form-item {
     display: flex;
     flex-direction: column;
@@ -2094,6 +2178,42 @@ onMounted(() => {
       font-size: 12.5px;
       font-weight: 600;
       color: rgba(255, 255, 255, 0.75);
+    }
+
+    .input-with-copy {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      .n-input {
+        flex: 1;
+      }
+
+      .copy-link-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        flex-shrink: 0;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 9px;
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(255, 255, 255, 0.6);
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          color: #667eea;
+          background: rgba(102, 126, 234, 0.15);
+          border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        &:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+        }
+      }
     }
 
     .switch-wrap {

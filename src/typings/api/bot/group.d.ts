@@ -16,6 +16,8 @@ declare namespace Api {
       isNotifyImage: number;
       /** 偏好社区，多个使用逗号分隔 */
       communitys: string;
+      /** 入群链接 */
+      joinGroupUrl: string;
       /** 创建用户ID */
       createUserId: string;
       /** 创建时间 */
@@ -56,6 +58,8 @@ declare namespace Api {
       isNotifyImage: number;
       /** 偏好社区，多个使用逗号分隔 */
       communitys: string;
+      /** 入群链接 */
+      joinGroupUrl?: string;
     };
   }
 }

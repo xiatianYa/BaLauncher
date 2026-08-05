@@ -36,6 +36,7 @@ declare global {
       closeMapOrderNotification: () => Promise<void>;
       getImageCacheInfo: () => Promise<{ count: number; totalSize: number }>;
       clearImageCache: () => Promise<{ success: boolean }>;
+      openExternalWindow: (url: string) => Promise<void>;
     };
   }
 

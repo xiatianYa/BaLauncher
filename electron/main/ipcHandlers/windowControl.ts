@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow, dialog, app } from 'electron'
+import { ipcMain, BrowserWindow, dialog, app, shell } from 'electron'
+import path from 'node:path'
 import { getMainWindow } from '../windowManager'
 import { preload, indexHtml, VITE_DEV_SERVER_URL } from '../config'
 
@@ -29,6 +30,31 @@ export function setupWindowControlIpc() {
     } else {
       childWindow.loadFile(indexHtml, { hash: arg })
     }
+  })
+
+  ipcMain.handle('open-external-window', (_, url: string) => {
+    if (!url) return
+    const childWindow = new BrowserWindow({
+      title: '',
+      icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
+      width: 960,
+      height: 720,
+      minWidth: 640,
+      minHeight: 480,
+      autoHideMenuBar: true,
+      backgroundColor: '#161a26',
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        sandbox: true
+      }
+    })
+    // 窗口内继续打开的链接交由系统默认浏览器处理，避免窗口嵌套
+    childWindow.webContents.setWindowOpenHandler(({ url: targetUrl }) => {
+      if (targetUrl.startsWith('https:')) shell.openExternal(targetUrl)
+      return { action: 'deny' }
+    })
+    childWindow.loadURL(url)
   })
 
   ipcMain.handle('window-minimize', () => {

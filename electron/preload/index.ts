@@ -78,6 +78,9 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   clearImageCache() {
     return ipcRenderer.invoke('image-cache:clear');
   },
+  openExternalWindow(url: string) {
+    return ipcRenderer.invoke('open-external-window', url);
+  },
 });
 
 // --------- Preload scripts loading ---------
