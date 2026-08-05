@@ -79,6 +79,15 @@ function createVueRoutes(): RouteRecordRaw[] {
                         requiresAuth: false
                     }
                 },
+                {
+                    path: 'userManage',
+                    name: 'userManage',
+                    component: () => import('@/views/userManage/index.vue'),
+                    meta: {
+                        title: '用户管理',
+                        requiresAuth: false
+                    }
+                },
             ]
         }
     ];

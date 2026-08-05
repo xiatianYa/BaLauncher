@@ -28,6 +28,16 @@ declare namespace Api {
       roleCode?: string;
     } & Api.Common.CommonSearchParams>;
 
+    /** 角色配置选项 VO（用户配置角色用） */
+    type SysRoleOptionVo = {
+      /** 角色ID */
+      id: number;
+      /** 角色名称 */
+      roleName: string;
+      /** 角色编码 */
+      roleCode: string;
+    };
+
     /** role form dto (新增 / 修改) */
     type SysRoleFormDTO = CommonType.RecordNullable<{
       /** 角色ID(修改时必填) */

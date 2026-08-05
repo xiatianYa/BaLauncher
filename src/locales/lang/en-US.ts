@@ -17,6 +17,7 @@ export default {
     hall: 'Hall',
     roleManage: 'Role Management',
     role: 'Role Management',
+    userManage: 'User Management',
   },
   common: {
     loading: 'Loading...',

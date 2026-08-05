@@ -13,6 +13,7 @@ import iconSetting from '@/assets/imgs/menu/menu-setting.png';
 import iconUpdateLog from '@/assets/imgs/menu/menu-update-log.png';
 import iconHall from '@/assets/imgs/menu/menu-hall.png';
 import iconRole from '@/assets/imgs/menu/menu-role.png';
+import iconUser from '@/assets/imgs/menu/menu-user.png';
 
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
@@ -24,8 +25,16 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   // 需要超级管理员权限才能显示的菜单 key
   const SUPER_ADMIN_ONLY_MENU_KEYS = ['roleManage'];
 
+  // 需要管理员权限才能显示的菜单 key
+  const ADMIN_ONLY_MENU_KEYS = ['userManage'];
+
   // 是否为超级管理员
   const isSuperAdmin = computed(() => authStore.userInfo.roles.includes('R_SUPER'));
+
+  // 是否为管理员（超管或管理员）
+  const isAdmin = computed(() =>
+    authStore.userInfo.roles.some(role => ['R_SUPER', 'R_ADMIN'].includes(role))
+  );
 
   const routerPush = router.push;
 
@@ -36,8 +45,9 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       '首页': 'routes.home',
       '服务器': 'routes.server',
       '工具箱': 'routes.tools',
-      '设置': 'routes.setting',
       '角色管理': 'routes.roleManage',
+      '用户管理': 'routes.userManage',
+      '设置': 'routes.setting',
     };
     return map[name] ?? name;
   };
@@ -78,13 +88,6 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       isPersistent: true
     },
     {
-      name: "routes.roleManage",
-      key: "roleManage",
-      icon: "tabler:user-shield",
-      img: iconRole,
-      isPersistent: true
-    },
-    {
       name: "routes.setting",
       key: "setting",
       icon: "tabler:settings",
@@ -97,15 +100,23 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   // 合并默认菜单：保证新增的默认菜单（如角色管理）在已保存过的旧配置中也能出现
   const initialRoutes: Api.Route.SideNavItem[] = Array.isArray(storedRoutes)
     ? DEFAULT_SIDE_NAV_ROUTES.reduce(
-        (acc, def) => (acc.some(item => item.key === def.key) ? acc : [...acc, def]),
-        [...storedRoutes]
-      )
+      (acc, def) => (acc.some(item => item.key === def.key) ? acc : [...acc, def]),
+      [...storedRoutes]
+    )
     : DEFAULT_SIDE_NAV_ROUTES;
   const SideNavRoutes: Api.Route.SideNavItem[] = reactive(initialRoutes.map(normalizeNavItem));
 
-  // 侧边菜单（按权限过滤，超级管理员专属菜单仅对超级管理员显示）
+  // 侧边菜单（按权限过滤：超管专属菜单仅超管可见，管理员专属菜单仅管理员可见）
   const menuRoutes = computed(() =>
-    SideNavRoutes.filter(item => !SUPER_ADMIN_ONLY_MENU_KEYS.includes(item.key) || isSuperAdmin.value)
+    SideNavRoutes.filter(item => {
+      if (SUPER_ADMIN_ONLY_MENU_KEYS.includes(item.key)) {
+        return isSuperAdmin.value;
+      }
+      if (ADMIN_ONLY_MENU_KEYS.includes(item.key)) {
+        return isAdmin.value;
+      }
+      return true;
+    })
   );
 
   async function routerPushByKey(key: string, options?: App.Global.RouterPushOptions) {

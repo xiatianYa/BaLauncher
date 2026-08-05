@@ -170,8 +170,17 @@ onMounted(() => {
 
       <!-- 日志列表 -->
       <div class="card-list">
-        <NSpin :show="loading">
-          <div v-if="updateLogs.length === 0 && !loading" class="empty-state">
+        <!-- 骨架屏：初次加载接口较慢时显示（与 userManage 一致） -->
+        <div v-if="loading && updateLogs.length === 0" class="skeleton-list">
+          <div v-for="i in 3" :key="`skeleton-${i}`" class="log-card skeleton">
+            <div class="skeleton-title" />
+            <div class="skeleton-meta" />
+            <div class="skeleton-content" />
+          </div>
+        </div>
+
+        <template v-else>
+          <div v-if="updateLogs.length === 0" class="empty-state">
             <SvgIcon icon="mdi:file-document-outline" class="empty-icon" />
             <p>{{ $t('updateLog.noLogs') }}</p>
           </div>
@@ -225,8 +234,8 @@ onMounted(() => {
           <div v-if="finished && updateLogs.length > 0" class="finished-indicator">
             {{ $t('updateLog.allLoaded') }} · {{ $t('updateLog.totalLogs', { count: updateLogs.length }) }}
           </div>
-        </NInfiniteScroll>
-        </NSpin>
+          </NInfiniteScroll>
+        </template>
       </div>
     </NCard>
   </NCard>
@@ -392,6 +401,51 @@ onMounted(() => {
 
   p {
     font-size: 14px;
+  }
+}
+
+/* 骨架屏（与 userManage 一致）：初次加载接口较慢时显示 */
+.skeleton-list {
+  padding: 0 16px 16px;
+}
+
+.log-card.skeleton {
+  pointer-events: none;
+
+  .skeleton-title,
+  .skeleton-meta,
+  .skeleton-content {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+  }
+
+  .skeleton-title {
+    height: 20px;
+    width: 55%;
+    margin-bottom: 10px;
+  }
+
+  .skeleton-meta {
+    height: 26px;
+    width: 45%;
+    margin-bottom: 12px;
+  }
+
+  .skeleton-content {
+    height: 90px;
+    width: 100%;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
   }
 }
 

@@ -44,3 +44,11 @@ export function fetchGetRolePermissions(roleId: string) {
     method: 'get'
   });
 }
+
+/** 获取所有角色(用户配置角色用下拉选项) */
+export function fetchGetAllRoles() {
+  return request<Api.System.SysRoleOptionVo[]>({
+    url: '/sysRole/getAllRoles',
+    method: 'get'
+  });
+}

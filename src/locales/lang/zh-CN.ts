@@ -17,6 +17,7 @@ export default {
     hall: '大厅',
     roleManage: '角色管理',
     role: '角色管理',
+    userManage: '用户管理',
   },
   common: {
     loading: '正在加载...',

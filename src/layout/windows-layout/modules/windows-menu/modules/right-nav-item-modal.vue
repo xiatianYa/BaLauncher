@@ -4,6 +4,7 @@ import { reactive } from 'vue';
 import { useRouteStore } from '@/store/modules/route';
 import { localStg } from '@/utils/storage';
 import iconRole from '@/assets/imgs/menu/menu-role.png';
+import iconUser from '@/assets/imgs/menu/menu-user.png';
 import iconTools from '@/assets/imgs/menu/menu-tools.png';
 import iconSetting from '@/assets/imgs/menu/menu-setting.png';
 import iconUpdateLog from '@/assets/imgs/menu/menu-update-log.png';
@@ -26,13 +27,6 @@ const SideNavRoutes: Api.Route.SideNavItem[] = reactive([
         isPersistent: true
     },
     {
-        name: "routes.setting",
-        key: "setting",
-        icon: "tabler:settings",
-        img: iconSetting,
-        isPersistent: true
-    },
-    {
         name: "routes.updateLog",
         key: "updateLog",
         icon: "tabler:history",
@@ -44,6 +38,20 @@ const SideNavRoutes: Api.Route.SideNavItem[] = reactive([
         key: "roleManage",
         icon: "hugeicons:authorized",
         img: iconRole,
+        isPersistent: true
+    },
+    {
+        name: "routes.userManage",
+        key: "userManage",
+        icon: "tabler:users",
+        img: iconUser,
+        isPersistent: true
+    },
+    {
+        name: "routes.setting",
+        key: "setting",
+        icon: "tabler:settings",
+        img: iconSetting,
         isPersistent: true
     },
 ])
