@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { NModal, NProgress } from 'naive-ui';
+import { MdPreview } from 'md-editor-v3';
 import { fetchGetLogByVersion } from '@/service/api';
 import { useAuthStore } from '@/store/modules/auth';
 
@@ -183,7 +184,7 @@ onUnmounted(() => {
             <SvgIcon icon="mdi:note-text-outline" class="log-title-icon" />
             {{ updateLog.title }}
           </h3>
-          <div class="update-log-text">{{ updateLog.content }}</div>
+          <MdPreview class="log-markdown" :modelValue="updateLog.content" />
         </div>
         <div v-else-if="loadingUpdateLog" class="update-log-loading">
           <SvgIcon icon="mdi:loading" class="loading-icon" />
@@ -315,8 +316,8 @@ onUnmounted(() => {
     min-height: 100px;
     max-height: 240px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.04);
+    border: 1px solid rgba(var(--app-rgb), 0.07);
     overflow: hidden;
 
     .update-log {
@@ -331,7 +332,7 @@ onUnmounted(() => {
         margin: 0 0 10px 0;
         font-size: 14px;
         font-weight: 600;
-        color: rgba(255, 255, 255, 0.9);
+        color: rgba(var(--app-rgb), 0.9);
 
         .log-title-icon {
           font-size: 15px;
@@ -339,12 +340,188 @@ onUnmounted(() => {
         }
       }
 
-      .update-log-text {
-        font-size: 12.5px;
-        line-height: 1.7;
-        color: rgba(255, 255, 255, 0.6);
-        white-space: pre-wrap;
-        word-wrap: break-word;
+      .log-markdown {
+        /* md-editor-v3 根容器透明化，沿用外层 update-log 盒子 */
+        :deep(.md-editor),
+        :deep(.md-editor-content),
+        :deep(.md-editor-preview-wrapper),
+        :deep(.md-editor-preview) {
+          background: transparent;
+        }
+
+        :deep(.md-editor-preview-wrapper) {
+          padding: 0;
+        }
+
+        :deep(.md-editor-preview) {
+          font-size: 12.5px;
+          line-height: 1.8;
+          color: rgba(var(--app-rgb), 0.7);
+
+          &::-webkit-scrollbar {
+            width: 4px;
+          }
+
+          &::-webkit-scrollbar-thumb {
+            border-radius: 4px;
+            background: rgba(var(--app-rgb), 0.12);
+          }
+        }
+
+        /* 标题 */
+        :deep(.md-editor-preview h1),
+        :deep(.md-editor-preview h2),
+        :deep(.md-editor-preview h3),
+        :deep(.md-editor-preview h4),
+        :deep(.md-editor-preview h5),
+        :deep(.md-editor-preview h6) {
+          margin: 12px 0 6px;
+          font-weight: 600;
+          line-height: 1.45;
+          color: rgba(var(--app-rgb), 0.92);
+
+          &:first-child {
+            margin-top: 0;
+          }
+        }
+
+        :deep(.md-editor-preview h1) {
+          font-size: 16px;
+          padding-bottom: 6px;
+          border-bottom: 1px solid rgba(var(--app-rgb), 0.08);
+        }
+
+        :deep(.md-editor-preview h2) {
+          font-size: 15px;
+        }
+
+        :deep(.md-editor-preview h3) {
+          font-size: 14px;
+        }
+
+        :deep(.md-editor-preview h4),
+        :deep(.md-editor-preview h5),
+        :deep(.md-editor-preview h6) {
+          font-size: 13px;
+        }
+
+        /* 段落 / 强调 */
+        :deep(.md-editor-preview p) {
+          margin: 6px 0;
+          color: rgba(var(--app-rgb), 0.72);
+        }
+
+        :deep(.md-editor-preview strong) {
+          font-weight: 600;
+          color: rgba(var(--app-rgb), 0.95);
+        }
+
+        :deep(.md-editor-preview em) {
+          color: rgba(var(--app-rgb), 0.85);
+        }
+
+        /* 链接 */
+        :deep(.md-editor-preview a) {
+          color: #667eea;
+          text-decoration: none;
+          border-bottom: 1px solid rgba(102, 126, 234, 0.35);
+
+          &:hover {
+            color: #764ba2;
+            border-bottom-color: #764ba2;
+          }
+        }
+
+        /* 列表 */
+        :deep(.md-editor-preview ul),
+        :deep(.md-editor-preview ol) {
+          margin: 6px 0;
+          padding-left: 20px;
+          color: rgba(var(--app-rgb), 0.72);
+        }
+
+        :deep(.md-editor-preview li) {
+          margin: 3px 0;
+        }
+
+        /* 行内代码 */
+        :deep(.md-editor-preview code) {
+          font-family: 'Cascadia Code', Consolas, 'Courier New', monospace;
+          font-size: 12px;
+          padding: 2px 6px;
+          border-radius: 5px;
+          background: rgba(102, 126, 234, 0.12);
+          color: #764ba2;
+          word-break: break-all;
+        }
+
+        /* 代码块 */
+        :deep(.md-editor-preview pre) {
+          margin: 10px 0;
+          padding: 12px 14px;
+          border-radius: 10px;
+          background: rgba(0, 0, 0, 0.35);
+          border: 1px solid rgba(var(--app-rgb), 0.08);
+          overflow-x: auto;
+          line-height: 1.6;
+
+          code {
+            padding: 0;
+            background: transparent;
+            color: #c9d1f9;
+          }
+        }
+
+        /* 引用 */
+        :deep(.md-editor-preview blockquote) {
+          margin: 8px 0;
+          padding: 8px 14px;
+          border-left: 3px solid #667eea;
+          border-radius: 0 8px 8px 0;
+          background: rgba(102, 126, 234, 0.08);
+          color: rgba(var(--app-rgb), 0.7);
+
+          p {
+            margin: 4px 0;
+          }
+        }
+
+        /* 表格 */
+        :deep(.md-editor-preview table) {
+          width: 100%;
+          margin: 10px 0;
+          border-collapse: collapse;
+          font-size: 12px;
+
+          th,
+          td {
+            padding: 7px 12px;
+            border: 1px solid rgba(var(--app-rgb), 0.1);
+            text-align: left;
+          }
+
+          th {
+            background: rgba(var(--app-rgb), 0.05);
+            font-weight: 600;
+            color: rgba(var(--app-rgb), 0.85);
+          }
+
+          tr:nth-child(even) td {
+            background: rgba(var(--app-rgb), 0.02);
+          }
+        }
+
+        /* 分割线 / 图片 */
+        :deep(.md-editor-preview hr) {
+          margin: 14px 0;
+          border: none;
+          border-top: 1px solid rgba(var(--app-rgb), 0.1);
+        }
+
+        :deep(.md-editor-preview img) {
+          max-width: 100%;
+          border-radius: 8px;
+        }
       }
 
       &::-webkit-scrollbar {
@@ -353,7 +530,7 @@ onUnmounted(() => {
 
       &::-webkit-scrollbar-thumb {
         border-radius: 4px;
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(var(--app-rgb), 0.12);
       }
     }
 
@@ -364,7 +541,7 @@ onUnmounted(() => {
       gap: 8px;
       height: 100px;
       font-size: 13px;
-      color: rgba(255, 255, 255, 0.45);
+      color: rgba(var(--app-rgb), 0.45);
 
       .loading-icon {
         font-size: 18px;
@@ -380,7 +557,7 @@ onUnmounted(() => {
       height: 100px;
       margin: 0;
       font-size: 14px;
-      color: rgba(255, 255, 255, 0.6);
+      color: rgba(var(--app-rgb), 0.6);
     }
   }
 
@@ -391,8 +568,8 @@ onUnmounted(() => {
     gap: 10px;
     padding: 16px;
     border-radius: 12px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.04);
+    border: 1px solid rgba(var(--app-rgb), 0.07);
 
     .download-progress {
       .progress-bar {
@@ -421,7 +598,7 @@ onUnmounted(() => {
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          color: rgba(255, 255, 255, 0.45);
+          color: rgba(var(--app-rgb), 0.45);
 
           svg {
             font-size: 13px;
@@ -464,13 +641,13 @@ onUnmounted(() => {
       gap: 5px;
       flex: 1;
       padding: 9px 2px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
       border-radius: 9px;
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
-      color: rgba(255, 255, 255, 0.8);
-      background: rgba(255, 255, 255, 0.06);
+      color: rgba(var(--app-rgb), 0.8);
+      background: rgba(var(--app-rgb), 0.06);
       transition: all 0.2s ease;
 
       &:hover {

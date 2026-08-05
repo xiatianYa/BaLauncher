@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { NModal } from 'naive-ui';
+import { useI18n } from 'vue-i18n';
 import { useThemeStore } from '@/store/modules/theme';
 import { useAuthStore } from '@/store/modules/auth';
-import { $t } from '@/locales';
+import { $t, setLocale } from '@/locales';
 
 const themeStore = useThemeStore();
 
 const authStore = useAuthStore();
+
+const { locale } = useI18n();
 
 const showTrigger = ref<boolean>(true);
 
@@ -25,7 +29,7 @@ const changeThemeLayout = () => {
   }
 }
 
-type DropdownKey = 'logout' | 'login';
+type DropdownKey = 'logout' | 'login' | App.I18n.LangType;
 
 interface DropdownOption {
   key: DropdownKey;
@@ -33,34 +37,36 @@ interface DropdownOption {
   icon: string;
 }
 
-function logout() {
-  window.$dialog?.info({
-    title: $t('layout.footer.logout.title'),
-    content: $t('layout.footer.logout.content'),
-    positiveText: $t('layout.footer.logout.confirm'),
-    negativeText: $t('layout.footer.logout.cancel'),
-    onPositiveClick: () => {
-      authStore.resetStore();
-    }
-  });
+/** 语言切换选项（computed 保证切换语言后文案实时更新） */
+const langOptions = computed<DropdownOption[]>(() => [
+  { label: $t('settings.langOptions.zhCN'), key: 'zh-CN', icon: 'mdi:translate' },
+  { label: $t('settings.langOptions.enUS'), key: 'en-US', icon: 'mdi:translate' }
+]);
+
+/** 退出登录确认弹窗显示状态 */
+const logoutVisible = ref(false);
+
+function handleConfirmLogout() {
+  logoutVisible.value = false;
+  authStore.resetStore();
 }
 
 function handleDropdown(key: DropdownKey) {
   if (key === 'logout') {
-    logout();
+    logoutVisible.value = true;
   } else if (key === 'login') {
     authStore.loginModalVisibel = true;
+  } else if (key === 'zh-CN' || key === 'en-US') {
+    setLocale(key);
   }
 }
 
-// 根据登录状态动态生成菜单选项
+// 根据登录状态动态生成菜单选项（语言选项置顶，账号操作置底）
 const options = computed<DropdownOption[]>(() => {
-  if (authStore.isLogin) {
-    // 已登录：显示退出登录选项
-    return [{ label: $t('layout.footer.logoutAction'), key: 'logout', icon: 'ph:sign-out' }];
-  }
-  // 未登录：显示登录选项
-  return [{ label: $t('layout.footer.loginAction'), key: 'login', icon: 'ph:sign-in' }];
+  const authOption: DropdownOption = authStore.isLogin
+    ? { label: $t('layout.footer.logoutAction'), key: 'logout', icon: 'ph:sign-out' }
+    : { label: $t('layout.footer.loginAction'), key: 'login', icon: 'ph:sign-in' };
+  return [...langOptions.value, authOption];
 });
 
 /* ===== 自定义下拉菜单 ===== */
@@ -110,11 +116,15 @@ onBeforeUnmount(() => {
       <!-- 自定义下拉菜单 -->
       <transition name="menu-fade">
         <div v-if="menuVisible" class="footer-menu">
-          <div v-for="option in options" :key="option.key" class="footer-menu-item"
-            @click="handleOptionClick(option.key)">
-            <SvgIcon :icon="option.icon" class="footer-menu-item-icon" />
-            <span class="footer-menu-item-text">{{ option.label }}</span>
-          </div>
+          <template v-for="option in options" :key="option.key">
+            <div v-if="option.key === 'logout' || option.key === 'login'" class="footer-menu-divider" />
+            <div class="footer-menu-item mt-5px" :class="{ active: locale === option.key }"
+              @click="handleOptionClick(option.key)">
+              <SvgIcon :icon="option.icon" class="footer-menu-item-icon" />
+              <span class="footer-menu-item-text">{{ option.label }}</span>
+              <SvgIcon v-if="locale === option.key" icon="mdi:check" class="footer-menu-item-check" />
+            </div>
+          </template>
         </div>
       </transition>
     </div>
@@ -122,6 +132,27 @@ onBeforeUnmount(() => {
       <SvgIcon :icon="icon" class="footer-btn-icon" />
     </button>
   </div>
+
+  <!-- 退出登录确认弹窗 -->
+  <NModal v-model:show="logoutVisible" preset="card" class="logout-modal rounded-16px w-400px"
+    :bordered="false" size="small" :closable="false">
+    <template #header>
+      <div class="logout-modal-header">
+        <SvgIcon icon="ph:sign-out" class="logout-modal-icon" />
+        <span>{{ $t('layout.footer.logout.title') }}</span>
+      </div>
+    </template>
+    <div class="logout-modal-body">
+      <p class="logout-modal-text">{{ $t('layout.footer.logout.content') }}</p>
+    </div>
+    <div class="logout-modal-actions">
+      <button class="action-btn cancel" @click="logoutVisible = false">{{ $t('layout.footer.logout.cancel') }}</button>
+      <button class="action-btn danger" @click="handleConfirmLogout">
+        <SvgIcon icon="ph:sign-out" />
+        <span>{{ $t('layout.footer.logout.confirm') }}</span>
+      </button>
+    </div>
+  </NModal>
 </template>
 
 <style scoped lang="scss">
@@ -139,14 +170,14 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.6);
+  background: rgba(var(--app-rgb), 0.04);
+  border: 1px solid rgba(var(--app-rgb), 0.07);
+  color: rgba(var(--app-rgb), 0.6);
   cursor: pointer;
   transition: all 0.25s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.07);
     border-color: rgba(102, 126, 234, 0.4);
     color: #667eea;
     transform: translateY(-1px);
@@ -198,6 +229,10 @@ onBeforeUnmount(() => {
       background: rgba(102, 126, 234, 0.15);
     }
 
+    &.active {
+      background: rgba(102, 126, 234, 0.12);
+    }
+
     .footer-menu-item-icon {
       font-size: 15px;
       color: #667eea;
@@ -205,10 +240,23 @@ onBeforeUnmount(() => {
     }
 
     .footer-menu-item-text {
+      flex: 1;
       font-size: 13px;
       color: rgba(255, 255, 255, 0.85);
       white-space: nowrap;
     }
+
+    .footer-menu-item-check {
+      font-size: 14px;
+      color: #667eea;
+      flex-shrink: 0;
+    }
+  }
+
+  .footer-menu-divider {
+    height: 1px;
+    margin: 4px 2px;
+    background: rgba(255, 255, 255, 0.08);
   }
 }
 
@@ -223,5 +271,79 @@ onBeforeUnmount(() => {
 .menu-fade-leave-to {
   opacity: 0;
   transform: translateX(-50%) translateY(6px) scale(0.96);
+}
+
+/* 退出登录确认弹窗（teleport 到 body，参考 botGroup 删除确认弹窗卡片风格） */
+.logout-modal {
+  .logout-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--n-text-color);
+
+    .logout-modal-icon {
+      font-size: 20px;
+      color: #f5576c;
+    }
+  }
+
+  .logout-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px 0 16px;
+
+    .logout-modal-text {
+      margin: 0;
+      font-size: 13.5px;
+      line-height: 1.6;
+      color: var(--n-text-color);
+      opacity: 0.85;
+    }
+  }
+
+  .logout-modal-actions {
+    display: flex;
+    gap: 10px;
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      flex: 1;
+      padding: 9px 2px;
+      border: 1px solid rgba(128, 128, 128, 0.25);
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s ease;
+      background: rgba(128, 128, 128, 0.08);
+      color: var(--n-text-color);
+
+      &:hover {
+        transform: translateY(-1px);
+      }
+
+      &.cancel {
+        &:hover {
+          background: rgba(128, 128, 128, 0.16);
+        }
+      }
+
+      &.danger {
+        color: #f5576c;
+        background: rgba(245, 87, 108, 0.12);
+        border-color: rgba(245, 87, 108, 0.25);
+
+        &:hover {
+          background: rgba(245, 87, 108, 0.22);
+        }
+      }
+    }
+  }
 }
 </style>

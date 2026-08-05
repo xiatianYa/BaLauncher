@@ -75,7 +75,7 @@ watch(
 
     &::-webkit-scrollbar-thumb {
         border-radius: 4px;
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(var(--app-rgb), 0.12);
     }
 }
 
@@ -84,15 +84,17 @@ watch(
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: rgba(var(--app-rgb), 0.04);
     padding: 12px;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(var(--app-rgb), 0.07);
+    min-height: 108px; /* 固定最小高度，与 add-nav-btn 一致，避免长菜单名换行导致卡片高度不齐 */
+    box-sizing: border-box;
 
     &:hover {
-        background-color: rgba(255, 255, 255, 0.07);
+        background-color: rgba(var(--app-rgb), 0.07);
         border-color: rgba(102, 126, 234, 0.35);
         transform: translateY(-2px);
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
@@ -109,6 +111,7 @@ watch(
         justify-content: center;
         margin-bottom: 8px;
         transition: all 0.3s ease;
+        flex-shrink: 0;
 
         .menu-icon-img {
             width: 100%;
@@ -125,8 +128,13 @@ watch(
     .menu-name {
         font-size: 12px;
         font-weight: 600;
-        color: rgba(255, 255, 255, 0.88);
+        color: rgba(var(--app-rgb), 0.88);
         letter-spacing: 0.5px;
+        line-height: 18px;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 
@@ -136,7 +144,7 @@ watch(
     height: 100%;
     min-height: 108px; /* 与菜单项高度一致（56px 图标 + 8px 间距 + 名称行 + 24px 内边距 + 2px 边框），独立成行时不会塌陷变矮 */
     font-family: inherit;
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: rgba(var(--app-rgb), 0.03);
     border: 1.5px dashed rgba(102, 126, 234, 0.5);
 
     &:hover {

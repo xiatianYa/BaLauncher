@@ -90,7 +90,18 @@ onMounted(() => {
         </template>
         <!-- 已选择服务器 → 展示时间线 -->
         <div v-if="selectedServerIndex !== null" class="timeline-wrapper mt-8px">
-            <NInfiniteScroll v-if="timelineList.length > 0" :distance="100" @load="emit('load')"
+            <!-- 初始加载骨架屏 -->
+            <div v-if="timelineLoading && timelineList.length === 0" class="timeline-skeleton">
+                <div v-for="i in 5" :key="`timeline-skeleton-${i}`" class="timeline-skeleton-item">
+                    <div class="timeline-skeleton-dot" />
+                    <div class="timeline-skeleton-lines">
+                        <div class="timeline-skeleton-line" />
+                        <div class="timeline-skeleton-line short" />
+                    </div>
+                </div>
+            </div>
+
+            <NInfiniteScroll v-else-if="timelineList.length > 0" :distance="100" @load="emit('load')"
                 class="timeline-scroll">
                 <NTimeline class="custom-timeline">
                     <NTimelineItem v-for="(item, index) in timelineList" :key="index"
@@ -183,7 +194,7 @@ onMounted(() => {
             padding: 0;
             border: 1px solid var(--n-border-color);
             border-radius: 8px;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(var(--app-rgb), 0.05);
             cursor: pointer;
             font-size: 16px;
             color: var(--n-text-color-2);
@@ -210,6 +221,78 @@ onMounted(() => {
 .timeline-wrapper {
     height: 100%;
     overflow: hidden;
+}
+
+.timeline-skeleton {
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: none;
+
+    .timeline-skeleton-item {
+        display: flex;
+        gap: 14px;
+        padding-bottom: 22px;
+        position: relative;
+
+        &::before {
+            content: '';
+            position: absolute;
+            left: 4px;
+            top: 16px;
+            bottom: 0;
+            width: 2px;
+            background: rgba(var(--app-rgb), 0.06);
+        }
+
+        &:last-child::before {
+            display: none;
+        }
+
+        .timeline-skeleton-dot,
+        .timeline-skeleton-line {
+            background: linear-gradient(90deg, rgba(var(--app-rgb), 0.04) 25%, rgba(var(--app-rgb), 0.09) 50%, rgba(var(--app-rgb), 0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+
+        .timeline-skeleton-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-top: 4px;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+
+        .timeline-skeleton-lines {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+
+            .timeline-skeleton-line {
+                height: 14px;
+                width: 100%;
+
+                &.short {
+                    width: 60%;
+                    height: 11px;
+                }
+            }
+        }
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
 }
 
 .timeline-scroll {

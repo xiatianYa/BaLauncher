@@ -190,14 +190,14 @@ const handleClose = (): void => {
 <style lang="scss">
 .log-modal {
   --card-bg: rgba(40, 43, 50, 0.96);
-  --card-border: rgba(255, 255, 255, 0.08);
-  --text-main: rgba(255, 255, 255, 0.9);
-  --text-secondary: rgba(255, 255, 255, 0.55);
-  --input-bg: rgba(255, 255, 255, 0.04);
-  --input-border: rgba(255, 255, 255, 0.08);
-  --btn-cancel-bg: rgba(255, 255, 255, 0.06);
-  --btn-cancel-border: rgba(255, 255, 255, 0.1);
-  --btn-cancel-text: rgba(255, 255, 255, 0.7);
+  --card-border: rgba(var(--app-rgb), 0.08);
+  --text-main: rgba(var(--app-rgb), 0.9);
+  --text-secondary: rgba(var(--app-rgb), 0.55);
+  --input-bg: rgba(var(--app-rgb), 0.04);
+  --input-border: rgba(var(--app-rgb), 0.08);
+  --btn-cancel-bg: rgba(var(--app-rgb), 0.06);
+  --btn-cancel-border: rgba(var(--app-rgb), 0.1);
+  --btn-cancel-text: rgba(var(--app-rgb), 0.7);
   --btn-confirm: #667eea;
   --btn-confirm-hover: #5a6fd6;
 }
@@ -326,8 +326,8 @@ const handleClose = (): void => {
   font-weight: 500;
   white-space: nowrap;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(var(--app-rgb), 0.06);
+  color: rgba(var(--app-rgb), 0.8);
 
   &:active {
     transform: scale(0.98);

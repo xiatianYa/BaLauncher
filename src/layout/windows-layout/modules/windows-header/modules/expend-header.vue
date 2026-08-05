@@ -63,13 +63,13 @@ const getRoleInfo = (role: string) : RoleInfo => {
   gap: 12px;
   padding: 10px 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(var(--app-rgb), 0.04);
+  border: 1px solid rgba(var(--app-rgb), 0.07);
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.07);
     border-color: rgba(102, 126, 234, 0.35);
     transform: translateY(-2px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
@@ -93,7 +93,7 @@ const getRoleInfo = (role: string) : RoleInfo => {
       font-size: 14px;
       font-weight: 600;
       line-height: 1.2;
-      color: rgba(255, 255, 255, 0.9);
+      color: rgba(var(--app-rgb), 0.9);
     }
 
     .user-role-tag {
@@ -111,13 +111,13 @@ const getRoleInfo = (role: string) : RoleInfo => {
   gap: 8px;
   padding: 12px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(var(--app-rgb), 0.04);
+  border: 1px solid rgba(var(--app-rgb), 0.07);
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.07);
     border-color: rgba(102, 126, 234, 0.35);
   }
 
@@ -130,7 +130,7 @@ const getRoleInfo = (role: string) : RoleInfo => {
   .login-prompt-text {
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.85);
+    color: rgba(var(--app-rgb), 0.85);
   }
 }
 </style>

@@ -1,24 +1,12 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { NGrid, NGridItem, NSelect, NSlider, NButton, NText } from 'naive-ui'
+import { NGrid, NGridItem, NSlider, NButton, NText } from 'naive-ui'
 import { useAppStore } from '@/store/modules/app'
-import { setLocale } from '@/locales'
 
-const { locale, t } = useI18n()
 const appStore = useAppStore()
 
 const themes = computed(() => appStore.themes)
 const currentTheme = computed(() => appStore.currentTheme)
-
-const langOptions = computed(() => [
-  { label: t('settings.langOptions.zhCN'), value: 'zh-CN' },
-  { label: t('settings.langOptions.enUS'), value: 'en-US' },
-])
-
-const handleLangChange = (val: App.I18n.LangType) => {
-  setLocale(val)
-}
 
 const themeAudio = ref<HTMLAudioElement | null>(null)
 
@@ -60,9 +48,6 @@ const previewAudio = () => {
       <div class="section-title">
         <SvgIcon icon="unjs:theme-colors" class="section-icon" />
         <NText>{{ $t('settings.theme') }}</NText>
-      </div>
-      <div class="section-extra">
-        <NSelect v-model:value="locale" :options="langOptions" @update:value="handleLangChange" size="small" />
       </div>
     </div>
 
@@ -113,10 +98,6 @@ const previewAudio = () => {
       font-size: 20px;
       color: var(--primary-color, #18a058);
     }
-  }
-
-  .section-extra {
-    width: 120px;
   }
 }
 

@@ -40,7 +40,7 @@ export const commonIcons = [
   // material-symbols
   'material-symbols:account-circle',
   'material-symbols:add',
-  'material-symbols:add-photo-alternate-outlined',
+  'material-symbols:add-photo-alternate-outline',
   'material-symbols:alarm-smart-wake-outline',
   'material-symbols:arrow-back',
   'material-symbols:bolt',

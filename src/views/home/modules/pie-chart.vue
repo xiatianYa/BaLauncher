@@ -23,7 +23,7 @@ const { domRef, updateOptions } = useEcharts(() => ({
     },
     // 使用简单的 formatter 提升性能
     formatter: (params: any) => {
-      return `${params.name}<br/>${params.value} 人 (${params.percent}%)`;
+      return `${params.name}<br/>${params.value} ${$t('home.people')} (${params.percent}%)`;
     }
   },
   legend: {
@@ -34,7 +34,6 @@ const { domRef, updateOptions } = useEcharts(() => ({
       borderWidth: 0
     },
     textStyle: {
-      color: 'rgba(255, 255, 255, 0.8)',
       fontSize: 12
     },
     itemWidth: 12,

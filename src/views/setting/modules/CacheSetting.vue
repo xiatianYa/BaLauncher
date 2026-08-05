@@ -24,11 +24,11 @@ type CacheType = {
 }
 
 const cacheTypes: CacheType[] = [
-  { label: '游戏数据', value: 'gameSettings', key: 'gameSettings', icon: 'mdi:gamepad-variant', type: 'success' },
-  { label: '系统数据', value: 'appSettings', key: 'appSettings', icon: 'mdi:cog', type: 'primary' },
-  { label: '用户数据', value: 'authData', key: 'authData', icon: 'mdi:shield-account', type: 'warning' },
-  { label: '路由数据', value: 'routeData', key: 'routeData', icon: 'mdi:routes', type: 'info' },
-  { label: '图片缓存', value: 'imageCache', key: 'imageCache', icon: 'mdi:image-multiple', type: 'info' },
+  { label: $t('settings.cache.types.gameSettings'), value: 'gameSettings', key: 'gameSettings', icon: 'mdi:gamepad-variant', type: 'success' },
+  { label: $t('settings.cache.types.appSettings'), value: 'appSettings', key: 'appSettings', icon: 'mdi:cog', type: 'primary' },
+  { label: $t('settings.cache.types.authData'), value: 'authData', key: 'authData', icon: 'mdi:shield-account', type: 'warning' },
+  { label: $t('settings.cache.types.routeData'), value: 'routeData', key: 'routeData', icon: 'mdi:routes', type: 'info' },
+  { label: $t('settings.cache.types.imageCache'), value: 'imageCache', key: 'imageCache', icon: 'mdi:image-multiple', type: 'info' },
 ]
 
 /** 图片磁盘缓存大小（通过 IPC 查询） */
@@ -134,7 +134,7 @@ const clearCache = () => {
 
 const handleClearCache = async () => {
   if (selectedCacheTypes.value.length === 0) {
-    window.$message?.warning('请选择要清理的缓存类型')
+    window.$message?.warning($t('settings.cache.selectType'))
     return
   }
 
@@ -162,7 +162,7 @@ const handleClearCache = async () => {
     }
 
     cacheModalVisible.value = false
-    window.$message?.success('缓存清理成功')
+    window.$message?.success($t('settings.cache.success'))
 
     cacheUpdateTrigger.value++
     calculateCacheSize()
@@ -220,7 +220,7 @@ defineExpose({
       <div class="cache-modal-header">
         <div class="cache-modal-title">
           <SvgIcon icon="mdi:broom" class="cache-modal-title-icon" />
-          <span>清理缓存</span>
+          <span>{{ $t('settings.cache.clear') }}</span>
         </div>
         <div class="cache-modal-close" @click="cacheModalVisible = false">
           <SvgIcon icon="mdi:close" />
@@ -242,11 +242,11 @@ defineExpose({
       <div class="cache-modal-footer">
         <button class="cache-btn cache-btn-cancel" @click="cacheModalVisible = false">
           <SvgIcon icon="mdi:close" />
-          <span>取消</span>
+          <span>{{ $t('common.cancel') }}</span>
         </button>
         <button class="cache-btn cache-btn-confirm" @click="handleClearCache">
           <SvgIcon icon="material-symbols:delete-outline" />
-          <span>确认清理</span>
+          <span>{{ $t('settings.cache.confirmClear') }}</span>
         </button>
       </div>
     </div>

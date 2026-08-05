@@ -137,7 +137,7 @@ const formatFullTime = (timeStr: string): string => {
 
         .record-time {
             font-size: 12px;
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(var(--app-rgb), 0.85);
             display: flex;
             align-items: center;
             gap: 4px;

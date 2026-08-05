@@ -16,6 +16,8 @@ const props = defineProps<{
     servers: Api.Game.Server[];
     /** 当前选中的服务器索引（基于 servers 数组下标） */
     selectedServerIndex: number | null;
+    /** 数据加载中，显示骨架屏 */
+    loading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -34,8 +36,19 @@ const emit = defineEmits<{
             </div>
         </template>
 
+        <!-- 加载骨架屏 -->
+        <div v-if="loading" class="server-skeleton">
+            <div v-for="i in 6" :key="`server-skeleton-${i}`" class="skeleton-item">
+                <div class="skeleton-avatar" />
+                <div class="skeleton-lines">
+                    <div class="skeleton-line" />
+                    <div class="skeleton-line short" />
+                </div>
+            </div>
+        </div>
+
         <!-- 服务器列表 -->
-        <div class="server-list" v-if="servers.length > 0">
+        <div class="server-list" v-else-if="servers.length > 0">
             <div v-for="(server, sIndex) in servers" :key="sIndex" class="server-item"
                 :class="{ 'server-item-selected': selectedServerIndex === sIndex }"
                 @click="emit('select', sIndex)">
@@ -150,6 +163,55 @@ const emit = defineEmits<{
     }
 }
 
+.server-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 8px;
+    pointer-events: none;
+
+    .skeleton-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(var(--app-rgb), 0.07);
+
+        .skeleton-avatar,
+        .skeleton-line {
+            background: linear-gradient(90deg, rgba(var(--app-rgb), 0.04) 25%, rgba(var(--app-rgb), 0.09) 50%, rgba(var(--app-rgb), 0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+
+        .skeleton-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            flex-shrink: 0;
+        }
+
+        .skeleton-lines {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+
+            .skeleton-line {
+                height: 12px;
+                width: 70%;
+
+                &.short {
+                    width: 45%;
+                    height: 10px;
+                }
+            }
+        }
+    }
+}
+
 .panel-header {
     display: flex;
     align-items: center;
@@ -164,6 +226,16 @@ const emit = defineEmits<{
         font-size: 13px;
         font-weight: 600;
         color: var(--n-text-color);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
     }
 }
 </style>

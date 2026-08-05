@@ -190,12 +190,12 @@ const handleToolClick = (tool: ToolItem) => {
         font-size: 18px;
         font-weight: 600;
         line-height: 1.3;
-        color: rgba(255, 255, 255, 0.92);
+        color: rgba(var(--app-rgb), 0.92);
       }
 
       .page-subtitle {
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.45);
+        color: rgba(var(--app-rgb), 0.45);
       }
     }
   }
@@ -218,12 +218,12 @@ const handleToolClick = (tool: ToolItem) => {
   width: fit-content;
   padding: 8px 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(var(--app-rgb), 0.03);
+  border: 1px solid rgba(var(--app-rgb), 0.08);
 
   &:hover {
     color: var(--primary-color);
-    background: rgba(255, 255, 255, 0.06);
+    background: rgba(var(--app-rgb), 0.06);
   }
 }
 
@@ -240,13 +240,13 @@ const handleToolClick = (tool: ToolItem) => {
 .tool-card {
   height: 200px;
   position: relative;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(var(--app-rgb), 0.05);
   border-radius: 16px;
   padding: 24px;
   cursor: pointer;
   overflow: hidden;
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--app-rgb), 0.1);
   backdrop-filter: blur(10px);
   animation: fadeInUp 0.6s ease-out forwards;
   animation-delay: var(--delay);
@@ -366,14 +366,14 @@ const handleToolClick = (tool: ToolItem) => {
 .tool-title {
   font-size: 18px;
   font-weight: 700;
-  color: #ffffff;
+  color: rgba(var(--app-rgb), 0.92);
   margin: 0;
   transition: color 0.3s ease;
 }
 
 .tool-description {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(var(--app-rgb), 0.6);
   margin: 0;
   line-height: 1.5;
 }
@@ -385,11 +385,11 @@ const handleToolClick = (tool: ToolItem) => {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(var(--app-rgb), 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(var(--app-rgb), 0.5);
   transition: all 0.4s ease;
   opacity: 0.5;
   font-size: 18px;

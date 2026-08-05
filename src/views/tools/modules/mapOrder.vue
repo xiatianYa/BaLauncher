@@ -25,8 +25,8 @@ const { dictOptions } = useDict();
 const { ensureBound } = useBotBind(); // 添加订阅时需要先绑定QQ群成员
 const emit = defineEmits<{ back: [] }>();
 const isOrderOptions = [
-    { label: '是', value: '1' },
-    { label: '否', value: '0' }
+    { label: $t('mapOrder.yes'), value: '1' },
+    { label: $t('mapOrder.no'), value: '0' }
 ];
 
 /* ===== 数据状态 ===== */
@@ -184,7 +184,10 @@ const handleSystemSubscribe = async () => {
     const bound = await ensureBound();
     if (!bound) return;
     const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, '1', null);
-    if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
+    if (error) {
+        console.error('[mapOrder] 系统订阅失败:', error);
+        window.$message?.error(error.message || $t('mapOrder.subscribeFailed'));
+    }
     showSubscribeModal.value = false;
     currentSubscribeMap.value = null;
     await fetchSubscribeList();
@@ -196,7 +199,10 @@ const handleQQSubscribe = async () => {
     const bound = await ensureBound();
     if (!bound) return;
     const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, null, '1');
-    if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
+    if (error) {
+        console.error('[mapOrder] QQ订阅失败:', error);
+        window.$message?.error(error.message || $t('mapOrder.subscribeFailed'));
+    }
     showSubscribeModal.value = false;
     currentSubscribeMap.value = null;
     await fetchSubscribeList();
@@ -207,7 +213,10 @@ const handleSystemSubscribeDirect = async (map: Api.Game.MapVo) => {
     const bound = await ensureBound();
     if (!bound) return;
     const { error } = await fetchAddMapSubscribe(map.id, '1', null);
-    if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
+    if (error) {
+        console.error('[mapOrder] 系统订阅失败:', error);
+        window.$message?.error(error.message || $t('mapOrder.subscribeFailed'));
+    }
     await fetchSubscribeList();
 };
 
@@ -216,7 +225,10 @@ const handleQQSubscribeDirect = async (map: Api.Game.MapVo) => {
     const bound = await ensureBound();
     if (!bound) return;
     const { error } = await fetchAddMapSubscribe(map.id, null, '1');
-    if (error) window.$message?.error($t('mapOrder.subscribeFailed'));
+    if (error) {
+        console.error('[mapOrder] QQ订阅失败:', error);
+        window.$message?.error(error.message || $t('mapOrder.subscribeFailed'));
+    }
     await fetchSubscribeList();
 };
 
@@ -352,11 +364,14 @@ onMounted(() => {
                                     </div>
                                     <div class="stat-item">
                                         <span class="stat-label">{{ $t('mapOrder.cooldown') }}</span>
-                                        <span class="stat-value">{{ map.exgMap?.cooldownMinute || '-' }} {{ $t('mapOrder.minutes') }}</span>
+                                        <span class="stat-value">{{ map.exgMap?.cooldownMinute || '-' }} {{
+                                            $t('mapOrder.minutes')
+                                            }}</span>
                                     </div>
                                     <div class="stat-item">
                                         <span class="stat-label">{{ $t('mapOrder.isOrderable') }}</span>
-                                        <span class="stat-value" :class="{ 'is-order': map.exgMap?.isOrder, 'not-order': !map.exgMap?.isOrder }">
+                                        <span class="stat-value"
+                                            :class="{ 'is-order': map.exgMap?.isOrder, 'not-order': !map.exgMap?.isOrder }">
                                             {{ map.exgMap?.isOrder ? $t('mapOrder.yes') : $t('mapOrder.no') }}
                                         </span>
                                     </div>
@@ -378,8 +393,7 @@ onMounted(() => {
                                             <SvgIcon icon="basil:qq-outline" />
                                             <span>{{ $t('mapOrder.qqSubscribe') }}</span>
                                         </div>
-                                        <div v-else class="action-btn qq subscribed"
-                                            @click="handleUnsubscribeQQ(map)">
+                                        <div v-else class="action-btn qq subscribed" @click="handleUnsubscribeQQ(map)">
                                             <SvgIcon icon="basil:qq-outline" />
                                             <span>{{ $t('mapOrder.unsubscribeQQ') }}</span>
                                         </div>
@@ -412,7 +426,18 @@ onMounted(() => {
                         <span>{{ $t('mapOrder.subscribeList') }}</span>
                     </div>
                 </template>
-                <LoadingSpinner :loading="subscribeLoading" v-if="subscribeLoading" />
+                <!-- 订阅列表骨架屏 -->
+                <div v-if="subscribeLoading" class="subscribe-skeleton-list">
+                    <div v-for="i in 4" :key="`subscribe-skeleton-${i}`" class="subscribe-skeleton-item">
+                        <div class="subscribe-skeleton-img" />
+                        <div class="subscribe-skeleton-content">
+                            <div class="subscribe-skeleton-title" />
+                            <div class="subscribe-skeleton-line short" />
+                            <div class="subscribe-skeleton-line" />
+                            <div class="subscribe-skeleton-line short" />
+                        </div>
+                    </div>
+                </div>
                 <div v-else-if="subscribeList.length === 0"
                     class="flex flex-col items-center justify-center h-full color-#999">
                     <SvgIcon icon="material-symbols:inbox-outline" class="text-40px mb-10px" />
@@ -441,11 +466,13 @@ onMounted(() => {
                                     </div>
                                     <div class="meta-item">
                                         <span class="meta-label">{{ $t('mapOrder.cooldown') }}</span>
-                                        <span class="meta-value">{{ map.exgMap.cooldownMinute }} {{ $t('mapOrder.minutes') }}</span>
+                                        <span class="meta-value">{{ map.exgMap.cooldownMinute }} {{
+                                            $t('mapOrder.minutes') }}</span>
                                     </div>
                                     <div class="meta-item">
                                         <span class="meta-label">{{ $t('mapOrder.isOrderable') }}</span>
-                                        <span class="meta-value" :class="{ 'is-order': map.exgMap?.isOrder, 'not-order': !map.exgMap?.isOrder }">
+                                        <span class="meta-value"
+                                            :class="{ 'is-order': map.exgMap?.isOrder, 'not-order': !map.exgMap?.isOrder }">
                                             {{ map.exgMap?.isOrder ? $t('mapOrder.yes') : $t('mapOrder.no') }}
                                         </span>
                                     </div>
@@ -468,8 +495,7 @@ onMounted(() => {
         </div>
     </div>
     <NModal v-model:show="showSubscribeModal" :bordered="true" preset="card"
-        class="w-400px rounded-20px subscribe-modal-wrapper" :closable="false"
-        size="small">
+        class="w-400px rounded-20px subscribe-modal-wrapper" :closable="false" size="small">
         <template #header>
             <div class="flex items-center font-size-18px">
                 <div class="font-size-16px">{{ $t('mapOrder.selectSubscribeType') }}</div>
@@ -499,8 +525,7 @@ onMounted(() => {
         </div>
     </NModal>
     <NModal v-model:show="showEditModal" :bordered="true" preset="card"
-        class="w-400px rounded-20px subscribe-modal-wrapper" :closable="false"
-        size="small">
+        class="w-400px rounded-20px subscribe-modal-wrapper" :closable="false" size="small">
         <template #header>
             <div class="font-size-16px">{{ $t('mapOrder.editSubscribe') }}</div>
         </template>
@@ -544,24 +569,25 @@ onMounted(() => {
             </div>
         </div>
     </NModal>
-    <NModal v-model:show="showMapEditModal" :bordered="true" preset="card" class="w-500px rounded-20px"
-        :closable="true" size="small">
+    <NModal v-model:show="showMapEditModal" :bordered="true" preset="card" class="w-500px rounded-20px" :closable="true"
+        size="small">
         <template #header>
             <div class="flex items-center font-size-16px">
-                <SvgIcon :icon="isMapAddMode ? 'material-symbols:add' : 'material-symbols:edit-outline'" class="mr-5px" />
+                <SvgIcon :icon="isMapAddMode ? 'material-symbols:add' : 'material-symbols:edit-outline'"
+                    class="mr-5px" />
                 {{ isMapAddMode ? $t('mapOrder.addMap') : $t('mapOrder.editMap') }}
             </div>
         </template>
         <div class="map-edit-form p-10px">
             <div class="form-item mb-10px">
                 <div class="form-label mb-5px font-bold">{{ $t('mapOrder.mapImage') }}</div>
-                <NUpload accept="image/*" :max="1" :show-file-list="false"
-                    :custom-request="handleUploadImage">
+                <NUpload accept="image/*" :max="1" :show-file-list="false" :custom-request="handleUploadImage">
                     <div class="map-upload-trigger">
                         <img v-if="mapEditForm.mapUrl" :src="mapEditForm.mapUrl" class="map-upload-preview" alt="map" />
                         <div v-else class="map-upload-placeholder">
-                            <SvgIcon icon="material-symbols:add-photo-alternate-outlined" class="placeholder-icon" />
-                            <span>{{ mapUploadLoading ? $t('mapOrder.uploading') : $t('mapOrder.uploadMapImage') }}</span>
+                            <SvgIcon icon="material-symbols:add-photo-alternate-outline" class="placeholder-icon" />
+                            <span>{{ mapUploadLoading ? $t('mapOrder.uploading') : $t('mapOrder.uploadMapImage')
+                                }}</span>
                         </div>
                     </div>
                 </NUpload>
@@ -669,7 +695,7 @@ onMounted(() => {
             cursor: pointer;
             color: #667eea;
             background: rgba(102, 126, 234, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(var(--app-rgb), 0.1);
             transition: all 0.3s ease;
 
             &:hover {
@@ -711,14 +737,14 @@ onMounted(() => {
                 display: flex;
                 flex-direction: column;
                 height: 100%;
-                background: rgba(255, 255, 255, 0.04);
-                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: rgba(var(--app-rgb), 0.04);
+                border: 1px solid rgba(var(--app-rgb), 0.08);
                 border-radius: 14px;
                 overflow: hidden;
                 transition: all 0.25s ease;
 
                 &:hover {
-                    background: rgba(255, 255, 255, 0.07);
+                    background: rgba(var(--app-rgb), 0.07);
                     border-color: rgba(102, 126, 234, 0.35);
                     transform: translateY(-2px);
                     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
@@ -762,8 +788,8 @@ onMounted(() => {
                                 font-size: 10px;
                                 font-weight: 500;
                                 color: #fff;
-                                background: rgba(255, 255, 255, 0.15);
-                                border: 1px solid rgba(255, 255, 255, 0.2);
+                                background: rgba(var(--app-rgb), 0.15);
+                                border: 1px solid rgba(var(--app-rgb), 0.2);
                                 backdrop-filter: blur(4px);
                             }
 
@@ -816,7 +842,7 @@ onMounted(() => {
 
                     .map-card-label {
                         font-size: 11px;
-                        color: rgba(255, 255, 255, 0.45);
+                        color: rgba(var(--app-rgb), 0.45);
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
@@ -833,15 +859,15 @@ onMounted(() => {
                         gap: 3px;
                         padding: 2px 7px;
                         border-radius: 6px;
-                        background: rgba(255, 255, 255, 0.05);
+                        background: rgba(var(--app-rgb), 0.05);
                         font-size: 10px;
 
                         .stat-label {
-                            color: rgba(255, 255, 255, 0.4);
+                            color: rgba(var(--app-rgb), 0.4);
                         }
 
                         .stat-value {
-                            color: rgba(255, 255, 255, 0.8);
+                            color: rgba(var(--app-rgb), 0.8);
                             font-weight: 500;
 
                             &.is-order {
@@ -902,8 +928,8 @@ onMounted(() => {
 
                             &.subscribed {
                                 color: #fff;
-                                background: rgba(112, 192, 232, 0.55);
-                                border-color: rgba(112, 192, 232, 0.7);
+                                background: #70c0e8;
+                                border-color: #70c0e8;
                             }
                         }
 
@@ -919,8 +945,8 @@ onMounted(() => {
 
                             &.subscribed {
                                 color: #fff;
-                                background: rgba(99, 226, 183, 0.55);
-                                border-color: rgba(99, 226, 183, 0.7);
+                                background: #63e2b7;
+                                border-color: #63e2b7;
                             }
                         }
 
@@ -940,9 +966,9 @@ onMounted(() => {
                         &.disabled {
                             width: 100%;
                             flex: none;
-                            color: rgba(255, 255, 255, 0.4);
-                            background: rgba(255, 255, 255, 0.05);
-                            border-color: rgba(255, 255, 255, 0.1);
+                            color: rgba(var(--app-rgb), 0.4);
+                            background: rgba(var(--app-rgb), 0.05);
+                            border-color: rgba(var(--app-rgb), 0.1);
                             cursor: not-allowed;
                         }
                     }
@@ -952,7 +978,7 @@ onMounted(() => {
             ::v-deep(.n-card-header) {
                 height: auto;
                 padding: 2px 0 12px;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                border-bottom: 1px solid rgba(var(--app-rgb), 0.1);
             }
         }
 
@@ -969,7 +995,7 @@ onMounted(() => {
             ::v-deep(.n-card-header) {
                 height: auto;
                 padding: 2px 0 12px;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                border-bottom: 1px solid rgba(var(--app-rgb), 0.1);
             }
 
             .subscribe-list {
@@ -978,14 +1004,14 @@ onMounted(() => {
                 gap: 12px;
 
                 .subscribe-item {
-                    background: rgba(255, 255, 255, 0.04);
-                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    background: rgba(var(--app-rgb), 0.04);
+                    border: 1px solid rgba(var(--app-rgb), 0.08);
                     border-radius: 14px;
                     padding: 12px;
                     transition: all 0.25s ease;
 
                     &:hover {
-                        background: rgba(255, 255, 255, 0.07);
+                        background: rgba(var(--app-rgb), 0.07);
                         border-color: rgba(102, 126, 234, 0.35);
                         transform: translateY(-2px);
                         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
@@ -1047,9 +1073,9 @@ onMounted(() => {
                             border-radius: 7px;
                             cursor: pointer;
                             pointer-events: auto;
-                            color: rgba(255, 255, 255, 0.65);
-                            background: rgba(255, 255, 255, 0.06);
-                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            color: rgba(var(--app-rgb), 0.65);
+                            background: rgba(var(--app-rgb), 0.06);
+                            border: 1px solid rgba(var(--app-rgb), 0.1);
                             transition: all 0.2s ease;
 
                             &:hover {
@@ -1062,7 +1088,7 @@ onMounted(() => {
 
                     .subscribe-item-label {
                         font-size: 11px;
-                        color: rgba(255, 255, 255, 0.45);
+                        color: rgba(var(--app-rgb), 0.45);
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
@@ -1079,15 +1105,15 @@ onMounted(() => {
                             gap: 3px;
                             padding: 2px 7px;
                             border-radius: 6px;
-                            background: rgba(255, 255, 255, 0.05);
+                            background: rgba(var(--app-rgb), 0.05);
                             font-size: 10px;
 
                             .meta-label {
-                                color: rgba(255, 255, 255, 0.4);
+                                color: rgba(var(--app-rgb), 0.4);
                             }
 
                             .meta-value {
-                                color: rgba(255, 255, 255, 0.8);
+                                color: rgba(var(--app-rgb), 0.8);
                                 font-weight: 500;
 
                                 &.is-order {
@@ -1114,12 +1140,12 @@ onMounted(() => {
                             font-size: 10px;
 
                             .extra-label {
-                                color: rgba(255, 255, 255, 0.4);
+                                color: rgba(var(--app-rgb), 0.4);
                                 flex-shrink: 0;
                             }
 
                             .extra-value {
-                                color: rgba(255, 255, 255, 0.65);
+                                color: rgba(var(--app-rgb), 0.65);
                                 white-space: nowrap;
                                 overflow: hidden;
                                 text-overflow: ellipsis;
@@ -1144,13 +1170,13 @@ onMounted(() => {
         height: 36px;
         padding: 0 10px 0 36px;
         border-radius: 18px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: rgba(var(--app-rgb), 0.05);
+        border: 1px solid rgba(var(--app-rgb), 0.09);
         transition: all 0.25s ease;
 
         &:focus-within {
             border-color: rgba(102, 126, 234, 0.55);
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(var(--app-rgb), 0.08);
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
         }
 
@@ -1174,12 +1200,12 @@ onMounted(() => {
             --n-box-shadow-focus: none !important;
 
             .n-input__input-el {
-                color: rgba(255, 255, 255, 0.9);
+                color: rgba(var(--app-rgb), 0.9);
                 font-size: 13px;
             }
 
             .n-input__placeholder {
-                color: rgba(255, 255, 255, 0.35);
+                color: rgba(var(--app-rgb), 0.35);
             }
         }
     }
@@ -1194,7 +1220,7 @@ onMounted(() => {
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.03em;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(var(--app-rgb), 0.9);
 
     .subscribe-list-icon {
         display: flex;
@@ -1208,6 +1234,75 @@ onMounted(() => {
         color: rgba(102, 126, 234, 0.95);
         font-size: 15px;
         transition: all 0.25s ease;
+    }
+}
+
+/* ==================== 订阅列表骨架屏（参考 userManage/roleManage shimmer 风格） ==================== */
+.subscribe-skeleton-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+
+    .subscribe-skeleton-item {
+        display: flex;
+        gap: 12px;
+        padding: 12px;
+        background: rgba(var(--app-rgb), 0.04);
+        border: 1px solid rgba(var(--app-rgb), 0.08);
+        border-radius: 14px;
+
+        .subscribe-skeleton-img,
+        .subscribe-skeleton-title,
+        .subscribe-skeleton-line {
+            background: linear-gradient(90deg,
+                    rgba(var(--app-rgb), 0.04) 25%,
+                    rgba(var(--app-rgb), 0.09) 50%,
+                    rgba(var(--app-rgb), 0.04) 75%);
+            background-size: 200% 100%;
+            animation: subscribeShimmer 1.5s infinite;
+        }
+
+        .subscribe-skeleton-img {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .subscribe-skeleton-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            justify-content: center;
+
+            .subscribe-skeleton-title {
+                height: 14px;
+                width: 60%;
+                border-radius: 6px;
+            }
+
+            .subscribe-skeleton-line {
+                height: 12px;
+                width: 100%;
+                border-radius: 6px;
+
+                &.short {
+                    width: 50%;
+                }
+            }
+        }
+    }
+}
+
+@keyframes subscribeShimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
     }
 }
 
@@ -1404,7 +1499,7 @@ onMounted(() => {
                 }
 
                 .tip-text {
-                    color: #fff;
+                    color: #667eea;
                 }
             }
 
@@ -1536,12 +1631,11 @@ onMounted(() => {
         width: 150px;
         height: 100%;
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.55);
+        color: rgba(var(--app-rgb), 0.55);
 
         .placeholder-icon {
             font-size: 28px;
         }
     }
 }
-
 </style>

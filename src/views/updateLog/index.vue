@@ -36,7 +36,7 @@ const limit = ref(10);
 const newLogIds = ref<Set<number>>(new Set());
 
 const formatDateTime = (dateStr: string): string => {
-  return dayjs(dateStr).format('YYYY年MM月DD日');
+  return dayjs(dateStr).format($t('updateLog.dateFormat'));
 };
 
 const loadUpdateLogs = async (): Promise<void> => {
@@ -74,7 +74,7 @@ const loadUpdateLogs = async (): Promise<void> => {
     }
   } catch (error) {
     console.error('加载更新日志失败:', error);
-    window.$message?.error('加载更新日志失败');
+    window.$message?.error($t('updateLog.loadFailed'));
   } finally {
     loading.value = false;
     loadingMore.value = false;
@@ -111,16 +111,16 @@ const handleConfirmDelete = async (): Promise<void> => {
   try {
     const { error } = await fetchRemoveLog(currentDeleteLog.value.id);
     if (error) {
-      window.$message?.error(error.message || '删除失败');
+      window.$message?.error(error.message || $t('updateLog.deleteFailed'));
       return;
     }
-    window.$message?.success('删除成功');
+    window.$message?.success($t('updateLog.deleteSuccess'));
     showDeleteModal.value = false;
     currentDeleteLog.value = null;
     handleSuccess();
   } catch (error) {
     console.error('删除更新日志失败:', error);
-    window.$message?.error('删除失败');
+    window.$message?.error($t('updateLog.deleteFailed'));
   } finally {
     deleteLoading.value = false;
   }
@@ -162,7 +162,7 @@ onMounted(() => {
               <span class="page-subtitle">{{ $t('updateLog.subtitle') }}</span>
             </div>
           </div>
-          <button v-if="canAddUpdateLog" class="icon-btn primary" title="新增更新日志" @click="addModalVisible = true">
+          <button v-if="canAddUpdateLog" class="icon-btn primary" :title="$t('updateLog.addNewLog')" @click="addModalVisible = true">
             <SvgIcon icon="mdi:plus" />
           </button>
         </div>
@@ -198,10 +198,10 @@ onMounted(() => {
                 </span>
               </div>
               <div v-if="canAddUpdateLog" class="log-actions">
-                <button class="icon-btn ghost" title="编辑" @click="openEditModal(log)">
+                <button class="icon-btn ghost" :title="$t('updateLog.edit')" @click="openEditModal(log)">
                   <SvgIcon icon="mdi:pencil" />
                 </button>
-                <button class="icon-btn ghost danger" title="删除" @click="handleDelete(log)">
+                <button class="icon-btn ghost danger" :title="$t('updateLog.delete')" @click="handleDelete(log)">
                   <SvgIcon icon="mdi:delete" />
                 </button>
               </div>
@@ -220,7 +220,7 @@ onMounted(() => {
                 <SvgIcon icon="mdi:shape-outline" />
                 <span>{{ dictLabel('sys_updateLog_type', log.updateType) }}</span>
               </span>
-              <span v-if="index === 0" class="meta-tag latest">最新</span>
+              <span v-if="index === 0" class="meta-tag latest">{{ $t('updateLog.latest') }}</span>
             </div>
 
             <div class="log-card-body" v-if="log.content">
@@ -249,22 +249,22 @@ onMounted(() => {
     <template #header>
       <div class="delete-modal-header">
         <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
-        <span>删除确认</span>
+        <span>{{ $t('updateLog.deleteConfirm') }}</span>
       </div>
     </template>
     <div class="delete-modal-body">
       <p class="delete-modal-text">
-        确定要删除更新日志
+        {{ $t('updateLog.deleteConfirmPrefix') }}
         <span class="delete-modal-target">{{ currentDeleteLog?.title }}</span>
-        吗？
+        {{ $t('updateLog.deleteConfirmSuffix') }}
       </p>
-      <p class="delete-modal-tip">删除后数据将无法恢复，请谨慎操作。</p>
+      <p class="delete-modal-tip">{{ $t('updateLog.deleteConfirmTip') }}</p>
     </div>
     <div class="delete-modal-actions">
-      <button class="action-btn cancel" @click="handleCloseDeleteModal">取消</button>
+      <button class="action-btn cancel" @click="handleCloseDeleteModal">{{ $t('common.cancel') }}</button>
       <button class="action-btn danger" :disabled="deleteLoading" @click="handleConfirmDelete">
         <SvgIcon icon="mdi:delete" />
-        <span>{{ deleteLoading ? '删除中...' : '删除' }}</span>
+        <span>{{ deleteLoading ? $t('updateLog.deleting') : $t('updateLog.delete') }}</span>
       </button>
     </div>
   </NModal>
@@ -315,12 +315,12 @@ onMounted(() => {
         font-size: 18px;
         font-weight: 600;
         line-height: 1.3;
-        color: rgba(255, 255, 255, 0.92);
+        color: rgba(var(--app-rgb), 0.92);
       }
 
       .page-subtitle {
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.45);
+        color: rgba(var(--app-rgb), 0.45);
       }
     }
   }
@@ -333,15 +333,15 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(var(--app-rgb), 0.08);
+  background: rgba(var(--app-rgb), 0.04);
+  color: rgba(var(--app-rgb), 0.7);
   cursor: pointer;
   transition: all 0.15s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.9);
+    background: rgba(var(--app-rgb), 0.08);
+    color: rgba(var(--app-rgb), 0.9);
   }
 
   &:active {
@@ -392,7 +392,7 @@ onMounted(() => {
   justify-content: center;
   height: 100%;
   gap: 12px;
-  color: rgba(255, 255, 255, 0.4);
+  color: rgba(var(--app-rgb), 0.4);
 
   .empty-icon {
     font-size: 48px;
@@ -415,7 +415,7 @@ onMounted(() => {
   .skeleton-title,
   .skeleton-meta,
   .skeleton-content {
-    background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%);
+    background: linear-gradient(90deg, rgba(var(--app-rgb), 0.04) 25%, rgba(var(--app-rgb), 0.09) 50%, rgba(var(--app-rgb), 0.04) 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     border-radius: 6px;
@@ -450,8 +450,8 @@ onMounted(() => {
 }
 
 .log-card {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(var(--app-rgb), 0.03);
+  border: 1px solid rgba(var(--app-rgb), 0.06);
   border-radius: 12px;
   padding: 16px 18px;
   margin-bottom: 14px;
@@ -462,7 +462,7 @@ onMounted(() => {
   opacity: 0;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--app-rgb), 0.05);
     border-color: rgba(102, 126, 234, 0.25);
   }
 
@@ -493,7 +493,7 @@ onMounted(() => {
     .log-title {
       font-size: 15px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.9);
+      color: rgba(var(--app-rgb), 0.9);
       margin: 0;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -529,9 +529,9 @@ onMounted(() => {
     padding: 4px 10px;
     border-radius: 6px;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.55);
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: rgba(var(--app-rgb), 0.55);
+    background: rgba(var(--app-rgb), 0.05);
+    border: 1px solid rgba(var(--app-rgb), 0.06);
 
     svg {
       font-size: 13px;
@@ -544,7 +544,7 @@ onMounted(() => {
     }
 
     &.date {
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(var(--app-rgb), 0.5);
     }
 
     &.latest {
@@ -557,12 +557,200 @@ onMounted(() => {
 
 .log-card-body {
   .log-markdown {
-    padding: 12px 14px;
-    border-radius: 8px;
-    background: rgba(0, 0, 0, 0.2);
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: rgba(var(--app-rgb), 0.03);
+    border: 1px solid rgba(var(--app-rgb), 0.06);
     font-size: 13px;
-    line-height: 1.7;
-    color: rgba(255, 255, 255, 0.68);
+    line-height: 1.8;
+    color: rgba(var(--app-rgb), 0.78);
+    transition: background 0.2s ease, border-color 0.2s ease;
+
+    &:hover {
+      border-color: rgba(102, 126, 234, 0.22);
+    }
+
+    /* md-editor-v3 根容器透明化 */
+    :deep(.md-editor),
+    :deep(.md-editor-content),
+    :deep(.md-editor-preview-wrapper) {
+      background: transparent;
+    }
+
+    :deep(.md-editor-preview-wrapper) {
+      padding: 0;
+    }
+
+    :deep(.md-editor-preview) {
+      background: transparent;
+      font-size: 13px;
+      line-height: 1.8;
+      color: rgba(var(--app-rgb), 0.78);
+
+      &::-webkit-scrollbar {
+        width: 5px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        border-radius: 4px;
+        background: rgba(var(--app-rgb), 0.12);
+      }
+    }
+
+    /* 标题 */
+    :deep(.md-editor-preview h1),
+    :deep(.md-editor-preview h2),
+    :deep(.md-editor-preview h3),
+    :deep(.md-editor-preview h4),
+    :deep(.md-editor-preview h5),
+    :deep(.md-editor-preview h6) {
+      margin: 14px 0 8px;
+      font-weight: 600;
+      line-height: 1.45;
+      color: rgba(var(--app-rgb), 0.92);
+
+      &:first-child {
+        margin-top: 0;
+      }
+    }
+
+    :deep(.md-editor-preview h1) {
+      font-size: 17px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(var(--app-rgb), 0.08);
+    }
+
+    :deep(.md-editor-preview h2) {
+      font-size: 15.5px;
+    }
+
+    :deep(.md-editor-preview h3) {
+      font-size: 14px;
+    }
+
+    :deep(.md-editor-preview h4),
+    :deep(.md-editor-preview h5),
+    :deep(.md-editor-preview h6) {
+      font-size: 13.5px;
+    }
+
+    /* 段落 / 强调 */
+    :deep(.md-editor-preview p) {
+      margin: 6px 0;
+      color: rgba(var(--app-rgb), 0.75);
+    }
+
+    :deep(.md-editor-preview strong) {
+      font-weight: 600;
+      color: rgba(var(--app-rgb), 0.95);
+    }
+
+    :deep(.md-editor-preview em) {
+      color: rgba(var(--app-rgb), 0.85);
+    }
+
+    /* 链接 */
+    :deep(.md-editor-preview a) {
+      color: #667eea;
+      text-decoration: none;
+      border-bottom: 1px solid rgba(102, 126, 234, 0.35);
+
+      &:hover {
+        color: #764ba2;
+        border-bottom-color: #764ba2;
+      }
+    }
+
+    /* 列表 */
+    :deep(.md-editor-preview ul),
+    :deep(.md-editor-preview ol) {
+      margin: 6px 0;
+      padding-left: 20px;
+      color: rgba(var(--app-rgb), 0.75);
+    }
+
+    :deep(.md-editor-preview li) {
+      margin: 3px 0;
+    }
+
+    /* 行内代码 */
+    :deep(.md-editor-preview code) {
+      font-family: 'Cascadia Code', Consolas, 'Courier New', monospace;
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 5px;
+      background: rgba(102, 126, 234, 0.12);
+      color: #764ba2;
+      word-break: break-all;
+    }
+
+    /* 代码块 */
+    :deep(.md-editor-preview pre) {
+      margin: 10px 0;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
+      overflow-x: auto;
+      line-height: 1.6;
+
+      code {
+        padding: 0;
+        background: transparent;
+        color: #c9d1f9;
+      }
+    }
+
+    /* 引用 */
+    :deep(.md-editor-preview blockquote) {
+      margin: 8px 0;
+      padding: 8px 14px;
+      border-left: 3px solid #667eea;
+      border-radius: 0 8px 8px 0;
+      background: rgba(102, 126, 234, 0.08);
+      color: rgba(var(--app-rgb), 0.7);
+
+      p {
+        margin: 4px 0;
+      }
+    }
+
+    /* 表格 */
+    :deep(.md-editor-preview table) {
+      width: 100%;
+      margin: 10px 0;
+      border-collapse: collapse;
+      font-size: 12.5px;
+
+      th,
+      td {
+        padding: 7px 12px;
+        border: 1px solid rgba(var(--app-rgb), 0.1);
+        text-align: left;
+      }
+
+      th {
+        background: rgba(var(--app-rgb), 0.05);
+        font-weight: 600;
+        color: rgba(var(--app-rgb), 0.85);
+      }
+
+      tr:nth-child(even) td {
+        background: rgba(var(--app-rgb), 0.02);
+      }
+    }
+
+    /* 分割线 / 图片 */
+    :deep(.md-editor-preview hr) {
+      margin: 14px 0;
+      border: none;
+      border-top: 1px solid rgba(var(--app-rgb), 0.1);
+    }
+
+    :deep(.md-editor-preview img) {
+      max-width: 100%;
+      border-radius: 8px;
+    }
   }
 }
 
@@ -594,7 +782,7 @@ onMounted(() => {
       margin: 0;
       font-size: 13.5px;
       line-height: 1.6;
-      color: rgba(255, 255, 255, 0.85);
+      color: rgba(var(--app-rgb), 0.85);
 
       .delete-modal-target {
         font-weight: 600;
@@ -605,7 +793,7 @@ onMounted(() => {
     .delete-modal-tip {
       margin: 0;
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(var(--app-rgb), 0.5);
     }
   }
 
@@ -620,14 +808,14 @@ onMounted(() => {
       gap: 5px;
       flex: 1;
       padding: 9px 2px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
       border-radius: 9px;
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
       transition: all 0.2s ease;
-      background: rgba(255, 255, 255, 0.06);
-      color: rgba(255, 255, 255, 0.8);
+      background: rgba(var(--app-rgb), 0.06);
+      color: rgba(var(--app-rgb), 0.8);
 
       &:hover {
         transform: translateY(-1px);
@@ -640,7 +828,7 @@ onMounted(() => {
       }
 
       &.cancel:hover {
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(var(--app-rgb), 0.12);
       }
 
       &.danger {
@@ -681,7 +869,7 @@ onMounted(() => {
   gap: 8px;
   padding: 10px 0;
   font-size: 12px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(var(--app-rgb), 0.35);
 
   &::before,
   &::after {

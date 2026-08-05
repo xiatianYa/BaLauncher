@@ -41,14 +41,14 @@ const changeThemeLayout = () => {
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.6);
+  background: rgba(var(--app-rgb), 0.04);
+  border: 1px solid rgba(var(--app-rgb), 0.07);
+  color: rgba(var(--app-rgb), 0.6);
   cursor: pointer;
   transition: all 0.25s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.07);
     border-color: rgba(102, 126, 234, 0.4);
     color: #667eea;
     transform: translateY(-1px);

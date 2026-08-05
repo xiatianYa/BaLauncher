@@ -17,6 +17,8 @@ defineOptions({ name: 'CommunityList' });
 const props = defineProps<{
     /** 当前选中的社区 ID，用于高亮标记 */
     selectedCommunityId: number | null;
+    /** 数据加载中，显示骨架屏 */
+    loading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -37,8 +39,19 @@ const gameStore = useGameStore();
             </div>
         </template>
 
+        <!-- 加载骨架屏 -->
+        <div v-if="loading" class="community-skeleton">
+            <div v-for="i in 6" :key="`community-skeleton-${i}`" class="skeleton-item">
+                <div class="skeleton-avatar" />
+                <div class="skeleton-lines">
+                    <div class="skeleton-line" />
+                    <div class="skeleton-line short" />
+                </div>
+            </div>
+        </div>
+
         <!-- 社区列表 -->
-        <div class="community-list" v-if="gameStore.communityList.length > 0">
+        <div class="community-list" v-else-if="gameStore.communityList.length > 0">
             <div v-for="community in gameStore.communityList" :key="community.id" class="community-item"
                 :class="{ 'community-item-selected': selectedCommunityId === community.id }"
                 @click="emit('select', community.id)">
@@ -160,6 +173,55 @@ const gameStore = useGameStore();
     }
 }
 
+.community-skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 8px;
+    pointer-events: none;
+
+    .skeleton-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        border: 1px solid rgba(var(--app-rgb), 0.07);
+
+        .skeleton-avatar,
+        .skeleton-line {
+            background: linear-gradient(90deg, rgba(var(--app-rgb), 0.04) 25%, rgba(var(--app-rgb), 0.09) 50%, rgba(var(--app-rgb), 0.04) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 6px;
+        }
+
+        .skeleton-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            flex-shrink: 0;
+        }
+
+        .skeleton-lines {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+
+            .skeleton-line {
+                height: 12px;
+                width: 70%;
+
+                &.short {
+                    width: 45%;
+                    height: 10px;
+                }
+            }
+        }
+    }
+}
+
 .panel-header {
     display: flex;
     align-items: center;
@@ -174,6 +236,16 @@ const gameStore = useGameStore();
         font-size: 13px;
         font-weight: 600;
         color: var(--n-text-color);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
     }
 }
 </style>

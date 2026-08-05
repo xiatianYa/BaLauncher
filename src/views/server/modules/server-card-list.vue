@@ -2,6 +2,7 @@
 import { NGrid, NGridItem, NTag, NEllipsis } from 'naive-ui';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useDict } from '@/hooks/business/dict';
+import { $t } from '@/locales';
 import dayjs from 'dayjs';
 
 // 虚拟滚动配置
@@ -112,13 +113,13 @@ const getPlayerLevel = (server: Api.Game.SeverVo): string => {
 // 服务器状态中文映射
 const getMapPhaseText = (phase: string) => {
   const phaseMap: Record<string, string> = {
-    'warmup': '热身',
-    'intermission': '中场休息',
-    'gameover': '游戏结束',
-    'live': '对局中',
-    'over': '已结束',
-    'freezetime': '暂停回合',
-    'unknown': '未知'
+    'warmup': $t('server.mapPhase.warmup'),
+    'intermission': $t('server.mapPhase.intermission'),
+    'gameover': $t('server.mapPhase.gameover'),
+    'live': $t('server.mapPhase.live'),
+    'over': $t('server.mapPhase.over'),
+    'freezetime': $t('server.mapPhase.freezetime'),
+    'unknown': $t('server.mapPhase.unknown')
   };
   return phaseMap[phase] || phase;
 };
@@ -209,7 +210,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
               {{ server.ping ? `${server.ping}ms` : '???' }}
             </NTag>
             <NTag v-if="server.dateTimeOriginal" size="small" round class="mr-3px" ghost type="info">
-              {{ calculatePastMinutes(server.dateTimeOriginal) }}分钟
+              {{ $t('server.minutesAgo', { count: calculatePastMinutes(server.dateTimeOriginal) }) }}
             </NTag>
           </div>
           <div class="server-card-button mt-6px">
@@ -294,7 +295,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
       flex: 1 1 0;
       min-width: 0;
       height: 4px;
-      background: rgba(255, 255, 255, 0.2);
+      background: rgba(var(--app-rgb), 0.2);
       box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
     }
 
@@ -355,6 +356,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   }
 
   /* 遮罩层样式 - 底部加深渐变更有层次 */
+  /* z-index 与背景图同层（0），内容文字在 DOM 中位于其后，绘制顺序靠上，不会被遮罩盖住 */
   .server-card-mask {
     position: absolute;
     top: 0;
@@ -365,7 +367,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
         rgba(0, 0, 0, 0.15) 0%,
         rgba(0, 0, 0, 0.35) 50%,
         rgba(0, 0, 0, 0.6) 100%);
-    z-index: 1;
+    z-index: 0;
     transition: opacity 0.25s ease;
   }
 
@@ -411,8 +413,8 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
       cursor: pointer;
       color: rgba(59, 130, 246, 0.85);
       transition: all 0.2s ease;
-      border-left: 1px solid rgba(255, 255, 255, 0.08);
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      border-left: 1px solid rgba(var(--app-rgb), 0.08);
+      border-right: 1px solid rgba(var(--app-rgb), 0.08);
 
       &:hover {
         background: rgba(59, 130, 246, 0.25);
@@ -455,7 +457,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
       color: rgba(239, 68, 68, 0.7);
 
       &:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(var(--app-rgb), 0.1);
       }
     }
   }
@@ -492,13 +494,13 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   color: #fff;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--app-rgb), 0.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
 
   &:hover {
     background: rgba(0, 0, 0, 0.55);
-    border-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(var(--app-rgb), 0.18);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
   }
 }
@@ -600,7 +602,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   font-size: 12px;
   font-weight: 700;
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(var(--app-rgb), 0.25);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(6px);
 }
@@ -621,7 +623,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 .chip-score {
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(var(--app-rgb), 0.1);
   padding: 3px 8px;
   border-radius: 8px;
   font-size: 11px;
@@ -668,7 +670,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   opacity: 0.6;
   font-weight: 500;
   padding: 1px 6px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(var(--app-rgb), 0.08);
   border-radius: 4px;
 }
 

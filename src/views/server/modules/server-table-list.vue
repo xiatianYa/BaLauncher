@@ -166,7 +166,7 @@ const getSortOrder = (field: SortField) => {
               </NTooltip>
               <NTooltip v-if="server.mapLabel" trigger="hover" placement="top">
                 <template #trigger>
-                  <span class="map-label" :style="{ color: 'rgba(255, 255, 255, 0.6)' }">
+                  <span class="map-label" :style="{ color: 'rgba(var(--app-rgb), 0.6)' }">
                     {{ server.mapLabel }}
                   </span>
                 </template>
@@ -178,14 +178,14 @@ const getSortOrder = (field: SortField) => {
           <!-- 玩家数 -->
           <div class="td td-players">
             <div class="player-count-cell">
-              <div class="progress-track" :style="{ backgroundColor: 'rgba(255, 255, 255, 0.15)' }">
+              <div class="progress-track" :style="{ backgroundColor: 'rgba(var(--app-rgb), 0.15)' }">
                 <div class="progress-fill" :style="{
                   width: `${getPlayerPercent(server)}%`,
                   backgroundColor: getPlayerColor(server.numPlayers),
                   boxShadow: `0 0 8px ${getPlayerColor(server.numPlayers)}`
                 }" />
               </div>
-              <span class="player-count-text" :style="{ color: 'rgba(255, 255, 255, 0.6)' }">
+              <span class="player-count-text" :style="{ color: 'rgba(var(--app-rgb), 0.6)' }">
                 {{ server.numPlayers || 0 }}<span class="count-sep">/</span>{{ server.maxPlayers || 0 }}
               </span>
             </div>
@@ -205,7 +205,7 @@ const getSortOrder = (field: SortField) => {
               <span class="score-phase">{{ server.mapPhase }}</span>
               <span class="team team-t">{{ server.TScore || 0 }}</span>
             </div>
-            <span v-else class="empty-score" :style="{ color: 'rgba(255, 255, 255, 0.6)' }">-</span>
+            <span v-else class="empty-score" :style="{ color: 'rgba(var(--app-rgb), 0.6)' }">-</span>
           </div>
 
           <!-- 操作 -->
@@ -264,7 +264,7 @@ const getSortOrder = (field: SortField) => {
   .th {
     font-size: 13px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.6);
+    color: rgba(var(--app-rgb), 0.6);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -451,7 +451,7 @@ const getSortOrder = (field: SortField) => {
     color: #fff;
     background: rgba(0, 0, 0, 0.45);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(var(--app-rgb), 0.1);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
@@ -492,7 +492,7 @@ const getSortOrder = (field: SortField) => {
     opacity: 0.7;
     font-weight: 500;
     padding: 1px 6px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--app-rgb), 0.08);
     border-radius: 4px;
     text-transform: capitalize;
   }

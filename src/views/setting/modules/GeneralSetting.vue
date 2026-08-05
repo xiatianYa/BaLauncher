@@ -42,16 +42,16 @@ const customStartItem = ref('')
 const addCustomStartItem = () => {
   const value = customStartItem.value.trim()
   if (!value) {
-    window.$message?.warning('请输入启动选项')
+    window.$message?.warning($t('settings.messages.enterStartOption'))
     return
   }
   if (gameStore.selectedStartItems.includes(value)) {
-    window.$message?.warning('该启动选项已存在')
+    window.$message?.warning($t('settings.messages.startOptionExists'))
     return
   }
   gameStore.toggleStartItem(value)
   customStartItem.value = ''
-  window.$message?.success('添加成功')
+  window.$message?.success($t('updateLog.addSuccess'))
 }
 
 const selectCsgo2Path = async () => {

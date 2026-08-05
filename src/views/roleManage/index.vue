@@ -40,7 +40,8 @@ const formatDate = (date?: string | null) => {
 };
 
 /** 状态文案 */
-const getStatusText = (status?: string | null) => (status === '1' ? '启用' : '禁用');
+const getStatusText = (status?: string | null) =>
+  status === '1' ? $t('roleManage.enabled') : $t('roleManage.disabled');
 
 /** 加载分页数据 */
 const loadData = async () => {
@@ -151,11 +152,11 @@ const handleEditSubmit = async () => {
   const roleName = editForm.roleName.trim();
   const roleCode = editForm.roleCode.trim();
   if (!roleName) {
-    window.$message?.warning('请输入角色名称');
+    window.$message?.warning($t('roleManage.messages.pleaseEnterRoleName'));
     return;
   }
   if (!roleCode) {
-    window.$message?.warning('请输入角色编码');
+    window.$message?.warning($t('roleManage.messages.pleaseEnterRoleCode'));
     return;
   }
   // 勾选的权限ID列表
@@ -173,10 +174,10 @@ const handleEditSubmit = async () => {
       ? await fetchUpdateRole(params)
       : await fetchSaveRole(params);
     if (error) {
-      window.$message?.error(error.message || (isEditMode.value ? '保存失败' : '新增失败'));
+      window.$message?.error(error.message || (isEditMode.value ? $t('roleManage.messages.saveFailed') : $t('roleManage.messages.createFailed')));
       return;
     }
-    window.$message?.success(isEditMode.value ? '保存成功' : '新增成功');
+    window.$message?.success(isEditMode.value ? $t('roleManage.messages.saveSuccess') : $t('roleManage.messages.createSuccess'));
     showEditModal.value = false;
     loadData();
   } finally {
@@ -206,10 +207,10 @@ const handleConfirmDelete = async () => {
   try {
     const { error } = await fetchDeleteRole(String(currentDeleteRow.value.id));
     if (error) {
-      window.$message?.error(error.message || '删除失败');
+      window.$message?.error(error.message || $t('roleManage.messages.deleteFailed'));
       return;
     }
-    window.$message?.success('删除成功');
+    window.$message?.success($t('roleManage.messages.deleteSuccess'));
     showDeleteModal.value = false;
     currentDeleteRow.value = null;
     loadData();
@@ -312,7 +313,7 @@ const handleEditPermission = (row: Api.System.SysPermissionVo) => {
 const handlePermSubmit = async () => {
   const code = permForm.code.trim();
   if (!code) {
-    window.$message?.warning('请输入权限资源');
+    window.$message?.warning($t('roleManage.messages.pleaseEnterPermissionResource'));
     return;
   }
   const params: Api.System.SysPermissionFormDTO = {
@@ -326,10 +327,10 @@ const handlePermSubmit = async () => {
       ? await fetchUpdatePermission(params)
       : await fetchSavePermission(params);
     if (error) {
-      window.$message?.error(error.message || (isEditPermMode.value ? '保存失败' : '新增失败'));
+      window.$message?.error(error.message || (isEditPermMode.value ? $t('roleManage.messages.saveFailed') : $t('roleManage.messages.createFailed')));
       return;
     }
-    window.$message?.success(isEditPermMode.value ? '保存成功' : '新增成功');
+    window.$message?.success(isEditPermMode.value ? $t('roleManage.messages.saveSuccess') : $t('roleManage.messages.createSuccess'));
     showPermModal.value = false;
     // 刷新权限分页 + 更新角色勾选用的权限全量列表
     loadPermissionPageData();
@@ -361,10 +362,10 @@ const handleConfirmDeletePerm = async () => {
   try {
     const { error } = await fetchDeletePermission(String(currentDeletePerm.value.id));
     if (error) {
-      window.$message?.error(error.message || '删除失败');
+      window.$message?.error(error.message || $t('roleManage.messages.deleteFailed'));
       return;
     }
-    window.$message?.success('删除成功');
+    window.$message?.success($t('roleManage.messages.deleteSuccess'));
     showPermDeleteModal.value = false;
     currentDeletePerm.value = null;
     loadPermissionPageData();
@@ -400,18 +401,18 @@ onMounted(() => {
             <SvgIcon icon="mdi:shield-account" class="title-icon" />
             <div class="title-group">
               <h1 class="page-title">{{ $t('routes.roleManage') }}</h1>
-              <span class="page-subtitle">管理系统角色与权限</span>
+              <span class="page-subtitle">{{ $t('roleManage.subtitle') }}</span>
             </div>
           </div>
           <div class="view-switcher">
             <button class="switch-btn" :class="{ active: viewMode === 'role' }" @click="handleSwitchView('role')">
               <SvgIcon icon="mdi:shield-account" class="switch-icon" />
-              <span>角色管理</span>
+              <span>{{ $t('routes.roleManage') }}</span>
             </button>
             <button class="switch-btn" :class="{ active: viewMode === 'permission' }"
               @click="handleSwitchView('permission')">
               <SvgIcon icon="mdi:key-outline" class="switch-icon" />
-              <span>按钮权限</span>
+              <span>{{ $t('roleManage.permissionView') }}</span>
             </button>
           </div>
         </div>
@@ -422,13 +423,13 @@ onMounted(() => {
         <div class="search-bar">
           <div v-if="viewMode === 'role'" class="search-box">
             <SvgIcon icon="mdi:magnify" class="search-icon" />
-            <NInput v-model:value="pagination.roleName" placeholder="搜索角色名称" clearable size="small" />
+            <NInput v-model:value="pagination.roleName" :placeholder="$t('roleManage.searchRolePlaceholder')" clearable size="small" />
           </div>
-          <button v-if="viewMode === 'role'" class="search-btn" title="搜索" @click="handleSearch">
+          <button v-if="viewMode === 'role'" class="search-btn" :title="$t('roleManage.search')" @click="handleSearch">
             <SvgIcon icon="mdi:magnify" />
-            <span>搜索</span>
+            <span>{{ $t('roleManage.search') }}</span>
           </button>
-          <button class="icon-btn primary" :title="viewMode === 'role' ? '新增角色' : '新增权限'"
+          <button class="icon-btn primary" :title="viewMode === 'role' ? $t('roleManage.addRole') : $t('roleManage.addPermission')"
             @click="viewMode === 'role' ? handleCreate() : handleCreatePermission()">
             <SvgIcon icon="mdi:plus" />
           </button>
@@ -437,7 +438,7 @@ onMounted(() => {
         <!-- 无权限提示 -->
         <div v-if="!isSuperAdmin" class="no-permission">
           <SvgIcon icon="mdi:shield-lock" class="no-permission-icon" />
-          <p>无权限访问角色管理</p>
+          <p>{{ $t('roleManage.noPermission') }}</p>
         </div>
 
         <!-- 角色卡片列表 -->
@@ -452,7 +453,7 @@ onMounted(() => {
                       <SvgIcon icon="mdi:shield-account" class="role-icon" />
                     </div>
                     <div class="role-title">
-                      <span class="role-name" :title="row.roleName">{{ row.roleName || '未命名角色' }}</span>
+                      <span class="role-name" :title="row.roleName">{{ row.roleName || $t('roleManage.unnamedRole') }}</span>
                       <span class="role-code">{{ row.roleCode }}</span>
                     </div>
                   </div>
@@ -464,19 +465,19 @@ onMounted(() => {
 
                 <div class="role-desc">
                   <SvgIcon icon="mdi:text-box-outline" class="desc-icon" />
-                  <span class="desc-text" :title="row.roleDesc">{{ row.roleDesc || '暂无描述' }}</span>
+                  <span class="desc-text" :title="row.roleDesc">{{ row.roleDesc || $t('roleManage.noDescription') }}</span>
                 </div>
 
                 <div class="card-footer">
                   <div class="footer-item">
                     <SvgIcon icon="mdi:clock-outline" class="footer-icon" />
-                    <span>创建时间：{{ formatDate(row.createTime) }}</span>
+                    <span>{{ $t('roleManage.createTime', { time: formatDate(row.createTime) }) }}</span>
                   </div>
                   <div class="footer-actions">
-                    <button class="footer-action-btn edit" title="编辑角色" @click="handleEdit(row)">
+                    <button class="footer-action-btn edit" :title="$t('roleManage.editRole')" @click="handleEdit(row)">
                       <SvgIcon icon="mdi:pencil" />
                     </button>
-                    <button class="footer-action-btn delete" title="删除角色" @click="handleDelete(row)">
+                    <button class="footer-action-btn delete" :title="$t('roleManage.deleteRole')" @click="handleDelete(row)">
                       <SvgIcon icon="mdi:delete" />
                     </button>
                   </div>
@@ -497,7 +498,7 @@ onMounted(() => {
           <!-- 空状态 -->
           <div v-if="!loading && list.length === 0" class="empty-state">
             <SvgIcon icon="mdi:shield-off-outline" class="empty-icon" />
-            <p>暂无角色数据</p>
+            <p>{{ $t('roleManage.noRoleData') }}</p>
           </div>
         </div>
 
@@ -512,19 +513,19 @@ onMounted(() => {
                   </div>
                   <div class="perm-info">
                     <span class="perm-code" :title="perm.code">{{ perm.code }}</span>
-                    <span class="perm-desc" :title="perm.description">{{ perm.description || '暂无描述' }}</span>
+                    <span class="perm-desc" :title="perm.description">{{ perm.description || $t('roleManage.noDescription') }}</span>
                   </div>
                 </div>
                 <div class="card-footer">
                   <div class="footer-item">
                     <SvgIcon icon="mdi:clock-outline" class="footer-icon" />
-                    <span>创建时间：{{ formatDate(perm.createTime) }}</span>
+                    <span>{{ $t('roleManage.createTime', { time: formatDate(perm.createTime) }) }}</span>
                   </div>
                   <div class="footer-actions">
-                    <button class="footer-action-btn edit" title="编辑权限" @click="handleEditPermission(perm)">
+                    <button class="footer-action-btn edit" :title="$t('roleManage.editPermission')" @click="handleEditPermission(perm)">
                       <SvgIcon icon="mdi:pencil" />
                     </button>
-                    <button class="footer-action-btn delete" title="删除权限" @click="handleDeletePermission(perm)">
+                    <button class="footer-action-btn delete" :title="$t('roleManage.deletePermission')" @click="handleDeletePermission(perm)">
                       <SvgIcon icon="mdi:delete" />
                     </button>
                   </div>
@@ -545,7 +546,7 @@ onMounted(() => {
           <!-- 空状态 -->
           <div v-if="!permPageLoading && permPageList.length === 0" class="empty-state">
             <SvgIcon icon="mdi:key-remove" class="empty-icon" />
-            <p>暂无权限数据</p>
+            <p>{{ $t('roleManage.noPermissionData') }}</p>
           </div>
         </div>
 
@@ -568,34 +569,34 @@ onMounted(() => {
         <template #header>
           <div class="modal-header">
             <SvgIcon :icon="isEditMode ? 'mdi:pencil' : 'mdi:plus'" class="modal-header-icon" />
-            <span>{{ isEditMode ? '编辑角色' : '新增角色' }}</span>
+            <span>{{ isEditMode ? $t('roleManage.editRole') : $t('roleManage.addRole') }}</span>
           </div>
         </template>
         <div class="modal-form">
           <div class="form-item">
-            <label class="form-label">角色名称</label>
-            <NInput v-model:value="editForm.roleName" placeholder="请输入角色名称" clearable />
+            <label class="form-label">{{ $t('roleManage.roleNameLabel') }}</label>
+            <NInput v-model:value="editForm.roleName" :placeholder="$t('roleManage.roleNamePlaceholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">角色编码</label>
-            <NInput v-model:value="editForm.roleCode" placeholder="请输入角色编码" clearable />
+            <label class="form-label">{{ $t('roleManage.roleCodeLabel') }}</label>
+            <NInput v-model:value="editForm.roleCode" :placeholder="$t('roleManage.roleCodePlaceholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">角色描述</label>
-            <NInput v-model:value="editForm.roleDesc" type="textarea" :rows="3" placeholder="请输入角色描述" clearable />
+            <label class="form-label">{{ $t('roleManage.roleDescLabel') }}</label>
+            <NInput v-model:value="editForm.roleDesc" type="textarea" :rows="3" :placeholder="$t('roleManage.roleDescPlaceholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">是否启用</label>
+            <label class="form-label">{{ $t('roleManage.enabledLabel') }}</label>
             <div class="switch-wrap">
               <NSwitch v-model:value="editForm.status" :checked-value="'1'" :unchecked-value="'0'" />
-              <span class="switch-text">{{ editForm.status === '1' ? '启用' : '禁用' }}</span>
+              <span class="switch-text">{{ editForm.status === '1' ? $t('roleManage.enabled') : $t('roleManage.disabled') }}</span>
             </div>
           </div>
           <div class="form-item">
-            <label class="form-label">按钮权限</label>
+            <label class="form-label">{{ $t('roleManage.permissionLabel') }}</label>
             <div class="permission-box">
-              <div v-if="permissionLoading" class="permission-loading">权限加载中...</div>
-              <div v-else-if="permissionList.length === 0" class="permission-loading">暂无权限数据</div>
+              <div v-if="permissionLoading" class="permission-loading">{{ $t('roleManage.permissionLoading') }}</div>
+              <div v-else-if="permissionList.length === 0" class="permission-loading">{{ $t('roleManage.noPermissionData') }}</div>
               <NCheckboxGroup v-else v-model:value="checkedPermissionIds">
                 <div v-for="perm in permissionList" :key="perm.id" class="permission-item">
                   <NCheckbox :value="Number(perm.id)">
@@ -607,10 +608,10 @@ onMounted(() => {
             </div>
           </div>
           <div class="modal-actions">
-            <button class="action-btn cancel" @click="showEditModal = false">取消</button>
+            <button class="action-btn cancel" @click="showEditModal = false">{{ $t('common.cancel') }}</button>
             <button class="action-btn confirm" :disabled="editLoading" @click="handleEditSubmit">
               <SvgIcon icon="mdi:check" />
-              <span>{{ editLoading ? '保存中...' : '保存' }}</span>
+              <span>{{ editLoading ? $t('roleManage.saving') : $t('roleManage.save') }}</span>
             </button>
           </div>
         </div>
@@ -622,22 +623,20 @@ onMounted(() => {
         <template #header>
           <div class="delete-modal-header">
             <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
-            <span>删除确认</span>
+            <span>{{ $t('roleManage.deleteConfirmTitle') }}</span>
           </div>
         </template>
         <div class="delete-modal-body">
           <p class="delete-modal-text">
-            确定要删除角色
-            <span class="delete-modal-target">{{ currentDeleteRow?.roleName }}</span>
-            吗？
+            {{ $t('roleManage.deleteRoleConfirm', { name: currentDeleteRow?.roleName }) }}
           </p>
-          <p class="delete-modal-tip">删除后数据将无法恢复，请谨慎操作。</p>
+          <p class="delete-modal-tip">{{ $t('roleManage.deleteTip') }}</p>
         </div>
         <div class="delete-modal-actions">
-          <button class="action-btn cancel" @click="handleCloseDeleteModal">取消</button>
+          <button class="action-btn cancel" @click="handleCloseDeleteModal">{{ $t('common.cancel') }}</button>
           <button class="action-btn danger" :disabled="deleteLoading" @click="handleConfirmDelete">
             <SvgIcon icon="mdi:delete" />
-            <span>{{ deleteLoading ? '删除中...' : '删除' }}</span>
+            <span>{{ deleteLoading ? $t('roleManage.deleting') : $t('roleManage.delete') }}</span>
           </button>
         </div>
       </NModal>
@@ -648,23 +647,23 @@ onMounted(() => {
         <template #header>
           <div class="modal-header">
             <SvgIcon :icon="isEditPermMode ? 'mdi:pencil' : 'mdi:plus'" class="modal-header-icon" />
-            <span>{{ isEditPermMode ? '编辑权限' : '新增权限' }}</span>
+            <span>{{ isEditPermMode ? $t('roleManage.editPermission') : $t('roleManage.addPermission') }}</span>
           </div>
         </template>
         <div class="modal-form">
           <div class="form-item">
-            <label class="form-label">权限资源</label>
-            <NInput v-model:value="permForm.code" placeholder="请输入权限资源(如 sys:role:page)" clearable />
+            <label class="form-label">{{ $t('roleManage.permissionResourceLabel') }}</label>
+            <NInput v-model:value="permForm.code" :placeholder="$t('roleManage.permissionResourcePlaceholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">描述</label>
-            <NInput v-model:value="permForm.description" type="textarea" :rows="3" placeholder="请输入权限描述" clearable />
+            <label class="form-label">{{ $t('roleManage.descriptionLabel') }}</label>
+            <NInput v-model:value="permForm.description" type="textarea" :rows="3" :placeholder="$t('roleManage.permissionDescPlaceholder')" clearable />
           </div>
           <div class="modal-actions">
-            <button class="action-btn cancel" @click="showPermModal = false">取消</button>
+            <button class="action-btn cancel" @click="showPermModal = false">{{ $t('common.cancel') }}</button>
             <button class="action-btn confirm" :disabled="permSaving" @click="handlePermSubmit">
               <SvgIcon icon="mdi:check" />
-              <span>{{ permSaving ? '保存中...' : '保存' }}</span>
+              <span>{{ permSaving ? $t('roleManage.saving') : $t('roleManage.save') }}</span>
             </button>
           </div>
         </div>
@@ -676,22 +675,20 @@ onMounted(() => {
         <template #header>
           <div class="delete-modal-header">
             <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
-            <span>删除确认</span>
+            <span>{{ $t('roleManage.deleteConfirmTitle') }}</span>
           </div>
         </template>
         <div class="delete-modal-body">
           <p class="delete-modal-text">
-            确定要删除权限
-            <span class="delete-modal-target">{{ currentDeletePerm?.code }}</span>
-            吗？
+            {{ $t('roleManage.deletePermissionConfirm', { code: currentDeletePerm?.code }) }}
           </p>
-          <p class="delete-modal-tip">删除后数据将无法恢复，请谨慎操作。</p>
+          <p class="delete-modal-tip">{{ $t('roleManage.deleteTip') }}</p>
         </div>
         <div class="delete-modal-actions">
-          <button class="action-btn cancel" @click="handleCloseDeletePermModal">取消</button>
+          <button class="action-btn cancel" @click="handleCloseDeletePermModal">{{ $t('common.cancel') }}</button>
           <button class="action-btn danger" :disabled="permDeleting" @click="handleConfirmDeletePerm">
             <SvgIcon icon="mdi:delete" />
-            <span>{{ permDeleting ? '删除中...' : '删除' }}</span>
+            <span>{{ permDeleting ? $t('roleManage.deleting') : $t('roleManage.delete') }}</span>
           </button>
         </div>
       </NModal>
@@ -733,12 +730,12 @@ onMounted(() => {
         font-size: 18px;
         font-weight: 600;
         line-height: 1.3;
-        color: rgba(255, 255, 255, 0.92);
+        color: rgba(var(--app-rgb), 0.92);
       }
 
       .page-subtitle {
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.45);
+        color: rgba(var(--app-rgb), 0.45);
       }
     }
   }
@@ -749,8 +746,8 @@ onMounted(() => {
     gap: 6px;
     padding: 4px;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.04);
+    border: 1px solid rgba(var(--app-rgb), 0.07);
 
     .switch-btn {
       display: flex;
@@ -762,7 +759,7 @@ onMounted(() => {
       cursor: pointer;
       font-size: 12.5px;
       font-weight: 500;
-      color: rgba(255, 255, 255, 0.55);
+      color: rgba(var(--app-rgb), 0.55);
       background: transparent;
       transition: all 0.25s ease;
 
@@ -771,7 +768,7 @@ onMounted(() => {
       }
 
       &:hover {
-        color: rgba(255, 255, 255, 0.85);
+        color: rgba(var(--app-rgb), 0.85);
       }
 
       &.active {
@@ -805,13 +802,13 @@ onMounted(() => {
       height: 36px;
       padding: 0 12px 0 36px;
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(var(--app-rgb), 0.05);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
       transition: all 0.25s ease;
 
       &:focus-within {
         border-color: rgba(102, 126, 234, 0.5);
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(var(--app-rgb), 0.08);
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
       }
 
@@ -819,7 +816,7 @@ onMounted(() => {
         position: absolute;
         left: 12px;
         font-size: 16px;
-        color: rgba(255, 255, 255, 0.4);
+        color: rgba(var(--app-rgb), 0.4);
       }
 
       :deep(.n-input) {
@@ -830,12 +827,12 @@ onMounted(() => {
         --n-box-shadow-focus: none !important;
 
         .n-input__input-el {
-          color: rgba(255, 255, 255, 0.9);
+          color: rgba(var(--app-rgb), 0.9);
           font-size: 13px;
         }
 
         .n-input__placeholder {
-          color: rgba(255, 255, 255, 0.35);
+          color: rgba(var(--app-rgb), 0.35);
         }
       }
     }
@@ -868,15 +865,15 @@ onMounted(() => {
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.05);
-      color: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
+      background: rgba(var(--app-rgb), 0.05);
+      color: rgba(var(--app-rgb), 0.75);
       cursor: pointer;
       font-size: 18px;
       transition: all 0.25s ease;
 
       &:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(var(--app-rgb), 0.1);
         transform: translateY(-2px);
       }
 
@@ -899,7 +896,7 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(var(--app-rgb), 0.5);
 
     .no-permission-icon {
       font-size: 56px;
@@ -930,8 +927,8 @@ onMounted(() => {
     height: 100%;
     padding: 16px;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.04);
+    border: 1px solid rgba(var(--app-rgb), 0.07);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     animation: cardIn 0.45s ease-out forwards;
     animation-delay: var(--delay);
@@ -940,7 +937,7 @@ onMounted(() => {
 
     &:hover {
       transform: translateY(-4px);
-      background: rgba(255, 255, 255, 0.07);
+      background: rgba(var(--app-rgb), 0.07);
       border-color: rgba(102, 126, 234, 0.35);
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
     }
@@ -1003,7 +1000,7 @@ onMounted(() => {
 
           .role-code {
             font-size: 11px;
-            color: rgba(255, 255, 255, 0.45);
+            color: rgba(var(--app-rgb), 0.45);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -1019,8 +1016,8 @@ onMounted(() => {
         border-radius: 10px;
         font-size: 11px;
         font-weight: 500;
-        color: rgba(255, 255, 255, 0.55);
-        background: rgba(255, 255, 255, 0.06);
+        color: rgba(var(--app-rgb), 0.55);
+        background: rgba(var(--app-rgb), 0.06);
         white-space: nowrap;
         flex-shrink: 0;
 
@@ -1028,7 +1025,7 @@ onMounted(() => {
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.3);
+          background: rgba(var(--app-rgb), 0.3);
         }
 
         &.enabled {
@@ -1051,7 +1048,7 @@ onMounted(() => {
       flex: 1;
       padding: 10px 12px;
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(var(--app-rgb), 0.03);
       min-width: 0;
 
       .desc-icon {
@@ -1064,7 +1061,7 @@ onMounted(() => {
       .desc-text {
         font-size: 12.5px;
         line-height: 1.5;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(var(--app-rgb), 0.6);
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
@@ -1079,14 +1076,14 @@ onMounted(() => {
       justify-content: space-between;
       gap: 10px;
       padding-top: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-top: 1px solid rgba(var(--app-rgb), 0.06);
 
       .footer-item {
         display: inline-flex;
         align-items: center;
         gap: 5px;
         font-size: 11.5px;
-        color: rgba(255, 255, 255, 0.4);
+        color: rgba(var(--app-rgb), 0.4);
 
         .footer-icon {
           font-size: 13px;
@@ -1109,8 +1106,8 @@ onMounted(() => {
           border-radius: 8px;
           cursor: pointer;
           font-size: 15px;
-          color: rgba(255, 255, 255, 0.5);
-          background: rgba(255, 255, 255, 0.06);
+          color: rgba(var(--app-rgb), 0.5);
+          background: rgba(var(--app-rgb), 0.06);
           transition: all 0.2s ease;
 
           &:hover {
@@ -1171,7 +1168,7 @@ onMounted(() => {
 
         .perm-desc {
           font-size: 12px;
-          color: rgba(255, 255, 255, 0.5);
+          color: rgba(var(--app-rgb), 0.5);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -1185,7 +1182,7 @@ onMounted(() => {
 
     .skeleton-title,
     .skeleton-line {
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%);
+      background: linear-gradient(90deg, rgba(var(--app-rgb), 0.04) 25%, rgba(var(--app-rgb), 0.09) 50%, rgba(var(--app-rgb), 0.04) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
       border-radius: 6px;
@@ -1216,7 +1213,7 @@ onMounted(() => {
     justify-content: center;
     gap: 12px;
     padding: 80px 20px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(var(--app-rgb), 0.5);
 
     .empty-icon {
       font-size: 56px;
@@ -1288,7 +1285,7 @@ onMounted(() => {
     .form-label {
       font-size: 12.5px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.75);
+      color: rgba(var(--app-rgb), 0.75);
     }
 
     .switch-wrap {
@@ -1299,7 +1296,7 @@ onMounted(() => {
 
       .switch-text {
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(var(--app-rgb), 0.6);
       }
     }
 
@@ -1311,14 +1308,14 @@ onMounted(() => {
       overflow-y: auto;
       padding: 10px 12px;
       border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
+      background: rgba(var(--app-rgb), 0.03);
 
       .permission-loading {
         padding: 20px 0;
         text-align: center;
         font-size: 12.5px;
-        color: rgba(255, 255, 255, 0.45);
+        color: rgba(var(--app-rgb), 0.45);
       }
 
       .permission-item {
@@ -1329,20 +1326,20 @@ onMounted(() => {
         transition: background 0.2s ease;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(var(--app-rgb), 0.05);
         }
 
         .permission-code {
           font-size: 12.5px;
           font-weight: 600;
-          color: rgba(255, 255, 255, 0.85);
+          color: rgba(var(--app-rgb), 0.85);
           font-family: 'JetBrains Mono', Consolas, monospace;
           margin-right: 8px;
         }
 
         .permission-desc {
           font-size: 12px;
-          color: rgba(255, 255, 255, 0.45);
+          color: rgba(var(--app-rgb), 0.45);
         }
       }
     }
@@ -1360,14 +1357,14 @@ onMounted(() => {
       gap: 5px;
       flex: 1;
       padding: 9px 2px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
       border-radius: 9px;
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
       transition: all 0.2s ease;
-      background: rgba(255, 255, 255, 0.06);
-      color: rgba(255, 255, 255, 0.8);
+      background: rgba(var(--app-rgb), 0.06);
+      color: rgba(var(--app-rgb), 0.8);
 
       &:hover {
         transform: translateY(-1px);
@@ -1381,7 +1378,7 @@ onMounted(() => {
 
       &.cancel {
         &:hover {
-          background: rgba(255, 255, 255, 0.12);
+          background: rgba(var(--app-rgb), 0.12);
         }
       }
 
@@ -1425,7 +1422,7 @@ onMounted(() => {
       margin: 0;
       font-size: 13.5px;
       line-height: 1.6;
-      color: rgba(255, 255, 255, 0.85);
+      color: rgba(var(--app-rgb), 0.85);
 
       .delete-modal-target {
         font-weight: 600;
@@ -1436,7 +1433,7 @@ onMounted(() => {
     .delete-modal-tip {
       margin: 0;
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(var(--app-rgb), 0.5);
     }
   }
 
@@ -1451,14 +1448,14 @@ onMounted(() => {
       gap: 5px;
       flex: 1;
       padding: 9px 2px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
       border-radius: 9px;
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
       transition: all 0.2s ease;
-      background: rgba(255, 255, 255, 0.06);
-      color: rgba(255, 255, 255, 0.8);
+      background: rgba(var(--app-rgb), 0.06);
+      color: rgba(var(--app-rgb), 0.8);
 
       &:hover {
         transform: translateY(-1px);
@@ -1472,7 +1469,7 @@ onMounted(() => {
 
       &.cancel {
         &:hover {
-          background: rgba(255, 255, 255, 0.12);
+          background: rgba(var(--app-rgb), 0.12);
         }
       }
 

@@ -26,8 +26,8 @@ const pagination = reactive({
 
 /** 状态筛选选项 */
 const statusOptions = [
-  { label: '启用', value: '1' },
-  { label: '禁用', value: '0' }
+  { label: $t('userManage.enabled'), value: '1' },
+  { label: $t('userManage.disabled'), value: '0' }
 ];
 
 /* ===== 自定义下拉（不使用组件） ===== */
@@ -48,7 +48,7 @@ const formatDate = (date?: string | null) => {
 };
 
 /** 状态文案 */
-const getStatusText = (status?: string | null) => (status === '1' ? '启用' : '禁用');
+const getStatusText = (status?: string | null) => (status === '1' ? $t('userManage.enabled') : $t('userManage.disabled'));
 
 /** 加载分页数据 */
 const loadData = async () => {
@@ -158,7 +158,7 @@ const handleEdit = (row: Api.System.SysUserVo) => {
 const handleEditSubmit = async () => {
   const userName = editForm.userName.trim();
   if (!userName) {
-    window.$message?.warning('请输入用户名');
+    window.$message?.warning($t('userManage.messages.pleaseEnterUserName'));
     return;
   }
   const params: Api.System.SysUserFormDTO = {
@@ -174,10 +174,10 @@ const handleEditSubmit = async () => {
       ? await fetchUpdateUser(params)
       : await fetchSaveUser(params);
     if (error) {
-      window.$message?.error(error.message || (isEditMode.value ? '保存失败' : '新增失败'));
+      window.$message?.error(error.message || (isEditMode.value ? $t('userManage.messages.saveFailed') : $t('userManage.messages.addFailed')));
       return;
     }
-    window.$message?.success(isEditMode.value ? '保存成功' : '新增成功');
+    window.$message?.success(isEditMode.value ? $t('userManage.messages.saveSuccess') : $t('userManage.messages.addSuccess'));
     showEditModal.value = false;
     loadData();
   } finally {
@@ -207,10 +207,10 @@ const handleConfirmDelete = async () => {
   try {
     const { error } = await fetchDeleteUser(String(currentDeleteRow.value.id));
     if (error) {
-      window.$message?.error(error.message || '删除失败');
+      window.$message?.error(error.message || $t('userManage.messages.deleteFailed'));
       return;
     }
-    window.$message?.success('删除成功');
+    window.$message?.success($t('userManage.messages.deleteSuccess'));
     showDeleteModal.value = false;
     currentDeleteRow.value = null;
     loadData();
@@ -245,10 +245,10 @@ onMounted(() => {
             <SvgIcon icon="tabler:users" class="title-icon" />
             <div class="title-group">
               <h1 class="page-title">{{ $t('routes.userManage') }}</h1>
-              <span class="page-subtitle">管理系统用户与账号信息</span>
+              <span class="page-subtitle">{{ $t('userManage.subtitle') }}</span>
             </div>
           </div>
-          <button class="icon-btn primary" title="新增用户" @click="handleCreate">
+          <button class="icon-btn primary" :title="$t('userManage.addUser')" @click="handleCreate">
             <SvgIcon icon="mdi:plus" />
           </button>
         </div>
@@ -258,23 +258,23 @@ onMounted(() => {
         <!-- 搜索栏 -->
         <div class="search-bar">
           <div class="search-field">
-            <span class="field-label">用户名</span>
+            <span class="field-label">{{ $t('userManage.userName') }}</span>
             <div class="search-box">
-              <NInput v-model:value="pagination.userName" placeholder="请输入用户名" clearable size="small" />
+              <NInput v-model:value="pagination.userName" :placeholder="$t('userManage.userNamePlaceholder')" clearable size="small" />
             </div>
           </div>
           <div class="search-field">
-            <span class="field-label">昵称</span>
+            <span class="field-label">{{ $t('userManage.nickName') }}</span>
             <div class="search-box">
-              <NInput v-model:value="pagination.nickName" placeholder="请输入昵称" clearable size="small" />
+              <NInput v-model:value="pagination.nickName" :placeholder="$t('userManage.nickNamePlaceholder')" clearable size="small" />
             </div>
           </div>
           <div class="search-field">
-            <span class="field-label">状态</span>
+            <span class="field-label">{{ $t('userManage.status') }}</span>
             <div class="custom-select" :class="{ open: statusMenuOpen }">
               <div class="select-trigger" @click.stop="statusMenuOpen = !statusMenuOpen">
                 <span class="select-value" :class="{ placeholder: !pagination.status }">
-                  {{ pagination.status ? (pagination.status === '1' ? '启用' : '禁用') : '全部' }}
+                  {{ pagination.status ? (pagination.status === '1' ? $t('userManage.enabled') : $t('userManage.disabled')) : $t('userManage.all') }}
                 </span>
                 <SvgIcon icon="mdi:chevron-down" class="select-arrow" />
               </div>
@@ -291,18 +291,18 @@ onMounted(() => {
           </div>
           <button class="search-btn" @click="handleSearch">
             <SvgIcon icon="mdi:magnify" />
-            <span>搜索</span>
+            <span>{{ $t('userManage.search') }}</span>
           </button>
           <button class="search-btn reset" @click="handleReset">
             <SvgIcon icon="mdi:refresh" />
-            <span>重置</span>
+            <span>{{ $t('userManage.reset') }}</span>
           </button>
         </div>
 
         <!-- 无权限提示 -->
         <div v-if="!isAdmin" class="no-permission">
           <SvgIcon icon="mdi:shield-lock" class="no-permission-icon" />
-          <p>无权限访问用户管理</p>
+          <p>{{ $t('userManage.noPermission') }}</p>
         </div>
 
         <!-- 用户卡片列表 -->
@@ -318,8 +318,8 @@ onMounted(() => {
                       <SvgIcon v-else icon="mdi:account" class="user-icon" />
                     </div>
                     <div class="user-title">
-                      <span class="user-name" :title="row.userName">{{ row.userName || '未知用户' }}</span>
-                      <span class="user-nick">{{ row.nickName || '暂无昵称' }}</span>
+                      <span class="user-name" :title="row.userName">{{ row.userName || $t('userManage.unknownUser') }}</span>
+                      <span class="user-nick">{{ row.nickName || $t('userManage.noNickName') }}</span>
                     </div>
                   </div>
                   <div class="status-badge" :class="{ enabled: row.status === '1' }">
@@ -332,17 +332,17 @@ onMounted(() => {
                   <template v-if="row.userRoles && row.userRoles.length">
                     <span v-for="role in row.userRoles" :key="role" class="role-tag">{{ role }}</span>
                   </template>
-                  <span v-else class="no-role">暂无角色</span>
+                  <span v-else class="no-role">{{ $t('userManage.noRole') }}</span>
                 </div>
 
                 <div class="user-bindings">
                   <span class="bind-item" :class="{ bound: !!row.qqOpenId }">
                     <SvgIcon icon="mdi:qqchat" class="bind-icon" />
-                    {{ row.qqOpenId ? 'QQ 已绑定' : 'QQ 未绑定' }}
+                    {{ row.qqOpenId ? $t('userManage.qqBound') : $t('userManage.qqNotBound') }}
                   </span>
                   <span class="bind-item" :class="{ bound: !!row.steamOpenId }">
                     <SvgIcon icon="mdi:steam" class="bind-icon" />
-                    {{ row.steamOpenId ? 'Steam 已绑定' : 'Steam 未绑定' }}
+                    {{ row.steamOpenId ? $t('userManage.steamBound') : $t('userManage.steamNotBound') }}
                   </span>
                 </div>
 
@@ -350,18 +350,18 @@ onMounted(() => {
                   <div class="footer-info">
                     <div class="footer-item">
                       <SvgIcon icon="mdi:login" class="footer-icon" />
-                      <span>最近登录：{{ formatDate(row.lastLoginTime) }}</span>
+                      <span>{{ $t('userManage.lastLogin', { time: formatDate(row.lastLoginTime) }) }}</span>
                     </div>
                     <div class="footer-item">
                       <SvgIcon icon="mdi:clock-outline" class="footer-icon" />
-                      <span>创建时间：{{ formatDate(row.createTime) }}</span>
+                      <span>{{ $t('userManage.createTime', { time: formatDate(row.createTime) }) }}</span>
                     </div>
                   </div>
                   <div class="footer-actions">
-                    <button class="footer-action-btn edit" title="编辑用户" @click="handleEdit(row)">
+                    <button class="footer-action-btn edit" :title="$t('userManage.editUser')" @click="handleEdit(row)">
                       <SvgIcon icon="mdi:pencil" />
                     </button>
-                    <button class="footer-action-btn delete" title="删除用户" @click="handleDelete(row)">
+                    <button class="footer-action-btn delete" :title="$t('userManage.deleteUser')" @click="handleDelete(row)">
                       <SvgIcon icon="mdi:delete" />
                     </button>
                   </div>
@@ -382,7 +382,7 @@ onMounted(() => {
           <!-- 空状态 -->
           <div v-if="!loading && list.length === 0" class="empty-state">
             <SvgIcon icon="mdi:account-off-outline" class="empty-icon" />
-            <p>暂无用户数据</p>
+            <p>{{ $t('userManage.empty') }}</p>
           </div>
         </div>
 
@@ -399,23 +399,23 @@ onMounted(() => {
         <template #header>
           <div class="modal-header">
             <SvgIcon :icon="isEditMode ? 'mdi:pencil' : 'mdi:plus'" class="modal-header-icon" />
-            <span>{{ isEditMode ? '编辑用户' : '新增用户' }}</span>
+            <span>{{ isEditMode ? $t('userManage.editUser') : $t('userManage.addUser') }}</span>
           </div>
         </template>
         <div class="modal-form">
           <div class="form-item">
-            <label class="form-label">用户名</label>
-            <NInput v-model:value="editForm.userName" placeholder="请输入用户名" clearable />
+            <label class="form-label">{{ $t('userManage.userName') }}</label>
+            <NInput v-model:value="editForm.userName" :placeholder="$t('userManage.userNamePlaceholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">昵称</label>
-            <NInput v-model:value="editForm.nickName" placeholder="请输入昵称" clearable />
+            <label class="form-label">{{ $t('userManage.nickName') }}</label>
+            <NInput v-model:value="editForm.nickName" :placeholder="$t('userManage.nickNamePlaceholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">用户角色</label>
+            <label class="form-label">{{ $t('userManage.userRole') }}</label>
             <div class="role-box">
-              <div v-if="roleLoading" class="role-loading">角色加载中...</div>
-              <div v-else-if="roleOptions.length === 0" class="role-loading">暂无角色数据</div>
+              <div v-if="roleLoading" class="role-loading">{{ $t('userManage.roleLoading') }}</div>
+              <div v-else-if="roleOptions.length === 0" class="role-loading">{{ $t('userManage.noRoleData') }}</div>
               <NCheckboxGroup v-else v-model:value="editForm.userRoles">
                 <div v-for="role in roleOptions" :key="role.id" class="role-item">
                   <NCheckbox :value="role.roleCode">
@@ -427,17 +427,17 @@ onMounted(() => {
             </div>
           </div>
           <div class="form-item">
-            <label class="form-label">是否启用</label>
+            <label class="form-label">{{ $t('userManage.isEnabled') }}</label>
             <div class="switch-wrap">
               <NSwitch v-model:value="editForm.status" :checked-value="'1'" :unchecked-value="'0'" />
-              <span class="switch-text">{{ editForm.status === '1' ? '启用' : '禁用' }}</span>
+              <span class="switch-text">{{ editForm.status === '1' ? $t('userManage.enabled') : $t('userManage.disabled') }}</span>
             </div>
           </div>
           <div class="modal-actions">
-            <button class="action-btn cancel" @click="showEditModal = false">取消</button>
+            <button class="action-btn cancel" @click="showEditModal = false">{{ $t('userManage.cancel') }}</button>
             <button class="action-btn confirm" :disabled="editLoading" @click="handleEditSubmit">
               <SvgIcon icon="mdi:check" />
-              <span>{{ editLoading ? '保存中...' : '保存' }}</span>
+              <span>{{ editLoading ? $t('userManage.saving') : $t('userManage.save') }}</span>
             </button>
           </div>
         </div>
@@ -449,22 +449,22 @@ onMounted(() => {
         <template #header>
           <div class="delete-modal-header">
             <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
-            <span>删除确认</span>
+            <span>{{ $t('userManage.deleteConfirmTitle') }}</span>
           </div>
         </template>
         <div class="delete-modal-body">
           <p class="delete-modal-text">
-            确定要删除用户
+            {{ $t('userManage.deleteConfirmPrefix') }}
             <span class="delete-modal-target">{{ currentDeleteRow?.userName }}</span>
-            吗？
+            {{ $t('userManage.deleteConfirmSuffix') }}
           </p>
-          <p class="delete-modal-tip">删除后数据将无法恢复，请谨慎操作。</p>
+          <p class="delete-modal-tip">{{ $t('userManage.deleteConfirmTip') }}</p>
         </div>
         <div class="delete-modal-actions">
-          <button class="action-btn cancel" @click="handleCloseDeleteModal">取消</button>
+          <button class="action-btn cancel" @click="handleCloseDeleteModal">{{ $t('userManage.cancel') }}</button>
           <button class="action-btn danger" :disabled="deleteLoading" @click="handleConfirmDelete">
             <SvgIcon icon="mdi:delete" />
-            <span>{{ deleteLoading ? '删除中...' : '删除' }}</span>
+            <span>{{ deleteLoading ? $t('userManage.deleting') : $t('userManage.delete') }}</span>
           </button>
         </div>
       </NModal>
@@ -506,12 +506,12 @@ onMounted(() => {
         font-size: 18px;
         font-weight: 600;
         line-height: 1.3;
-        color: rgba(255, 255, 255, 0.92);
+        color: rgba(var(--app-rgb), 0.92);
       }
 
       .page-subtitle {
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.45);
+        color: rgba(var(--app-rgb), 0.45);
       }
     }
   }
@@ -524,15 +524,15 @@ onMounted(() => {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(var(--app-rgb), 0.08);
+  background: rgba(var(--app-rgb), 0.05);
+  color: rgba(var(--app-rgb), 0.75);
   cursor: pointer;
   font-size: 18px;
   transition: all 0.25s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--app-rgb), 0.1);
     transform: translateY(-2px);
   }
 
@@ -570,7 +570,7 @@ onMounted(() => {
 
       .field-label {
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(var(--app-rgb), 0.5);
         white-space: nowrap;
       }
     }
@@ -583,13 +583,13 @@ onMounted(() => {
       height: 34px;
       padding: 0 8px;
       border-radius: 8px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(var(--app-rgb), 0.05);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
       transition: all 0.25s ease;
 
       &:focus-within {
         border-color: rgba(102, 126, 234, 0.5);
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(var(--app-rgb), 0.08);
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
       }
 
@@ -601,12 +601,12 @@ onMounted(() => {
         --n-box-shadow-focus: none !important;
 
         .n-input__input-el {
-          color: rgba(255, 255, 255, 0.9);
+          color: rgba(var(--app-rgb), 0.9);
           font-size: 13px;
         }
 
         .n-input__placeholder {
-          color: rgba(255, 255, 255, 0.35);
+          color: rgba(var(--app-rgb), 0.35);
         }
       }
     }
@@ -623,32 +623,32 @@ onMounted(() => {
         height: 34px;
         padding: 0 10px;
         border-radius: 8px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(var(--app-rgb), 0.05);
+        border: 1px solid rgba(var(--app-rgb), 0.08);
         cursor: pointer;
         transition: all 0.25s ease;
         box-sizing: border-box;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(var(--app-rgb), 0.08);
         }
 
         .select-value {
           flex: 1;
           font-size: 13px;
-          color: rgba(255, 255, 255, 0.9);
+          color: rgba(var(--app-rgb), 0.9);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
 
           &.placeholder {
-            color: rgba(255, 255, 255, 0.35);
+            color: rgba(var(--app-rgb), 0.35);
           }
         }
 
         .select-arrow {
           font-size: 14px;
-          color: rgba(255, 255, 255, 0.4);
+          color: rgba(var(--app-rgb), 0.4);
           transition: transform 0.25s ease;
           flex-shrink: 0;
         }
@@ -657,7 +657,7 @@ onMounted(() => {
       &.open {
         .select-trigger {
           border-color: rgba(102, 126, 234, 0.5);
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(var(--app-rgb), 0.08);
           box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
@@ -675,7 +675,7 @@ onMounted(() => {
         padding: 4px;
         border-radius: 10px;
         background: rgba(28, 32, 44, 0.98);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(var(--app-rgb), 0.1);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
         backdrop-filter: blur(10px);
 
@@ -688,12 +688,12 @@ onMounted(() => {
           border-radius: 6px;
           cursor: pointer;
           font-size: 13px;
-          color: rgba(255, 255, 255, 0.8);
+          color: rgba(var(--app-rgb), 0.8);
           transition: all 0.2s ease;
 
           &:hover {
             background: rgba(102, 126, 234, 0.15);
-            color: #fff;
+            color: #667eea;
           }
 
           &.active {
@@ -730,12 +730,12 @@ onMounted(() => {
       }
 
       &.reset {
-        color: rgba(255, 255, 255, 0.75);
-        background: rgba(255, 255, 255, 0.06);
-        border-color: rgba(255, 255, 255, 0.1);
+        color: rgba(var(--app-rgb), 0.75);
+        background: rgba(var(--app-rgb), 0.06);
+        border-color: rgba(var(--app-rgb), 0.1);
 
         &:hover {
-          background: rgba(255, 255, 255, 0.12);
+          background: rgba(var(--app-rgb), 0.12);
         }
       }
     }
@@ -748,7 +748,7 @@ onMounted(() => {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(var(--app-rgb), 0.5);
 
     .no-permission-icon {
       font-size: 56px;
@@ -779,8 +779,8 @@ onMounted(() => {
     height: 100%;
     padding: 16px;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.04);
+    border: 1px solid rgba(var(--app-rgb), 0.07);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     animation: cardIn 0.45s ease-out forwards;
     animation-delay: var(--delay);
@@ -789,7 +789,7 @@ onMounted(() => {
 
     &:hover {
       transform: translateY(-4px);
-      background: rgba(255, 255, 255, 0.07);
+      background: rgba(var(--app-rgb), 0.07);
       border-color: rgba(102, 126, 234, 0.35);
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
     }
@@ -859,7 +859,7 @@ onMounted(() => {
 
           .user-nick {
             font-size: 11px;
-            color: rgba(255, 255, 255, 0.45);
+            color: rgba(var(--app-rgb), 0.45);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -875,8 +875,8 @@ onMounted(() => {
         border-radius: 10px;
         font-size: 11px;
         font-weight: 500;
-        color: rgba(255, 255, 255, 0.55);
-        background: rgba(255, 255, 255, 0.06);
+        color: rgba(var(--app-rgb), 0.55);
+        background: rgba(var(--app-rgb), 0.06);
         white-space: nowrap;
         flex-shrink: 0;
 
@@ -884,7 +884,7 @@ onMounted(() => {
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.3);
+          background: rgba(var(--app-rgb), 0.3);
         }
 
         &.enabled {
@@ -909,7 +909,7 @@ onMounted(() => {
       align-content: flex-start;
       padding: 10px 12px;
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(var(--app-rgb), 0.03);
       min-height: 42px;
       box-sizing: border-box;
 
@@ -927,7 +927,7 @@ onMounted(() => {
 
       .no-role {
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.35);
+        color: rgba(var(--app-rgb), 0.35);
       }
     }
 
@@ -942,11 +942,11 @@ onMounted(() => {
         align-items: center;
         gap: 4px;
         font-size: 11.5px;
-        color: rgba(255, 255, 255, 0.35);
+        color: rgba(var(--app-rgb), 0.35);
 
         .bind-icon {
           font-size: 14px;
-          color: rgba(255, 255, 255, 0.35);
+          color: rgba(var(--app-rgb), 0.35);
         }
 
         &.bound {
@@ -965,7 +965,7 @@ onMounted(() => {
       justify-content: space-between;
       gap: 10px;
       padding-top: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-top: 1px solid rgba(var(--app-rgb), 0.06);
 
       .footer-info {
         display: flex;
@@ -979,7 +979,7 @@ onMounted(() => {
         align-items: center;
         gap: 5px;
         font-size: 11.5px;
-        color: rgba(255, 255, 255, 0.4);
+        color: rgba(var(--app-rgb), 0.4);
 
         .footer-icon {
           font-size: 13px;
@@ -1002,8 +1002,8 @@ onMounted(() => {
           border-radius: 8px;
           cursor: pointer;
           font-size: 15px;
-          color: rgba(255, 255, 255, 0.5);
-          background: rgba(255, 255, 255, 0.06);
+          color: rgba(var(--app-rgb), 0.5);
+          background: rgba(var(--app-rgb), 0.06);
           transition: all 0.2s ease;
 
           &:hover {
@@ -1029,7 +1029,7 @@ onMounted(() => {
 
     .skeleton-title,
     .skeleton-line {
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%);
+      background: linear-gradient(90deg, rgba(var(--app-rgb), 0.04) 25%, rgba(var(--app-rgb), 0.09) 50%, rgba(var(--app-rgb), 0.04) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
       border-radius: 6px;
@@ -1060,7 +1060,7 @@ onMounted(() => {
     justify-content: center;
     gap: 12px;
     padding: 80px 20px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(var(--app-rgb), 0.5);
 
     .empty-icon {
       font-size: 56px;
@@ -1144,7 +1144,7 @@ onMounted(() => {
     .form-label {
       font-size: 12.5px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.75);
+      color: rgba(var(--app-rgb), 0.75);
     }
 
     .switch-wrap {
@@ -1155,7 +1155,7 @@ onMounted(() => {
 
       .switch-text {
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(var(--app-rgb), 0.6);
       }
     }
 
@@ -1167,14 +1167,14 @@ onMounted(() => {
       overflow-y: auto;
       padding: 10px 12px;
       border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
+      background: rgba(var(--app-rgb), 0.03);
 
       .role-loading {
         padding: 20px 0;
         text-align: center;
         font-size: 12.5px;
-        color: rgba(255, 255, 255, 0.45);
+        color: rgba(var(--app-rgb), 0.45);
       }
 
       .role-item {
@@ -1185,19 +1185,19 @@ onMounted(() => {
         transition: background 0.2s ease;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(var(--app-rgb), 0.05);
         }
 
         .role-name {
           font-size: 12.5px;
           font-weight: 600;
-          color: rgba(255, 255, 255, 0.85);
+          color: rgba(var(--app-rgb), 0.85);
           margin-right: 8px;
         }
 
         .role-code {
           font-size: 12px;
-          color: rgba(255, 255, 255, 0.45);
+          color: rgba(var(--app-rgb), 0.45);
           font-family: 'JetBrains Mono', Consolas, monospace;
         }
       }
@@ -1216,14 +1216,14 @@ onMounted(() => {
       gap: 5px;
       flex: 1;
       padding: 9px 2px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
       border-radius: 9px;
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
       transition: all 0.2s ease;
-      background: rgba(255, 255, 255, 0.06);
-      color: rgba(255, 255, 255, 0.8);
+      background: rgba(var(--app-rgb), 0.06);
+      color: rgba(var(--app-rgb), 0.8);
 
       &:hover {
         transform: translateY(-1px);
@@ -1237,7 +1237,7 @@ onMounted(() => {
 
       &.cancel {
         &:hover {
-          background: rgba(255, 255, 255, 0.12);
+          background: rgba(var(--app-rgb), 0.12);
         }
       }
 
@@ -1281,7 +1281,7 @@ onMounted(() => {
       margin: 0;
       font-size: 13.5px;
       line-height: 1.6;
-      color: rgba(255, 255, 255, 0.85);
+      color: rgba(var(--app-rgb), 0.85);
 
       .delete-modal-target {
         font-weight: 600;
@@ -1292,7 +1292,7 @@ onMounted(() => {
     .delete-modal-tip {
       margin: 0;
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(var(--app-rgb), 0.5);
     }
   }
 
@@ -1307,14 +1307,14 @@ onMounted(() => {
       gap: 5px;
       flex: 1;
       padding: 9px 2px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
       border-radius: 9px;
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
       transition: all 0.2s ease;
-      background: rgba(255, 255, 255, 0.06);
-      color: rgba(255, 255, 255, 0.8);
+      background: rgba(var(--app-rgb), 0.06);
+      color: rgba(var(--app-rgb), 0.8);
 
       &:hover {
         transform: translateY(-1px);
@@ -1328,7 +1328,7 @@ onMounted(() => {
 
       &.cancel {
         &:hover {
-          background: rgba(255, 255, 255, 0.12);
+          background: rgba(var(--app-rgb), 0.12);
         }
       }
 

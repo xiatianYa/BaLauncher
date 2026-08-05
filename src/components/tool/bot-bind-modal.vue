@@ -155,7 +155,7 @@ onUnmounted(() => {
       margin: 0;
       font-size: 13px;
       line-height: 1.6;
-      color: rgba(255, 255, 255, 0.65);
+      color: rgba(var(--app-rgb), 0.65);
     }
 
     .bind-steps {
@@ -185,7 +185,7 @@ onUnmounted(() => {
         .step-text {
           font-size: 13px;
           line-height: 1.5;
-          color: rgba(255, 255, 255, 0.85);
+          color: rgba(var(--app-rgb), 0.85);
         }
       }
     }
@@ -214,17 +214,17 @@ onUnmounted(() => {
         align-items: center;
         gap: 4px;
         padding: 0 12px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(var(--app-rgb), 0.08);
         border-radius: 8px;
         cursor: pointer;
         font-size: 12.5px;
         white-space: nowrap;
         transition: all 0.2s ease;
-        background: rgba(255, 255, 255, 0.06);
-        color: rgba(255, 255, 255, 0.8);
+        background: rgba(var(--app-rgb), 0.06);
+        color: rgba(var(--app-rgb), 0.8);
 
         &:hover {
-          background: rgba(255, 255, 255, 0.12);
+          background: rgba(var(--app-rgb), 0.12);
         }
 
         &:disabled {
@@ -262,7 +262,7 @@ onUnmounted(() => {
       &.cancel {
         color: #4b9ef8;
         background: rgba(75, 158, 248, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(var(--app-rgb), 0.1);
 
         &:hover:not(:disabled) {
           background: rgba(75, 158, 248, 0.3);

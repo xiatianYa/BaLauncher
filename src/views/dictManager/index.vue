@@ -41,11 +41,11 @@ const statusOptions = computed(() => dictOptions('status'));
 
 /** 字典类型文案（优先取字典标签，兜底本地映射） */
 const getTypeText = (type?: string | null) =>
-  dictLabel('dict_type', type || '') || (type === '2' ? '业务字典' : '系统字典');
+  dictLabel('dict_type', type || '') || (type === '2' ? $t('dict.type.business') : $t('dict.type.system'));
 
 /** 状态文案（优先取字典标签，兜底本地映射） */
 const getStatusText = (status?: string | null) =>
-  dictLabel('status', status || '') || (status === '1' ? '启用' : '禁用');
+  dictLabel('status', status || '') || (status === '1' ? $t('dict.status.enabled') : $t('dict.status.disabled'));
 
 /* ==================== 字典列表与分页 ==================== */
 
@@ -179,7 +179,7 @@ const handleEditSubmit = async () => {
   const name = editForm.name.trim();
   const code = editForm.code.trim();
   if (!name || !code) {
-    window.$message?.warning(!name ? '请输入字典名称' : '请输入字典编码');
+    window.$message?.warning(!name ? $t('dict.messages.nameRequired') : $t('dict.messages.codeRequired'));
     return;
   }
   const params: Api.System.DictEdit = {
@@ -197,10 +197,10 @@ const handleEditSubmit = async () => {
   try {
     const { error } = isEditMode.value ? await fetchUpdateDict(params) : await fetchAddDict(params);
     if (error) {
-      window.$message?.error(error.message || (isEditMode.value ? '保存失败' : '新增失败'));
+      window.$message?.error(error.message || (isEditMode.value ? $t('dict.messages.saveFailed') : $t('dict.messages.addFailed')));
       return;
     }
-    window.$message?.success(isEditMode.value ? '保存成功' : '新增成功');
+    window.$message?.success(isEditMode.value ? $t('dict.messages.saveSuccess') : $t('dict.messages.addSuccess'));
     showEditModal.value = false;
     loadData();
   } finally {
@@ -217,7 +217,7 @@ const currentDeleteRow = ref<Api.System.Dict | null>(null);
 /** 打开删除确认弹窗（系统字典不可删除） */
 const handleDelete = (row: Api.System.Dict) => {
   if (row.type === '1') {
-    window.$message?.warning('系统字典不可删除');
+    window.$message?.warning($t('dict.messages.systemDictNotDeletable'));
     return;
   }
   currentDeleteRow.value = row;
@@ -231,10 +231,10 @@ const handleConfirmDelete = async () => {
   try {
     const { error } = await fetchDeleteDict({ ids: [Number(currentDeleteRow.value.id)] });
     if (error) {
-      window.$message?.error(error.message || '删除失败');
+      window.$message?.error(error.message || $t('dict.messages.deleteFailed'));
       return;
     }
-    window.$message?.success('删除成功');
+    window.$message?.success($t('dict.messages.deleteSuccess'));
     showDeleteModal.value = false;
     currentDeleteRow.value = null;
     loadData();
@@ -269,11 +269,11 @@ const itemPagination = reactive({
 
 /** 主题色类型选项（前端渲染类型） */
 const itemTypeOptions = [
-  { label: '默认', value: 'primary' },
-  { label: '成功', value: 'success' },
-  { label: '信息', value: 'info' },
-  { label: '警告', value: 'warning' },
-  { label: '危险', value: 'error' }
+  { label: $t('dict.item.typeOptions.primary'), value: 'primary' },
+  { label: $t('dict.item.typeOptions.success'), value: 'success' },
+  { label: $t('dict.item.typeOptions.info'), value: 'info' },
+  { label: $t('dict.item.typeOptions.warning'), value: 'warning' },
+  { label: $t('dict.item.typeOptions.error'), value: 'error' }
 ];
 
 /** 主题色类型色值映射 */
@@ -290,7 +290,7 @@ const getItemTypeColor = (type?: string | null) => itemTypeColorMap[type || 'pri
 
 /** 获取渲染类型文案 */
 const getItemTypeLabel = (type?: string | null) =>
-  itemTypeOptions.find(opt => opt.value === type)?.label || type || '默认';
+  itemTypeOptions.find(opt => opt.value === type)?.label || type || $t('dict.item.typeOptions.primary');
 
 /** 打开子项管理弹窗 */
 const handleOpenItem = (row: Api.System.Dict) => {
@@ -402,7 +402,7 @@ const handleItemEditSubmit = async () => {
   const value = itemEditForm.value.trim();
   const zhCn = itemEditForm.zhCn.trim();
   if (!value || !zhCn) {
-    window.$message?.warning(!value ? '请输入数据值' : '请输入中文名称');
+    window.$message?.warning(!value ? $t('dict.item.messages.valueRequired') : $t('dict.item.messages.zhCnRequired'));
     return;
   }
   const params: Api.System.DictItemEdit = {
@@ -423,10 +423,10 @@ const handleItemEditSubmit = async () => {
   try {
     const { error } = isItemEditMode.value ? await fetchUpdateDictItem(params) : await fetchAddDictItem(params);
     if (error) {
-      window.$message?.error(error.message || (isItemEditMode.value ? '保存失败' : '新增失败'));
+      window.$message?.error(error.message || (isItemEditMode.value ? $t('dict.item.messages.saveFailed') : $t('dict.item.messages.addFailed')));
       return;
     }
-    window.$message?.success(isItemEditMode.value ? '保存成功' : '新增成功');
+    window.$message?.success(isItemEditMode.value ? $t('dict.item.messages.saveSuccess') : $t('dict.item.messages.addSuccess'));
     showItemEditModal.value = false;
     loadItemData();
   } finally {
@@ -453,10 +453,10 @@ const handleConfirmItemDelete = async () => {
   try {
     const { error } = await fetchDeleteDictItem({ ids: [Number(currentDeleteItem.value.id)] });
     if (error) {
-      window.$message?.error(error.message || '删除失败');
+      window.$message?.error(error.message || $t('dict.item.messages.deleteFailed'));
       return;
     }
-    window.$message?.success('删除成功');
+    window.$message?.success($t('dict.item.messages.deleteSuccess'));
     showItemDeleteModal.value = false;
     currentDeleteItem.value = null;
     loadItemData();
@@ -497,7 +497,7 @@ onUnmounted(() => {
             <SvgIcon icon="mdi:book-open-outline" class="title-icon" />
             <div class="title-group">
               <h1 class="page-title">{{ $t('routes.dictManage') }}</h1>
-              <span class="page-subtitle">管理系统数据字典与字典项</span>
+              <span class="page-subtitle">{{ $t('dict.subtitle') }}</span>
             </div>
           </div>
         </div>
@@ -508,18 +508,18 @@ onUnmounted(() => {
         <div class="search-bar">
           <div class="search-box">
             <SvgIcon icon="mdi:form-textbox" class="search-icon" />
-            <NInput v-model:value="pagination.name" placeholder="字典名称" clearable size="small" />
+            <NInput v-model:value="pagination.name" :placeholder="$t('dict.search.name')" clearable size="small" />
           </div>
           <div class="search-box">
             <SvgIcon icon="mdi:key-outline" class="search-icon" />
-            <NInput v-model:value="pagination.code" placeholder="字典编码" clearable size="small" />
+            <NInput v-model:value="pagination.code" :placeholder="$t('dict.search.code')" clearable size="small" />
           </div>
           <div class="custom-select">
             <button class="select-trigger" :class="{ open: activeDropdown === 'type' }"
               @click.stop="toggleDropdown('type')">
               <SvgIcon icon="mdi:shape-outline" class="search-icon" />
               <span class="select-label" :class="{ placeholder: !pagination.type }">
-                {{ pagination.type ? getTypeText(pagination.type) : '字典类型' }}
+                {{ pagination.type ? getTypeText(pagination.type) : $t('dict.search.type') }}
               </span>
               <SvgIcon icon="mdi:chevron-down" class="chevron-icon" :class="{ open: activeDropdown === 'type' }" />
             </button>
@@ -533,14 +533,14 @@ onUnmounted(() => {
           </div>
           <div class="search-box">
             <SvgIcon icon="mdi:text-box-outline" class="search-icon" />
-            <NInput v-model:value="pagination.description" placeholder="描述" clearable size="small" />
+            <NInput v-model:value="pagination.description" :placeholder="$t('dict.search.description')" clearable size="small" />
           </div>
           <div class="custom-select">
             <button class="select-trigger" :class="{ open: activeDropdown === 'status' }"
               @click.stop="toggleDropdown('status')">
               <SvgIcon icon="mdi:power" class="search-icon" />
               <span class="select-label" :class="{ placeholder: !pagination.status }">
-                {{ pagination.status ? getStatusText(pagination.status) : '状态' }}
+                {{ pagination.status ? getStatusText(pagination.status) : $t('dict.search.status') }}
               </span>
               <SvgIcon icon="mdi:chevron-down" class="chevron-icon" :class="{ open: activeDropdown === 'status' }" />
             </button>
@@ -552,15 +552,15 @@ onUnmounted(() => {
               </div>
             </div>
           </div>
-          <button class="search-btn" title="搜索" @click="handleSearch">
+          <button class="search-btn" :title="$t('dict.search.btn')" @click="handleSearch">
             <SvgIcon icon="mdi:magnify" />
-            <span>搜索</span>
+            <span>{{ $t('dict.search.btn') }}</span>
           </button>
-          <button class="reset-btn" title="重置搜索条件" @click="handleReset">
+          <button class="reset-btn" :title="$t('dict.search.resetTitle')" @click="handleReset">
             <SvgIcon icon="mdi:refresh" />
-            <span>重置</span>
+            <span>{{ $t('dict.search.reset') }}</span>
           </button>
-          <button class="icon-btn primary" title="新增字典" @click="handleCreate">
+          <button class="icon-btn primary" :title="$t('dict.search.add')" @click="handleCreate">
             <SvgIcon icon="mdi:plus" />
           </button>
         </div>
@@ -568,7 +568,7 @@ onUnmounted(() => {
         <!-- 无权限提示 -->
         <div v-if="!isSuperAdmin" class="no-permission">
           <SvgIcon icon="mdi:shield-lock" class="no-permission-icon" />
-          <p>无权限访问字典管理</p>
+          <p>{{ $t('dict.noPermission') }}</p>
         </div>
 
         <!-- 字典卡片列表 -->
@@ -583,7 +583,7 @@ onUnmounted(() => {
                       <SvgIcon icon="mdi:book-open-variant" class="dict-icon" />
                     </div>
                     <div class="dict-title">
-                      <span class="dict-name" :title="row.name">{{ row.name || '未命名字典' }}</span>
+                      <span class="dict-name" :title="row.name">{{ row.name || $t('dict.unnamed') }}</span>
                       <span class="dict-code">{{ row.code }}</span>
                     </div>
                   </div>
@@ -595,7 +595,7 @@ onUnmounted(() => {
 
                 <div class="dict-desc">
                   <SvgIcon icon="mdi:text-box-outline" class="desc-icon" />
-                  <span class="desc-text" :title="row.description">{{ row.description || '暂无描述' }}</span>
+                  <span class="desc-text" :title="row.description">{{ row.description || $t('dict.noDescription') }}</span>
                 </div>
 
                 <div class="dict-meta">
@@ -605,23 +605,23 @@ onUnmounted(() => {
                   </span>
                   <span class="sort-text">
                     <SvgIcon icon="mdi:sort" class="meta-icon" />
-                    排序 {{ row.sort ?? 0 }}
+                    {{ $t('dict.sort') }} {{ row.sort ?? 0 }}
                   </span>
                 </div>
 
                 <div class="card-footer">
                   <div class="footer-item">
                     <SvgIcon icon="mdi:clock-outline" class="footer-icon" />
-                    <span>创建时间：{{ formatDate(row.createTime) }}</span>
+                    <span>{{ $t('dict.createTime') }}{{ formatDate(row.createTime) }}</span>
                   </div>
                   <div class="footer-actions">
-                    <button class="footer-action-btn item" title="管理子项" @click="handleOpenItem(row)">
+                    <button class="footer-action-btn item" :title="$t('dict.manageItems')" @click="handleOpenItem(row)">
                       <SvgIcon icon="mdi:view-list" />
                     </button>
-                    <button class="footer-action-btn edit" title="编辑字典" @click="handleEdit(row)">
+                    <button class="footer-action-btn edit" :title="$t('dict.edit')" @click="handleEdit(row)">
                       <SvgIcon icon="mdi:pencil" />
                     </button>
-                    <button class="footer-action-btn delete" title="删除字典" :disabled="row.type === '1'"
+                    <button class="footer-action-btn delete" :title="$t('dict.delete')" :disabled="row.type === '1'"
                       @click="handleDelete(row)">
                       <SvgIcon icon="mdi:delete" />
                     </button>
@@ -643,7 +643,7 @@ onUnmounted(() => {
           <!-- 空状态 -->
           <div v-if="!loading && list.length === 0" class="empty-state">
             <SvgIcon icon="mdi:book-off-outline" class="empty-icon" />
-            <p>暂无字典数据</p>
+            <p>{{ $t('dict.empty') }}</p>
           </div>
         </div>
 
@@ -660,20 +660,20 @@ onUnmounted(() => {
         <template #header>
           <div class="modal-header">
             <SvgIcon :icon="isEditMode ? 'mdi:pencil' : 'mdi:plus'" class="modal-header-icon" />
-            <span>{{ isEditMode ? '编辑字典' : '新增字典' }}</span>
+            <span>{{ isEditMode ? $t('dict.form.editTitle') : $t('dict.form.addTitle') }}</span>
           </div>
         </template>
         <div class="modal-form">
           <div class="form-item">
-            <label class="form-label">字典名称</label>
-            <NInput v-model:value="editForm.name" placeholder="请输入字典名称" clearable />
+            <label class="form-label">{{ $t('dict.form.name.label') }}</label>
+            <NInput v-model:value="editForm.name" :placeholder="$t('dict.form.name.placeholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">字典编码</label>
-            <NInput v-model:value="editForm.code" placeholder="请输入字典编码" clearable />
+            <label class="form-label">{{ $t('dict.form.code.label') }}</label>
+            <NInput v-model:value="editForm.code" :placeholder="$t('dict.form.code.placeholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">字典类型</label>
+            <label class="form-label">{{ $t('dict.form.type.label') }}</label>
             <div class="type-chip-group">
               <button v-for="opt in typeOptions" :key="opt.value" type="button" class="type-chip"
                 :class="{ active: editForm.type === opt.value }"
@@ -684,25 +684,26 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="form-item">
-            <label class="form-label">排序值</label>
-            <NInputNumber v-model:value="editForm.sort" placeholder="请输入排序值" min="0" class="w-full" />
+            <label class="form-label">{{ $t('dict.form.sort.label') }}</label>
+            <NInputNumber v-model:value="editForm.sort" :placeholder="$t('dict.form.sort.placeholder')" min="0" class="w-full" />
           </div>
           <div class="form-item">
-            <label class="form-label">字典描述</label>
-            <NInput v-model:value="editForm.description" type="textarea" :rows="3" placeholder="请输入字典描述" clearable />
+            <label class="form-label">{{ $t('dict.form.description.label') }}</label>
+            <NInput v-model:value="editForm.description" type="textarea" :rows="3"
+              :placeholder="$t('dict.form.description.placeholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">是否启用</label>
+            <label class="form-label">{{ $t('dict.form.enabled.label') }}</label>
             <div class="switch-wrap">
               <NSwitch v-model:value="editForm.status" :checked-value="'1'" :unchecked-value="'0'" />
-              <span class="switch-text">{{ editForm.status === '1' ? '启用' : '禁用' }}</span>
+              <span class="switch-text">{{ editForm.status === '1' ? $t('dict.status.enabled') : $t('dict.status.disabled') }}</span>
             </div>
           </div>
           <div class="modal-actions">
-            <button class="action-btn cancel" @click="showEditModal = false">取消</button>
+            <button class="action-btn cancel" @click="showEditModal = false">{{ $t('common.cancel') }}</button>
             <button class="action-btn confirm" :disabled="editLoading" @click="handleEditSubmit">
               <SvgIcon icon="mdi:check" />
-              <span>{{ editLoading ? '保存中...' : '保存' }}</span>
+              <span>{{ editLoading ? $t('dict.form.saving') : $t('dict.form.save') }}</span>
             </button>
           </div>
         </div>
@@ -714,22 +715,22 @@ onUnmounted(() => {
         <template #header>
           <div class="delete-modal-header">
             <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
-            <span>删除确认</span>
+            <span>{{ $t('dict.deleteModal.title') }}</span>
           </div>
         </template>
         <div class="delete-modal-body">
           <p class="delete-modal-text">
-            确定要删除字典
+            {{ $t('dict.deleteModal.confirmPrefix') }}
             <span class="delete-modal-target">{{ currentDeleteRow?.name }}</span>
-            （{{ currentDeleteRow?.code }}）吗？
+            {{ $t('dict.deleteModal.confirmSuffix', { value: currentDeleteRow?.code }) }}
           </p>
-          <p class="delete-modal-tip">删除后数据将无法恢复，请谨慎操作。</p>
+          <p class="delete-modal-tip">{{ $t('dict.deleteModal.tip') }}</p>
         </div>
         <div class="delete-modal-actions">
-          <button class="action-btn cancel" @click="handleCloseDeleteModal">取消</button>
+          <button class="action-btn cancel" @click="handleCloseDeleteModal">{{ $t('common.cancel') }}</button>
           <button class="action-btn danger" :disabled="deleteLoading" @click="handleConfirmDelete">
             <SvgIcon icon="mdi:delete" />
-            <span>{{ deleteLoading ? '删除中...' : '删除' }}</span>
+            <span>{{ deleteLoading ? $t('dict.deleteModal.deleting') : $t('dict.deleteModal.delete') }}</span>
           </button>
         </div>
       </NModal>
@@ -740,7 +741,7 @@ onUnmounted(() => {
         <template #header>
           <div class="modal-header">
             <SvgIcon icon="mdi:view-list" class="modal-header-icon" />
-            <span>子字典管理 - {{ currentDict?.name }}（{{ currentDict?.code }}）</span>
+            <span>{{ $t('dict.item.manageTitle', { name: currentDict?.name, code: currentDict?.code }) }}</span>
           </div>
         </template>
         <div class="item-manage">
@@ -748,44 +749,44 @@ onUnmounted(() => {
           <div class="item-search-bar">
             <div class="item-search-box">
               <SvgIcon icon="mdi:code-tags" class="search-icon" />
-              <NInput v-model:value="itemPagination.value" placeholder="数据值" clearable size="small" />
+              <NInput v-model:value="itemPagination.value" :placeholder="$t('dict.item.search.value')" clearable size="small" />
             </div>
             <div class="item-search-box">
               <SvgIcon icon="mdi:translate" class="search-icon" />
-              <NInput v-model:value="itemPagination.zhCn" placeholder="中文名称" clearable size="small" />
+              <NInput v-model:value="itemPagination.zhCn" :placeholder="$t('dict.item.search.zhCn')" clearable size="small" />
             </div>
             <div class="item-search-box">
               <SvgIcon icon="mdi:alphabetical-variant" class="search-icon" />
-              <NInput v-model:value="itemPagination.enUs" placeholder="英文名称" clearable size="small" />
+              <NInput v-model:value="itemPagination.enUs" :placeholder="$t('dict.item.search.enUs')" clearable size="small" />
             </div>
             <div class="item-search-box">
               <SvgIcon icon="mdi:text-box-outline" class="search-icon" />
-              <NInput v-model:value="itemPagination.description" placeholder="描述" clearable size="small" />
+              <NInput v-model:value="itemPagination.description" :placeholder="$t('dict.item.search.description')" clearable size="small" />
             </div>
-            <button class="item-btn primary" title="搜索" @click="handleItemSearch">
+            <button class="item-btn primary" :title="$t('dict.item.search.btn')" @click="handleItemSearch">
               <SvgIcon icon="mdi:magnify" />
-              <span>搜索</span>
+              <span>{{ $t('dict.item.search.btn') }}</span>
             </button>
-            <button class="item-btn" title="重置" @click="handleItemReset">
+            <button class="item-btn" :title="$t('dict.item.search.reset')" @click="handleItemReset">
               <SvgIcon icon="mdi:refresh" />
-              <span>重置</span>
+              <span>{{ $t('dict.item.search.reset') }}</span>
             </button>
-            <button class="item-btn add" title="添加子项" @click="handleItemCreate">
+            <button class="item-btn add" :title="$t('dict.item.add')" @click="handleItemCreate">
               <SvgIcon icon="mdi:plus" />
-              <span>添加子项</span>
+              <span>{{ $t('dict.item.add') }}</span>
             </button>
           </div>
 
           <!-- 子项表格 -->
           <div class="item-table">
             <div class="item-table-header">
-              <span class="col-value">数据值</span>
-              <span class="col-zh">中文名称</span>
-              <span class="col-en">英文名称</span>
-              <span class="col-type">类型</span>
-              <span class="col-sort">排序</span>
-              <span class="col-status">状态</span>
-              <span class="col-actions">操作</span>
+              <span class="col-value">{{ $t('dict.item.column.value') }}</span>
+              <span class="col-zh">{{ $t('dict.item.column.zhCn') }}</span>
+              <span class="col-en">{{ $t('dict.item.column.enUs') }}</span>
+              <span class="col-type">{{ $t('dict.item.column.type') }}</span>
+              <span class="col-sort">{{ $t('dict.item.column.sort') }}</span>
+              <span class="col-status">{{ $t('dict.item.column.status') }}</span>
+              <span class="col-actions">{{ $t('dict.item.column.actions') }}</span>
             </div>
             <div class="item-table-body">
               <div v-for="item in itemList" :key="item.id" class="item-row">
@@ -807,10 +808,10 @@ onUnmounted(() => {
                   </span>
                 </span>
                 <span class="col-actions">
-                  <button class="item-action-btn edit" title="编辑子项" @click="handleItemEdit(item)">
+                  <button class="item-action-btn edit" :title="$t('dict.item.editBtnTitle')" @click="handleItemEdit(item)">
                     <SvgIcon icon="mdi:pencil" />
                   </button>
-                  <button class="item-action-btn delete" title="删除子项" @click="handleItemDelete(item)">
+                  <button class="item-action-btn delete" :title="$t('dict.item.deleteBtnTitle')" @click="handleItemDelete(item)">
                     <SvgIcon icon="mdi:delete" />
                   </button>
                 </span>
@@ -826,7 +827,7 @@ onUnmounted(() => {
               <!-- 空状态 -->
               <div v-if="!itemLoading && itemList.length === 0" class="item-empty">
                 <SvgIcon icon="mdi:book-off-outline" class="empty-icon" />
-                <p>暂无子项数据</p>
+                <p>{{ $t('dict.item.empty') }}</p>
               </div>
             </div>
           </div>
@@ -845,24 +846,24 @@ onUnmounted(() => {
         <template #header>
           <div class="modal-header">
             <SvgIcon :icon="isItemEditMode ? 'mdi:pencil' : 'mdi:plus'" class="modal-header-icon" />
-            <span>{{ isItemEditMode ? '编辑子项' : '新增子项' }} - {{ currentDict?.name }}</span>
+            <span>{{ isItemEditMode ? $t('dict.item.editTitle') : $t('dict.item.addTitle') }} - {{ currentDict?.name }}</span>
           </div>
         </template>
         <div class="modal-form">
           <div class="form-item">
-            <label class="form-label">数据值</label>
-            <NInput v-model:value="itemEditForm.value" placeholder="请输入数据值" clearable />
+            <label class="form-label">{{ $t('dict.item.form.value.label') }}</label>
+            <NInput v-model:value="itemEditForm.value" :placeholder="$t('dict.item.form.value.placeholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">中文名称</label>
-            <NInput v-model:value="itemEditForm.zhCn" placeholder="请输入中文名称" clearable />
+            <label class="form-label">{{ $t('dict.item.form.zhCn.label') }}</label>
+            <NInput v-model:value="itemEditForm.zhCn" :placeholder="$t('dict.item.form.zhCn.placeholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">英文名称</label>
-            <NInput v-model:value="itemEditForm.enUs" placeholder="请输入英文名称" clearable />
+            <label class="form-label">{{ $t('dict.item.form.enUs.label') }}</label>
+            <NInput v-model:value="itemEditForm.enUs" :placeholder="$t('dict.item.form.enUs.placeholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">渲染类型</label>
+            <label class="form-label">{{ $t('dict.item.form.type.label') }}</label>
             <div class="type-chip-group">
               <button v-for="opt in itemTypeOptions" :key="opt.value" type="button" class="type-chip"
                 :class="{ active: itemEditForm.type === opt.value }"
@@ -873,25 +874,26 @@ onUnmounted(() => {
             </div>
           </div>
           <div class="form-item">
-            <label class="form-label">排序值</label>
-            <NInputNumber v-model:value="itemEditForm.sort" placeholder="请输入排序值" min="0" class="w-full" />
+            <label class="form-label">{{ $t('dict.item.form.sort.label') }}</label>
+            <NInputNumber v-model:value="itemEditForm.sort" :placeholder="$t('dict.item.form.sort.placeholder')" min="0" class="w-full" />
           </div>
           <div class="form-item">
-            <label class="form-label">描述</label>
-            <NInput v-model:value="itemEditForm.description" type="textarea" :rows="2" placeholder="请输入描述" clearable />
+            <label class="form-label">{{ $t('dict.item.form.description.label') }}</label>
+            <NInput v-model:value="itemEditForm.description" type="textarea" :rows="2"
+              :placeholder="$t('dict.item.form.description.placeholder')" clearable />
           </div>
           <div class="form-item">
-            <label class="form-label">是否启用</label>
+            <label class="form-label">{{ $t('dict.item.form.enabled.label') }}</label>
             <div class="switch-wrap">
               <NSwitch v-model:value="itemEditForm.status" :checked-value="'1'" :unchecked-value="'0'" />
-              <span class="switch-text">{{ itemEditForm.status === '1' ? '启用' : '禁用' }}</span>
+              <span class="switch-text">{{ itemEditForm.status === '1' ? $t('dict.status.enabled') : $t('dict.status.disabled') }}</span>
             </div>
           </div>
           <div class="modal-actions">
-            <button class="action-btn cancel" @click="showItemEditModal = false">取消</button>
+            <button class="action-btn cancel" @click="showItemEditModal = false">{{ $t('common.cancel') }}</button>
             <button class="action-btn confirm" :disabled="itemEditLoading" @click="handleItemEditSubmit">
               <SvgIcon icon="mdi:check" />
-              <span>{{ itemEditLoading ? '保存中...' : '保存' }}</span>
+              <span>{{ itemEditLoading ? $t('dict.item.form.saving') : $t('dict.item.form.save') }}</span>
             </button>
           </div>
         </div>
@@ -903,22 +905,22 @@ onUnmounted(() => {
         <template #header>
           <div class="delete-modal-header">
             <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
-            <span>删除确认</span>
+            <span>{{ $t('dict.item.deleteModal.title') }}</span>
           </div>
         </template>
         <div class="delete-modal-body">
           <p class="delete-modal-text">
-            确定要删除子项
+            {{ $t('dict.item.deleteModal.confirmPrefix') }}
             <span class="delete-modal-target">{{ currentDeleteItem?.zhCn }}</span>
-            （{{ currentDeleteItem?.value }}）吗？
+            {{ $t('dict.item.deleteModal.confirmSuffix', { value: currentDeleteItem?.value }) }}
           </p>
-          <p class="delete-modal-tip">删除后数据将无法恢复，请谨慎操作。</p>
+          <p class="delete-modal-tip">{{ $t('dict.item.deleteModal.tip') }}</p>
         </div>
         <div class="delete-modal-actions">
-          <button class="action-btn cancel" @click="handleCloseItemDeleteModal">取消</button>
+          <button class="action-btn cancel" @click="handleCloseItemDeleteModal">{{ $t('common.cancel') }}</button>
           <button class="action-btn danger" :disabled="itemDeleteLoading" @click="handleConfirmItemDelete">
             <SvgIcon icon="mdi:delete" />
-            <span>{{ itemDeleteLoading ? '删除中...' : '删除' }}</span>
+            <span>{{ itemDeleteLoading ? $t('dict.item.deleteModal.deleting') : $t('dict.item.deleteModal.delete') }}</span>
           </button>
         </div>
       </NModal>
@@ -960,12 +962,12 @@ onUnmounted(() => {
         font-size: 18px;
         font-weight: 600;
         line-height: 1.3;
-        color: rgba(255, 255, 255, 0.92);
+        color: rgba(var(--app-rgb), 0.92);
       }
 
       .page-subtitle {
         font-size: 12px;
-        color: rgba(255, 255, 255, 0.45);
+        color: rgba(var(--app-rgb), 0.45);
       }
     }
   }
@@ -995,13 +997,13 @@ onUnmounted(() => {
       height: 36px;
       padding: 0 12px 0 36px;
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(var(--app-rgb), 0.05);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
       transition: all 0.25s ease;
 
       &:focus-within {
         border-color: rgba(102, 126, 234, 0.5);
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(var(--app-rgb), 0.08);
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
       }
 
@@ -1009,7 +1011,7 @@ onUnmounted(() => {
         position: absolute;
         left: 12px;
         font-size: 16px;
-        color: rgba(255, 255, 255, 0.4);
+        color: rgba(var(--app-rgb), 0.4);
       }
 
       :deep(.n-input) {
@@ -1020,12 +1022,12 @@ onUnmounted(() => {
         --n-box-shadow-focus: none !important;
 
         .n-input__input-el {
-          color: rgba(255, 255, 255, 0.9);
+          color: rgba(var(--app-rgb), 0.9);
           font-size: 13px;
         }
 
         .n-input__placeholder {
-          color: rgba(255, 255, 255, 0.35);
+          color: rgba(var(--app-rgb), 0.35);
         }
       }
     }
@@ -1041,9 +1043,9 @@ onUnmounted(() => {
         height: 36px;
         padding: 0 12px;
         border-radius: 10px;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: rgba(255, 255, 255, 0.9);
+        background: rgba(var(--app-rgb), 0.05);
+        border: 1px solid rgba(var(--app-rgb), 0.08);
+        color: rgba(var(--app-rgb), 0.9);
         cursor: pointer;
         font-size: 13px;
         transition: all 0.25s ease;
@@ -1051,13 +1053,13 @@ onUnmounted(() => {
         &:hover,
         &.open {
           border-color: rgba(102, 126, 234, 0.5);
-          background: rgba(255, 255, 255, 0.08);
+          background: rgba(var(--app-rgb), 0.08);
           box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
         .search-icon {
           font-size: 16px;
-          color: rgba(255, 255, 255, 0.4);
+          color: rgba(var(--app-rgb), 0.4);
           flex-shrink: 0;
         }
 
@@ -1069,13 +1071,13 @@ onUnmounted(() => {
           white-space: nowrap;
 
           &.placeholder {
-            color: rgba(255, 255, 255, 0.35);
+            color: rgba(var(--app-rgb), 0.35);
           }
         }
 
         .chevron-icon {
           font-size: 15px;
-          color: rgba(255, 255, 255, 0.4);
+          color: rgba(var(--app-rgb), 0.4);
           flex-shrink: 0;
           transition: transform 0.25s ease;
 
@@ -1094,7 +1096,7 @@ onUnmounted(() => {
         padding: 5px;
         border-radius: 10px;
         background: #1e1f24;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(var(--app-rgb), 0.1);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
         box-sizing: border-box;
 
@@ -1106,14 +1108,14 @@ onUnmounted(() => {
           padding: 7px 10px;
           border-radius: 7px;
           font-size: 13px;
-          color: rgba(255, 255, 255, 0.75);
+          color: rgba(var(--app-rgb), 0.75);
           cursor: pointer;
           white-space: nowrap;
           transition: all 0.15s ease;
 
           &:hover {
             background: rgba(102, 126, 234, 0.12);
-            color: #fff;
+            color: #667eea;
           }
 
           &.selected {
@@ -1160,14 +1162,14 @@ onUnmounted(() => {
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
-      color: rgba(255, 255, 255, 0.7);
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(var(--app-rgb), 0.7);
+      background: rgba(var(--app-rgb), 0.06);
+      border: 1px solid rgba(var(--app-rgb), 0.1);
       transition: all 0.2s ease;
 
       &:hover {
-        color: rgba(255, 255, 255, 0.9);
-        background: rgba(255, 255, 255, 0.12);
+        color: rgba(var(--app-rgb), 0.9);
+        background: rgba(var(--app-rgb), 0.12);
         transform: translateY(-1px);
       }
     }
@@ -1179,15 +1181,15 @@ onUnmounted(() => {
       width: 36px;
       height: 36px;
       border-radius: 10px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.05);
-      color: rgba(255, 255, 255, 0.75);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
+      background: rgba(var(--app-rgb), 0.05);
+      color: rgba(var(--app-rgb), 0.75);
       cursor: pointer;
       font-size: 18px;
       transition: all 0.25s ease;
 
       &:hover {
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(var(--app-rgb), 0.1);
         transform: translateY(-2px);
       }
 
@@ -1210,7 +1212,7 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     gap: 12px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(var(--app-rgb), 0.5);
 
     .no-permission-icon {
       font-size: 56px;
@@ -1241,8 +1243,8 @@ onUnmounted(() => {
     height: 100%;
     padding: 16px;
     border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.04);
+    border: 1px solid rgba(var(--app-rgb), 0.07);
     transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     animation: cardIn 0.45s ease-out forwards;
     animation-delay: var(--delay);
@@ -1251,7 +1253,7 @@ onUnmounted(() => {
 
     &:hover {
       transform: translateY(-4px);
-      background: rgba(255, 255, 255, 0.07);
+      background: rgba(var(--app-rgb), 0.07);
       border-color: rgba(102, 126, 234, 0.35);
       box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18);
     }
@@ -1322,7 +1324,7 @@ onUnmounted(() => {
 
           .dict-code {
             font-size: 11px;
-            color: rgba(255, 255, 255, 0.45);
+            color: rgba(var(--app-rgb), 0.45);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -1339,8 +1341,8 @@ onUnmounted(() => {
         border-radius: 10px;
         font-size: 11px;
         font-weight: 500;
-        color: rgba(255, 255, 255, 0.55);
-        background: rgba(255, 255, 255, 0.06);
+        color: rgba(var(--app-rgb), 0.55);
+        background: rgba(var(--app-rgb), 0.06);
         white-space: nowrap;
         flex-shrink: 0;
 
@@ -1348,7 +1350,7 @@ onUnmounted(() => {
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: rgba(255, 255, 255, 0.3);
+          background: rgba(var(--app-rgb), 0.3);
         }
 
         &.enabled {
@@ -1371,7 +1373,7 @@ onUnmounted(() => {
       flex: 1;
       padding: 10px 12px;
       border-radius: 10px;
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(var(--app-rgb), 0.03);
       min-width: 0;
 
       .desc-icon {
@@ -1384,7 +1386,7 @@ onUnmounted(() => {
       .desc-text {
         font-size: 12.5px;
         line-height: 1.5;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(var(--app-rgb), 0.6);
         overflow: hidden;
         text-overflow: ellipsis;
         display: -webkit-box;
@@ -1426,7 +1428,7 @@ onUnmounted(() => {
         align-items: center;
         gap: 4px;
         font-size: 11px;
-        color: rgba(255, 255, 255, 0.4);
+        color: rgba(var(--app-rgb), 0.4);
 
         .meta-icon {
           font-size: 12px;
@@ -1440,14 +1442,14 @@ onUnmounted(() => {
       justify-content: space-between;
       gap: 10px;
       padding-top: 12px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      border-top: 1px solid rgba(var(--app-rgb), 0.06);
 
       .footer-item {
         display: inline-flex;
         align-items: center;
         gap: 5px;
         font-size: 11.5px;
-        color: rgba(255, 255, 255, 0.4);
+        color: rgba(var(--app-rgb), 0.4);
 
         .footer-icon {
           font-size: 13px;
@@ -1470,8 +1472,8 @@ onUnmounted(() => {
           border-radius: 8px;
           cursor: pointer;
           font-size: 15px;
-          color: rgba(255, 255, 255, 0.5);
-          background: rgba(255, 255, 255, 0.06);
+          color: rgba(var(--app-rgb), 0.5);
+          background: rgba(var(--app-rgb), 0.06);
           transition: all 0.2s ease;
 
           &:hover {
@@ -1497,12 +1499,12 @@ onUnmounted(() => {
             opacity: 0.3;
             cursor: not-allowed;
             transform: none;
-            background: rgba(255, 255, 255, 0.04);
-            color: rgba(255, 255, 255, 0.3);
+            background: rgba(var(--app-rgb), 0.04);
+            color: rgba(var(--app-rgb), 0.3);
 
             &:hover {
               transform: none;
-              background: rgba(255, 255, 255, 0.04);
+              background: rgba(var(--app-rgb), 0.04);
             }
           }
         }
@@ -1515,7 +1517,7 @@ onUnmounted(() => {
 
     .skeleton-title,
     .skeleton-line {
-      background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%);
+      background: linear-gradient(90deg, rgba(var(--app-rgb), 0.04) 25%, rgba(var(--app-rgb), 0.09) 50%, rgba(var(--app-rgb), 0.04) 75%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
       border-radius: 6px;
@@ -1546,7 +1548,7 @@ onUnmounted(() => {
     justify-content: center;
     gap: 12px;
     padding: 80px 20px;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(var(--app-rgb), 0.5);
 
     .empty-icon {
       font-size: 56px;
@@ -1625,7 +1627,7 @@ onUnmounted(() => {
     .form-label {
       font-size: 12.5px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.75);
+      color: rgba(var(--app-rgb), 0.75);
     }
 
     .switch-wrap {
@@ -1636,7 +1638,7 @@ onUnmounted(() => {
 
       .switch-text {
         font-size: 13px;
-        color: rgba(255, 255, 255, 0.6);
+        color: rgba(var(--app-rgb), 0.6);
       }
     }
 
@@ -1653,9 +1655,9 @@ onUnmounted(() => {
         border-radius: 8px;
         font-size: 12.5px;
         cursor: pointer;
-        color: rgba(255, 255, 255, 0.7);
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(var(--app-rgb), 0.7);
+        background: rgba(var(--app-rgb), 0.05);
+        border: 1px solid rgba(var(--app-rgb), 0.1);
         transition: all 0.2s ease;
 
         .chip-dot {
@@ -1666,12 +1668,12 @@ onUnmounted(() => {
         }
 
         &:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: rgba(255, 255, 255, 0.9);
+          background: rgba(var(--app-rgb), 0.1);
+          color: rgba(var(--app-rgb), 0.9);
         }
 
         &.active {
-          color: #fff;
+          color: #667eea;
           font-weight: 500;
           background: rgba(102, 126, 234, 0.15);
           border-color: var(--chip-color);
@@ -1696,14 +1698,14 @@ onUnmounted(() => {
   gap: 5px;
   flex: 1;
   padding: 9px 2px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(var(--app-rgb), 0.08);
   border-radius: 9px;
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
   transition: all 0.2s ease;
-  background: rgba(255, 255, 255, 0.06);
-  color: rgba(255, 255, 255, 0.8);
+  background: rgba(var(--app-rgb), 0.06);
+  color: rgba(var(--app-rgb), 0.8);
 
   &:hover {
     transform: translateY(-1px);
@@ -1716,7 +1718,7 @@ onUnmounted(() => {
   }
 
   &.cancel:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(var(--app-rgb), 0.12);
   }
 
   &.confirm {
@@ -1753,7 +1755,7 @@ onUnmounted(() => {
       margin: 0;
       font-size: 13.5px;
       line-height: 1.6;
-      color: rgba(255, 255, 255, 0.85);
+      color: rgba(var(--app-rgb), 0.85);
 
       .delete-modal-target {
         font-weight: 600;
@@ -1764,7 +1766,7 @@ onUnmounted(() => {
     .delete-modal-tip {
       margin: 0;
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(var(--app-rgb), 0.5);
     }
   }
 
@@ -1797,13 +1799,13 @@ onUnmounted(() => {
       height: 34px;
       padding: 0 10px 0 34px;
       border-radius: 9px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(var(--app-rgb), 0.05);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
       transition: all 0.25s ease;
 
       &:focus-within {
         border-color: rgba(102, 126, 234, 0.5);
-        background: rgba(255, 255, 255, 0.08);
+        background: rgba(var(--app-rgb), 0.08);
         box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
       }
 
@@ -1811,7 +1813,7 @@ onUnmounted(() => {
         position: absolute;
         left: 11px;
         font-size: 15px;
-        color: rgba(255, 255, 255, 0.4);
+        color: rgba(var(--app-rgb), 0.4);
       }
 
       :deep(.n-input) {
@@ -1822,12 +1824,12 @@ onUnmounted(() => {
         --n-box-shadow-focus: none !important;
 
         .n-input__input-el {
-          color: rgba(255, 255, 255, 0.9);
+          color: rgba(var(--app-rgb), 0.9);
           font-size: 12.5px;
         }
 
         .n-input__placeholder {
-          color: rgba(255, 255, 255, 0.35);
+          color: rgba(var(--app-rgb), 0.35);
         }
       }
     }
@@ -1842,14 +1844,14 @@ onUnmounted(() => {
       cursor: pointer;
       font-size: 12.5px;
       font-weight: 500;
-      color: rgba(255, 255, 255, 0.7);
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(var(--app-rgb), 0.7);
+      background: rgba(var(--app-rgb), 0.06);
+      border: 1px solid rgba(var(--app-rgb), 0.1);
       transition: all 0.2s ease;
 
       &:hover {
-        color: rgba(255, 255, 255, 0.9);
-        background: rgba(255, 255, 255, 0.12);
+        color: rgba(var(--app-rgb), 0.9);
+        background: rgba(var(--app-rgb), 0.12);
       }
 
       &.primary {
@@ -1880,7 +1882,7 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(var(--app-rgb), 0.08);
     overflow: hidden;
 
     .item-table-header {
@@ -1888,11 +1890,11 @@ onUnmounted(() => {
       align-items: center;
       gap: 8px;
       padding: 10px 14px;
-      background: rgba(255, 255, 255, 0.05);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(var(--app-rgb), 0.05);
+      border-bottom: 1px solid rgba(var(--app-rgb), 0.08);
       font-size: 12px;
       font-weight: 600;
-      color: rgba(255, 255, 255, 0.55);
+      color: rgba(var(--app-rgb), 0.55);
       flex-shrink: 0;
 
       .col-value { flex: 1.2; }
@@ -1915,11 +1917,11 @@ onUnmounted(() => {
         align-items: center;
         gap: 8px;
         padding: 9px 14px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(var(--app-rgb), 0.05);
         transition: background 0.2s ease;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(var(--app-rgb), 0.04);
         }
 
         .col-value { flex: 1.2; }
@@ -1938,7 +1940,7 @@ onUnmounted(() => {
 
         .cell-text {
           font-size: 12.5px;
-          color: rgba(255, 255, 255, 0.85);
+          color: rgba(var(--app-rgb), 0.85);
           overflow: hidden;
           text-overflow: ellipsis;
           white-space: nowrap;
@@ -1946,7 +1948,7 @@ onUnmounted(() => {
 
         .col-sort {
           font-size: 12.5px;
-          color: rgba(255, 255, 255, 0.55);
+          color: rgba(var(--app-rgb), 0.55);
         }
 
         .item-type-badge {
@@ -1976,15 +1978,15 @@ onUnmounted(() => {
           border-radius: 7px;
           font-size: 11px;
           font-weight: 500;
-          color: rgba(255, 255, 255, 0.55);
-          background: rgba(255, 255, 255, 0.06);
+          color: rgba(var(--app-rgb), 0.55);
+          background: rgba(var(--app-rgb), 0.06);
           white-space: nowrap;
 
           .dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
-            background: rgba(255, 255, 255, 0.3);
+            background: rgba(var(--app-rgb), 0.3);
           }
 
           &.enabled {
@@ -2009,8 +2011,8 @@ onUnmounted(() => {
           border-radius: 7px;
           cursor: pointer;
           font-size: 14px;
-          color: rgba(255, 255, 255, 0.5);
-          background: rgba(255, 255, 255, 0.06);
+          color: rgba(var(--app-rgb), 0.5);
+          background: rgba(var(--app-rgb), 0.06);
           transition: all 0.2s ease;
 
           &:hover {
@@ -2036,7 +2038,7 @@ onUnmounted(() => {
           flex: 1;
           height: 14px;
           border-radius: 4px;
-          background: linear-gradient(90deg, rgba(255, 255, 255, 0.04) 25%, rgba(255, 255, 255, 0.09) 50%, rgba(255, 255, 255, 0.04) 75%);
+          background: linear-gradient(90deg, rgba(var(--app-rgb), 0.04) 25%, rgba(var(--app-rgb), 0.09) 50%, rgba(var(--app-rgb), 0.04) 75%);
           background-size: 200% 100%;
           animation: shimmer 1.5s infinite;
         }
@@ -2049,7 +2051,7 @@ onUnmounted(() => {
         justify-content: center;
         gap: 10px;
         padding: 60px 20px;
-        color: rgba(255, 255, 255, 0.5);
+        color: rgba(var(--app-rgb), 0.5);
 
         .empty-icon {
           font-size: 48px;

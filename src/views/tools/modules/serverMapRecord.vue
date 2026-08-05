@@ -44,6 +44,10 @@ const communityServers = computed(() => {
     return gameStore.serverDataList.filter(s => s.communityId === selectedCommunityId.value);
 });
 
+/** 社区/服务器数据加载中（store 数据未就绪时显示骨架屏） */
+const communityLoading = computed(() => gameStore.communityList.length === 0);
+const serverLoading = computed(() => gameStore.serverDataList.length === 0);
+
 /* ===== 交互逻辑 ===== */
 
 const selectCommunity = (id: number) => {
@@ -136,13 +140,14 @@ onMounted(() => {
         <div class="main-content">
             <!-- 左栏：社区列表 -->
             <div class="community-panel">
-                <CommunityList :selected-community-id="selectedCommunityId" @select="selectCommunity" />
+                <CommunityList :selected-community-id="selectedCommunityId" :loading="communityLoading"
+                    @select="selectCommunity" />
             </div>
 
             <!-- 中栏：服务器列表 -->
             <div class="server-panel">
                 <ServerList :servers="communityServers" :selected-server-index="selectedServerIndex"
-                    @select="selectServerByIndex" />
+                    :loading="serverLoading" @select="selectServerByIndex" />
             </div>
 
             <!-- 右栏：时间线面板 -->
@@ -185,7 +190,7 @@ onMounted(() => {
             cursor: pointer;
             color: #667eea;
             background: rgba(102, 126, 234, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(var(--app-rgb), 0.1);
             transition: all 0.3s ease;
 
             &:hover {

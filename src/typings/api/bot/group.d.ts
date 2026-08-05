@@ -14,6 +14,8 @@ declare namespace Api {
       expireTime: string;
       /** 是否开启换图通知(0:关闭,1:开启) */
       isNotifyImage: number;
+      /** 是否开启地图订阅(0:关闭,1:开启) */
+      isOrder: number;
       /** 偏好社区，多个使用逗号分隔 */
       communitys: string;
       /** 入群链接 */
@@ -56,6 +58,8 @@ declare namespace Api {
       expireTime: string;
       /** 是否开启换图通知(0:关闭,1:开启) */
       isNotifyImage: number;
+      /** 是否开启地图订阅(0:关闭,1:开启) */
+      isOrder: number;
       /** 偏好社区，多个使用逗号分隔 */
       communitys: string;
       /** 入群链接 */

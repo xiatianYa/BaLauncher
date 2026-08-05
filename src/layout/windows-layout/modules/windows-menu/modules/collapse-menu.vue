@@ -81,7 +81,7 @@ watch(
 
     &::-webkit-scrollbar-thumb {
         border-radius: 4px;
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(var(--app-rgb), 0.12);
     }
 }
 
@@ -89,15 +89,15 @@ watch(
     display: flex;
     justify-content: center;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.04);
+    background-color: rgba(var(--app-rgb), 0.04);
     padding: 10px;
     border-radius: 12px;
     cursor: pointer;
     transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(var(--app-rgb), 0.07);
 
     &:hover {
-        background-color: rgba(255, 255, 255, 0.07);
+        background-color: rgba(var(--app-rgb), 0.07);
         border-color: rgba(102, 126, 234, 0.35);
         transform: translateY(-2px);
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
@@ -133,7 +133,7 @@ watch(
     height: 100%;
     min-height: 72px; /* 与菜单项高度一致（50px 图标 + 20px 内边距 + 2px 边框），独立成行时不会塌陷变矮 */
     font-family: inherit;
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: rgba(var(--app-rgb), 0.03);
     border: 1.5px dashed rgba(102, 126, 234, 0.5);
 
     &:hover {

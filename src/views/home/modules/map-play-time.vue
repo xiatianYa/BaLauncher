@@ -2,6 +2,7 @@
 import { computed, onMounted, ref } from 'vue';
 import { fetchGetMapPlayCountList } from '@/service/api';
 import SvgIcon from '@/components/custom/svg-icon.vue';
+import { $t } from '@/locales';
 
 const mapPlayCountList = ref<Api.Game.GameMapPlayCountVo[]>([]);
 
@@ -10,12 +11,12 @@ const rankColors = ['#ff4d4f', '#faad14', '#52c41a', '#4096ff', '#722ed1', '#13c
 const formatPlayCount = (count: number): string => {
     if (count >= 10000) {
         const w = count / 10000;
-        return w.toFixed(1) + '万次';
+        return $t('home.playCountWan', { count: w.toFixed(1) });
     } else if (count >= 1000) {
         const k = count / 1000;
-        return k.toFixed(1) + 'k次';
+        return $t('home.playCountK', { count: k.toFixed(1) });
     }
-    return count + '次';
+    return $t('home.playCount', { count });
 };
 
 const sortedMapList = computed(() => {
@@ -40,7 +41,7 @@ onMounted(async () => {
                 class="flex items-center gap-12px p-12px rounded-12px transition-all duration-300 overflow-hidden relative" :class="{
                     'hover:translate-x-4px cursor-pointer': true
                 }" :style="{
-                    backgroundColor: index < 5 && item.mapUrl ? 'transparent' : 'rgba(255, 255, 255, 0.1)'
+                    backgroundColor: index < 5 && item.mapUrl ? 'transparent' : 'rgba(var(--app-rgb), 0.1)'
                 }">
                 <img v-if="index < 5 && item.mapUrl" :src="item.mapUrl" :alt="item.mapName"
                     class="absolute inset-0 w-full h-full object-cover opacity-50" />
@@ -49,8 +50,8 @@ onMounted(async () => {
                 }"></div>
                 <div class="relative z-10 flex items-center gap-12px w-full">
                     <div class="flex items-center justify-center w-32px h-32px rounded-8px font-bold text-14px" :style="{
-                        backgroundColor: index < 3 ? rankColors[index] : 'rgba(255, 255, 255, 0.1)',
-                        color: index < 3 ? '#fff' : 'rgba(255, 255, 255, 0.3)'
+                        backgroundColor: index < 3 ? rankColors[index] : 'rgba(var(--app-rgb), 0.1)',
+                        color: index < 3 ? '#fff' : 'rgba(var(--app-rgb), 0.3)'
                     }">
                         <span v-if="index === 0" class="text-16px">🥇</span>
                         <span v-else-if="index === 1" class="text-16px">🥈</span>
@@ -66,9 +67,9 @@ onMounted(async () => {
                         </div>
                         <div class="flex items-center gap-8px">
                             <SvgIcon v-if="item.mapUrl" icon="material-symbols:map-outline" class="font-size-12px"
-                                :style="{ color: 'rgba(255, 255, 255, 0.5)' }" />
+                                :style="{ color: 'rgba(var(--app-rgb), 0.5)' }" />
                             <span class="text-12px"
-                                :style="{ color: 'rgba(255, 255, 255, 0.5)' }">
+                                :style="{ color: 'rgba(var(--app-rgb), 0.5)' }">
                                 {{ item.mapName }}
                             </span>
                         </div>

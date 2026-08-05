@@ -32,12 +32,12 @@ const authStore = useAuthStore();
   justify-content: center;
   padding: 10px 0;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(var(--app-rgb), 0.04);
+  border: 1px solid rgba(var(--app-rgb), 0.07);
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.07);
     border-color: rgba(102, 126, 234, 0.35);
     transform: translateY(-2px);
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
@@ -52,13 +52,13 @@ const authStore = useAuthStore();
   align-items: center;
   justify-content: center;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(var(--app-rgb), 0.04);
+  border: 1px solid rgba(var(--app-rgb), 0.07);
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:hover {
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(var(--app-rgb), 0.07);
     border-color: rgba(102, 126, 234, 0.35);
   }
 

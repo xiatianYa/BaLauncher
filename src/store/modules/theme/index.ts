@@ -1,14 +1,10 @@
-import { computed, effectScope, onScopeDispose, ref, toRefs } from 'vue';
+import { computed, ref, toRefs } from 'vue';
 import type { Ref } from 'vue';
-import { usePreferredColorScheme } from '@vueuse/core';
 import { defineStore } from 'pinia';
 import { SetupStoreId } from '@/enum';
 
 /** Theme store */
 export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
-    const scope = effectScope();
-    const osTheme = usePreferredColorScheme();
-
     /** Theme settings */
     const settings: Ref<App.Theme.ThemeSetting> = ref({
         themeScheme: 'dark',
@@ -17,13 +13,8 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
         }
     });
 
-    /** Dark mode */
-    const darkMode = computed(() => {
-        if (settings.value.themeScheme === 'light') {
-            return osTheme.value === 'dark';
-        }
-        return settings.value.themeScheme === 'dark';
-    });
+    /** Dark mode：完全由用户选择的主题方案决定，不受系统主题影响 */
+    const darkMode = computed(() => settings.value.themeScheme === 'dark');
 
     /** Reset store */
     function resetStore() {
@@ -63,11 +54,6 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
 
         setThemeScheme(nextThemeScheme);
     }
-
-    /** On scope dispose */
-    onScopeDispose(() => {
-        scope.stop();
-    });
 
     return {
         ...toRefs(settings.value),

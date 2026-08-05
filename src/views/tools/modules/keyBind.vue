@@ -834,7 +834,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
             cursor: pointer;
             color: $accent;
             background: rgba($accent, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(var(--app-rgb), 0.1);
             transition: all 0.3s ease;
 
             &:hover {
@@ -881,8 +881,8 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                 padding: 4px;
                 margin-bottom: 4px;
                 border-radius: 12px;
-                background: rgba(255, 255, 255, 0.05);
-                border: 1px solid rgba(255, 255, 255, 0.08);
+                background: rgba(var(--app-rgb), 0.05);
+                border: 1px solid rgba(var(--app-rgb), 0.08);
 
                 .tab-btn {
                     flex: 1;
@@ -895,10 +895,10 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                     white-space: nowrap;
                     transition: all 0.2s ease;
                     background: transparent;
-                    color: rgba(255, 255, 255, 0.55);
+                    color: rgba(var(--app-rgb), 0.55);
 
                     &:hover {
-                        color: rgba(255, 255, 255, 0.9);
+                        color: rgba(var(--app-rgb), 0.9);
                     }
 
                     &.active {
@@ -919,8 +919,8 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                 cursor: pointer;
                 pointer-events: auto;
                 transition: all 0.25s ease;
-                border: 1px solid rgba(255, 255, 255, 0.08);
-                background: rgba(255, 255, 255, 0.04);
+                border: 1px solid rgba(var(--app-rgb), 0.08);
+                background: rgba(var(--app-rgb), 0.04);
                 position: relative;
                 overflow: hidden;
                 padding: 10px;
@@ -938,7 +938,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                 }
 
                 &:hover {
-                    background: rgba(255, 255, 255, 0.07);
+                    background: rgba(var(--app-rgb), 0.07);
                     border-color: rgba($accent, 0.35);
                     transform: translateY(-2px);
                     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
@@ -965,7 +965,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                     padding: 8px;
                     border-radius: 10px;
                     margin-left: 3px;
-                    background: rgba(255, 255, 255, 0.05);
+                    background: rgba(var(--app-rgb), 0.05);
                     flex-shrink: 0;
                     transition: all 0.2s ease;
 
@@ -985,7 +985,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                     .applied-binding-name {
                         font-size: 14px;
                         font-weight: 600;
-                        color: #fff;
+                        color: rgba(var(--app-rgb), 0.9);
                         line-height: 1.4;
                         white-space: nowrap;
                         overflow: hidden;
@@ -996,7 +996,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                     .config-card-desc,
                     .applied-binding-key {
                         font-size: 11px;
-                        color: rgba(255, 255, 255, 0.5);
+                        color: rgba(var(--app-rgb), 0.5);
                         line-height: 1.4;
                         margin-top: 2px;
                         white-space: nowrap;
@@ -1060,8 +1060,8 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                 font-weight: 500;
                 white-space: nowrap;
                 transition: all 0.2s ease;
-                background: rgba(255, 255, 255, 0.06);
-                color: rgba(255, 255, 255, 0.8);
+                background: rgba(var(--app-rgb), 0.06);
+                color: rgba(var(--app-rgb), 0.8);
 
                 svg {
                     font-size: 14px;
@@ -1081,7 +1081,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
                 align-items: center;
                 justify-content: center;
                 padding: 40px 20px;
-                color: rgba(255, 255, 255, 0.5);
+                color: rgba(var(--app-rgb), 0.5);
 
                 .empty-icon {
                     font-size: 48px;

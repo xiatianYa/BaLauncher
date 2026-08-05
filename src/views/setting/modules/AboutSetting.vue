@@ -11,7 +11,7 @@ let isUpdateChecking = false
 
 const updateNotAvailableHandler = () => {
   if (!isUpdateChecking) return
-  window.$message?.success('当前已是最新版本')
+  window.$message?.success($t('settings.messages.alreadyLatest'))
   isUpdateChecking = false
   isCheckingUpdate.value = false
   // 清理监听器
@@ -34,7 +34,7 @@ const updateErrorHandler = (_event: any, errorMsg?: string) => {
 const checkForUpdates = async () => {
   // 防止重复点击
   if (isUpdateChecking || isCheckingUpdate.value) {
-    window.$message?.warning('正在检查更新中，请稍候...')
+    window.$message?.warning($t('settings.messages.checkingUpdateInProgress'))
     return
   }
 
@@ -42,7 +42,7 @@ const checkForUpdates = async () => {
   isCheckingUpdate.value = true
 
   try {
-    window.$message?.info('正在检查更新...')
+    window.$message?.info($t('settings.messages.checkingUpdate'))
 
     // 先注册监听器
     window.ipcRenderer.on('update-not-available', updateNotAvailableHandler)
@@ -52,7 +52,7 @@ const checkForUpdates = async () => {
     await window.ipcRenderer.invoke('check-update')
   } catch (error) {
     console.error('检查更新失败:', error)
-    window.$message?.error('检查更新失败')
+    window.$message?.error($t('settings.messages.checkUpdateFailed'))
     isUpdateChecking = false
     isCheckingUpdate.value = false
     // 清理监听器

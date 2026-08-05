@@ -469,56 +469,56 @@ const getWeaponName = (weaponName: string) => {
     weapon_m4a4: 'M4A4',
     weapon_aug: 'AUG',
     weapon_sg556: 'SG 553',
-    weapon_famas: '法玛斯',
-    weapon_galilar: '加利尔 AR',
+    weapon_famas: $t('serverJoin.weapon.famas'),
+    weapon_galilar: $t('serverJoin.weapon.galil'),
     // 狙击枪
     weapon_awp: 'AWP',
     weapon_g3sg1: 'G3SG1',
     weapon_scar20: 'SCAR-20',
-    weapon_ssg08: '鸟狙',
+    weapon_ssg08: $t('serverJoin.weapon.ssg08'),
     // 手枪
-    weapon_glock: '格洛克',
+    weapon_glock: $t('serverJoin.weapon.glock'),
     weapon_usp_silencer: 'USP-S',
     weapon_hkp2000: 'P2000',
     weapon_p250: 'P250',
     weapon_fiveseven: 'FN57',
-    weapon_deagle: '沙漠之鹰',
-    weapon_revolver: 'R8左轮',
+    weapon_deagle: $t('serverJoin.weapon.deagle'),
+    weapon_revolver: $t('serverJoin.weapon.revolver'),
     weapon_cz75a: 'CZ75',
     // 冲锋枪
     weapon_mp7: 'MP7',
     weapon_mp9: 'MP9',
-    weapon_bizon: '野牛',
+    weapon_bizon: $t('serverJoin.weapon.bizon'),
     weapon_mac10: 'MAC-10',
     weapon_ump45: 'UMP-45',
     weapon_p90: 'P90',
     weapon_mp5sd: 'MP5-SD',
     weapon_mp5: 'MP5',
     // 霰弹枪
-    weapon_nova: '新星',
+    weapon_nova: $t('serverJoin.weapon.nova'),
     weapon_xm1014: 'XM1014',
-    weapon_sawedoff: '截短霰弹枪',
+    weapon_sawedoff: $t('serverJoin.weapon.sawedoff'),
     weapon_mag7: 'MAG-7',
     weapon_m1014: 'M1014',
     // 机枪
     weapon_m249: 'M249',
-    weapon_negev: '内格夫',
+    weapon_negev: $t('serverJoin.weapon.negev'),
     // 装备
     weapon_c4: 'C4',
-    weapon_taser: '电击枪',
-    weapon_knife: '匕首',
-    weapon_shield: '防暴盾',
-    weapon_zeus: '宙斯',
+    weapon_taser: $t('serverJoin.weapon.taser'),
+    weapon_knife: $t('serverJoin.weapon.knife'),
+    weapon_shield: $t('serverJoin.weapon.shield'),
+    weapon_zeus: $t('serverJoin.weapon.zeus'),
     // 投掷物
-    weapon_molotov: '燃烧瓶',
-    weapon_incgrenade: '燃烧弹',
-    weapon_flashbang: '闪光弹',
-    weapon_hegrenade: '高爆手雷',
-    weapon_smokegrenade: '烟雾弹',
-    weapon_decoy: '诱饵弹',
-    weapon_tagrenade: '闪光震撼弹',
-    weapon_snowball: '雪球',
-    weapon_bumpmine: '冲击地雷',
+    weapon_molotov: $t('serverJoin.weapon.molotov'),
+    weapon_incgrenade: $t('serverJoin.weapon.incgrenade'),
+    weapon_flashbang: $t('serverJoin.weapon.flashbang'),
+    weapon_hegrenade: $t('serverJoin.weapon.hegrenade'),
+    weapon_smokegrenade: $t('serverJoin.weapon.smokegrenade'),
+    weapon_decoy: $t('serverJoin.weapon.decoy'),
+    weapon_tagrenade: $t('serverJoin.weapon.tagrenade'),
+    weapon_snowball: $t('serverJoin.weapon.snowball'),
+    weapon_bumpmine: $t('serverJoin.weapon.bumpmine'),
   }
   return weaponMap[weaponName] || weaponName
 }
@@ -1032,7 +1032,7 @@ onBeforeUnmount(() => {
       flex-shrink: 0;
       margin-top: 15px;
       padding-top: 15px;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid rgba(var(--app-rgb), 0.1);
     }
   }
 
@@ -1120,7 +1120,7 @@ onBeforeUnmount(() => {
       padding: 2px 8px;
       border-radius: 999px;
       background: rgba(0, 0, 0, 0.18);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(var(--app-rgb), 0.08);
     }
 
     .dynamic-body {
@@ -1144,7 +1144,7 @@ onBeforeUnmount(() => {
       padding: 6px 8px;
       border-radius: 8px;
       background: rgba(0, 0, 0, 0.10);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(var(--app-rgb), 0.06);
       line-height: 1.2;
     }
 
@@ -1154,7 +1154,7 @@ onBeforeUnmount(() => {
       height: 6px;
       border-radius: 50%;
       background: linear-gradient(135deg, rgba(0, 249, 26, 1), rgba(84, 112, 238, 1));
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.06);
+      box-shadow: 0 0 0 2px rgba(var(--app-rgb), 0.06);
     }
 
     .dynamic-text {

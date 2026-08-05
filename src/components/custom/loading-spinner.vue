@@ -105,9 +105,9 @@ watch(() => props.loading, (newVal) => {
   font-size: 16px;
   font-weight: 500;
   letter-spacing: 2px;
-  color: rgba(255, 255, 255, 0.9);
+  color: rgba(var(--app-rgb), 0.9);
   text-shadow:
-    0 0 8px rgba(255, 255, 255, 0.4),
+    0 0 8px rgba(var(--app-rgb), 0.4),
     0 2px 4px rgba(0, 0, 0, 0.5);
   animation: pulse 1.8s ease-in-out infinite;
 }

@@ -35,7 +35,7 @@ onMounted(() => {
                 {{ $t('routes.setting') }}
               </NText>
             </h1>
-            <span class="setting-subtitle">应用参数与偏好设置</span>
+            <span class="setting-subtitle">{{ $t('settings.subtitle') }}</span>
           </div>
         </div>
       </template>
@@ -76,7 +76,7 @@ onMounted(() => {
 
     .setting-subtitle {
       font-size: 12px;
-      color: rgba(255, 255, 255, 0.45);
+      color: rgba(var(--app-rgb), 0.45);
     }
   }
 }

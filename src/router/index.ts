@@ -26,15 +26,6 @@ function createVueRoutes(): RouteRecordRaw[] {
                     }
                 },
                 {
-                    path: 'hall',
-                    name: 'hall',
-                    component: () => import('@/views/hall/index.vue'),
-                    meta: {
-                        title: '大厅',
-                        requiresAuth: false
-                    }
-                },
-                {
                     path: 'server',
                     name: 'server',
                     component: () => import('@/views/server/index.vue'),
@@ -91,7 +82,7 @@ function createVueRoutes(): RouteRecordRaw[] {
                 {
                     path: 'dictManage',
                     name: 'dictManage',
-                    component: () => import('@/views/dict/index.vue'),
+                    component: () => import('@/views/dictManager/index.vue'),
                     meta: {
                         title: '字典管理',
                         requiresAuth: false
