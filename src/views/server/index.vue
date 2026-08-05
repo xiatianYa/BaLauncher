@@ -411,44 +411,8 @@ onUnmounted(() => {
 .speed-line-3,
 .speed-line-4,
 .speed-line-5 {
-  opacity: 0;
-  animation: speedLine 0.8s ease-in-out infinite;
-}
-
-.speed-line-1 {
-  animation-delay: 0s;
-}
-
-.speed-line-2 {
-  animation-delay: 0.1s;
-}
-
-.speed-line-3 {
-  animation-delay: 0.1s;
-}
-
-.speed-line-4 {
-  animation-delay: 0.2s;
-}
-
-.speed-line-5 {
-  animation-delay: 0.2s;
-}
-
-@keyframes speedLine {
-  0% {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-
-  20% {
-    opacity: 1;
-  }
-
-  100% {
-    opacity: 0;
-    transform: translateX(10px);
-  }
+  // 速度线静态显示，不再左右滑动
+  opacity: 1;
 }
 
 .spinner-svg {

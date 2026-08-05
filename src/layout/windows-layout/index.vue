@@ -28,7 +28,7 @@ onMounted(() => {
         <WindowsFooter />
       </NCard>
       <NCard class="rounded-none" content-class="flex-1 h-full" :bordered="false">
-        <RouterView class="animate__animated animate__fadeInRight animate__faster" />
+        <RouterView />
       </NCard>
     </div>
     <LoginDialog />

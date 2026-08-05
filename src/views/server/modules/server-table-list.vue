@@ -3,25 +3,10 @@ import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
 import { NButton, NTag, NTooltip } from 'naive-ui';
 import { computed, ref } from 'vue';
-import { useThemeStore } from '@/store/modules/theme';
 
 // 排序状态：none 默认 / asc 正序 / desc 倒序
 type SortOrder = 'none' | 'asc' | 'desc';
 type SortField = 'players' | 'ping' | null;
-
-const themeStore = useThemeStore();
-
-const isDarkMode = computed(() => themeStore.darkMode);
-
-// 获取次要文本颜色（根据主题深浅自适应）
-const getSecondaryTextColor = () => {
-  return isDarkMode.value ? 'rgba(255, 255, 255, 0.6)' : 'rgba(0, 0, 0, 0.6)';
-};
-
-// 获取进度条背景色（根据主题深浅自适应）
-const getProgressBarBgColor = () => {
-  return isDarkMode.value ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
-};
 
 const props = defineProps<{
   servers: Api.Game.SeverVo[];
@@ -180,7 +165,7 @@ const getSortOrder = (field: SortField) => {
               </NTooltip>
               <NTooltip v-if="server.mapLabel" trigger="hover" placement="top">
                 <template #trigger>
-                  <span class="map-label" :style="{ color: getSecondaryTextColor() }">
+                  <span class="map-label" :style="{ color: 'rgba(255, 255, 255, 0.6)' }">
                     {{ server.mapLabel }}
                   </span>
                 </template>
@@ -192,14 +177,14 @@ const getSortOrder = (field: SortField) => {
           <!-- 玩家数 -->
           <div class="td td-players">
             <div class="player-count-cell">
-              <div class="progress-track" :style="{ backgroundColor: getProgressBarBgColor() }">
+              <div class="progress-track" :style="{ backgroundColor: 'rgba(255, 255, 255, 0.15)' }">
                 <div class="progress-fill" :style="{
                   width: `${getPlayerPercent(server)}%`,
                   backgroundColor: getPlayerColor(server.numPlayers),
                   boxShadow: `0 0 8px ${getPlayerColor(server.numPlayers)}`
                 }" />
               </div>
-              <span class="player-count-text" :style="{ color: getSecondaryTextColor() }">
+              <span class="player-count-text" :style="{ color: 'rgba(255, 255, 255, 0.6)' }">
                 {{ server.numPlayers || 0 }}<span class="count-sep">/</span>{{ server.maxPlayers || 0 }}
               </span>
             </div>
@@ -219,7 +204,7 @@ const getSortOrder = (field: SortField) => {
               <span class="score-phase">{{ server.mapPhase }}</span>
               <span class="team team-t">{{ server.TScore || 0 }}</span>
             </div>
-            <span v-else class="empty-score" :style="{ color: getSecondaryTextColor() }">-</span>
+            <span v-else class="empty-score" :style="{ color: 'rgba(255, 255, 255, 0.6)' }">-</span>
           </div>
 
           <!-- 操作 -->
@@ -273,12 +258,12 @@ const getSortOrder = (field: SortField) => {
   grid-template-columns: 2fr 1.5fr 1.2fr 80px 100px 100px;
   gap: 16px;
   padding: 0 16px 8px;
-  border-bottom: 1px solid v-bind('isDarkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"');
+  border-bottom: 1px solid rgba(255,255,255,0.08);
 
   .th {
     font-size: 13px;
     font-weight: 600;
-    color: v-bind('getSecondaryTextColor()');
+    color: rgba(255, 255, 255, 0.6);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -292,7 +277,7 @@ const getSortOrder = (field: SortField) => {
       transition: color 0.2s ease;
 
       &:hover {
-        color: v-bind('isDarkMode ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.85)"');
+        color: rgba(255,255,255,0.9);
       }
 
       .sort-icon {
@@ -323,7 +308,7 @@ const getSortOrder = (field: SortField) => {
   align-items: center;
   padding: 16px;
   border-radius: 12px;
-  background: v-bind('isDarkMode ? "rgba(255,255,255,0.03)" : "#ffffff"');
+  background: rgba(255,255,255,0.03);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.25s ease;
   overflow: hidden;
@@ -334,7 +319,7 @@ const getSortOrder = (field: SortField) => {
   }
 
   &.offline-row {
-    background: v-bind('isDarkMode ? "rgba(255, 77, 79, 0.08)" : "rgba(255, 77, 79, 0.12)"');
+    background: rgba(255, 77, 79, 0.08);
     box-shadow: 0 1px 3px rgba(255, 77, 79, 0.08), 0 1px 2px rgba(255, 77, 79, 0.05);
 
     &:hover {
@@ -375,7 +360,7 @@ const getSortOrder = (field: SortField) => {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: v-bind('isDarkMode ? "rgba(255,255,255,0.95)" : "rgba(0,0,0,0.85)"');
+    color: rgba(255,255,255,0.95);
   }
 }
 
@@ -394,7 +379,7 @@ const getSortOrder = (field: SortField) => {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: v-bind('isDarkMode ? "rgba(255,255,255,0.9)" : "rgba(0,0,0,0.85)"');
+    color: rgba(255,255,255,0.9);
   }
 
   .map-label {

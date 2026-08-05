@@ -2,7 +2,6 @@
 import { NGrid, NGridItem, NCard } from 'naive-ui';
 import { ref, computed } from 'vue';
 import type { Component } from 'vue';
-import { useThemeStore } from '@/store/modules/theme';
 import KeyBind from './modules/keyBind.vue';
 import MapOrder from './modules/mapOrder.vue';
 import ServerMapRecord from './modules/serverMapRecord.vue';
@@ -22,9 +21,6 @@ interface ToolModule {
   label: string;
   component: Component;
 }
-
-const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 
 const moduleMap: Record<UnionKey.ToolModule, ToolModule> = {
   'keyBind': { label: $t('tools.keyBind'), component: KeyBind },
@@ -108,12 +104,14 @@ const handleToolClick = (tool: ToolItem) => {
         footer: 'soft',
       }" v-if="!activeModuleKey">
       <template #header>
-        <div class="relative">
-          <div class="flex items-center mb-5px">
-            <h1 class="text-18px font-bold mr-2">{{ $t('tools.title') }}</h1>
-            <SvgIcon icon="gg:toolbox" class="text-20px" />
+        <div class="header-section">
+          <div class="title-section">
+            <SvgIcon icon="gg:toolbox" class="title-icon" />
+            <div class="title-group">
+              <h1 class="page-title">{{ $t('tools.title') }}</h1>
+              <span class="page-subtitle">{{ $t('tools.subtitle') }}</span>
+            </div>
           </div>
-          <div class="text-12px color-#666 font-bold">{{ $t('tools.subtitle') }}</div>
         </div>
       </template>
       <!-- Tools Grid or Module View -->
@@ -122,7 +120,7 @@ const handleToolClick = (tool: ToolItem) => {
         <div class="tools-grid">
           <NGrid :x-gap="24" :y-gap="24" :cols="3" responsive="screen" item-responsive>
             <NGridItem v-for="tool in tools" :key="tool.id" span="4 s:2 m:1 l:1">
-              <div class="tool-card" :class="{ 'light-mode': !isDarkMode }" :style="{
+              <div class="tool-card" :style="{
                 '--gradient': tool.gradient,
                 '--color': tool.color,
                 '--delay': `${tool.delay}s`
@@ -160,6 +158,49 @@ const handleToolClick = (tool: ToolItem) => {
 </template>
 
 <style scoped lang="scss">
+.header-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+
+  .title-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    .title-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(102, 126, 234, 0.12);
+      color: #667eea;
+      font-size: 20px;
+    }
+
+    .title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+
+      .page-title {
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.3;
+        color: rgba(255, 255, 255, 0.92);
+      }
+
+      .page-subtitle {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.45);
+      }
+    }
+  }
+}
+
 .module-view {
   display: flex;
   flex-direction: column;

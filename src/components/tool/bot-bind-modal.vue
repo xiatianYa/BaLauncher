@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue';
-import { useThemeStore } from '@/store/modules/theme';
+import { onUnmounted, ref, watch } from 'vue';
 import { useBotBind } from '@/hooks/business/botBind';
 import { fetchGetBindToken } from '@/service/api';
 import { $t } from '@/locales';
@@ -8,9 +7,6 @@ import { $t } from '@/locales';
 defineOptions({
   name: 'BotBindModal'
 });
-
-const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 
 const { bindModalVisible, checking, checkBound, closeBindModal } = useBotBind();
 
@@ -79,7 +75,7 @@ onUnmounted(() => {
 
 <template>
   <NModal v-model:show="bindModalVisible" preset="card" class="bind-modal rounded-16px w-520px"
-    :class="{ 'light-mode': !isDarkMode }" :bordered="false" size="small" :closable="true">
+    :bordered="false" size="small" :closable="true">
     <template #header>
       <div class="bind-modal-header">
         <SvgIcon icon="mdi:link-variant" class="bind-modal-icon" />
@@ -285,37 +281,5 @@ onUnmounted(() => {
     }
   }
 
-  &.light-mode {
-    .bind-modal-body {
-      .bind-modal-desc {
-        color: rgba(0, 0, 0, 0.55);
-      }
-
-      .bind-step .step-text {
-        color: rgba(0, 0, 0, 0.8);
-      }
-
-      .token-btn {
-        background: rgba(0, 0, 0, 0.04);
-        border-color: rgba(0, 0, 0, 0.1);
-        color: rgba(0, 0, 0, 0.7);
-
-        &:hover {
-          background: rgba(0, 0, 0, 0.08);
-        }
-      }
-    }
-
-    .bind-modal-actions {
-      .bind-btn.cancel {
-        background: rgba(75, 158, 248, 0.1);
-        border-color: rgba(75, 158, 248, 0.2);
-
-        &:hover:not(:disabled) {
-          background: rgba(75, 158, 248, 0.2);
-        }
-      }
-    }
-  }
 }
 </style>

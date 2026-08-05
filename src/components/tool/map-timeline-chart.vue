@@ -6,9 +6,8 @@
  *         x 轴标签最多显示 8 个，使用 dayjs 格式化为 HH:mm
  -->
 <script setup lang="ts">
-import { watch, computed, nextTick } from 'vue';
+import { watch, nextTick } from 'vue';
 import dayjs from 'dayjs';
-import { useThemeStore } from '@/store/modules/theme';
 import { ECOption, useEcharts } from '@/hooks/common/echarts';
 
 defineOptions({
@@ -21,9 +20,6 @@ const props = defineProps<{
     /** y 轴在线人数数据 */
     playerCountAxis?: number[];
 }>();
-
-const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 
 /** 主题色板 —— 与全局设计语言保持一致 */
 const COLOR_PALETTE = {
@@ -54,16 +50,16 @@ const formatTimeLabel = (value: string): string => dayjs(value).format('HH:mm');
 const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
     tooltip: {
         trigger: 'axis',
-        backgroundColor: isDarkMode.value ? 'rgba(50, 50, 50, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-        borderColor: isDarkMode.value ? '#444' : '#ddd',
+        backgroundColor: 'rgba(50, 50, 50, 0.9)',
+        borderColor: '#444',
         borderWidth: 1,
         textStyle: {
-            color: isDarkMode.value ? '#e0e0e0' : '#333'
+            color: '#e0e0e0'
         },
         axisPointer: {
             type: 'line',
             lineStyle: {
-                color: isDarkMode.value ? '#666' : '#999',
+                color: '#666',
                 width: 1
             }
         }
@@ -81,11 +77,11 @@ const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
         data: [],
         axisLine: {
             lineStyle: {
-                color: isDarkMode.value ? '#444' : '#ddd'
+                color: '#444'
             }
         },
         axisLabel: {
-            color: isDarkMode.value ? '#999' : '#666',
+            color: '#999',
             fontSize: 10,
             rotate: 30,
             formatter: formatTimeLabel,
@@ -103,12 +99,12 @@ const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
             show: false
         },
         axisLabel: {
-            color: isDarkMode.value ? '#999' : '#666',
+            color: '#999',
             fontSize: 10
         },
         splitLine: {
             lineStyle: {
-                color: isDarkMode.value ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                color: 'rgba(255,255,255,0.1)',
                 type: 'dashed'
             }
         }
@@ -176,58 +172,6 @@ function updateChartData() {
         return opts;
     });
 }
-
-/**
- * 监听主题切换，热更新图表配色
- * 仅修改颜色相关属性，保留数据与布局不变
- */
-watch(
-    () => themeStore.darkMode,
-    () => {
-        updateOptions(opts => {
-            const dark = isDarkMode.value;
-
-            // 更新 tooltip 配色
-            const tooltip = opts.tooltip;
-            if (tooltip && !Array.isArray(tooltip)) {
-                tooltip.backgroundColor = dark ? 'rgba(50, 50, 50, 0.9)' : 'rgba(255, 255, 255, 0.9)';
-                tooltip.borderColor = dark ? '#444' : '#ddd';
-                if (tooltip.textStyle) {
-                    tooltip.textStyle.color = dark ? '#e0e0e0' : '#333';
-                }
-                if (tooltip.axisPointer?.lineStyle) {
-                    tooltip.axisPointer.lineStyle.color = dark ? '#666' : '#999';
-                }
-            }
-
-            // 更新 x 轴配色
-            const xAxis = opts.xAxis;
-            if (xAxis) {
-                const axis = Array.isArray(xAxis) ? xAxis[0] : xAxis;
-                if (axis?.axisLine?.lineStyle) {
-                    axis.axisLine.lineStyle.color = dark ? '#444' : '#ddd';
-                }
-                if (axis?.axisLabel) {
-                    axis.axisLabel.color = dark ? '#999' : '#666';
-                }
-            }
-
-            // 更新 y 轴配色
-            const yAxis = opts.yAxis;
-            if (yAxis) {
-                const axis = Array.isArray(yAxis) ? yAxis[0] : yAxis;
-                if (axis?.axisLabel) {
-                    axis.axisLabel.color = dark ? '#999' : '#666';
-                }
-                if (axis?.splitLine?.lineStyle) {
-                    axis.splitLine.lineStyle.color = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
-                }
-            }
-
-            return opts;
-        });
-    }
-);
 
 /**
  * 监听数据变化，触发图表更新

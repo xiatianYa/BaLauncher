@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, watch } from 'vue';
 import { NModal, NButton, NForm, NFormItem, NInput, NSelect, NSwitch, FormRules } from 'naive-ui';
 import { MdEditor } from 'md-editor-v3';
 import { $t } from '@/locales';
 
-import { useThemeStore } from '@/store/modules/theme';
 import { fetchUpdateLog } from '@/service/api';
 import { useDict } from '@/hooks/business/dict';
 
@@ -19,9 +18,6 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<Emits>();
-
-const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 
 const { dictOptions } = useDict();
 
@@ -120,7 +116,7 @@ const handleClose = (): void => {
 <template>
     <NModal v-model:show="props.showUpdateLogModal" @update:show="(value) => !value && handleClose()" preset="card"
         size="large" :bordered="false" class="log-modal w-760px rounded-12px" header-style="padding:16px 20px;"
-        :class="{ 'light-mode': !isDarkMode }" :closable="true">
+        :closable="true">
         <template #header>
             <div class="modal-header">
                 <div class="modal-icon-wrap">
@@ -155,7 +151,7 @@ const handleClose = (): void => {
                     </NFormItem>
                 </div>
                 <NFormItem :label="$t('updateLog.form.content.label')" path="content" class="content-item">
-                    <MdEditor v-model="formData.content" :theme="isDarkMode ? 'dark' : 'light'" :toolbars="[
+                    <MdEditor v-model="formData.content" :toolbars="[
                         'bold',
                         'underline',
                         'italic',

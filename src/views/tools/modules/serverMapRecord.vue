@@ -1,6 +1,5 @@
 <!-- 地图游玩记录：社区 → 服务器 → 时间线 三栏布局 -->
 <script setup lang="ts">
-import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
 import { computed, ref, onMounted } from 'vue';
 import { fetchGetServerMapTimeline } from '@/service/api';
@@ -19,9 +18,7 @@ defineOptions({ name: 'ServerMapRecordPage' });
 
 const emit = defineEmits<{ back: [] }>();
 
-const themeStore = useThemeStore();
 const gameStore = useGameStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 
 /* ===== 选择状态 ===== */
 
@@ -122,7 +119,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="server-map-record-container" :class="{ 'light-mode': !isDarkMode }">
+    <div class="server-map-record-container">
         <!-- 页面头部：标题 + 返回按钮 -->
         <div class="header-section">
             <div class="title-section">

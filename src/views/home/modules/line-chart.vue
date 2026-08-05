@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { watch, computed } from 'vue';
+import { watch } from 'vue';
 import { useAppStore } from '@/store/modules/app';
-import { useThemeStore } from '@/store/modules/theme';
 import { ECOption, useEcharts } from '@/hooks/common/echarts';
 
 defineOptions({
@@ -9,25 +8,21 @@ defineOptions({
 });
 
 const appStore = useAppStore();
-const themeStore = useThemeStore();
-
-// 判断是否为深色模式
-const isDarkMode = computed(() => themeStore.darkMode);
 
 // 在useEcharts中指定泛型类型
 const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
   tooltip: {
     trigger: 'axis',
-    backgroundColor: isDarkMode.value ? 'rgba(50, 50, 50, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-    borderColor: isDarkMode.value ? '#444' : '#ddd',
+    backgroundColor: 'rgba(50, 50, 50, 0.9)',
+    borderColor: '#444',
     borderWidth: 1,
     textStyle: {
-      color: isDarkMode.value ? '#e0e0e0' : '#333'
+      color: '#e0e0e0'
     },
     axisPointer: {
       type: 'line',
       lineStyle: {
-        color: isDarkMode.value ? '#666' : '#999',
+        color: '#666',
         width: 1
       }
     }
@@ -38,7 +33,7 @@ const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
     right: '2%',
     itemGap: 20,
     textStyle: {
-      color: isDarkMode.value ? '#e0e0e0' : '#666'
+      color: '#e0e0e0'
     }
   },
   grid: {
@@ -54,11 +49,11 @@ const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
     data: [],
     axisLine: {
       lineStyle: {
-        color: isDarkMode.value ? '#444' : '#ddd'
+        color: '#444'
       }
     },
     axisLabel: {
-      color: isDarkMode.value ? '#999' : '#666'
+      color: '#999'
     },
     axisTick: {
       show: false
@@ -70,11 +65,11 @@ const { domRef, updateOptions } = useEcharts<ECOption>(() => ({
       show: false
     },
     axisLabel: {
-      color: isDarkMode.value ? '#999' : '#666'
+      color: '#999'
     },
     splitLine: {
       lineStyle: {
-        color: isDarkMode.value ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+        color: 'rgba(255,255,255,0.1)',
         type: 'dashed'
       }
     }
@@ -111,67 +106,6 @@ function updateLocale() {
     return opts;
   });
 }
-
-// 监听主题变化，更新图表颜色
-watch(
-  () => themeStore.darkMode,
-  () => {
-    updateOptions(opts => {
-      const dark = isDarkMode.value;
-
-      // 更新 title
-      const title = opts.title;
-      if (title && !Array.isArray(title) && title.textStyle) {
-        title.textStyle.color = dark ? '#e0e0e0' : '#333';
-      }
-
-      // 更新 tooltip
-      const tooltip = opts.tooltip;
-      if (tooltip && !Array.isArray(tooltip)) {
-        tooltip.backgroundColor = dark ? 'rgba(50, 50, 50, 0.9)' : 'rgba(255, 255, 255, 0.9)';
-        tooltip.borderColor = dark ? '#444' : '#ddd';
-        if (tooltip.textStyle) {
-          tooltip.textStyle.color = dark ? '#e0e0e0' : '#333';
-        }
-        if (tooltip.axisPointer?.lineStyle) {
-          tooltip.axisPointer.lineStyle.color = dark ? '#666' : '#999';
-        }
-      }
-
-      // 更新 legend
-      const legend = opts.legend;
-      if (legend && !Array.isArray(legend) && legend.textStyle) {
-        legend.textStyle.color = dark ? '#e0e0e0' : '#666';
-      }
-
-      // 更新 xAxis
-      const xAxis = opts.xAxis;
-      if (xAxis) {
-        const axis = Array.isArray(xAxis) ? xAxis[0] : xAxis;
-        if (axis?.axisLine?.lineStyle) {
-          axis.axisLine.lineStyle.color = dark ? '#444' : '#ddd';
-        }
-        if (axis?.axisLabel) {
-          axis.axisLabel.color = dark ? '#999' : '#666';
-        }
-      }
-
-      // 更新 yAxis
-      const yAxis = opts.yAxis;
-      if (yAxis) {
-        const axis = Array.isArray(yAxis) ? yAxis[0] : yAxis;
-        if (axis?.axisLabel) {
-          axis.axisLabel.color = dark ? '#999' : '#666';
-        }
-        if (axis?.splitLine?.lineStyle) {
-          axis.splitLine.lineStyle.color = dark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)';
-        }
-      }
-
-      return opts;
-    });
-  }
-);
 
 watch(
   () => appStore.locale,

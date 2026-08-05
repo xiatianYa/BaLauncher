@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { NButton, NCard, NModal, NGrid, NGridItem, NInput } from 'naive-ui';
-import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
 import { fetchGetMyKeyBinds, fetchAddKeyBind, fetchDeleteKeyBind, fetchUpdateKeyBind } from '@/service/api';
 import { MdEditor } from 'md-editor-v3';
@@ -21,9 +20,7 @@ const emit = defineEmits<{ back: [] }>();
 
 /* ===== 状态 ===== */
 
-const themeStore = useThemeStore();
 const gameStore = useGameStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 
 const activeTab = ref<'library' | 'local' | 'user'>('library');
 const selectedSystemConfig = ref<string | null>(null);
@@ -523,7 +520,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="key-bind-container" :class="{ 'light-mode': !isDarkMode }">
+    <div class="key-bind-container">
         <div class="header-section">
             <div class="title-section">
                 <SvgIcon icon="material-symbols:keyboard-alt-outline" />
@@ -654,7 +651,7 @@ onMounted(() => {
                                     </div>
                                 </NCard>
                             </template>
-                            <div class="config-code-block" :class="{ 'dark': isDarkMode, 'light': !isDarkMode }">
+                            <div class="config-code-block">
                                 <NButton class="copy-btn" size="tiny" quaternary
                                     @click="copyConfigCode(item.renderKeyConfigJson)">
                                     <template #icon>
@@ -667,14 +664,14 @@ onMounted(() => {
                     </NCollapse>
                 </div>
                 <div v-show="activeTab === 'local'" class="h-full">
-                    <MdEditor v-model="localAutoexecCfg" :theme="isDarkMode ? 'dark' : 'light'" :preview="false"
+                    <MdEditor v-model="localAutoexecCfg" :preview="false"
                         :toolbars="['revoke', 'next', 'save']" @onSave="saveLocalAutoexecCfg" />
                 </div>
             </NCard>
         </div>
         <!-- 按键绑定配置弹窗 -->
         <NModal v-model:show="showKeyCaptureModal" :bordered="true" preset="card"
-            class="w-400px rounded-20px key-capture-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
+            class="w-400px rounded-20px key-capture-wrapper" :closable="false"
             size="small">
             <template #header>
                 {{ $t('keyBind.keyBindConfig') }}
@@ -758,7 +755,7 @@ onMounted(() => {
         <!-- 新增/编辑配置弹框 -->
         <NModal v-model:show="showAddConfigModal" :bordered="true" preset="card"
             class="w-600px h-500px rounded-20px key-capture-wrapper overflow-auto"
-            :class="{ 'light-mode': !isDarkMode }" :closable="false" size="medium">
+            :closable="false" size="medium">
             <template #header>
                 <div class="flex items-center justify-between font-size-18px">
                     <div class="font-size-16px">{{ isEditMode ? $t('keyBind.editPersonalConfig') :
@@ -775,7 +772,7 @@ onMounted(() => {
                 </div>
                 <div class="mb-20px">
                     <div class="text-sm font-medium mb-5px">{{ $t('keyBind.configContent') }}</div>
-                    <MdEditor v-model="newConfigJson" :theme="isDarkMode ? 'dark' : 'light'" :preview="false"
+                    <MdEditor v-model="newConfigJson" :preview="false"
                         :toolbars="['revoke', 'next']" />
                 </div>
             </div>
@@ -1099,157 +1096,12 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
     }
 }
 
-.key-bind-container.light-mode {
-    .main-content {
-        .left-panel {
-            .tab-switch {
-                background: rgba(0, 0, 0, 0.04);
-                border-color: rgba(0, 0, 0, 0.08);
-
-                .tab-btn {
-                    color: rgba(0, 0, 0, 0.5);
-
-                    &:hover {
-                        color: rgba(0, 0, 0, 0.8);
-                    }
-
-                    &.active {
-                        background: linear-gradient(135deg, $accent 0%, $accent-deep 100%);
-                        color: #fff;
-                        box-shadow: 0 4px 12px rgba($accent, 0.3);
-                    }
-                }
-            }
-
-            .config-card,
-            .applied-binding-item {
-                border-color: rgba(0, 0, 0, 0.08);
-                background: rgba(0, 0, 0, 0.02);
-
-                &:hover {
-                    background: rgba(0, 0, 0, 0.05);
-                    border-color: rgba($accent, 0.3);
-                    box-shadow: 0 8px 24px rgba($accent, 0.1);
-                }
-
-                &.selected {
-                    background: rgba($accent, 0.06);
-                    border-color: rgba($accent, 0.5);
-                    box-shadow: 0 8px 24px rgba($accent, 0.15);
-                }
-
-                .config-card-content-img,
-                .applied-binding-img {
-                    background: rgba(0, 0, 0, 0.04);
-                }
-
-                .config-card-text,
-                .applied-binding-text {
-
-                    .config-card-title,
-                    .applied-binding-name {
-                        color: rgba(0, 0, 0, 0.85);
-                    }
-
-                    .config-card-desc,
-                    .applied-binding-key {
-                        color: rgba(0, 0, 0, 0.5);
-                    }
-                }
-
-                &.selected {
-
-                    .config-card-content-img,
-                    .applied-binding-img {
-                        background: rgba($accent, 0.12);
-                    }
-
-                    .config-card-title,
-                    .applied-binding-name {
-                        color: $accent;
-                    }
-                }
-            }
-        }
-
-        .right-panel {
-            .config-copy-btn {
-                background: rgba(0, 0, 0, 0.04);
-                color: rgba(0, 0, 0, 0.65);
-
-                &:hover {
-                    background: rgba($accent, 0.18);
-                    color: $accent;
-                }
-            }
-        }
-    }
-}
-
 // 新的按键捕获弹窗样式 - 适配黑白主题
 .key-capture-wrapper {
     :deep(.n-card) {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
         border: none;
         overflow: hidden;
-    }
-
-    &.light-mode {
-        :deep(.n-card) {
-            background: linear-gradient(135deg, #f8f9fc 0%, #eef0f5 100%);
-        }
-
-        .key-capture-modal-new {
-            color: #333;
-
-            .capture-header {
-                .character-image {
-                    border-color: rgba($accent, 0.6);
-                    box-shadow: 0 0 20px rgba($accent, 0.3);
-                }
-
-                .header-glow {
-                    background: radial-gradient(circle, rgba($accent, 0.2) 0%, transparent 70%);
-                }
-            }
-
-            .capture-display-area {
-                .key-display-box {
-                    background: rgba($accent, 0.05);
-                    border-color: rgba($accent, 0.3);
-
-                    .captured-key-text {
-                        color: $accent;
-                        text-shadow: none;
-                    }
-
-                    .waiting-text .dots span {
-                        background: $accent;
-                    }
-                }
-
-                &.has-key .key-display-box {
-                    background: rgba($accent, 0.1);
-                    border-color: $accent;
-                    box-shadow: 0 0 20px rgba($accent, 0.2);
-                }
-            }
-
-            .capture-tips {
-                .tip-item {
-                    background: rgba($accent, 0.05);
-                    border-color: rgba($accent, 0.15);
-
-                    .tip-icon {
-                        color: $accent;
-                    }
-
-                    .tip-text {
-                        color: rgba(0, 0, 0, 0.6);
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -1471,55 +1323,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
         white-space: pre-wrap;
     }
 
-    // 黑夜主题
-    &.dark {
-        background: #18181c;
-        border-color: #333;
-        color: #e0e0e0;
 
-        &::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        &::-webkit-scrollbar-track {
-            background: #18181c;
-        }
-
-        &::-webkit-scrollbar-thumb {
-            background: #333;
-            border-radius: 3px;
-        }
-
-        &::-webkit-scrollbar-thumb:hover {
-            background: #444;
-        }
-    }
-
-    // 白天主题
-    &.light {
-        background: #f8f9fa;
-        border-color: #e2e8f0;
-        color: #333;
-
-        &::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        &::-webkit-scrollbar-track {
-            background: #f8f9fa;
-        }
-
-        &::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-
-        &::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-    }
 }
 
 @keyframes dotPulse {

@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue';
 import { fetchGetMapPlayCountList } from '@/service/api';
-import { useThemeStore } from '@/store/modules/theme';
 import SvgIcon from '@/components/custom/svg-icon.vue';
-
-const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 
 const mapPlayCountList = ref<Api.Game.GameMapPlayCountVo[]>([]);
 
@@ -44,17 +40,17 @@ onMounted(async () => {
                 class="flex items-center gap-12px p-12px rounded-12px transition-all duration-300 overflow-hidden relative" :class="{
                     'hover:translate-x-4px cursor-pointer': true
                 }" :style="{
-                    backgroundColor: index < 5 && item.mapUrl ? 'transparent' : (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)')
+                    backgroundColor: index < 5 && item.mapUrl ? 'transparent' : 'rgba(255, 255, 255, 0.1)'
                 }">
                 <img v-if="index < 5 && item.mapUrl" :src="item.mapUrl" :alt="item.mapName"
                     class="absolute inset-0 w-full h-full object-cover opacity-50" />
                 <div v-if="index < 5 && item.mapUrl" class="absolute inset-0" :style="{
-                    background: isDarkMode ? 'linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 100%)' : 'linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.4) 100%)'
+                    background: 'linear-gradient(90deg, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0.3) 100%)'
                 }"></div>
                 <div class="relative z-10 flex items-center gap-12px w-full">
                     <div class="flex items-center justify-center w-32px h-32px rounded-8px font-bold text-14px" :style="{
-                        backgroundColor: index < 3 ? rankColors[index] : (isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.08)'),
-                        color: index < 3 ? '#fff' : (isDarkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)')
+                        backgroundColor: index < 3 ? rankColors[index] : 'rgba(255, 255, 255, 0.1)',
+                        color: index < 3 ? '#fff' : 'rgba(255, 255, 255, 0.3)'
                     }">
                         <span v-if="index === 0" class="text-16px">🥇</span>
                         <span v-else-if="index === 1" class="text-16px">🥈</span>
@@ -64,15 +60,15 @@ onMounted(async () => {
 
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center gap-8px mb-4px">
-                            <span class="font-bold text-14px truncate" :style="{ color: isDarkMode ? '#fff' : '#333' }">
+                            <span class="font-bold text-14px truncate" :style="{ color: '#fff' }">
                                 {{ item.mapLabel || item.mapName }}
                             </span>
                         </div>
                         <div class="flex items-center gap-8px">
                             <SvgIcon v-if="item.mapUrl" icon="material-symbols:map-outline" class="font-size-12px"
-                                :style="{ color: isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)' }" />
+                                :style="{ color: 'rgba(255, 255, 255, 0.5)' }" />
                             <span class="text-12px"
-                                :style="{ color: isDarkMode ? 'rgba(255, 255, 255, 0.5)' : 'rgba(0, 0, 0, 0.4)' }">
+                                :style="{ color: 'rgba(255, 255, 255, 0.5)' }">
                                 {{ item.mapName }}
                             </span>
                         </div>

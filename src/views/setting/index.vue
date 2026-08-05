@@ -20,58 +20,39 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="setting-page">
-    <div class="setting-card">
-      <!-- 页面标题 -->
-      <div class="setting-header">
-        <SvgIcon icon="ic:twotone-settings" class="setting-icon" />
-        <h1 class="setting-title">
-          <NText>
-            {{ $t('routes.setting') }}
-          </NText>
-        </h1>
-      </div>
+  <NCard class="w-full h-full" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
+    <NCard class="m-10px rounded-10px" content-style="padding:25px 0px 25px 0px;" :bordered="true"
+      content-class="h-full flex flex-col flex-1 overflow-hidden" header-style="padding:10px 20px 10px 20px" :segmented="{
+        content: true,
+        footer: 'soft',
+      }">
+      <template #header>
+        <div class="setting-header">
+          <SvgIcon icon="ic:twotone-settings" class="setting-icon" />
+          <h1 class="setting-title">
+            <NText>
+              {{ $t('routes.setting') }}
+            </NText>
+          </h1>
+        </div>
+      </template>
 
       <!-- 设置内容 -->
       <div class="setting-body">
-        <ThemeSetting />
-        <GeneralSetting />
-        <CacheSetting ref="cacheSettingRef" />
-        <AboutSetting ref="aboutSettingRef" />
+        <ThemeSetting class="setting-section" style="--delay: 0s" />
+        <GeneralSetting class="setting-section" style="--delay: 0.08s" />
+        <CacheSetting ref="cacheSettingRef" class="setting-section" style="--delay: 0.16s" />
+        <AboutSetting ref="aboutSettingRef" class="setting-section" style="--delay: 0.24s" />
       </div>
-    </div>
-  </div>
+    </NCard>
+  </NCard>
 </template>
 
 <style scoped lang="scss">
-.setting-page {
-  width: 100%;
-  height: 100%;
-  padding: 12px;
-  overflow: hidden;
-  background-color: var(--n-color);
-  color: var(--n-text-color);
-}
-
-.setting-card {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  border-radius: 14px;
-  background-color: var(--n-card-color);
-  border: 1px solid var(--n-border-color);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
-}
-
 .setting-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  flex-shrink: 0;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--n-divider-color);
 
   .setting-icon {
     font-size: 22px;
@@ -90,5 +71,29 @@ onMounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 16px 20px 24px;
+}
+
+.setting-section {
+  margin-bottom: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: var(--n-color);
+  border: 1px solid var(--n-border-color);
+  // 进入动画：错落淡入上浮
+  animation: fadeInUp 0.5s ease-out forwards;
+  animation-delay: var(--delay);
+  opacity: 0;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

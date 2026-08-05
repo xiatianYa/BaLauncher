@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, watch } from 'vue'
 import { NButton } from 'naive-ui'
-import { useThemeStore } from '@/store/modules/theme'
 import { localStg } from '@/utils/storage'
 import { $t } from '@/locales'
 import {
@@ -11,9 +10,6 @@ import {
   AUTH_STORAGE_KEYS,
   ALL_STORAGE_KEYS,
 } from '@/constants/cache'
-
-const themeStore = useThemeStore()
-const isDarkMode = computed(() => themeStore.darkMode)
 
 const cacheSize = ref('0 KB')
 const cacheModalVisible = ref(false)
@@ -220,7 +216,7 @@ defineExpose({
   </section>
 
   <div v-if="cacheModalVisible" class="cache-modal-overlay" @click.self="cacheModalVisible = false">
-    <div class="cache-modal" :class="{ 'light-mode': !isDarkMode }">
+    <div class="cache-modal">
       <div class="cache-modal-header">
         <div class="cache-modal-title">
           <SvgIcon icon="mdi:broom" class="cache-modal-title-icon" />
@@ -260,10 +256,6 @@ defineExpose({
 <style scoped lang="scss">
 .setting-section {
   margin-bottom: 16px;
-  padding: 16px;
-  border-radius: 12px;
-  background-color: var(--n-color);
-  border: 1px solid var(--n-border-color);
 }
 
 .section-header {

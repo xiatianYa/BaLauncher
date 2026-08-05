@@ -2,7 +2,6 @@
 import { computed, onMounted, reactive, ref } from 'vue';
 import { NGrid, NGridItem, NInput, NPagination, NModal, NSelect, NSwitch, NDatePicker } from 'naive-ui';
 import dayjs from 'dayjs';
-import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
 import {
   fetchGetBotGroupPageList,
@@ -21,8 +20,6 @@ defineOptions({ name: 'BotGroupPage' });
 
 const emit = defineEmits<{ back: [] }>();
 
-const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 const gameStore = useGameStore();
 
 const { isAdmin } = useAuth(); // 操作按钮仅管理员可见
@@ -396,7 +393,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="bot-group-container" :class="{ 'light-mode': !isDarkMode }">
+  <div class="bot-group-container">
     <!-- 页面头部：标题 + 返回按钮 -->
     <div class="header-section">
       <div class="title-section">
@@ -523,7 +520,7 @@ onMounted(() => {
 
     <!-- 群成员管理弹窗 -->
     <NModal v-model:show="showMemberModal" preset="card" class="member-modal w-700px rounded-16px"
-      :class="{ 'light-mode': !isDarkMode }" :bordered="false" size="small" :closable="true"
+      :bordered="false" size="small" :closable="true"
       @close="handleCloseMemberModal">
       <template #header>
         <div class="member-modal-header">
@@ -690,7 +687,7 @@ onMounted(() => {
 
     <!-- 删除订阅确认弹窗 -->
     <NModal v-model:show="showDeleteSubModal" preset="card" class="delete-modal rounded-16px w-400px"
-      :class="{ 'light-mode': !isDarkMode }" :bordered="false" size="small" :closable="false">
+      :bordered="false" size="small" :closable="false">
       <template #header>
         <div class="delete-modal-header">
           <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
@@ -717,7 +714,7 @@ onMounted(() => {
 
     <!-- 删除确认弹窗 -->
     <NModal v-model:show="showDeleteModal" preset="card" class="delete-modal rounded-16px w-400px"
-      :class="{ 'light-mode': !isDarkMode }" :bordered="false" size="small" :closable="false">
+      :bordered="false" size="small" :closable="false">
       <template #header>
         <div class="delete-modal-header">
           <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
@@ -743,7 +740,7 @@ onMounted(() => {
 
     <!-- 编辑 / 新增弹窗 -->
     <NModal v-model:show="showEditModal" preset="card" class="w-520px rounded-16px"
-      :class="{ 'light-mode': !isDarkMode }" :bordered="false" size="small" :closable="true">
+      :bordered="false" size="small" :closable="true">
       <template #header>
         <div class="modal-header">
           <SvgIcon :icon="isEditMode ? 'mdi:pencil' : 'mdi:plus'" class="modal-header-icon" />
@@ -1293,162 +1290,6 @@ onMounted(() => {
     flex-shrink: 0;
   }
 
-  &.light-mode {
-    .search-bar {
-      .search-box {
-        background: rgba(0, 0, 0, 0.03);
-        border-color: rgba(0, 0, 0, 0.06);
-
-        &:focus-within {
-          border-color: rgba(102, 126, 234, 0.45);
-          background: rgba(0, 0, 0, 0.04);
-          box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.08);
-        }
-
-        .search-icon {
-          color: rgba(0, 0, 0, 0.35);
-        }
-
-        :deep(.n-input) {
-          .n-input__input-el {
-            color: rgba(0, 0, 0, 0.85);
-          }
-
-          .n-input__placeholder {
-            color: rgba(0, 0, 0, 0.35);
-          }
-        }
-      }
-
-      .icon-btn {
-        background: rgba(0, 0, 0, 0.03);
-        border-color: rgba(0, 0, 0, 0.06);
-        color: rgba(0, 0, 0, 0.65);
-
-        &:hover {
-          background: rgba(0, 0, 0, 0.06);
-        }
-
-        &.primary {
-          color: #667eea;
-          background: rgba(102, 126, 234, 0.1);
-          border-color: rgba(102, 126, 234, 0.22);
-
-          &:hover {
-            background: rgba(102, 126, 234, 0.18);
-          }
-        }
-      }
-    }
-
-    .group-card {
-      background: rgba(0, 0, 0, 0.02);
-      border-color: rgba(0, 0, 0, 0.05);
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.04);
-        border-color: rgba(102, 126, 234, 0.3);
-        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.1);
-      }
-
-      &.expired {
-        border-color: rgba(245, 87, 108, 0.2);
-      }
-
-      .card-header {
-        .group-title {
-          .group-number {
-            color: rgba(0, 0, 0, 0.45);
-          }
-        }
-      }
-
-      .card-meta {
-        .meta-item {
-          background: rgba(0, 0, 0, 0.02);
-
-          .meta-label {
-            color: rgba(0, 0, 0, 0.4);
-          }
-
-          .meta-value {
-            color: rgba(0, 0, 0, 0.7);
-          }
-        }
-      }
-
-      .community-section {
-        .community-label {
-          color: rgba(0, 0, 0, 0.55);
-          background: rgba(0, 0, 0, 0.03);
-          border-color: rgba(0, 0, 0, 0.1);
-
-          .label-key {
-            color: rgba(0, 0, 0, 0.72);
-          }
-
-          .label-colon {
-            color: rgba(0, 0, 0, 0.3);
-          }
-
-          .label-value {
-            color: rgba(0, 0, 0, 0.55);
-          }
-        }
-
-        .notify-status {
-          color: rgba(0, 0, 0, 0.55);
-          background: rgba(0, 0, 0, 0.03);
-          border-color: rgba(0, 0, 0, 0.1);
-
-          .dot {
-            background: rgba(0, 0, 0, 0.25);
-          }
-
-          &.active {
-            color: #2ecc71;
-            background: rgba(46, 204, 113, 0.08);
-            border-color: rgba(46, 204, 113, 0.25);
-
-            .dot {
-              background: #2ecc71;
-            }
-          }
-        }
-      }
-
-      .card-actions {
-        border-top-color: rgba(0, 0, 0, 0.06);
-
-        .action-btn {
-          background: rgba(0, 0, 0, 0.04);
-          color: rgba(0, 0, 0, 0.65);
-        }
-
-        .action-btn.members {
-          &:hover {
-            background: rgba(46, 204, 113, 0.18);
-            color: #2ecc71;
-          }
-        }
-      }
-
-      .action-btn.apply {
-        border-top-color: rgba(0, 0, 0, 0.06);
-        background: rgba(0, 0, 0, 0.04);
-        color: rgba(0, 0, 0, 0.65);
-
-        &:hover {
-          background: rgba(79, 172, 254, 0.18);
-          color: #4facfe;
-        }
-      }
-    }
-
-    .empty-state {
-      color: rgba(0, 0, 0, 0.4);
-    }
-  }
 }
 
 /* ================================ 删除确认弹窗（teleport 到 body，独立于容器作用域） ================================ */
@@ -1540,18 +1381,6 @@ onMounted(() => {
           background: rgba(245, 87, 108, 0.22);
         }
       }
-    }
-  }
-}
-
-.light-mode {
-  .delete-modal-body {
-    .delete-modal-text {
-      color: rgba(0, 0, 0, 0.85);
-    }
-
-    .delete-modal-tip {
-      color: rgba(0, 0, 0, 0.45);
     }
   }
 }
@@ -2234,245 +2063,6 @@ onMounted(() => {
   }
 }
 
-.light-mode {
-  .member-modal {
-    .member-modal-header .member-modal-group {
-      color: rgba(0, 0, 0, 0.55);
-      background: rgba(0, 0, 0, 0.05);
-    }
-
-    .member-list-title {
-      border-bottom-color: rgba(0, 0, 0, 0.06);
-
-      .member-list-title-left {
-        color: rgba(0, 0, 0, 0.75);
-      }
-
-      .member-list-count {
-        color: #667eea;
-        background: rgba(102, 126, 234, 0.1);
-      }
-    }
-
-    .member-card {
-      background: rgba(0, 0, 0, 0.02);
-      border-color: rgba(0, 0, 0, 0.05);
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.04);
-        border-color: rgba(102, 126, 234, 0.3);
-      }
-
-      &.selected {
-        background: rgba(102, 126, 234, 0.1);
-        border-color: rgba(102, 126, 234, 0.35);
-        box-shadow: inset 3px 0 0 #667eea;
-      }
-
-      .member-info {
-        .member-name-row .member-name {
-          color: rgba(0, 0, 0, 0.8);
-        }
-
-        .member-meta .member-qq {
-          color: rgba(0, 0, 0, 0.45);
-        }
-
-        .member-meta .member-bind-status {
-          color: rgba(0, 0, 0, 0.4);
-
-          .bind-dot {
-            background: rgba(0, 0, 0, 0.25);
-          }
-        }
-
-        .member-meta .member-role-tag {
-          color: rgba(0, 0, 0, 0.5);
-          background: rgba(0, 0, 0, 0.06);
-
-          &.owner {
-            color: #d03050;
-            background: rgba(208, 48, 80, 0.1);
-          }
-
-          &.admin {
-            color: #f0a020;
-            background: rgba(240, 160, 32, 0.1);
-          }
-        }
-      }
-    }
-
-    .member-list::-webkit-scrollbar-thumb {
-      background: rgba(0, 0, 0, 0.15);
-    }
-
-    .member-empty {
-      color: rgba(0, 0, 0, 0.4);
-    }
-
-    .member-skeleton .member-skeleton-card {
-      background: rgba(0, 0, 0, 0.03);
-    }
-
-    .member-skeleton .member-skeleton-avatar,
-    .member-skeleton .member-skeleton-line {
-      background: rgba(0, 0, 0, 0.05);
-    }
-
-    .member-detail-panel {
-      background: rgba(0, 0, 0, 0.02);
-      border-color: rgba(0, 0, 0, 0.05);
-
-      .member-detail-placeholder {
-        .placeholder-title {
-          color: rgba(0, 0, 0, 0.7);
-        }
-
-        .placeholder-tip {
-          color: rgba(0, 0, 0, 0.4);
-        }
-
-        .placeholder-icon-wrap {
-          background: rgba(102, 126, 234, 0.08);
-
-          .placeholder-icon {
-            color: rgba(102, 126, 234, 0.6);
-          }
-        }
-      }
-
-      .member-detail-content {
-        .member-detail-header {
-          border-bottom-color: rgba(0, 0, 0, 0.06);
-
-          .member-detail-info {
-            .member-detail-name {
-              color: rgba(0, 0, 0, 0.85);
-            }
-
-            .member-detail-badge {
-              color: rgba(0, 0, 0, 0.55);
-              background: rgba(0, 0, 0, 0.06);
-
-              &.bound {
-                color: #2ecc71;
-                background: rgba(46, 204, 113, 0.12);
-              }
-            }
-
-            .member-detail-role {
-              color: rgba(0, 0, 0, 0.55);
-              background: rgba(0, 0, 0, 0.06);
-
-              &.owner {
-                color: #d03050;
-                background: rgba(208, 48, 80, 0.1);
-              }
-
-              &.admin {
-                color: #f0a020;
-                background: rgba(240, 160, 32, 0.1);
-              }
-            }
-
-            .member-detail-meta .detail-meta-item {
-              color: rgba(0, 0, 0, 0.5);
-
-              svg {
-                color: rgba(0, 0, 0, 0.35);
-              }
-            }
-          }
-        }
-
-        .member-subscribe-section {
-          .member-subscribe-title {
-            color: rgba(0, 0, 0, 0.75);
-
-            .subscribe-count {
-              color: #667eea;
-              background: rgba(102, 126, 234, 0.1);
-            }
-          }
-
-          .member-subscribe-empty {
-            border-color: rgba(0, 0, 0, 0.15);
-            color: rgba(0, 0, 0, 0.4);
-
-            p {
-              color: rgba(0, 0, 0, 0.6);
-            }
-          }
-
-          .subscribe-skeleton {
-            .subscribe-skeleton-card {
-              background: rgba(0, 0, 0, 0.03);
-
-              .subscribe-skeleton-cover,
-              .subscribe-skeleton-line {
-                background: rgba(0, 0, 0, 0.05);
-              }
-            }
-          }
-
-          .subscribe-list {
-            &::-webkit-scrollbar-thumb {
-              background: rgba(0, 0, 0, 0.15);
-            }
-
-            .subscribe-card {
-              background: rgba(0, 0, 0, 0.02);
-              border-color: rgba(0, 0, 0, 0.05);
-
-              &:hover {
-                background: rgba(0, 0, 0, 0.04);
-                border-color: rgba(102, 126, 234, 0.3);
-              }
-
-              .subscribe-card-icon {
-                color: #667eea;
-                background: rgba(102, 126, 234, 0.1);
-              }
-
-              .subscribe-card-info {
-                .subscribe-map-name {
-                  color: rgba(0, 0, 0, 0.82);
-                }
-
-                .subscribe-map-origin {
-                  color: rgba(0, 0, 0, 0.4);
-                }
-              }
-
-              .subscribe-badge {
-                &.system {
-                  color: #2ecc71;
-                  background: rgba(46, 204, 113, 0.1);
-                }
-
-                &.qq {
-                  color: #0d9fd8;
-                  background: rgba(13, 159, 216, 0.1);
-                }
-              }
-
-              .subscribe-delete-btn {
-                color: rgba(0, 0, 0, 0.3);
-
-                &:hover {
-                  color: #f5576c;
-                  background: rgba(245, 87, 108, 0.12);
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 /* ================================ 编辑弹窗（teleport 到 body，独立于容器作用域） ================================ */
 
 .modal-header {
@@ -2564,27 +2154,6 @@ onMounted(() => {
         &:hover {
           background: rgba(102, 126, 234, 0.22);
         }
-      }
-    }
-  }
-}
-
-.light-mode {
-  .modal-form {
-    .form-label {
-      color: rgba(0, 0, 0, 0.72);
-    }
-
-    .switch-wrap .switch-text {
-      color: rgba(0, 0, 0, 0.6);
-    }
-
-    .modal-actions .action-btn.cancel {
-      background: rgba(0, 0, 0, 0.05);
-      color: rgba(0, 0, 0, 0.65);
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.1);
       }
     }
   }

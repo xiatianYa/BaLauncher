@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { NModal, NButton, NProgress } from 'naive-ui';
-import { useThemeStore } from '@/store/modules/theme';
 import { fetchGetLogByVersion } from '@/service/api';  
 import { useAuthStore } from '@/store/modules/auth';
 
@@ -23,9 +22,7 @@ const state = ref<UpdateState>({
   percent: '0%'
 });
 
-const themeStore = useThemeStore();
 const authStore = useAuthStore();
-const isDarkMode = ref(themeStore.darkMode);
 
 const updateLog = ref<Api.System.UpdateLogVo | null>(null);
 const loadingUpdateLog = ref(false);
@@ -104,10 +101,6 @@ const updateDownloadedHandler = () => {
   state.value.percent = '100%';
 };
 
-watch(() => themeStore.darkMode, (newVal) => {
-  isDarkMode.value = newVal;
-});
-
 onMounted(() => {
   window.ipcRenderer.on('update-available', updateAvailableHandler);
   window.ipcRenderer.on('update-downloading', updateDownloadingHandler);
@@ -140,7 +133,7 @@ onUnmounted(() => {
         </div>
       </div>
       <div v-if="!state.downloading && !state.downloaded && updateLog" class="w-full mb-4 flex-1 overflow-auto">
-        <div v-if="updateLog" class="update-log-content" :class="{ 'dark': isDarkMode, 'light': !isDarkMode }">
+        <div v-if="updateLog" class="update-log-content">
           <h3 class="update-log-title">{{ updateLog.title }}</h3>
           <div class="update-log-text">{{ updateLog.content }}</div>
         </div>
@@ -201,29 +194,21 @@ onUnmounted(() => {
   line-height: 1.7;
   max-height: 300px;
   overflow: auto;
-  border: 1px solid;
-}
-
-.update-log-title {
-  font-size: 15px;
-  font-weight: 600;
-  margin: 0 0 12px 0;
-}
-
-.update-log-text {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  margin: 0;
-}
-
-// 黑夜主题
-.update-log-content.dark {
+  border: 1px solid #333;
   background: #18181c;
-  border-color: #333;
   color: #e0e0e0;
 
   .update-log-title {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
     color: #f3f4f6;
+  }
+
+  .update-log-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
   }
 
   &::-webkit-scrollbar {
@@ -242,35 +227,6 @@ onUnmounted(() => {
 
   &::-webkit-scrollbar-thumb:hover {
     background: #444;
-  }
-}
-
-// 白天主题
-.update-log-content.light {
-  background: #f8f9fa;
-  border-color: #e2e8f0;
-  color: #333;
-
-  .update-log-title {
-    color: #1f2937;
-  }
-
-  &::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: #f8f9fa;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 3px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: #94a3b8;
   }
 }
 </style>

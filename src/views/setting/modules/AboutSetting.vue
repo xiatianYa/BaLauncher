@@ -127,10 +127,6 @@ defineExpose({
 <style scoped lang="scss">
 .setting-section {
   margin-bottom: 16px;
-  padding: 16px;
-  border-radius: 12px;
-  background-color: var(--n-color);
-  border: 1px solid var(--n-border-color);
 }
 
 .section-header {

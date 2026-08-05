@@ -3,7 +3,6 @@ import { computed, reactive, ref, watch, onMounted } from 'vue';
 import { NInput, NModal, NButton, NSelect, NUpload } from 'naive-ui';
 import type { UploadCustomRequestOptions } from 'naive-ui';
 import { useDebounceFn } from '@vueuse/core';
-import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
 import { useAuth } from '@/hooks/business/auth';
 import { useDict } from '@/hooks/business/dict';
@@ -20,14 +19,11 @@ const DEBOUNCE_DELAY = 300; // 搜索防抖（毫秒）
 const LOADING_DELAY = 500; // 列表加载动画时长（毫秒）
 const DEFAULT_PAGE_SIZE = 12;
 
-const themeStore = useThemeStore();
 const gameStore = useGameStore();
 const { isAdmin } = useAuth();
 const { dictOptions } = useDict();
 const { ensureBound } = useBotBind(); // 添加订阅时需要先绑定QQ群成员
 const emit = defineEmits<{ back: [] }>();
-
-const isDarkMode = computed(() => themeStore.darkMode);
 const isOrderOptions = [
     { label: '是', value: '1' },
     { label: '否', value: '0' }
@@ -297,7 +293,7 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="map-order-container" :class="{ 'light-mode': !isDarkMode }">
+    <div class="map-order-container">
         <div class="header-section">
             <div class="title-section">
                 <SvgIcon icon="material-symbols:map-outline" />
@@ -472,7 +468,7 @@ onMounted(() => {
         </div>
     </div>
     <NModal v-model:show="showSubscribeModal" :bordered="true" preset="card"
-        class="w-400px rounded-20px subscribe-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
+        class="w-400px rounded-20px subscribe-modal-wrapper" :closable="false"
         size="small">
         <template #header>
             <div class="flex items-center font-size-18px">
@@ -503,7 +499,7 @@ onMounted(() => {
         </div>
     </NModal>
     <NModal v-model:show="showEditModal" :bordered="true" preset="card"
-        class="w-400px rounded-20px subscribe-modal-wrapper" :class="{ 'light-mode': !isDarkMode }" :closable="false"
+        class="w-400px rounded-20px subscribe-modal-wrapper" :closable="false"
         size="small">
         <template #header>
             <div class="font-size-16px">{{ $t('mapOrder.editSubscribe') }}</div>
@@ -549,7 +545,7 @@ onMounted(() => {
         </div>
     </NModal>
     <NModal v-model:show="showMapEditModal" :bordered="true" preset="card" class="w-500px rounded-20px"
-        :class="{ 'light-mode': !isDarkMode }" :closable="true" size="small">
+        :closable="true" size="small">
         <template #header>
             <div class="flex items-center font-size-16px">
                 <SvgIcon :icon="isMapAddMode ? 'material-symbols:add' : 'material-symbols:edit-outline'" class="mr-5px" />
@@ -1215,209 +1211,6 @@ onMounted(() => {
     }
 }
 
-// 浅色模式适配
-.light-mode {
-    .search-box {
-        background: rgba(0, 0, 0, 0.03);
-        border-color: rgba(0, 0, 0, 0.09);
-
-        &:focus-within {
-            border-color: rgba(102, 126, 234, 0.45);
-            background: rgba(0, 0, 0, 0.05);
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .search-icon {
-            color: rgba(102, 126, 234, 0.75);
-        }
-
-        ::v-deep(.n-input) {
-            .n-input__input-el {
-                color: rgba(0, 0, 0, 0.85);
-            }
-
-            .n-input__placeholder {
-                color: rgba(0, 0, 0, 0.3);
-            }
-        }
-    }
-
-    .subscribe-list-title {
-        color: rgba(0, 0, 0, 0.85);
-
-        .subscribe-list-icon {
-            background: rgba(102, 126, 234, 0.12);
-            border-color: rgba(102, 126, 234, 0.2);
-            color: rgba(102, 126, 234, 0.9);
-        }
-    }
-
-    .main-content {
-        .left-panel {
-            ::v-deep(.n-card-header) {
-                border-bottom-color: rgba(0, 0, 0, 0.06);
-            }
-
-            .map-card {
-                background: rgba(0, 0, 0, 0.02);
-                border-color: rgba(0, 0, 0, 0.08);
-
-                &:hover {
-                    background: rgba(0, 0, 0, 0.05);
-                    border-color: rgba(102, 126, 234, 0.3);
-                    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.1);
-                }
-
-                .map-card-info {
-                    .map-card-name {
-                        color: rgba(0, 0, 0, 0.85);
-                    }
-
-                    .map-card-label {
-                        color: rgba(0, 0, 0, 0.45);
-                    }
-                }
-
-                .map-card-stats {
-                    .stat-item {
-                        background: rgba(0, 0, 0, 0.04);
-
-                        .stat-label {
-                            color: rgba(0, 0, 0, 0.45);
-                        }
-
-                        .stat-value {
-                            color: rgba(0, 0, 0, 0.75);
-                        }
-                    }
-                }
-
-                .map-card-actions {
-                    .action-btn {
-                        &.system {
-                            color: #2080f0;
-                            background: rgba(32, 128, 240, 0.08);
-                            border-color: rgba(32, 128, 240, 0.2);
-
-                            &:hover {
-                                background: rgba(32, 128, 240, 0.15);
-                                border-color: rgba(32, 128, 240, 0.35);
-                            }
-
-                            &.subscribed {
-                                color: #fff;
-                                background: rgba(32, 128, 240, 0.85);
-                                border-color: rgba(32, 128, 240, 1);
-                            }
-                        }
-
-                        &.qq {
-                            color: #18a058;
-                            background: rgba(24, 160, 88, 0.08);
-                            border-color: rgba(24, 160, 88, 0.2);
-
-                            &:hover {
-                                background: rgba(24, 160, 88, 0.15);
-                                border-color: rgba(24, 160, 88, 0.35);
-                            }
-
-                            &.subscribed {
-                                color: #fff;
-                                background: rgba(24, 160, 88, 0.85);
-                                border-color: rgba(24, 160, 88, 1);
-                            }
-                        }
-
-                        &.edit {
-                            color: #f0a020;
-                            background: rgba(240, 160, 32, 0.08);
-                            border-color: rgba(240, 160, 32, 0.2);
-
-                            &:hover {
-                                background: rgba(240, 160, 32, 0.15);
-                                border-color: rgba(240, 160, 32, 0.35);
-                            }
-                        }
-
-                        &.disabled {
-                            color: rgba(0, 0, 0, 0.4);
-                            background: rgba(0, 0, 0, 0.04);
-                            border-color: rgba(0, 0, 0, 0.08);
-                        }
-                    }
-                }
-            }
-        }
-
-        .right-panel {
-            ::v-deep(.n-card-header) {
-                border-bottom-color: rgba(0, 0, 0, 0.06);
-            }
-
-            .subscribe-list {
-                .subscribe-item {
-                    background: rgba(0, 0, 0, 0.02);
-                    border-color: rgba(0, 0, 0, 0.08);
-
-                    &:hover {
-                        background: rgba(0, 0, 0, 0.05);
-                        border-color: rgba(102, 126, 234, 0.3);
-                        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.1);
-                    }
-
-                    .subscribe-item-name {
-                        color: rgba(0, 0, 0, 0.85);
-                    }
-
-                    .subscribe-item-label {
-                        color: rgba(0, 0, 0, 0.45);
-                    }
-
-                    .subscribe-item-actions {
-                        .icon-btn {
-                            color: rgba(0, 0, 0, 0.55);
-                            background: rgba(0, 0, 0, 0.04);
-                            border-color: rgba(0, 0, 0, 0.08);
-
-                            &:hover {
-                                background: rgba(102, 126, 234, 0.1);
-                                border-color: rgba(102, 126, 234, 0.35);
-                                color: #667eea;
-                            }
-                        }
-                    }
-
-                    .subscribe-item-meta {
-                        .meta-item {
-                            background: rgba(0, 0, 0, 0.04);
-
-                            .meta-label {
-                                color: rgba(0, 0, 0, 0.45);
-                            }
-
-                            .meta-value {
-                                color: rgba(0, 0, 0, 0.75);
-                            }
-                        }
-                    }
-
-                    .subscribe-item-extra {
-                        .extra-item {
-                            .extra-label {
-                                color: rgba(0, 0, 0, 0.45);
-                            }
-
-                            .extra-value {
-                                color: rgba(0, 0, 0, 0.65);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -1435,114 +1228,6 @@ onMounted(() => {
         background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
         border: none;
         overflow: hidden;
-    }
-
-    &.light-mode {
-        :deep(.n-card) {
-            background: linear-gradient(135deg, #f8f9fc 0%, #eef0f5 100%);
-        }
-
-        .subscribe-modal-new {
-            display: flex;
-            align-items: center;
-            color: #333;
-
-            .subscribe-header {
-                .character-image {
-                    border-color: rgba(102, 126, 234, 0.6);
-                    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
-                }
-
-                .header-glow {
-                    background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
-                }
-            }
-
-            .edit-actions {
-                .action-card {
-                    background: rgba(102, 126, 234, 0.05);
-                    border-color: rgba(102, 126, 234, 0.15);
-
-                    &:hover {
-                        background: rgba(102, 126, 234, 0.1);
-                    }
-
-                    .action-text {
-                        color: rgba(0, 0, 0, 0.6);
-                    }
-                }
-
-                .system-card {
-                    color: #2080f0;
-
-                    &:hover {
-                        background: rgba(32, 128, 240, 0.1);
-                        border-color: rgba(32, 128, 240, 0.3);
-                    }
-
-                    &.subscribed {
-                        background: rgba(32, 128, 240, 0.12);
-                        border-color: rgba(32, 128, 240, 0.35);
-                    }
-                }
-
-                .qq-card {
-                    color: #18a058;
-
-                    &:hover {
-                        background: rgba(24, 160, 88, 0.1);
-                        border-color: rgba(24, 160, 88, 0.3);
-                    }
-
-                    &.subscribed {
-                        background: rgba(24, 160, 88, 0.12);
-                        border-color: rgba(24, 160, 88, 0.35);
-                    }
-                }
-
-                .delete-card {
-                    color: #d03050;
-
-                    &:hover {
-                        background: rgba(208, 48, 80, 0.1);
-                        border-color: rgba(208, 48, 80, 0.3);
-                    }
-                }
-            }
-
-            .subscribe-tips {
-                .tip-item {
-                    background: rgba(102, 126, 234, 0.05);
-                    border-color: rgba(102, 126, 234, 0.15);
-                    cursor: pointer;
-
-                    &:hover {
-                        background: rgba(102, 126, 234, 0.15);
-                        border-color: rgba(102, 126, 234, 0.5);
-                        box-shadow: 0 0 15px rgba(102, 126, 234, 0.2);
-                        transform: translateY(-2px);
-
-                        .tip-icon {
-                            color: #764ba2;
-                        }
-
-                        .tip-text {
-                            color: rgba(0, 0, 0, 0.9);
-                        }
-                    }
-
-                    .tip-icon {
-                        color: #667eea;
-                        transition: all 0.3s ease;
-                    }
-
-                    .tip-text {
-                        color: rgba(0, 0, 0, 0.6);
-                        transition: all 0.3s ease;
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -1745,35 +1430,6 @@ onMounted(() => {
         border: none;
         overflow: hidden;
     }
-
-    &.light-mode {
-        :deep(.n-card) {
-            background: linear-gradient(135deg, #f8f9fc 0%, #eef0f5 100%);
-        }
-
-        .bind-qq-modal-new {
-            color: #333;
-
-            .subscribe-header {
-                .character-image {
-                    border-color: rgba(102, 126, 234, 0.6);
-                    box-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
-                }
-
-                .header-glow {
-                    background: radial-gradient(circle, rgba(102, 126, 234, 0.2) 0%, transparent 70%);
-                }
-            }
-
-            .bind-qq-form {
-                .form-item {
-                    .form-label {
-                        color: rgba(0, 0, 0, 0.8);
-                    }
-                }
-            }
-        }
-    }
 }
 
 .bind-qq-modal-new {
@@ -1888,11 +1544,4 @@ onMounted(() => {
     }
 }
 
-.light-mode {
-    .map-upload-trigger {
-        .map-upload-placeholder {
-            color: rgba(0, 0, 0, 0.5);
-        }
-    }
-}
 </style>

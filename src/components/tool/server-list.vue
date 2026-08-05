@@ -5,8 +5,6 @@
  * @design 三栏布局中间面板，承接社区选择后联动刷新的服务器数据
  -->
 <script setup lang="ts">
-import { useThemeStore } from '@/store/modules/theme';
-import { computed } from 'vue';
 import { NCard, NEmpty } from 'naive-ui';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
@@ -25,8 +23,6 @@ const emit = defineEmits<{
     (e: 'select', index: number): void;
 }>();
 
-const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 </script>
 
 <template>

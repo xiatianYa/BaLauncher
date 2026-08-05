@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, watch, ref } from 'vue';
+import { watch } from 'vue';
 import { useAppStore } from '@/store/modules/app';
 import { useEcharts } from '@/hooks/common/echarts';
 import { $t } from '@/locales';
-import { useThemeStore } from '@/store/modules/theme';
 
 defineOptions({
   name: 'PieChart'
@@ -11,57 +10,15 @@ defineOptions({
 
 const appStore = useAppStore();
 
-/** 主题相关 */
-const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
-
-// 缓存数据避免重复计算
-const cachedData = ref<{ name: string; value: number; itemStyle: any }[] | null>(null);
-
-// 渐变色配置 - 柔和的配色方案
-const gradientColors = [
-  { start: '#a8c0ff', end: '#3f2b96' },
-  { start: '#ffecd2', end: '#fcb69f' },
-  { start: '#a1c4fd', end: '#c2e9fb' },
-  { start: '#d4fc79', end: '#96e6a1' },
-  { start: '#fbc2eb', end: '#a6c1ee' },
-  { start: '#e0c3fc', end: '#8ec5fc' },
-  { start: '#f6d365', end: '#fda085' },
-  { start: '#84fab0', end: '#8fd3f4' }
-];
-
-// 预计算颜色避免重复创建对象
-const getItemStyle = (index: number, dark: boolean) => {
-  const colorPair = gradientColors[index % gradientColors.length];
-  return {
-    color: {
-      type: 'linear' as const,
-      x: 0,
-      y: 0,
-      x2: 1,
-      y2: 1,
-      colorStops: [
-        { offset: 0, color: colorPair.start },
-        { offset: 1, color: colorPair.end }
-      ]
-    },
-    borderRadius: 8,
-    borderColor: dark ? '#1a1a2e' : '#fff',
-    borderWidth: 2,
-    shadowColor: colorPair.start + '40',
-    shadowBlur: 10
-  };
-};
-
 const { domRef, updateOptions } = useEcharts(() => ({
   tooltip: {
     trigger: 'item',
-    backgroundColor: isDarkMode.value ? 'rgba(30, 30, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: 'rgba(30, 30, 40, 0.95)',
     borderColor: 'transparent',
     borderWidth: 0,
     padding: [5, 5],
     textStyle: {
-      color: isDarkMode.value ? '#fff' : '#333',
+      color: '#fff',
       fontSize: 13
     },
     // 使用简单的 formatter 提升性能
@@ -77,7 +34,7 @@ const { domRef, updateOptions } = useEcharts(() => ({
       borderWidth: 0
     },
     textStyle: {
-      color: isDarkMode.value ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)',
+      color: 'rgba(255, 255, 255, 0.8)',
       fontSize: 12
     },
     itemWidth: 12,
@@ -107,7 +64,7 @@ const { domRef, updateOptions } = useEcharts(() => ({
           show: true,
           fontSize: 16,
           fontWeight: 'bold' as const,
-          color: isDarkMode.value ? '#fff' : '#333',
+          color: '#fff',
           formatter: '{b}'
         },
         itemStyle: {
@@ -134,48 +91,6 @@ watch(
   () => appStore.locale,
   () => {
     updateLocale();
-  }
-);
-
-// 监听主题变化 - 使用缓存数据避免重新请求
-watch(
-  () => isDarkMode.value,
-  (dark) => {
-    if (!cachedData.value) return;
-
-    // 只更新颜色相关的样式
-    const updatedData = cachedData.value.map((item, index) => ({
-      ...item,
-      itemStyle: getItemStyle(index, dark)
-    }));
-
-    updateOptions(opts => {
-      if (!opts.tooltip || Array.isArray(opts.tooltip)) return opts;
-
-      // 更新 tooltip
-      opts.tooltip.backgroundColor = dark ? 'rgba(30, 30, 40, 0.95)' : 'rgba(255, 255, 255, 0.95)';
-      if (opts.tooltip.textStyle) {
-        opts.tooltip.textStyle.color = dark ? '#fff' : '#333';
-      }
-
-      // 更新 legend
-      if (opts.legend && !Array.isArray(opts.legend) && opts.legend.textStyle) {
-        opts.legend.textStyle.color = dark ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.7)';
-      }
-
-      // 更新 series 数据
-      if (opts.series && opts.series[0]) {
-        const series = opts.series[0];
-        series.data = updatedData;
-
-        // 更新 emphasis 标签颜色
-        if (series.emphasis?.label) {
-          series.emphasis.label.color = dark ? '#fff' : '#333';
-        }
-      }
-
-      return opts;
-    });
   }
 );
 </script>

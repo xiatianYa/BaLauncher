@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, watch } from 'vue';
+import { ref, onMounted, nextTick, watch } from 'vue';
 import { NCard, NSpin, NTag, NButton } from 'naive-ui';
 import { MdPreview } from 'md-editor-v3';
 import dayjs from 'dayjs';
-import { useThemeStore } from '@/store/modules/theme';
 import { fetchGetLatestLogList, fetchRemoveLog } from '@/service/api';
 import { useAuth } from '@/hooks/business/auth';
 import AddLogModal from './modules/add-log-modal.vue';
@@ -14,9 +13,6 @@ import { $t } from '@/locales';
 defineOptions({
   name: 'updateLog'
 });
-
-const themeStore = useThemeStore();
-const isDarkMode = computed(() => themeStore.darkMode);
 
 const { dictType, dictLabel } = useDict();
 
@@ -151,32 +147,39 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="update-log-container" :class="{ 'light-mode': !isDarkMode }">
-    <!-- 页面头部：标题 + 新增按钮 -->
-    <div class="header-section">
-      <div class="title-section">
-        <SvgIcon icon="mdi:update" class="title-icon" />
-        <div class="title-group">
-          <h1 class="page-title">{{ $t('updateLog.title') }}</h1>
-          <span class="page-subtitle">{{ $t('updateLog.subtitle') }}</span>
+  <NCard class="w-full h-full" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
+    <NCard class="m-10px rounded-10px" content-style="padding:25px 0px 25px 0px;" :bordered="true"
+      content-class="h-full flex flex-col flex-1 overflow-hidden" header-style="padding:10px 20px 10px 20px" :segmented="{
+        content: true,
+        footer: 'soft',
+      }">
+      <template #header>
+        <div class="header-section">
+          <div class="title-section">
+            <SvgIcon icon="mdi:update" class="title-icon" />
+            <div class="title-group">
+              <h1 class="page-title">{{ $t('updateLog.title') }}</h1>
+              <span class="page-subtitle">{{ $t('updateLog.subtitle') }}</span>
+            </div>
+          </div>
+          <button v-if="canAddUpdateLog" class="icon-btn primary" title="新增更新日志" @click="addModalVisible = true">
+            <SvgIcon icon="mdi:plus" />
+          </button>
         </div>
-      </div>
-      <button v-if="canAddUpdateLog" class="icon-btn primary" title="新增更新日志" @click="addModalVisible = true">
-        <SvgIcon icon="mdi:plus" />
-      </button>
-    </div>
+      </template>
 
-    <!-- 日志列表 -->
-    <div class="card-list">
-      <NSpin :show="loading">
-        <div v-if="updateLogs.length === 0 && !loading" class="empty-state">
-          <SvgIcon icon="mdi:file-document-outline" class="empty-icon" />
-          <p>{{ $t('updateLog.noLogs') }}</p>
-        </div>
+      <!-- 日志列表 -->
+      <div class="card-list">
+        <NSpin :show="loading">
+          <div v-if="updateLogs.length === 0 && !loading" class="empty-state">
+            <SvgIcon icon="mdi:file-document-outline" class="empty-icon" />
+            <p>{{ $t('updateLog.noLogs') }}</p>
+          </div>
 
-        <NInfiniteScroll v-else @load="loadMore">
-          <div class="log-card" v-for="(log, index) in updateLogs" :key="log.id"
-            :class="{ 'new-item': isNewLog(log.id), pinned: log.isTop === 1 }">
+          <NInfiniteScroll v-else @load="loadMore">
+            <div class="log-card" v-for="(log, index) in updateLogs" :key="log.id"
+              :class="{ 'new-item': isNewLog(log.id), pinned: log.isTop === 1 }"
+              :style="{ '--delay': `${Math.min(index * 0.05, 0.4)}s` }">
             <div class="log-card-header">
               <div class="log-title-wrap">
                 <h3 class="log-title" :title="log.title">{{ log.title }}</h3>
@@ -212,7 +215,7 @@ onMounted(() => {
             </div>
 
             <div class="log-card-body" v-if="log.content">
-              <MdPreview class="log-markdown" :theme="isDarkMode ? 'dark' : 'light'" :modelValue="log.content" />
+              <MdPreview class="log-markdown" :modelValue="log.content" />
             </div>
           </div>
 
@@ -223,16 +226,17 @@ onMounted(() => {
             {{ $t('updateLog.allLoaded') }} · {{ $t('updateLog.totalLogs', { count: updateLogs.length }) }}
           </div>
         </NInfiniteScroll>
-      </NSpin>
-    </div>
-  </div>
+        </NSpin>
+      </div>
+    </NCard>
+  </NCard>
 
   <AddLogModal v-model:showAddLogModal="addModalVisible" @success="handleSuccess" />
   <UpdateLogModal v-model:showUpdateLogModal="editModalVisible" :edit-log="editingLog" @success="handleSuccess" />
 
   <!-- 删除确认弹窗 -->
   <NModal v-model:show="showDeleteModal" preset="card" class="delete-modal rounded-16px w-360px"
-    :class="{ 'light-mode': !isDarkMode }" :bordered="false" size="small" :closable="false">
+    :bordered="false" size="small" :closable="false">
     <template #header>
       <div class="delete-modal-header">
         <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
@@ -261,9 +265,6 @@ onMounted(() => {
 .update-log-container {
   width: 100%;
   height: 100%;
-  padding: 16px 20px 20px;
-  background-color: var(--n-color);
-  color: var(--n-text-color);
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -277,7 +278,6 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16px;
   flex-shrink: 0;
 
   .title-section {
@@ -373,7 +373,7 @@ onMounted(() => {
 .card-list {
   flex: 1;
   overflow: auto;
-  padding-right: 4px;
+  padding: 0 16px 16px;
 }
 
 .empty-state {
@@ -402,6 +402,10 @@ onMounted(() => {
   padding: 16px 18px;
   margin-bottom: 14px;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  // 进入动画：错落淡入上浮（与工具箱卡片一致）
+  animation: fadeInUp 0.5s ease-out forwards;
+  animation-delay: var(--delay);
+  opacity: 0;
 
   &:hover {
     background: rgba(255, 255, 255, 0.05);
@@ -416,9 +420,6 @@ onMounted(() => {
     }
   }
 
-  &.new-item {
-    animation: fadeInUp 0.35s ease-out forwards;
-  }
 }
 
 .log-card-header {
