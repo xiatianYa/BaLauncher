@@ -768,9 +768,9 @@ onMounted(() => {
         <div v-if="!isEditMode" class="form-tip">
           <SvgIcon icon="mdi:information-outline" class="form-tip-icon" />
           <div class="form-tip-text">
-            <span>1. 免费送 3 个月，之后 5 元/月</span>
+            <span>1. 免费送 3 个月，之后 5 元/月(腾讯保护费)</span>
             <span>2. 机器人会自动申请入群</span>
-            <span>3. 申请成功后，主动邀请机器人 2680785606 入群，自动加群</span>
+            <span>3. 申请成功后，添加机器人 2680785606 好友(自动同意)，然后邀请加群</span>
           </div>
         </div>
         <div class="form-item">
