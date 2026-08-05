@@ -15,6 +15,8 @@ export default {
     setting: '设置',
     updateLog: '更新日志',
     hall: '大厅',
+    roleManage: '角色管理',
+    role: '角色管理',
   },
   common: {
     loading: '正在加载...',

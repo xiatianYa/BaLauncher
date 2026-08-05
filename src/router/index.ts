@@ -70,6 +70,15 @@ function createVueRoutes(): RouteRecordRaw[] {
                         requiresAuth: false
                     }
                 },
+                {
+                    path: 'roleManage',
+                    name: 'roleManage',
+                    component: () => import('@/views/roleManage/index.vue'),
+                    meta: {
+                        title: '角色管理',
+                        requiresAuth: false
+                    }
+                },
             ]
         }
     ];

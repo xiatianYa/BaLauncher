@@ -145,7 +145,8 @@ const getSortOrder = (field: SortField) => {
       <!-- 表体 -->
       <div class="custom-tbody">
         <div v-for="(server, index) in sortedServers" :key="index" class="custom-row"
-          :class="{ 'offline-row': isServerOffline(server) }">
+          :class="{ 'offline-row': isServerOffline(server) }"
+          :style="{ '--delay': `${Math.min(index * 0.05, 0.4)}s` }">
           <!-- 服务器名 -->
           <div class="td td-name">
             <div class="flex items-center gap-8px">
@@ -312,6 +313,10 @@ const getSortOrder = (field: SortField) => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.25s ease;
   overflow: hidden;
+  // 进入动画：错落淡入上浮（与更新日志卡片一致）
+  animation: fadeInUp 0.5s ease-out forwards;
+  animation-delay: var(--delay, 0s);
+  opacity: 0;
 
   &:hover {
     transform: translateY(-2px);
@@ -537,6 +542,18 @@ const getSortOrder = (field: SortField) => {
     &:active {
       transform: scale(0.95);
     }
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

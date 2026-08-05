@@ -34,9 +34,13 @@ export function useAuth() {
   // 是否为管理员
   const isAdmin = computed(() => hasRole(ADMIN_ROLES));
 
+  // 是否为超级管理员
+  const isSuperAdmin = computed(() => hasRole('R_SUPER'));
+
   return {
     hasAuth,
     hasRole,
-    isAdmin
+    isAdmin,
+    isSuperAdmin
   };
 }

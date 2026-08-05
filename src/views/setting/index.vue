@@ -29,11 +29,14 @@ onMounted(() => {
       <template #header>
         <div class="setting-header">
           <SvgIcon icon="ic:twotone-settings" class="setting-icon" />
-          <h1 class="setting-title">
-            <NText>
-              {{ $t('routes.setting') }}
-            </NText>
-          </h1>
+          <div class="setting-title-group">
+            <h1 class="setting-title">
+              <NText>
+                {{ $t('routes.setting') }}
+              </NText>
+            </h1>
+            <span class="setting-subtitle">应用参数与偏好设置</span>
+          </div>
         </div>
       </template>
 
@@ -59,11 +62,22 @@ onMounted(() => {
     color: var(--primary-color, #18a058);
   }
 
-  .setting-title {
-    font-size: 18px;
-    font-weight: 600;
-    line-height: 1;
-    color: var(--n-text-color);
+  .setting-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .setting-title {
+      font-size: 18px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--n-text-color);
+    }
+
+    .setting-subtitle {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.45);
+    }
   }
 }
 

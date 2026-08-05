@@ -2,20 +2,30 @@ import { defineStore } from "pinia";
 import { SetupStoreId } from "@/enum";
 import { router as globalRouter } from "@/router";
 import { RouteLocationRaw } from "vue-router";
-import { reactive } from "vue";
+import { computed, reactive } from "vue";
 import { localStg } from "@/utils/storage";
 import { ROUTE_STORAGE_KEYS } from '@/constants/cache';
-import icon940326 from '@/assets/imgs/menu/940326.png';
-import icon939940 from '@/assets/imgs/menu/939940.png';
-import icon911476 from '@/assets/imgs/menu/911476.png';
-import icon207977 from '@/assets/imgs/menu/207977.png';
-import icon766184 from '@/assets/imgs/menu/766184.png';
-import icon451044 from '@/assets/imgs/menu/451044.png';
+import { useAuthStore } from '@/store/modules/auth';
+import iconHome from '@/assets/imgs/menu/menu-home.png';
+import iconServer from '@/assets/imgs/menu/menu-server.png';
+import iconTools from '@/assets/imgs/menu/menu-tools.png';
+import iconSetting from '@/assets/imgs/menu/menu-setting.png';
+import iconUpdateLog from '@/assets/imgs/menu/menu-update-log.png';
+import iconHall from '@/assets/imgs/menu/menu-hall.png';
+import iconRole from '@/assets/imgs/menu/menu-role.png';
 
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   const router = globalRouter;
   const route = globalRouter.currentRoute;
+
+  const authStore = useAuthStore();
+
+  // 需要超级管理员权限才能显示的菜单 key
+  const SUPER_ADMIN_ONLY_MENU_KEYS = ['roleManage'];
+
+  // 是否为超级管理员
+  const isSuperAdmin = computed(() => authStore.userInfo.roles.includes('R_SUPER'));
 
   const routerPush = router.push;
 
@@ -27,6 +37,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       '服务器': 'routes.server',
       '工具箱': 'routes.tools',
       '设置': 'routes.setting',
+      '角色管理': 'routes.roleManage',
     };
     return map[name] ?? name;
   };
@@ -42,49 +53,60 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       name: "routes.home",
       key: "home",
       icon: "material-symbols:home-outline-rounded",
-      img: icon940326,
+      img: iconHome,
       isPersistent: true
     },
-    // {
-    //   name: "routes.hall",
-    //   key: "hall",
-    //   icon: "tabler:home",
-    //   img: icon451044,
-    //   isPersistent: true
-    // },
     {
       name: "routes.server",
       key: "server",
       icon: "tabler:server",
-      img: icon939940,
+      img: iconServer,
       isPersistent: true
     },
     {
       name: "routes.tools",
       key: "tools",
       icon: "gg:toolbox",
-      img: icon911476,
+      img: iconTools,
       isPersistent: true
     },
     {
       name: "routes.updateLog",
       key: "updateLog",
       icon: "tabler:history",
-      img: icon766184,
+      img: iconUpdateLog,
+      isPersistent: true
+    },
+    {
+      name: "routes.roleManage",
+      key: "roleManage",
+      icon: "tabler:user-shield",
+      img: iconRole,
       isPersistent: true
     },
     {
       name: "routes.setting",
       key: "setting",
       icon: "tabler:settings",
-      img: icon207977,
+      img: iconSetting,
       isPersistent: true
     },
   ];
 
   const storedRoutes = localStg.get(ROUTE_STORAGE_KEYS.SIDE_NAV_ROUTES);
-  const initialRoutes = Array.isArray(storedRoutes) ? storedRoutes : DEFAULT_SIDE_NAV_ROUTES;
+  // 合并默认菜单：保证新增的默认菜单（如角色管理）在已保存过的旧配置中也能出现
+  const initialRoutes: Api.Route.SideNavItem[] = Array.isArray(storedRoutes)
+    ? DEFAULT_SIDE_NAV_ROUTES.reduce(
+        (acc, def) => (acc.some(item => item.key === def.key) ? acc : [...acc, def]),
+        [...storedRoutes]
+      )
+    : DEFAULT_SIDE_NAV_ROUTES;
   const SideNavRoutes: Api.Route.SideNavItem[] = reactive(initialRoutes.map(normalizeNavItem));
+
+  // 侧边菜单（按权限过滤，超级管理员专属菜单仅对超级管理员显示）
+  const menuRoutes = computed(() =>
+    SideNavRoutes.filter(item => !SUPER_ADMIN_ONLY_MENU_KEYS.includes(item.key) || isSuperAdmin.value)
+  );
 
   async function routerPushByKey(key: string, options?: App.Global.RouterPushOptions) {
     const { query, params } = options || {};
@@ -158,6 +180,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
     route,
     router,
     SideNavRoutes,
+    menuRoutes,
     resetStore,
     routerPush,
     routerBack,

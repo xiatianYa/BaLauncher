@@ -3,10 +3,13 @@ import { NGridItem } from 'naive-ui';
 import { reactive } from 'vue';
 import { useRouteStore } from '@/store/modules/route';
 import { localStg } from '@/utils/storage';
-import icon911476 from '@/assets/imgs/menu/911476.png';
-import icon207977 from '@/assets/imgs/menu/207977.png';
-import icon766184 from '@/assets/imgs/menu/766184.png';
-import icon451044 from '@/assets/imgs/menu/451044.png';
+import iconRole from '@/assets/imgs/menu/menu-role.png';
+import iconTools from '@/assets/imgs/menu/menu-tools.png';
+import iconSetting from '@/assets/imgs/menu/menu-setting.png';
+import iconUpdateLog from '@/assets/imgs/menu/menu-update-log.png';
+
+
+
 
 const visible = defineModel<boolean>('visible', {
     default: false
@@ -15,32 +18,32 @@ const visible = defineModel<boolean>('visible', {
 const useRoute = useRouteStore();
 
 const SideNavRoutes: Api.Route.SideNavItem[] = reactive([
-    // {
-    //     name: "routes.hall",
-    //     key: "hall",
-    //     icon: "tabler:home",
-    //     img: icon451044,
-    //     isPersistent: true
-    // },
     {
         name: "routes.tools",
         key: "tools",
         icon: "gg:toolbox",
-        img: icon911476,
+        img: iconTools,
         isPersistent: true
     },
     {
         name: "routes.setting",
         key: "setting",
         icon: "tabler:settings",
-        img: icon207977,
+        img: iconSetting,
         isPersistent: true
     },
     {
         name: "routes.updateLog",
         key: "updateLog",
         icon: "tabler:history",
-        img: icon766184,
+        img: iconUpdateLog,
+        isPersistent: true
+    },
+    {
+        name: "routes.roleManage",
+        key: "roleManage",
+        icon: "hugeicons:authorized",
+        img: iconRole,
         isPersistent: true
     },
 ])

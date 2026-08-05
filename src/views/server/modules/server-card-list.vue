@@ -157,7 +157,8 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   <div ref="listRef" class="h-full overflow-auto p-5px relative">
     <div class="virtual-scroll-spacer" :style="{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px` }">
       <NGrid :x-gap="12" :y-gap="12" :cols="2">
-        <NGridItem v-for="(server, index) in visibleServers" :key="server.connectStr || index">
+        <NGridItem v-for="(server, index) in visibleServers" :key="server.connectStr || index"
+          :style="{ '--delay': `${Math.min((startRow * ITEMS_PER_ROW + index) * 0.03, 0.4)}s` }">
         <div class="sercer-card overflow-hidden flex flex-col"
           v-if="server.isOnline && getSourceServerInfo(server)?.serverName">
           <img v-if="server.mapUrl" class="server-card-bg" v-lazy="server.mapUrl" />
@@ -264,6 +265,10 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   transition: box-shadow 0.25s ease;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
   cursor: pointer;
+  // 进入动画：错落淡入上浮（与更新日志卡片一致）
+  animation: fadeInUp 0.5s ease-out forwards;
+  animation-delay: var(--delay, 0s);
+  opacity: 0;
 
   .server-card-bg {
     position: absolute;
@@ -665,5 +670,17 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   padding: 1px 6px;
   background: rgba(255, 255, 255, 0.08);
   border-radius: 4px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

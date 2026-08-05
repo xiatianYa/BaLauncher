@@ -40,7 +40,8 @@ const handleSelect = (id: number) => {
       <VueDraggable v-model="gameStore.communityList"
         v-on:update="gameStore.updateCommunityList(gameStore.communityList)">
         <div class="community-box mt-10px" :class="{ 'community-box-selected': props.selectedId === community.id }"
-          v-for="community in gameStore.communityList" :key="community.id" @click="handleSelect(community.id)">
+          :style="{ '--delay': `${Math.min(index * 0.05, 0.4)}s` }"
+          v-for="(community, index) in gameStore.communityList" :key="community.id" @click="handleSelect(community.id)">
           <div class="drag-handle">
             <SvgIcon icon="material-symbols:drag-indicator" class="drag-icon" />
           </div>
@@ -72,6 +73,10 @@ const handleSelect = (id: number) => {
   border: 2px solid transparent;
   transition: all 0.2s ease;
   cursor: pointer;
+  // 进入动画：错落淡入上浮（与更新日志卡片一致）
+  animation: fadeInUp 0.5s ease-out forwards;
+  animation-delay: var(--delay, 0s);
+  opacity: 0;
 
   .drag-handle {
     display: flex;
@@ -154,5 +159,17 @@ const handleSelect = (id: number) => {
   flex-shrink: 0;
   text-align: center;
   margin-left: 12px;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>

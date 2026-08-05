@@ -8,6 +8,8 @@ export * from './game/server';
 export * from './game/community';
 export * from './game/keyBind';
 export * from './system/updateLog';
+export * from './system/role';
+export * from './system/permission';
 export * from './system/user';
 export * from './system/file';
 

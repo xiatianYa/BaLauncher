@@ -688,7 +688,7 @@ onMounted(() => {
                 <!-- 顶部装饰区域 -->
                 <div class="capture-header mb-20px">
                     <div class="character-image">
-                        <img src="@/assets/imgs/menu/942302.png" alt="character" />
+                        <img src="@/assets/imgs/menu/menu-character.png" alt="character" />
                     </div>
                     <div class="header-glow"></div>
                 </div>
@@ -729,7 +729,7 @@ onMounted(() => {
                 <!-- 顶部装饰区域 -->
                 <div class="capture-header mb-20px">
                     <div class="character-image">
-                        <img src="@/assets/imgs/menu/942302.png" alt="character" />
+                        <img src="@/assets/imgs/menu/menu-character.png" alt="character" />
                     </div>
                     <div class="header-glow"></div>
                 </div>

@@ -15,6 +15,8 @@ export default {
     setting: 'Settings',
     updateLog: 'VerLog',
     hall: 'Hall',
+    roleManage: 'Role Management',
+    role: 'Role Management',
   },
   common: {
     loading: 'Loading...',
