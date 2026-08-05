@@ -88,6 +88,15 @@ function createVueRoutes(): RouteRecordRaw[] {
                         requiresAuth: false
                     }
                 },
+                {
+                    path: 'dictManage',
+                    name: 'dictManage',
+                    component: () => import('@/views/dict/index.vue'),
+                    meta: {
+                        title: '字典管理',
+                        requiresAuth: false
+                    }
+                },
             ]
         }
     ];

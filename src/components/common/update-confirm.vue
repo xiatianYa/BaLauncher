@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { NModal, NButton, NProgress } from 'naive-ui';
-import { fetchGetLogByVersion } from '@/service/api';  
+import { NModal, NProgress } from 'naive-ui';
+import { fetchGetLogByVersion } from '@/service/api';
 import { useAuthStore } from '@/store/modules/auth';
 
 interface UpdateState {
@@ -28,7 +28,21 @@ const updateLog = ref<Api.System.UpdateLogVo | null>(null);
 const loadingUpdateLog = ref(false);
 const latestVersion = ref<string>('V2.6.1');
 
+/** 下载完成后自动重启倒计时（秒） */
+const autoRestartCountdown = ref(0);
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+/** 清理自动重启倒计时 */
+const clearCountdownTimer = () => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer);
+    countdownTimer = null;
+  }
+  autoRestartCountdown.value = 0;
+};
+
 const showUpdateConfirm = async () => {
+  clearCountdownTimer();
   state.value.downloading = false;
   state.value.downloaded = false;
   state.value.progress = 0;
@@ -61,6 +75,7 @@ const handleConfirmUpdate = () => {
 };
 
 const handleCancelUpdate = () => {
+  clearCountdownTimer();
   state.value.show = false;
   state.value.downloading = false;
   state.value.downloaded = false;
@@ -69,6 +84,7 @@ const handleCancelUpdate = () => {
 };
 
 const handleInstallUpdate = async () => {
+  clearCountdownTimer();
   await window.ipcRenderer.invoke('install-update');
 };
 
@@ -94,11 +110,26 @@ const updateDownloadingHandler = (_: any, info: any) => {
   }
 };
 
+/** 下载完成：进度条读满后，3 秒后自动关闭应用完成更新 */
 const updateDownloadedHandler = () => {
   state.value.downloading = false;
   state.value.downloaded = true;
   state.value.progress = 100;
   state.value.percent = '100%';
+  startAutoRestartCountdown();
+};
+
+/** 启动 3 秒自动重启倒计时 */
+const startAutoRestartCountdown = () => {
+  clearCountdownTimer();
+  autoRestartCountdown.value = 3;
+  countdownTimer = setInterval(() => {
+    autoRestartCountdown.value -= 1;
+    if (autoRestartCountdown.value <= 0) {
+      clearCountdownTimer();
+      handleInstallUpdate();
+    }
+  }, 1000);
 };
 
 onMounted(() => {
@@ -109,6 +140,7 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
+  clearCountdownTimer();
   window.ipcRenderer.off('update-available', updateAvailableHandler);
   window.ipcRenderer.off('update-downloading', updateDownloadingHandler);
   window.ipcRenderer.off('update-downloaded', updateDownloadedHandler);
@@ -116,117 +148,378 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <NModal v-model:show="state.show" preset="card" size="large" :bordered="false" :show-icon="false"
-    class="w-600px rounded-10px" header-style="padding:10px;" :closable="false" v-if="authStore.isLogin">
+  <NModal v-model:show="state.show" preset="card" class="update-modal w-480px rounded-16px"
+    :bordered="false" :closable="false" v-if="authStore.isLogin">
     <template #header>
-      <div class="flex items-center justify-between">
+      <div class="update-modal-header">
+        <div class="update-modal-icon-wrap">
+          <SvgIcon icon="mdi:cloud-download-outline" class="update-modal-icon" />
+        </div>
         <span>{{ $t('update.title') }}</span>
-        <span v-if="updateLog" class="text-sm text-gray-500">
+        <span v-if="updateLog" class="update-version-badge">
+          <SvgIcon icon="mdi:tag-outline" />
           v{{ updateLog.version }}
         </span>
       </div>
     </template>
-    <div class="flex flex-col w-full p-10px">
-      <div class="flex items-center justify-center mb-4">
-        <div class="dowload-icon">
-          <SvgIcon icon="material-symbols:download" />
+
+    <div class="update-modal-body">
+      <!-- 顶部图标 -->
+      <div class="update-hero">
+        <div class="update-hero-icon" :class="{ active: state.downloading || state.downloaded }">
+          <SvgIcon
+            :icon="state.downloaded
+              ? 'mdi:restart'
+              : state.downloading
+                ? 'mdi:progress-download'
+                : 'mdi:cloud-download-outline'" />
         </div>
       </div>
-      <div v-if="!state.downloading && !state.downloaded && updateLog" class="w-full mb-4 flex-1 overflow-auto">
-        <div v-if="updateLog" class="update-log-content">
-          <h3 class="update-log-title">{{ updateLog.title }}</h3>
+
+      <!-- 更新日志 -->
+      <div v-if="!state.downloading && !state.downloaded" class="update-log-box">
+        <div v-if="updateLog" class="update-log">
+          <h3 class="update-log-title">
+            <SvgIcon icon="mdi:note-text-outline" class="log-title-icon" />
+            {{ updateLog.title }}
+          </h3>
           <div class="update-log-text">{{ updateLog.content }}</div>
         </div>
+        <div v-else-if="loadingUpdateLog" class="update-log-loading">
+          <SvgIcon icon="mdi:loading" class="loading-icon" />
+          <span>正在加载更新日志...</span>
+        </div>
+        <p v-else class="update-tip">{{ $t('update.confirm') }}</p>
       </div>
-      <p v-if="!updateLog" class="text-center mb-4 text-lg font-medium">
-        {{ state.downloading ? $t('update.downloading') : state.downloaded ? $t('update.downloaded') :
-          $t('update.confirm')
-        }}
-      </p>
-      <div v-if="state.downloading || state.downloaded" class="w-full mb-4">
-        <NProgress type="line" :percentage="state.progress" :show-indicator="false" class="mb-2 h-8px rounded-4px" />
-        <div class="flex justify-between text-sm text-gray-500">
-          <span>{{ state.percent }}</span>
-          <span v-if="state.downloading">{{ state.speed }}</span>
+
+      <!-- 下载进度 -->
+      <div v-if="state.downloading || state.downloaded" class="download-section">
+        <div class="download-progress">
+          <NProgress type="line" :percentage="state.progress" :show-indicator="false" :height="8"
+            class="progress-bar" />
+          <div class="progress-info">
+            <span class="progress-percent">{{ state.percent }}</span>
+            <span v-if="state.downloading" class="progress-speed">
+              <SvgIcon icon="mdi:speedometer" />
+              {{ state.speed }}
+            </span>
+          </div>
+        </div>
+
+        <!-- 自动重启倒计时提示 -->
+        <div v-if="state.downloaded" class="auto-restart-tip">
+          <SvgIcon icon="mdi:restart" class="restart-icon" />
+          <span>更新下载完成，<b>{{ autoRestartCountdown }}</b> 秒后自动重启应用...</span>
         </div>
       </div>
-      <div class="flex gap-4 justify-center">
-        <NButton v-if="!state.downloading && !state.downloaded" @click="handleCancelUpdate" type="error" ghost strong>
-          <template #icon>
-            <SvgIcon icon="ic:baseline-close" />
-          </template>
-          {{ $t('update.cancel') }}
-        </NButton>
-        <NButton v-if="!state.downloading && !state.downloaded" @click="handleConfirmUpdate" type="success" ghost
-          strong>
-          <template #icon>
-            <SvgIcon icon="material-symbols:download" />
-          </template>
-          {{ $t('update.updateNow') }}
-        </NButton>
-        <NButton v-if="state.downloaded" @click="handleInstallUpdate" type="success" ghost strong>
-          <template #icon>
-            <SvgIcon icon="material-symbols:deployed-code-update-outline" />
-          </template>
-          {{ $t('update.installNow') }}
-        </NButton>
+
+      <!-- 操作按钮 -->
+      <div class="update-actions">
+        <button v-if="!state.downloading && !state.downloaded" class="action-btn cancel"
+          @click="handleCancelUpdate">
+          <SvgIcon icon="mdi:close" />
+          <span>{{ $t('update.cancel') }}</span>
+        </button>
+        <button v-if="!state.downloading && !state.downloaded" class="action-btn confirm"
+          @click="handleConfirmUpdate">
+          <SvgIcon icon="mdi:download" />
+          <span>{{ $t('update.updateNow') }}</span>
+        </button>
+        <button v-if="state.downloaded" class="action-btn confirm" @click="handleInstallUpdate">
+          <SvgIcon icon="mdi:restart" />
+          <span>{{ $t('update.installNow') }}</span>
+        </button>
       </div>
     </div>
   </NModal>
 </template>
 
 <style scoped lang="scss">
-.dowload-icon {
-  font-size: 32px;
-  border: 0.5px solid rgba($color: #3b82f6, $alpha: 0.2);
-  padding: 12px;
-  border-radius: 8px;
-  background-color: rgba($color: #3b82f6, $alpha: 0.1);
-  margin-bottom: 15px;
-  color: #3b82f6;
-}
+/* ================================ 更新确认弹窗（teleport 到 body） ================================ */
 
-.update-log-content {
-  position: relative;
-  border-radius: 8px;
-  padding: 16px;
-  font-size: 14px;
-  line-height: 1.7;
-  max-height: 300px;
-  overflow: auto;
-  border: 1px solid #333;
-  background: #18181c;
-  color: #e0e0e0;
-
-  .update-log-title {
+.update-modal {
+  .update-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     font-size: 15px;
     font-weight: 600;
-    margin: 0 0 12px 0;
-    color: #f3f4f6;
+    color: var(--n-text-color);
+
+    .update-modal-icon-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+      background: rgba(102, 126, 234, 0.12);
+
+      .update-modal-icon {
+        font-size: 18px;
+        color: #667eea;
+      }
+    }
+
+    .update-version-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: auto;
+      padding: 3px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #43e97b;
+      background: rgba(67, 233, 123, 0.1);
+
+      svg {
+        font-size: 13px;
+      }
+    }
   }
 
-  .update-log-text {
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    margin: 0;
+  .update-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 6px 2px 0;
   }
 
-  &::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+  /* ---------- 顶部图标 ---------- */
+  .update-hero {
+    display: flex;
+    justify-content: center;
+
+    .update-hero-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      font-size: 32px;
+      color: #667eea;
+      background: rgba(102, 126, 234, 0.1);
+      border: 1px solid rgba(102, 126, 234, 0.25);
+      transition: all 0.3s ease;
+
+      &.active {
+        animation: heroPulse 1.6s ease-in-out infinite;
+      }
+    }
   }
 
-  &::-webkit-scrollbar-track {
-    background: #18181c;
+  /* ---------- 更新日志 ---------- */
+  .update-log-box {
+    min-height: 100px;
+    max-height: 240px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    overflow: hidden;
+
+    .update-log {
+      padding: 14px 16px;
+      max-height: 240px;
+      overflow-y: auto;
+
+      .update-log-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.9);
+
+        .log-title-icon {
+          font-size: 15px;
+          color: #667eea;
+        }
+      }
+
+      .update-log-text {
+        font-size: 12.5px;
+        line-height: 1.7;
+        color: rgba(255, 255, 255, 0.6);
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      &::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.12);
+      }
+    }
+
+    .update-log-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      height: 100px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.45);
+
+      .loading-icon {
+        font-size: 18px;
+        color: #667eea;
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    .update-tip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100px;
+      margin: 0;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.6);
+    }
   }
 
-  &::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 3px;
+  /* ---------- 下载进度 ---------- */
+  .download-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+
+    .download-progress {
+      .progress-bar {
+        :deep(.n-progress-graph-line) {
+          border-radius: 4px;
+        }
+
+        :deep(.n-progress-graph-line-fill) {
+          border-radius: 4px;
+        }
+      }
+
+      .progress-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 12px;
+
+        .progress-percent {
+          font-weight: 600;
+          color: #667eea;
+        }
+
+        .progress-speed {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          color: rgba(255, 255, 255, 0.45);
+
+          svg {
+            font-size: 13px;
+          }
+        }
+      }
+    }
+
+    .auto-restart-tip {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: #43e97b;
+      background: rgba(67, 233, 123, 0.08);
+      border: 1px solid rgba(67, 233, 123, 0.2);
+
+      .restart-icon {
+        font-size: 15px;
+      }
+
+      b {
+        font-size: 14px;
+      }
+    }
   }
 
-  &::-webkit-scrollbar-thumb:hover {
-    background: #444;
+  /* ---------- 操作按钮 ---------- */
+  .update-actions {
+    display: flex;
+    gap: 10px;
+
+    .action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      flex: 1;
+      padding: 9px 2px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 9px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.06);
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+      }
+
+      &.cancel {
+        color: #f5576c;
+        background: rgba(245, 87, 108, 0.1);
+        border-color: rgba(245, 87, 108, 0.25);
+
+        &:hover {
+          background: rgba(245, 87, 108, 0.22);
+        }
+      }
+
+      &.confirm {
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.12);
+        border-color: rgba(102, 126, 234, 0.25);
+
+        &:hover {
+          background: rgba(102, 126, 234, 0.22);
+        }
+      }
+    }
+  }
+}
+
+@keyframes heroPulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.3);
+  }
+
+  50% {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 8px rgba(102, 126, 234, 0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

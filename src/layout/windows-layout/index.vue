@@ -21,7 +21,7 @@ onMounted(() => {
   <div class="flex flex-col w-full h-full">
     <WindowControls />
     <div class="flex h-full overflow-hidden">
-      <NCard :class="['sidebar-card', themeStore.layout.mode === 'expand' ? 'expanded' : 'collapsed', 'rounded-none']"
+      <NCard :class="['sidebar-card', themeStore.layout.mode === 'expand' ? 'expanded' : 'collapsed', 'rounded-none', 'h-full']"
         content-class="flex flex-col" content-style="padding:5px;">
         <WindowsMenu />
         <WindowsHeader />
@@ -46,6 +46,9 @@ onMounted(() => {
     fill 0.3s ease,
     stroke 0.3s ease !important;
   border-top: none;
+  /* 高度约束：让内部 flex 列（菜单/头部/底部）在容器内排列，避免溢出挤压 */
+  height: 100%;
+  min-height: 0;
 }
 
 /* 展开状态的宽度 */
@@ -61,5 +64,11 @@ onMounted(() => {
 /* 可选：为子元素添加过渡效果，使内容变化更平滑 */
 :deep(.n-card-content) {
   transition: all 0.3s ease-in-out;
+}
+
+/* 侧边栏卡片内容区：min-height:0 允许收缩，使菜单区域能够在内部滚动，避免把头部/底部挤出页面 */
+.sidebar-card :deep(.n-card-content) {
+  min-height: 0;
+  overflow: hidden;
 }
 </style>

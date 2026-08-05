@@ -18,6 +18,7 @@ export default {
     roleManage: '角色管理',
     role: '角色管理',
     userManage: '用户管理',
+    dictManage: '字典管理',
   },
   common: {
     loading: '正在加载...',
@@ -31,6 +32,7 @@ export default {
   },
   closeConfirm: {
     title: '确定要退出应用吗？',
+    hint: '进度已经保存好啦，安心去休息吧，老师！随时欢迎回来～',
     cancel: '取消',
     confirm: '退出',
   },
@@ -42,6 +44,7 @@ export default {
     cancel: '取消',
     updateNow: '立即更新',
     installNow: '立即安装',
+    restartCountdown: '更新将在 {count} 秒后自动重启',
   },
   login: {
     oauth: {
@@ -66,6 +69,8 @@ export default {
   },
   layout: {
     menuConfig: '菜单配置',
+    addNav: '添加导航',
+    removeNav: '移除导航',
     header: {
       login: '登录',
       loginPrompt: '请登录',

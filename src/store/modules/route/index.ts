@@ -14,6 +14,7 @@ import iconUpdateLog from '@/assets/imgs/menu/menu-update-log.png';
 import iconHall from '@/assets/imgs/menu/menu-hall.png';
 import iconRole from '@/assets/imgs/menu/menu-role.png';
 import iconUser from '@/assets/imgs/menu/menu-user.png';
+import iconDict from '@/assets/imgs/menu/menu-dict.png';
 
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
@@ -23,7 +24,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   const authStore = useAuthStore();
 
   // 需要超级管理员权限才能显示的菜单 key
-  const SUPER_ADMIN_ONLY_MENU_KEYS = ['roleManage'];
+  const SUPER_ADMIN_ONLY_MENU_KEYS = ['roleManage', 'dictManage'];
 
   // 需要管理员权限才能显示的菜单 key
   const ADMIN_ONLY_MENU_KEYS = ['userManage'];
@@ -47,6 +48,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       '工具箱': 'routes.tools',
       '角色管理': 'routes.roleManage',
       '用户管理': 'routes.userManage',
+      '字典管理': 'routes.dictManage',
       '设置': 'routes.setting',
     };
     return map[name] ?? name;
@@ -97,11 +99,19 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   ];
 
   const storedRoutes = localStg.get(ROUTE_STORAGE_KEYS.SIDE_NAV_ROUTES);
+  // 迁移旧版缓存：字典菜单 key 已由 'dict' 重命名为 'dictManage'，避免旧缓存点击时路由不匹配
+  const migratedStoredRoutes = Array.isArray(storedRoutes)
+    ? storedRoutes.map(item =>
+        item.key === 'dict' || item.name === 'routes.dict'
+          ? { ...item, key: 'dictManage', name: 'routes.dictManage' }
+          : item
+      )
+    : storedRoutes;
   // 合并默认菜单：保证新增的默认菜单（如角色管理）在已保存过的旧配置中也能出现
-  const initialRoutes: Api.Route.SideNavItem[] = Array.isArray(storedRoutes)
+  const initialRoutes: Api.Route.SideNavItem[] = Array.isArray(migratedStoredRoutes)
     ? DEFAULT_SIDE_NAV_ROUTES.reduce(
       (acc, def) => (acc.some(item => item.key === def.key) ? acc : [...acc, def]),
-      [...storedRoutes]
+      [...migratedStoredRoutes]
     )
     : DEFAULT_SIDE_NAV_ROUTES;
   const SideNavRoutes: Api.Route.SideNavItem[] = reactive(initialRoutes.map(normalizeNavItem));

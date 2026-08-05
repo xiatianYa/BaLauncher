@@ -15,19 +15,26 @@ declare namespace Api {
      */
     type DictType = '1' | '2';
 
-    /** dict item edit model */
+    /** dict item edit model (backend SysDictItemAddDTO / SysDictItemUpdateDTO) */
     type DictItemEdit = Pick<
       Api.System.DictItem,
-      'value' | 'zhCn' | 'enUs' | 'type' | 'sort' | 'description' | 'status'
-    >;
+      'dictId' | 'dictCode' | 'value' | 'zhCn' | 'enUs' | 'type' | 'sort' | 'description' | 'status'
+    > & {
+      /** dict item id (update required) */
+      id?: number;
+    };
 
-    /** dict search params */
+    /** dict search params (backend SysDictSearchDTO) */
     type DictSearchParams = CommonType.RecordNullable<
-      Pick<Api.System.Dict, 'name' | 'code'> & Api.Common.CommonSearchParams
+      Pick<Api.System.Dict, 'name' | 'code' | 'type' | 'description' | 'status'> &
+        Api.Common.CommonSearchParams
     >;
 
     /** dict edit model */
-    type DictEdit = Pick<Api.System.Dict, 'name' | 'code' | 'type' | 'sort' | 'description' | 'status'>;
+    type DictEdit = Pick<Api.System.Dict, 'name' | 'code' | 'type' | 'sort' | 'description' | 'status'> & {
+      /** dict id (update required) */
+      id?: number;
+    };
 
     /** dict tree * */
     type DictTree = Pick<Api.System.Dict, 'id' | 'name' | 'code' | 'type' | 'description' | 'status'>;

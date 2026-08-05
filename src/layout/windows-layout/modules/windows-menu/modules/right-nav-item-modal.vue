@@ -5,6 +5,7 @@ import { useRouteStore } from '@/store/modules/route';
 import { localStg } from '@/utils/storage';
 import iconRole from '@/assets/imgs/menu/menu-role.png';
 import iconUser from '@/assets/imgs/menu/menu-user.png';
+import iconDict from '@/assets/imgs/menu/menu-dict.png';
 import iconTools from '@/assets/imgs/menu/menu-tools.png';
 import iconSetting from '@/assets/imgs/menu/menu-setting.png';
 import iconUpdateLog from '@/assets/imgs/menu/menu-update-log.png';
@@ -45,6 +46,13 @@ const SideNavRoutes: Api.Route.SideNavItem[] = reactive([
         key: "userManage",
         icon: "tabler:users",
         img: iconUser,
+        isPersistent: true
+    },
+    {
+        name: "routes.dictManage",
+        key: "dictManage",
+        icon: "mdi:book-open-outline",
+        img: iconDict,
         isPersistent: true
     },
     {

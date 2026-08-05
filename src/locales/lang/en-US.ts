@@ -18,6 +18,7 @@ export default {
     roleManage: 'Role Management',
     role: 'Role Management',
     userManage: 'User Management',
+    dictManage: 'Dict Management',
   },
   common: {
     loading: 'Loading...',
@@ -31,6 +32,7 @@ export default {
   },
   closeConfirm: {
     title: 'Are you sure you want to exit?',
+    hint: 'All your progress is saved. Rest well, Sensei! Feel free to come back anytime!',
     cancel: 'Cancel',
     confirm: 'Exit',
   },
@@ -42,6 +44,7 @@ export default {
     cancel: 'Cancel',
     updateNow: 'Update Now',
     installNow: 'Install Now',
+    restartCountdown: 'Update will restart automatically in {count}s',
   },
   login: {
     oauth: {
@@ -66,6 +69,8 @@ export default {
   },
   layout: {
     menuConfig: 'Menu Settings',
+    addNav: 'Add Navigation',
+    removeNav: 'Remove Navigation',
     header: {
       login: 'Login',
       loginPrompt: 'Please login',
