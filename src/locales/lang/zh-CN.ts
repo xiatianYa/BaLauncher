@@ -50,6 +50,17 @@ export default {
     oauth: {
       qq: 'QQ登录',
       steam: 'Steam登录',
+      qqDesc: '使用 QQ 账号快速登录',
+      steamDesc: '使用 Steam 账号快速登录',
+    },
+    dialog: {
+      loginDesc: '登录后即可体验完整的社区服务',
+      welcome: '欢迎回来，请选择登录方式',
+      oauthLogin: '登录',
+      agreementPrefix: '登录即代表同意',
+      agreementWith: '与',
+      userAgreement: '《用户协议》',
+      privacyPolicy: '《隐私政策》',
     },
     form: {
       userName: {

@@ -50,6 +50,17 @@ export default {
     oauth: {
       qq: 'QQ Login',
       steam: 'Steam Login',
+      qqDesc: 'Log in quickly with your QQ account',
+      steamDesc: 'Log in quickly with your Steam account',
+    },
+    dialog: {
+      loginDesc: 'Log in to access the full community services',
+      welcome: 'Welcome back, please choose a login method',
+      oauthLogin: 'Log in',
+      agreementPrefix: 'By logging in, you agree to the',
+      agreementWith: 'and',
+      userAgreement: 'User Agreement',
+      privacyPolicy: 'Privacy Policy',
     },
     form: {
       userName: {

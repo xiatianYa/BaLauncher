@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useAuthStore } from '@/store/modules/auth';
+import { useThemeStore } from '@/store/modules/theme';
 import { useI18n } from 'vue-i18n';
 import { setLocale } from '@/locales';
 
 const authStore = useAuthStore();
+const themeStore = useThemeStore();
 const { locale, t } = useI18n();
+
+/** 登录框背景色：直接由主题状态驱动，不依赖 naive 注入的 CSS 变量（弹窗重新打开时可能失效） */
+const loginBgColor = computed(() => (themeStore.darkMode ? '#1c2130' : '#faf7f2'));
+/** 语言下拉面板背景色 */
+const langMenuBgColor = computed(() => (themeStore.darkMode ? '#242a3a' : '#ffffff'));
 
 const langOptions = computed<{ label: string; key: App.I18n.LangType; icon: string }[]>(() => [
   { label: t('settings.langOptions.zhCN'), key: 'zh-CN', icon: 'mdi:translate' },
@@ -63,13 +70,13 @@ const accounts = computed<Account[]>(() => [
     label: t('login.oauth.qq'),
     icon: 'basil:qq-outline',
     type: 'qq',
-    desc: '使用 QQ 账号快速登录'
+    desc: t('login.oauth.qqDesc')
   },
   {
     label: t('login.oauth.steam'),
     icon: 'mdi:steam',
     type: 'steam',
-    desc: '使用 Steam 账号快速登录'
+    desc: t('login.oauth.steamDesc')
   }
 ]);
 
@@ -150,19 +157,16 @@ const openAgreement = (type: 'user' | 'privacy') => {
 <template>
   <NModal v-model:show="authStore.loginModalVisibel" class="login-modal w-880px" :bordered="false" :closable="false"
     :close-on-esc="false" :mask-closable="false">
-    <div class="login-body">
+    <div class="login-body" :style="{ background: loginBgColor }">
       <!-- 左侧：背景图 + 品牌标语 -->
       <div class="login-bg-panel">
         <img class="login-bg-img" src="@/assets/imgs/login_bg.jpg" alt="login-bg">
         <div class="bg-overlay" />
         <div class="bg-content">
-          <div class="bg-logo">
-            <SvgIcon icon="mdi:shield-star" class="bg-logo-icon" />
-          </div>
           <h2 class="bg-title">Blue Archive</h2>
           <p class="bg-subtitle">Launcher</p>
           <div class="bg-divider" />
-          <p class="bg-desc">登录后即可体验完整的社区服务</p>
+          <p class="bg-desc">{{ $t('login.dialog.loginDesc') }}</p>
         </div>
       </div>
 
@@ -177,7 +181,7 @@ const openAgreement = (type: 'user' | 'privacy') => {
 
           <!-- 自定义语言下拉面板 -->
           <transition name="lang-menu-fade">
-            <div v-if="langMenuVisible" class="lang-menu">
+            <div v-if="langMenuVisible" class="lang-menu" :style="{ background: langMenuBgColor }">
               <div v-for="option in langOptions" :key="option.key" class="lang-menu-item"
                 :class="{ selected: locale === option.key }" @click="handleLangChange(option.key)">
                 <SvgIcon :icon="option.icon" class="lang-menu-item-icon" />
@@ -190,7 +194,7 @@ const openAgreement = (type: 'user' | 'privacy') => {
 
         <div class="panel-header">
           <h2 class="panel-title">{{ $t('system.title') }}</h2>
-          <p class="panel-subtitle">欢迎回来，请选择登录方式</p>
+          <p class="panel-subtitle">{{ $t('login.dialog.welcome') }}</p>
         </div>
 
         <div class="provider-list">
@@ -200,7 +204,7 @@ const openAgreement = (type: 'user' | 'privacy') => {
               <SvgIcon :icon="item.icon" />
             </div>
             <div class="provider-info">
-              <span class="provider-name">{{ item.label }} 登录</span>
+              <span class="provider-name">{{ item.label }} {{ $t('login.dialog.oauthLogin') }}</span>
               <span class="provider-desc">{{ item.desc }}</span>
             </div>
             <SvgIcon icon="mdi:chevron-right" class="provider-arrow" />
@@ -210,10 +214,10 @@ const openAgreement = (type: 'user' | 'privacy') => {
         <div class="panel-footer">
           <NDivider class="footer-divider">{{ $t('login.actions.otherMethods') }}</NDivider>
           <p class="footer-tip">
-            登录即代表同意
-            <span class="agreement-link" @click="openAgreement('user')">《用户协议》</span>
-            与
-            <span class="agreement-link" @click="openAgreement('privacy')">《隐私政策》</span>
+            {{ $t('login.dialog.agreementPrefix') }}
+            <span class="agreement-link" @click="openAgreement('user')">{{ $t('login.dialog.userAgreement') }}</span>
+            {{ $t('login.dialog.agreementWith') }}
+            <span class="agreement-link" @click="openAgreement('privacy')">{{ $t('login.dialog.privacyPolicy') }}</span>
           </p>
         </div>
       </div>
@@ -237,7 +241,7 @@ const openAgreement = (type: 'user' | 'privacy') => {
   height: 500px;
   border-radius: 20px;
   overflow: hidden;
-  background: rgba(22, 26, 38, 0.95);
+  /* 背景色由 :style 绑定 loginBgColor（主题驱动），避免依赖 naive 注入的 CSS 变量 */
 }
 
 /* ---------- 左侧：背景图 + 品牌标语 ---------- */
@@ -268,24 +272,6 @@ const openAgreement = (type: 'user' | 'privacy') => {
     gap: 10px;
     padding: 24px;
     text-align: center;
-
-    .bg-logo {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 64px;
-      height: 64px;
-      margin-bottom: 6px;
-      border-radius: 18px;
-      background: rgba(102, 126, 234, 0.22);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      backdrop-filter: blur(8px);
-
-      .bg-logo-icon {
-        font-size: 34px;
-        color: #fff;
-      }
-    }
 
     .bg-title {
       margin: 0;
@@ -340,15 +326,15 @@ const openAgreement = (type: 'user' | 'privacy') => {
       gap: 6px;
       padding: 7px 12px;
       border-radius: 9px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.05);
-      color: rgba(255, 255, 255, 0.65);
+      border: 1px solid var(--n-border-color);
+      background: rgba(128, 128, 128, 0.06);
+      color: var(--n-text-color-3);
       cursor: pointer;
       transition: all 0.25s ease;
 
       &:hover {
-        background: rgba(255, 255, 255, 0.1);
-        color: #fff;
+        background: rgba(128, 128, 128, 0.12);
+        color: var(--n-text-color);
         border-color: rgba(102, 126, 234, 0.4);
         transform: translateY(-1px);
 
@@ -371,7 +357,7 @@ const openAgreement = (type: 'user' | 'privacy') => {
 
       .lang-switch-arrow {
         font-size: 14px;
-        color: rgba(255, 255, 255, 0.35);
+        color: var(--n-text-color-3);
         transition: all 0.25s ease;
         flex-shrink: 0;
 
@@ -390,10 +376,9 @@ const openAgreement = (type: 'user' | 'privacy') => {
       width: 100%;
       padding: 6px;
       border-radius: 12px;
-      background: rgba(26, 30, 44, 0.95);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(12px);
-      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+      /* 背景色由 :style 绑定 langMenuBgColor（主题驱动） */
+      border: 1px solid var(--n-border-color);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
       z-index: 20;
 
       .lang-menu-item {
@@ -426,7 +411,7 @@ const openAgreement = (type: 'user' | 'privacy') => {
         .lang-menu-item-text {
           flex: 1;
           font-size: 13px;
-          color: rgba(255, 255, 255, 0.85);
+          color: var(--n-text-color);
           white-space: nowrap;
         }
 
@@ -462,13 +447,13 @@ const openAgreement = (type: 'user' | 'privacy') => {
       margin: 0;
       font-size: 22px;
       font-weight: 700;
-      color: rgba(255, 255, 255, 0.92);
+      color: var(--n-text-color);
     }
 
     .panel-subtitle {
       margin: 0;
       font-size: 13px;
-      color: rgba(255, 255, 255, 0.45);
+      color: var(--n-text-color-3);
     }
   }
 
@@ -483,8 +468,8 @@ const openAgreement = (type: 'user' | 'privacy') => {
       gap: 12px;
       padding: 13px 16px;
       border-radius: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--n-border-color);
+      background: rgba(128, 128, 128, 0.05);
       cursor: pointer;
       text-align: left;
       transition: all 0.25s ease;
@@ -520,18 +505,18 @@ const openAgreement = (type: 'user' | 'privacy') => {
         .provider-name {
           font-size: 14px;
           font-weight: 600;
-          color: rgba(255, 255, 255, 0.88);
+          color: var(--n-text-color);
         }
 
         .provider-desc {
           font-size: 12px;
-          color: rgba(255, 255, 255, 0.4);
+          color: var(--n-text-color-3);
         }
       }
 
       .provider-arrow {
         font-size: 18px;
-        color: rgba(255, 255, 255, 0.25);
+        color: var(--n-text-color-3);
         transition: all 0.25s ease;
       }
 
@@ -576,7 +561,7 @@ const openAgreement = (type: 'user' | 'privacy') => {
     gap: 10px;
 
     .footer-divider {
-      color: rgba(255, 255, 255, 0.35);
+      color: var(--n-text-color-3);
       font-size: 12px;
     }
 
@@ -584,7 +569,7 @@ const openAgreement = (type: 'user' | 'privacy') => {
       margin: 0;
       text-align: center;
       font-size: 11.5px;
-      color: rgba(255, 255, 255, 0.3);
+      color: var(--n-text-color-3);
 
       .agreement-link {
         color: #667eea;
