@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>蔚蓝档案登录器 - 协议</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      background: #161a26;
+      color: rgba(255, 255, 255, 0.72);
+      overflow: hidden;
+    }
+
+    /* ---------- 顶部栏（与登录器统一风格） ---------- */
+    .header {
+      position: relative;
+      z-index: 10;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(22, 26, 38, 0.98);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      -webkit-app-region: drag;
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 12px;
+      font-size: 12.5px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: rgba(255, 255, 255, 0.85);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-title .title-badge {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: rgba(102, 126, 234, 0.15);
+    }
+
+    .header-title .title-badge svg {
+      width: 14px;
+      height: 14px;
+      fill: #667eea;
+    }
+
+    .header-close {
+      width: 44px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+      transition: background 0.2s;
+    }
+
+    .header-close:hover {
+      background: rgba(232, 17, 35, 0.85);
+    }
+
+    .header-close svg {
+      width: 9px;
+      height: 9px;
+      fill: rgba(255, 255, 255, 0.7);
+      transition: fill 0.2s;
+    }
+
+    .header-close:hover svg {
+      fill: #fff;
+    }
+
+    /* ---------- 内容区 ---------- */
+    .content {
+      height: calc(100% - 36px);
+      overflow-y: auto;
+      padding: 28px 36px 36px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+    }
+
+    .content::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .content::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 3px;
+    }
+
+    .agreement-block {
+      display: none;
+    }
+
+    .agreement-block.active {
+      display: block;
+    }
+
+    .block-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .block-header .header-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(102, 126, 234, 0.12);
+      flex-shrink: 0;
+    }
+
+    .block-header .header-icon svg {
+      width: 22px;
+      height: 22px;
+      fill: #667eea;
+    }
+
+    .block-header h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .block-header .update-time {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.35);
+      margin-top: 4px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 16px;
+    }
+
+    .card h2 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+      margin-bottom: 12px;
+    }
+
+    .card h2 .section-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #667eea;
+      flex-shrink: 0;
+    }
+
+    .card p,
+    .card li {
+      font-size: 13px;
+      line-height: 1.8;
+      color: rgba(255, 255, 255, 0.62);
+    }
+
+    .card p {
+      margin-bottom: 8px;
+    }
+
+    .card p:last-child {
+      margin-bottom: 0;
+    }
+
+    .card ul {
+      padding-left: 18px;
+      list-style: none;
+    }
+
+    .card ul li {
+      position: relative;
+      padding-left: 12px;
+      margin-bottom: 6px;
+    }
+
+    .card ul li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 10px;
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: rgba(102, 126, 234, 0.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-title">
+      <div class="title-badge">
+        <svg viewBox="0 0 24 24"><path d="M19,3H5C3.9,3 3,3.9 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V5C21,3.9 20.1,3 19,3M14,17H7V15H14V17M17,13H7V11H17V13M17,9H7V7H17V9Z"/></svg>
+      </div>
+      <span id="header-text">蔚蓝档案登录器 - 用户协议</span>
+    </div>
+    <div class="header-close" title="关闭" onclick="window.close()">
+      <svg viewBox="0 0 10.2 10.2"><path d="M10.2,0.7L9.5,0L5.1,4.4L0.7,0L0,0.7l4.4,4.4L0,9.5l0.7,0.7l4.4-4.4l4.4,4.4l0.7-0.7L5.8,5.1L10.2,0.7z"/></svg>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- 用户协议 -->
+    <div id="user-agreement" class="agreement-block">
+      <div class="block-header">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24"><path d="M19,3H5C3.9,3 3,3.9 3,5V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V5C21,3.9 20.1,3 19,3M14,17H7V15H14V17M17,13H7V11H17V13M17,9H7V7H17V9Z"/></svg>
+        </div>
+        <div>
+          <h1>用户协议</h1>
+          <p class="update-time">更新日期：2026 年 8 月</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>一、协议范围与接受</h2>
+        <p>本用户协议（以下简称"本协议"）是您与「蔚蓝档案登录器」（以下简称"本软件"）之间就使用本软件及相关服务所订立的协议。</p>
+        <p>当您注册、登录或使用本软件时，即表示您已阅读、理解并同意接受本协议的全部条款。若您不同意本协议的任何内容，请立即停止使用本软件。</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>二、账号与登录</h2>
+        <ul>
+          <li>本软件支持通过第三方账号（如 QQ、Steam）进行登录，登录即视为您同意授权本软件获取您的账号基础信息。</li>
+          <li>您应妥善保管自己的账号信息，不得将账号出借、转让或用于任何非法用途。</li>
+          <li>因您自身原因导致的账号信息泄露、丢失，由您自行承担责任。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>三、用户行为规范</h2>
+        <ul>
+          <li>您承诺遵守法律法规，不利用本软件从事任何违法违规活动。</li>
+          <li>不得对本软件进行反向工程、破解、篡改或干扰其正常运行。</li>
+          <li>不得利用本软件传播病毒、恶意程序或从事任何损害他人权益的行为。</li>
+          <li>请勿滥用社区资源，包括但不限于恶意刷取、攻击服务器等行为。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>四、服务变更与终止</h2>
+        <p>本软件有权根据实际情况对服务内容进行变更、暂停或终止，并对您进行必要的提示。因以下原因终止服务的，本软件不承担由此产生的损失：</p>
+        <ul>
+          <li>您违反本协议约定，本软件依据协议条款终止对您的服务；</li>
+          <li>因不可抗力、系统维护或第三方服务中断等原因导致服务暂停或终止。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>五、免责声明</h2>
+        <p>本软件按"现状"提供，不保证服务绝不中断、不迟延或不发生错误。在法律允许的最大范围内，本软件对因使用或无法使用本软件所产生的任何直接、间接或衍生损失不承担责任。</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>六、协议修改</h2>
+        <p>本软件有权适时修改本协议，修改后的协议将在本页面公布。若您继续使用本软件，即视为接受修改后的协议内容。</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>七、法律适用与争议解决</h2>
+        <p>本协议的订立、执行与解释均适用中华人民共和国法律。因本协议产生的争议，双方应友好协商解决；协商不成的，提交本软件运营方所在地有管辖权的人民法院诉讼解决。</p>
+      </div>
+    </div>
+
+    <!-- 隐私政策 -->
+    <div id="privacy-agreement" class="agreement-block">
+      <div class="block-header">
+        <div class="header-icon">
+          <svg viewBox="0 0 24 24"><path d="M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1M12,7C13.66,7 15,8.34 15,10C15,11.31 14.17,12.42 13,12.83V14H11V12.83C9.83,12.42 9,11.31 9,10C9,8.34 10.34,7 12,7M12,9C11.45,9 11,9.45 11,10C11,10.55 11.45,11 12,11C12.55,11 13,10.55 13,10C13,9.45 12.55,9 12,9Z"/></svg>
+        </div>
+        <div>
+          <h1>隐私政策</h1>
+          <p class="update-time">更新日期：2026 年 8 月</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>一、我们收集的信息</h2>
+        <p>为向您提供登录与社区服务，我们可能收集以下信息：</p>
+        <ul>
+          <li>第三方登录授权信息：通过 QQ、Steam 授权登录时获取的账号标识（如 OpenID、SteamID）、昵称、头像等基础信息。</li>
+          <li>设备与运行信息：设备型号、操作系统版本、软件版本等用于保障服务稳定运行的信息。</li>
+          <li>您主动提供的信息：您在社区内填写的个人资料、发表的内容等。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>二、信息的使用</h2>
+        <ul>
+          <li>用于账号身份识别与登录验证；</li>
+          <li>用于提供、维护和改进软件功能与服务体验；</li>
+          <li>用于社区内容展示、消息通知等个性化服务；</li>
+          <li>用于安全防护、风险识别与异常行为监控。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>三、信息的存储与保护</h2>
+        <p>我们仅在实现服务目的所必需的期限内保留您的信息，并采取加密存储、访问控制等技术与管理措施保护您的个人信息安全。若发生个人信息安全事件，我们将依法及时告知您并采取补救措施。</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>四、信息的共享与披露</h2>
+        <ul>
+          <li>未经您的同意，我们不会向第三方出售或共享您的个人信息；</li>
+          <li>在法律法规要求、司法或行政机关依法要求时，我们可能依法披露必要信息；</li>
+          <li>为完成服务所必需的第三方合作方（如云服务商），我们仅在最小必要范围内共享信息，并要求其遵守保密义务。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>五、您的权利</h2>
+        <ul>
+          <li>您可以访问、查询、更正您的个人信息；</li>
+          <li>您可以要求删除您的个人信息或注销账号；</li>
+          <li>您可以通过第三方平台取消授权，停止我们获取相关信息。</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>六、未成年人保护</h2>
+        <p>我们非常重视未成年人个人信息的保护。若您是未满 18 周岁的未成年人，请在监护人指导下使用本软件，并在征得监护人同意后再提供任何个人信息。</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>七、政策更新</h2>
+        <p>我们可能适时更新本政策，更新后将在本页面公布。若本政策发生重大变更，我们还将通过弹窗、站内信等显著方式向您告知。</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="section-dot"></span>八、联系我们</h2>
+        <p>如您对本政策或个人信息保护有任何疑问、意见或建议，欢迎通过社区反馈渠道与我们联系，我们将在收到请求后尽快予以答复。</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 根据窗口传入的 type 参数展示对应协议
+    var type = new URLSearchParams(location.search).get('type') || 'user';
+    var isPrivacy = type === 'privacy';
+    document.getElementById(isPrivacy ? 'privacy-agreement' : 'user-agreement').classList.add('active');
+    document.getElementById('header-text').textContent = '蔚蓝档案登录器 - ' + (isPrivacy ? '隐私政策' : '用户协议');
+    document.title = isPrivacy ? '蔚蓝档案登录器 - 隐私政策' : '蔚蓝档案登录器 - 用户协议';
+  </script>
+</body>
+</html>

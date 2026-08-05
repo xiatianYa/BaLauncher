@@ -9,6 +9,7 @@ import { setupLogReaderIpc } from './logReader'
 import { setupAutomaticJoinIpc } from './automaticJoin'
 import { setupCs2CfgIpc } from './cs2Cfg'
 import { setupNotificationIpc } from '../notificationWindow'
+import { setupAgreementIpc } from './agreementWindow'
 
 export function setupAllIpcHandlers() {
   setupWindowControlIpc()
@@ -21,4 +22,5 @@ export function setupAllIpcHandlers() {
   setupAutomaticJoinIpc()
   setupCs2CfgIpc()
   setupNotificationIpc(ipcMain)
+  setupAgreementIpc()
 }
