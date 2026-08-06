@@ -142,7 +142,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 </script>
 
 <template>
-  <div ref="listRef" class="h-full overflow-auto p-5px relative">
+  <div ref="listRef" class="server-card-list h-full overflow-auto p-5px relative">
     <div class="virtual-scroll-spacer" :style="{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px` }">
       <NGrid :x-gap="12" :y-gap="12" :cols="2">
         <NGridItem v-for="(server, index) in visibleServers" :key="server.connectStr || index"
@@ -223,7 +223,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
             <div class="server-card-mask"></div>
             <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
               <SvgIcon icon="material-symbols:cloud-off" class="mr-5px font-size-18px text-yellow-400" />
-              {{ getSourceServerInfo(server)?.serverName }}
+              {{ server.serverName || server.connectStr }}
             </div>
             <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
               <SvgIcon icon="mdi:server-off" class="mr-5px font-size-16px text-gray-400" />
@@ -247,6 +247,14 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 </template>
 
 <style scoped lang="scss">
+/* 虚拟滚动容器：禁用浏览器滚动锚定（overflow-anchor），
+   避免向下滚动时视口上方行被卸载触发锚定补偿、在底部回弹；
+   overscroll-behavior 阻止滚动冒泡到外层窗口 */
+.server-card-list {
+  overflow-anchor: none;
+  overscroll-behavior: contain;
+}
+
 .sercer-card {
   position: relative;
   width: 100%;

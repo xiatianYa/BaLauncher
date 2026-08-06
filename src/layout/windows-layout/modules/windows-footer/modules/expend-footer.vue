@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n';
 import { useThemeStore } from '@/store/modules/theme';
 import { useAuthStore } from '@/store/modules/auth';
 import { $t, setLocale } from '@/locales';
+import { clearLocalCache } from '@/utils/cache';
 
 const themeStore = useThemeStore();
 
@@ -46,9 +47,13 @@ const langOptions = computed<DropdownOption[]>(() => [
 /** 退出登录确认弹窗显示状态 */
 const logoutVisible = ref(false);
 
-function handleConfirmLogout() {
+async function handleConfirmLogout() {
   logoutVisible.value = false;
-  authStore.resetStore();
+  // 退出登录：清除本地所有缓存，保留地图资源（图片磁盘缓存）
+  await clearLocalCache(['game', 'app', 'auth', 'route']);
+  await authStore.resetStore();
+  // 重载页面，刷新系统界面状态（参考设置页清除缓存的刷新方式）
+  window.location.reload();
 }
 
 function handleDropdown(key: DropdownKey) {

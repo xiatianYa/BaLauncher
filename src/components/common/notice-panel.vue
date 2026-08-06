@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import dayjs from 'dayjs';
-import { fetchGetMyNoticeList, fetchMarkNoticeAsRead, fetchMarkAllNoticesAsRead } from '@/service/api';
+import { fetchGetMyNoticeList, fetchMarkNoticeAsRead } from '@/service/api';
 import { $t } from '@/locales';
 
 defineOptions({ name: 'NoticePanel' });
@@ -79,21 +79,6 @@ const handleMarkRead = async (item: Api.System.SysNoticeVo) => {
   }
 };
 
-/** 全部标记为已读 */
-const handleMarkAllRead = async () => {
-  // 无未读则无需请求
-  if (list.value.every(item => item.isRead)) return;
-  const { error } = await fetchMarkAllNoticesAsRead();
-  if (!error) {
-    list.value.forEach(item => {
-      item.isRead = true;
-    });
-    // 全部已读后按列表统计（归零）并通知外部
-    updateUnreadCount();
-    window.$message?.success($t('notice.markAllReadSuccess'));
-  }
-};
-
 onMounted(() => {
   loadNotices();
 });
@@ -101,16 +86,12 @@ onMounted(() => {
 
 <template>
   <div class="notice-panel">
-    <!-- 头部：标题 + 未读数 + 全部已读 -->
+    <!-- 头部：标题 -->
     <div class="notice-header">
       <div class="notice-title">
         <SvgIcon icon="mdi:bell-outline" class="notice-title-icon" />
         <span>{{ $t('notice.title') }}</span>
-        <span v-if="unreadCount > 0" class="notice-header-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
       </div>
-      <button class="notice-mark-all" :title="$t('notice.markAllRead')" @click="handleMarkAllRead">
-        <SvgIcon icon="mdi:check-all" />
-      </button>
     </div>
 
     <!-- 通知列表 -->
@@ -142,7 +123,8 @@ onMounted(() => {
           <p class="notice-item-content" :title="item.content">{{ item.content }}</p>
           <div class="notice-item-footer">
             <span class="notice-item-time">{{ formatTime(item.createTime) }}</span>
-            <span class="notice-item-tag">{{ item.noticeType === 2 ? $t('notice.personal') : $t('notice.announce') }}</span>
+            <span class="notice-item-tag">{{ item.noticeType === 2 ? $t('notice.personal') : $t('notice.announce')
+              }}</span>
           </div>
         </div>
         <!-- 未读小红点 -->
@@ -169,7 +151,6 @@ onMounted(() => {
 .notice-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 14px 16px;
   border-bottom: 1px solid var(--n-border-color);
   flex-shrink: 0;
@@ -185,38 +166,6 @@ onMounted(() => {
     .notice-title-icon {
       font-size: 18px;
       color: #667eea;
-    }
-
-    .notice-header-badge {
-      min-width: 18px;
-      height: 18px;
-      padding: 0 5px;
-      border-radius: 9px;
-      background: #ff4757;
-      color: #fff;
-      font-size: 11px;
-      line-height: 18px;
-      text-align: center;
-    }
-  }
-
-  .notice-mark-all {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    border: 1px solid var(--n-border-color);
-    background: transparent;
-    color: var(--n-text-color-3);
-    cursor: pointer;
-    transition: all 0.25s ease;
-
-    &:hover {
-      color: #667eea;
-      border-color: #667eea;
-      background: rgba(102, 126, 234, 0.12);
     }
   }
 }

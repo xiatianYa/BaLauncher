@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import dayjs from 'dayjs';
 import { NModal, NProgress } from 'naive-ui';
+import { $t } from '@/locales';
 import { fetchGetLogByVersion } from '@/service/api';
 import { useAuthStore } from '@/store/modules/auth';
-import { localStg } from '@/utils/storage';
-import { GAME_STORAGE_KEYS, APP_STORAGE_KEYS, ROUTE_STORAGE_KEYS } from '@/constants/cache';
+import { useDict } from '@/hooks/business/dict';
+import { clearLocalCache } from '@/utils/cache';
 
 interface UpdateState {
   show: boolean;
@@ -28,7 +30,19 @@ const authStore = useAuthStore();
 
 const updateLog = ref<Api.System.UpdateLogVo | null>(null);
 const loadingUpdateLog = ref(false);
-const latestVersion = ref<string>('V2.6.1');
+const latestVersion = ref<string>('');
+
+const { dictLabel } = useDict();
+
+/** 格式化更新时间 */
+const formatDateTime = (dateStr?: string): string =>
+  dateStr ? dayjs(dateStr).format($t('updateLog.dateFormat')) : '';
+
+/** 更新类型文案（来自字典 sys_updateLog_type） */
+const updateTypeLabel = computed(() => {
+  const updateType = updateLog.value?.updateType;
+  return updateType ? dictLabel('sys_updateLog_type', updateType) : '';
+});
 
 /** 下载完成后自动重启倒计时（秒） */
 const autoRestartCountdown = ref(0);
@@ -85,16 +99,14 @@ const handleCancelUpdate = () => {
   updateLog.value = null;
 };
 
-/** 更新安装前清除缓存（保留用户数据 authData 与图片缓存 imageCache，其余全部清理） */
-const clearCacheBeforeUpdate = () => {
-  Object.values(GAME_STORAGE_KEYS).forEach((key) => localStg.remove(key));
-  Object.values(APP_STORAGE_KEYS).forEach((key) => localStg.remove(key));
-  Object.values(ROUTE_STORAGE_KEYS).forEach((key) => localStg.remove(key));
+/** 更新安装前清除缓存（保留登录态 auth 与地图资源 imageCache，其余全部清理） */
+const clearCacheBeforeUpdate = async () => {
+  await clearLocalCache(['game', 'app', 'route']);
 };
 
 const handleInstallUpdate = async () => {
   clearCountdownTimer();
-  clearCacheBeforeUpdate(); // 安装更新前清除缓存，避免旧缓存影响新版本
+  await clearCacheBeforeUpdate(); // 安装更新前清除缓存，避免旧缓存影响新版本
   await window.ipcRenderer.invoke('install-update');
 };
 
@@ -158,8 +170,8 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <NModal v-model:show="state.show" preset="card" class="update-modal w-480px rounded-16px"
-    :bordered="false" :closable="false" v-if="authStore.isLogin">
+  <NModal v-model:show="state.show" preset="card" class="update-modal w-480px rounded-16px" :bordered="false"
+    :closable="false" v-if="authStore.isLogin">
     <template #header>
       <div class="update-modal-header">
         <div class="update-modal-icon-wrap">
@@ -177,29 +189,51 @@ onUnmounted(() => {
       <!-- 顶部图标 -->
       <div class="update-hero">
         <div class="update-hero-icon" :class="{ active: state.downloading || state.downloaded }">
-          <SvgIcon
-            :icon="state.downloaded
-              ? 'mdi:restart'
-              : state.downloading
-                ? 'mdi:progress-download'
-                : 'mdi:cloud-download-outline'" />
+          <SvgIcon :icon="state.downloaded
+            ? 'mdi:restart'
+            : state.downloading
+              ? 'mdi:progress-download'
+              : 'mdi:cloud-download-outline'" />
         </div>
       </div>
 
       <!-- 更新日志 -->
       <div v-if="!state.downloading && !state.downloaded" class="update-log-box">
         <div v-if="updateLog" class="update-log">
+          <!-- 更新描述 -->
+          <div class="update-log-desc">
+            <SvgIcon icon="mdi:rocket-launch-outline" class="desc-icon" />
+            <p class="desc-text">{{ $t('update.desc', { version: updateLog.version }) }}</p>
+          </div>
+
           <h3 class="update-log-title">
             <SvgIcon icon="mdi:note-text-outline" class="log-title-icon" />
             {{ updateLog.title }}
           </h3>
+
+          <!-- 版本 / 类型 / 日期 -->
+          <div class="update-log-meta">
+            <span class="meta-tag">
+              <SvgIcon icon="lucide:tag" />
+              v{{ updateLog.version }}
+            </span>
+            <span v-if="updateTypeLabel" class="meta-tag">
+              <SvgIcon icon="mdi:shape-outline" />
+              {{ updateTypeLabel }}
+            </span>
+            <span v-if="updateLog.createTime" class="meta-tag">
+              <SvgIcon icon="lucide:calendar-1" />
+              {{ formatDateTime(updateLog.createTime) }}
+            </span>
+          </div>
+          <!-- 更新内容（CommonMdEditor 自带边框与内边距，随主题自适应） -->
           <CommonMdEditor preview-only :model-value="updateLog.content" />
         </div>
         <div v-else-if="loadingUpdateLog" class="update-log-loading">
           <SvgIcon icon="mdi:loading" class="loading-icon" />
-          <span>正在加载更新日志...</span>
+          <span>{{ $t('update.loadingLog') }}</span>
         </div>
-        <p v-else class="update-tip">{{ $t('update.confirm') }}</p>
+        <p v-else class="update-tip">{{ $t('update.confirm', { version: latestVersion }) }}</p>
       </div>
 
       <!-- 下载进度 -->
@@ -225,13 +259,11 @@ onUnmounted(() => {
 
       <!-- 操作按钮 -->
       <div class="update-actions">
-        <button v-if="!state.downloading && !state.downloaded" class="action-btn cancel"
-          @click="handleCancelUpdate">
+        <button v-if="!state.downloading && !state.downloaded" class="action-btn cancel" @click="handleCancelUpdate">
           <SvgIcon icon="mdi:close" />
           <span>{{ $t('update.cancel') }}</span>
         </button>
-        <button v-if="!state.downloading && !state.downloaded" class="action-btn confirm"
-          @click="handleConfirmUpdate">
+        <button v-if="!state.downloading && !state.downloaded" class="action-btn confirm" @click="handleConfirmUpdate">
           <SvgIcon icon="mdi:download" />
           <span>{{ $t('update.updateNow') }}</span>
         </button>
@@ -323,16 +355,41 @@ onUnmounted(() => {
   /* ---------- 更新日志 ---------- */
   .update-log-box {
     min-height: 100px;
-    max-height: 240px;
+    max-height: 400px;
     border-radius: 12px;
-    background: rgba(var(--app-rgb), 0.04);
-    border: 1px solid rgba(var(--app-rgb), 0.07);
-    overflow: hidden;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    overflow-y: auto;
 
     .update-log {
       padding: 14px 16px;
-      max-height: 240px;
+      max-height: 300px;
       overflow-y: auto;
+
+      .update-log-desc {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 12px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: rgba(102, 126, 234, 0.08);
+        border: 1px solid rgba(102, 126, 234, 0.18);
+
+        .desc-icon {
+          flex-shrink: 0;
+          margin-top: 1px;
+          font-size: 16px;
+          color: #667eea;
+        }
+
+        .desc-text {
+          margin: 0;
+          font-size: 13px;
+          line-height: 1.7;
+          color: var(--text-main);
+        }
+      }
 
       .update-log-title {
         display: flex;
@@ -341,11 +398,34 @@ onUnmounted(() => {
         margin: 0 0 10px 0;
         font-size: 14px;
         font-weight: 600;
-        color: rgba(var(--app-rgb), 0.9);
+        color: var(--text-main);
 
         .log-title-icon {
           font-size: 15px;
           color: #667eea;
+        }
+      }
+
+      .update-log-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 10px;
+
+        .meta-tag {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 2px 8px;
+          border-radius: 6px;
+          font-size: 11.5px;
+          color: var(--text-secondary);
+          background: var(--input-bg);
+          border: 1px solid var(--input-border);
+
+          svg {
+            font-size: 12px;
+          }
         }
       }
 
@@ -355,7 +435,7 @@ onUnmounted(() => {
 
       &::-webkit-scrollbar-thumb {
         border-radius: 4px;
-        background: rgba(var(--app-rgb), 0.12);
+        background: var(--input-border);
       }
     }
 
@@ -366,7 +446,7 @@ onUnmounted(() => {
       gap: 8px;
       height: 100px;
       font-size: 13px;
-      color: rgba(var(--app-rgb), 0.45);
+      color: var(--text-secondary);
 
       .loading-icon {
         font-size: 18px;
@@ -382,7 +462,7 @@ onUnmounted(() => {
       height: 100px;
       margin: 0;
       font-size: 14px;
-      color: rgba(var(--app-rgb), 0.6);
+      color: var(--text-secondary);
     }
   }
 
@@ -393,8 +473,8 @@ onUnmounted(() => {
     gap: 10px;
     padding: 16px;
     border-radius: 12px;
-    background: rgba(var(--app-rgb), 0.04);
-    border: 1px solid rgba(var(--app-rgb), 0.07);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
 
     .download-progress {
       .progress-bar {
@@ -423,7 +503,7 @@ onUnmounted(() => {
           display: inline-flex;
           align-items: center;
           gap: 4px;
-          color: rgba(var(--app-rgb), 0.45);
+          color: var(--text-secondary);
 
           svg {
             font-size: 13px;
@@ -466,13 +546,13 @@ onUnmounted(() => {
       gap: 5px;
       flex: 1;
       padding: 9px 2px;
-      border: 1px solid rgba(var(--app-rgb), 0.08);
+      border: 1px solid var(--input-border);
       border-radius: 9px;
       cursor: pointer;
       font-size: 13px;
       font-weight: 500;
-      color: rgba(var(--app-rgb), 0.8);
-      background: rgba(var(--app-rgb), 0.06);
+      color: var(--text-main);
+      background: var(--input-bg);
       transition: all 0.2s ease;
 
       &:hover {
@@ -503,6 +583,7 @@ onUnmounted(() => {
 }
 
 @keyframes heroPulse {
+
   0%,
   100% {
     transform: scale(1);
@@ -523,5 +604,19 @@ onUnmounted(() => {
   to {
     transform: rotate(360deg);
   }
+}
+</style>
+
+<style lang="scss">
+/* ===== 弹窗主题变量 =====
+   NModal 默认 teleport 到 body，不继承应用根节点（.theme-dark/.theme-light）上的 --app-rgb。
+   注意 naive-ui 的主题类是一串 hash（并非 n-dark），不能用来做主题判断；
+   这里直接基于弹窗卡片上 naive-ui 保证提供的 --n-text-color（自动随明暗主题切换）
+   派生出文字/边框/背景变量，弹窗内所有颜色随主题自适应。 */
+.update-modal {
+  --text-main: var(--n-text-color);
+  --text-secondary: color-mix(in srgb, var(--n-text-color) 55%, transparent);
+  --input-bg: color-mix(in srgb, var(--n-text-color) 5%, transparent);
+  --input-border: color-mix(in srgb, var(--n-text-color) 10%, transparent);
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { MdEditor } from 'md-editor-v3';
+import { MdEditor, MdPreview } from 'md-editor-v3';
 import type { ToolbarNames } from 'md-editor-v3';
 
 defineOptions({ name: 'CommonMdEditor' });
@@ -12,7 +12,7 @@ withDefaults(
     toolbars?: ToolbarNames[];
     /** 是否显示预览区 */
     preview?: boolean;
-    /** 是否仅预览（只读展示，隐藏编辑区，用于统一替代 MdPreview） */
+    /** 是否仅预览（只读展示，隐藏编辑区） */
     previewOnly?: boolean;
     /** 主题变体：log = 更新日志（紫色主色），cfg = 配置编辑器（天蓝主色） */
     theme?: 'log' | 'cfg';
@@ -58,13 +58,21 @@ const handleSave = (value: string) => emit('onSave', value);
 </script>
 
 <template>
+  <!-- 仅预览：md-editor-v3 自 4.0.0 起移除了 MdEditor 的 previewOnly 属性（不生效），
+       需改用独立的 MdPreview 组件才能实现真正的只读预览 -->
+  <MdPreview
+    v-if="previewOnly"
+    class="common-md-editor"
+    :class="`md-theme-${theme}`"
+    :model-value="modelValue"
+  />
   <MdEditor
+    v-else
     class="common-md-editor"
     :class="`md-theme-${theme}`"
     :model-value="modelValue"
     :toolbars="toolbars"
     :preview="preview"
-    :preview-only="previewOnly"
     @update:model-value="handleUpdate"
     @on-save="handleSave"
   />
@@ -73,33 +81,49 @@ const handleSave = (value: string) => emit('onSave', value);
 <style scoped lang="scss">
 // ==================== 通用 Markdown 编辑器（MdEditor）美化 ====================
 // 参考 updateLog 预览区的透明化风格，支持两种主题变体（log 紫色 / cfg 天蓝）
-// 颜色优先跟随所在容器变量（弹窗 --text-main/--input-*），无则回退 --app-rgb
+// 文字色跟随系统主题（naive-ui --n-text-color，页面与 teleport 弹窗内均可用），
+// 边框/背景由文字色 color-mix 派生，深浅随系统主题自动切换
 .common-md-editor {
   // 主题主色 RGB 三元组（默认 log = 项目主紫）
   --md-accent: 102, 126, 234;
 
+  // 系统主题文字色 + 由其派生的边框/背景色
+  --md-text: var(--n-text-color, rgba(var(--app-rgb), 0.8));
+  --md-line: color-mix(in srgb, var(--n-text-color, rgba(var(--app-rgb), 0.8)) 12%, transparent);
+  --md-line-soft: color-mix(in srgb, var(--n-text-color, rgba(var(--app-rgb), 0.8)) 6%, transparent);
+  --md-line-strong: color-mix(in srgb, var(--n-text-color, rgba(var(--app-rgb), 0.8)) 16%, transparent);
+  --md-bg-soft: color-mix(in srgb, var(--n-text-color, rgba(var(--app-rgb), 0.8)) 4%, transparent);
+
   // md-editor-v3 主题变量
-  --md-color: var(--text-main, rgba(var(--app-rgb), 0.8));
+  --md-color: var(--md-text);
   --md-bk-color: transparent;
-  --md-bk-color-outstand: var(--input-bg, rgba(var(--app-rgb), 0.03));
+  --md-bk-color-outstand: var(--md-bg-soft);
   --md-bk-hover-color: rgba(var(--md-accent), 0.1);
-  --md-border-color: var(--input-border, rgba(var(--app-rgb), 0.08));
+  --md-border-color: var(--md-line);
   --md-border-hover-color: rgba(var(--md-accent), 0.35);
   --md-border-active-color: rgb(var(--md-accent));
   --md-hover-color: rgb(var(--md-accent));
   --md-theme-base-color: rgb(var(--md-accent));
-  --md-scrollbar-bg-color: rgba(var(--app-rgb), 0.06);
-  --md-scrollbar-thumb-color: rgba(var(--app-rgb), 0.16);
+  --md-scrollbar-bg-color: var(--md-line-soft);
+  --md-scrollbar-thumb-color: var(--md-line-strong);
   --md-scrollbar-thumb-hover-color: rgba(var(--md-accent), 0.5);
   --md-scrollbar-thumb-active-color: rgba(var(--md-accent), 0.6);
   background: transparent;
-  border: 1px solid var(--input-border, rgba(var(--app-rgb), 0.08));
+  border: 1px solid var(--md-line);
   border-radius: 10px;
   overflow: hidden;
 
   // cfg 主题变体：天蓝主色（keyBind 配置编辑器）
   &.md-theme-cfg {
     --md-accent: 75, 158, 248;
+  }
+
+  /* 仅预览：库在 previewOnly 下会把预览区内边距清零（.md-editor-previewOnly .md-editor-preview { padding: 0 }），
+     这里补回内边距，让文字与边框留出间距（参考 update-confirm 更新日志卡片的 padding: 12px 14px） */
+  &.md-editor-previewOnly {
+    :deep(.md-editor-preview) {
+      padding: 12px 14px;
+    }
   }
 
   /* 编辑区 / 预览区透明化 + 排版统一（字号 13px、行高 1.8，同 updateLog 预览区） */
@@ -113,14 +137,14 @@ const handleSave = (value: string) => emit('onSave', value);
     background: transparent;
     font-size: 13px;
     line-height: 1.8;
-    color: var(--text-main, rgba(var(--app-rgb), 0.8));
+    color: var(--md-text);
   }
 
   /* 预览区内容排版：标题 / 段落 / 强调 / 链接 / 列表 / 代码 / 引用 / 表格 */
   :deep(.md-editor-preview) {
     font-size: 13px;
     line-height: 1.8;
-    color: var(--text-main, rgba(var(--app-rgb), 0.8));
+    color: var(--md-text);
 
     h1,
     h2,
@@ -131,7 +155,7 @@ const handleSave = (value: string) => emit('onSave', value);
       margin: 14px 0 8px;
       font-weight: 600;
       line-height: 1.45;
-      color: var(--text-main, rgba(var(--app-rgb), 0.92));
+      color: color-mix(in srgb, var(--md-text) 92%, transparent);
 
       &:first-child {
         margin-top: 0;
@@ -141,7 +165,7 @@ const handleSave = (value: string) => emit('onSave', value);
     h1 {
       font-size: 17px;
       padding-bottom: 6px;
-      border-bottom: 1px solid var(--input-border, rgba(var(--app-rgb), 0.08));
+      border-bottom: 1px solid var(--md-line);
     }
 
     h2 {
@@ -160,16 +184,16 @@ const handleSave = (value: string) => emit('onSave', value);
 
     p {
       margin: 6px 0;
-      color: var(--text-secondary, rgba(var(--app-rgb), 0.75));
+      color: color-mix(in srgb, var(--md-text) 75%, transparent);
     }
 
     strong {
       font-weight: 600;
-      color: var(--text-main, rgba(var(--app-rgb), 0.95));
+      color: color-mix(in srgb, var(--md-text) 95%, transparent);
     }
 
     em {
-      color: var(--text-main, rgba(var(--app-rgb), 0.85));
+      color: color-mix(in srgb, var(--md-text) 85%, transparent);
     }
 
     a {
@@ -178,8 +202,8 @@ const handleSave = (value: string) => emit('onSave', value);
       border-bottom: 1px solid rgba(var(--md-accent), 0.35);
 
       &:hover {
-        color: #764ba2;
-        border-bottom-color: #764ba2;
+        color: color-mix(in srgb, rgb(var(--md-accent)) 78%, var(--md-text));
+        border-bottom-color: color-mix(in srgb, rgb(var(--md-accent)) 78%, var(--md-text));
       }
     }
 
@@ -187,7 +211,7 @@ const handleSave = (value: string) => emit('onSave', value);
     ol {
       margin: 6px 0;
       padding-left: 20px;
-      color: var(--text-secondary, rgba(var(--app-rgb), 0.75));
+      color: color-mix(in srgb, var(--md-text) 75%, transparent);
     }
 
     li {
@@ -201,7 +225,7 @@ const handleSave = (value: string) => emit('onSave', value);
       padding: 2px 6px;
       border-radius: 5px;
       background: rgba(var(--md-accent), 0.12);
-      color: #764ba2;
+      color: color-mix(in srgb, rgb(var(--md-accent)) 78%, var(--md-text));
       word-break: break-all;
     }
 
@@ -211,7 +235,7 @@ const handleSave = (value: string) => emit('onSave', value);
       padding: 12px 14px;
       border-radius: 10px;
       background: rgba(0, 0, 0, 0.35);
-      border: 1px solid var(--input-border, rgba(var(--app-rgb), 0.08));
+      border: 1px solid var(--md-line);
       overflow-x: auto;
       line-height: 1.6;
 
@@ -229,7 +253,7 @@ const handleSave = (value: string) => emit('onSave', value);
       border-left: 3px solid rgb(var(--md-accent));
       border-radius: 0 8px 8px 0;
       background: rgba(var(--md-accent), 0.08);
-      color: var(--text-secondary, rgba(var(--app-rgb), 0.7));
+      color: color-mix(in srgb, var(--md-text) 70%, transparent);
 
       p {
         margin: 4px 0;
@@ -246,18 +270,18 @@ const handleSave = (value: string) => emit('onSave', value);
       th,
       td {
         padding: 7px 12px;
-        border: 1px solid var(--input-border, rgba(var(--app-rgb), 0.1));
+        border: 1px solid var(--md-line);
         text-align: left;
       }
 
       th {
-        background: var(--input-bg, rgba(var(--app-rgb), 0.05));
+        background: var(--md-bg-soft);
         font-weight: 600;
-        color: var(--text-main, rgba(var(--app-rgb), 0.85));
+        color: color-mix(in srgb, var(--md-text) 85%, transparent);
       }
 
       tr:nth-child(even) td {
-        background: rgba(var(--app-rgb), 0.02);
+        background: color-mix(in srgb, var(--md-text) 2%, transparent);
       }
     }
 
@@ -265,7 +289,7 @@ const handleSave = (value: string) => emit('onSave', value);
     hr {
       margin: 14px 0;
       border: none;
-      border-top: 1px solid var(--input-border, rgba(var(--app-rgb), 0.1));
+      border-top: 1px solid var(--md-line);
     }
 
     img {

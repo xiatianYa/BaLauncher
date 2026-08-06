@@ -328,8 +328,16 @@ onMounted(() => {
         </div>
       </template>
 
-      <!-- 更新日志视图（底部含添加栏，参照通知视图） -->
+      <!-- 更新日志视图（顶部添加栏） -->
       <div v-if="viewMode === 'log'" class="log-view-container">
+        <!-- 顶部添加栏（与通知视图位置保持一致） -->
+        <div v-if="canAddUpdateLog" class="log-toolbar">
+          <button class="log-add-btn" @click="addModalVisible = true">
+            <SvgIcon icon="mdi:plus" />
+            <span>{{ $t('updateLog.addNewLog') }}</span>
+          </button>
+        </div>
+
         <!-- 更新日志列表 -->
         <div class="card-list">
         <!-- 骨架屏：初次加载接口较慢时显示（与 userManage 一致） -->
@@ -400,14 +408,6 @@ onMounted(() => {
           </NInfiniteScroll>
         </template>
         </div>
-
-        <!-- 底部添加栏（参照通知视图：操作区域放到底部） -->
-        <div v-if="canAddUpdateLog" class="log-add-bar">
-          <button class="log-add-btn" @click="addModalVisible = true">
-            <SvgIcon icon="mdi:plus" />
-            <span>{{ $t('updateLog.addNewLog') }}</span>
-          </button>
-        </div>
       </div>
 
       <!-- 通知日志视图（参考 roleManage：搜索 + 卡片网格 + 分页） -->
@@ -422,6 +422,10 @@ onMounted(() => {
           <button class="notice-search-btn" @click="handleNoticeSearch">
             <SvgIcon icon="mdi:magnify" />
             <span>{{ $t('updateLog.noticeSearch') }}</span>
+          </button>
+          <button v-if="canAddUpdateLog" class="log-add-btn" @click="handleNoticeCreate">
+            <SvgIcon icon="mdi:plus" />
+            <span>{{ $t('updateLog.noticeAdd') }}</span>
           </button>
         </div>
 
@@ -494,14 +498,6 @@ onMounted(() => {
         <div v-if="noticePagination.total > 0" class="notice-pagination-bar">
           <NPagination v-model:value="noticePagination.current" :total="noticePagination.total"
             :page-size="noticePagination.size" @update-page="handleNoticePageChange" />
-        </div>
-
-        <!-- 底部添加栏（与更新日志视图保持一致） -->
-        <div v-if="canAddUpdateLog" class="log-add-bar">
-          <button class="log-add-btn" @click="handleNoticeCreate">
-            <SvgIcon icon="mdi:plus" />
-            <span>{{ $t('updateLog.noticeAdd') }}</span>
-          </button>
         </div>
       </div>
     </NCard>
@@ -733,12 +729,12 @@ onMounted(() => {
   padding: 0 16px 16px;
 }
 
-/* 底部添加栏（参照通知视图：操作区域放到底部） */
-.log-add-bar {
+/* 顶部添加栏（与通知视图位置保持一致：位于内容区顶部） */
+.log-toolbar {
   flex-shrink: 0;
   display: flex;
-  justify-content: center;
-  padding: 0 16px 16px;
+  justify-content: flex-start;
+  padding: 0 16px 12px;
 }
 
 .log-add-btn {

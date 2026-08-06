@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { NButton } from 'naive-ui'
 import { localStg } from '@/utils/storage'
 import { $t } from '@/locales'
+import { clearLocalCache, type CacheScope } from '@/utils/cache'
 import {
   ROUTE_STORAGE_KEYS,
   APP_STORAGE_KEYS,
@@ -30,6 +31,15 @@ const cacheTypes: CacheType[] = [
   { label: $t('settings.cache.types.routeData'), value: 'routeData', key: 'routeData', icon: 'mdi:routes', type: 'info' },
   { label: $t('settings.cache.types.imageCache'), value: 'imageCache', key: 'imageCache', icon: 'mdi:image-multiple', type: 'info' },
 ]
+
+/** 缓存类型 -> 清除范围（对应全局缓存清理函数 clearLocalCache 的 scope） */
+const CACHE_TYPE_SCOPE: Record<string, CacheScope> = {
+  gameSettings: 'game',
+  appSettings: 'app',
+  authData: 'auth',
+  routeData: 'route',
+  imageCache: 'image',
+}
 
 /** 图片磁盘缓存大小（通过 IPC 查询） */
 const imageCacheSize = ref('0 KB')
@@ -139,27 +149,9 @@ const handleClearCache = async () => {
   }
 
   try {
-    selectedCacheTypes.value.forEach((type) => {
-      switch (type) {
-        case 'gameSettings':
-          Object.values(GAME_STORAGE_KEYS).forEach(key => localStg.remove(key))
-          break
-        case 'appSettings':
-          Object.values(APP_STORAGE_KEYS).forEach(key => localStg.remove(key))
-          break
-        case 'authData':
-          Object.values(AUTH_STORAGE_KEYS).forEach(key => localStg.remove(key))
-          break
-        case 'routeData':
-          Object.values(ROUTE_STORAGE_KEYS).forEach(key => localStg.remove(key))
-          break
-      }
-    })
-
-    // 清理图片磁盘缓存
-    if (selectedCacheTypes.value.includes('imageCache')) {
-      await window.ipcRenderer.clearImageCache()
-    }
+    // 统一走全局缓存清理函数，按所选类型映射为对应 scope
+    const scopes = selectedCacheTypes.value.map((type) => CACHE_TYPE_SCOPE[type])
+    await clearLocalCache(scopes)
 
     cacheModalVisible.value = false
     window.$message?.success($t('settings.cache.success'))

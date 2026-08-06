@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NCard, NTag } from 'naive-ui';
+import { computed } from 'vue';
 import { VueDraggable } from 'vue-draggable-plus';
 import { useGameStore } from '@/store/modules/game';
 import SvgIcon from '@/components/custom/svg-icon.vue';
@@ -22,6 +23,25 @@ const getCommunityTagType = (playerNumber: number) => {
   const level = playerNumber < 300 ? 'normal' : playerNumber < 500 ? 'warning' : 'error';
   return dictType('community_level', level);
 };
+
+/**
+ * 各社区在线人数映射：从 WebSocket 全量服务器列表（currentServerWsList，覆盖所有社区）
+ * 按 communityId 汇总在线玩家数，避免使用接口返回的旧 playerNumber。
+ * currentServerList 只含当前选中社区的服务器，不能用于统计其他社区。
+ */
+const communityOnlineCountMap = computed(() => {
+  const map = new Map<number, number>();
+  gameStore.currentServerWsList.forEach(server => {
+    const id = server.communityId;
+    if (id == null) return;
+    map.set(id, (map.get(id) ?? 0) + (server.numPlayers || 0));
+  });
+  return map;
+});
+
+/** 获取社区在线人数：实时汇总值，无玩家数据时显示 0 */
+const getCommunityPlayerNumber = (community: Api.Game.Community) =>
+  communityOnlineCountMap.value.get(community.id) ?? 0;
 
 const handleSelect = (id: number) => {
   emit('select', id);
@@ -51,8 +71,8 @@ const handleSelect = (id: number) => {
             <div class="community-stats">{{ $t('server.serverCount', { count: community.serverNumber }) }}</div>
           </div>
           <div class="community-online">
-            <NTag :type="getCommunityTagType(community.playerNumber)" class="rounded-md" size="small">
-              {{ $t('server.playerCount', { count: community.playerNumber }) }}
+            <NTag :type="getCommunityTagType(getCommunityPlayerNumber(community))" class="rounded-md" size="small">
+              {{ $t('server.playerCount', { count: getCommunityPlayerNumber(community) }) }}
             </NTag>
           </div>
         </div>

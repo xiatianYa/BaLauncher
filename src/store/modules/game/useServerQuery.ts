@@ -52,10 +52,11 @@ export function useServerQuery(deps: ServerQueryDeps) {
       type: '',
       tag: [],
       artifact: '',
-      serverName: '',
+      // 离线时也带上源服务器的名称与连接地址，避免两个视图拿不到名称而显示空白/undefined
+      serverName: server.serverName || '',
       numPlayers: 0,
       maxPlayers: 0,
-      connectStr: '',
+      connectStr: server.connectStr || '',
       minPlayers: 0,
       dateTimeOriginal: undefined,
       ping: 0,

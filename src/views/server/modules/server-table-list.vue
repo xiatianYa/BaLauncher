@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
-import { NButton, NTag, NTooltip } from 'naive-ui';
+import { NButton, NEllipsis, NTag, NTooltip } from 'naive-ui';
 import { computed, ref } from 'vue';
 import { useDict } from '@/hooks/business/dict';
 
@@ -58,9 +58,13 @@ const isServerOffline = (server: Api.Game.SeverVo) => {
   return !server.isOnline;
 };
 
-// 获取服务器显示名称
+// 获取服务器显示名称（离线时用源服务器名 + 离线后缀；
+// 源服务器信息缺失时用连接地址兜底，再缺失则直接显示"离线"，避免出现 undefined）
 const getServerName = (server: Api.Game.SeverVo) => {
-  return server.serverName ? server.serverName : `${getSourceServerInfo(server)?.serverName}${$t('server.offlineSuffix')}`;
+  if (server.serverName) return server.serverName;
+  const sourceName = getSourceServerInfo(server)?.serverName;
+  const baseName = sourceName || server.connectStr;
+  return baseName ? `${baseName}${$t('server.offlineSuffix')}` : $t('server.offline');
 };
 
 // 获取玩家数进度百分比
@@ -152,10 +156,12 @@ const getSortOrder = (field: SortField) => {
           <div class="td td-name">
             <div class="flex items-center gap-8px">
               <span class="status-dot" :class="isServerOffline(server) ? 'offline' : 'online'" />
-              <span class="name-text" :title="getServerName(server)">{{ getServerName(server) }}</span>
+              <!-- 超出省略，鼠标移入展示完整名称 -->
+              <NEllipsis class="name-text" :max-line="1" :tooltip="{ placement: 'top' }" style="max-width: 200px;">
+                {{ getServerName(server) }}
+              </NEllipsis>
             </div>
           </div>
-
           <!-- 地图 -->
           <div class="td td-map">
             <div class="map-box">
@@ -366,9 +372,6 @@ const getSortOrder = (field: SortField) => {
   .name-text {
     font-size: 14px;
     font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
     // 服务器名颜色随主题变化
     color: rgba(var(--app-rgb), 0.95);
   }

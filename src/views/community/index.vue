@@ -98,12 +98,11 @@ onMounted(() => {
 
       <!-- 社区卡片列表（滚动到底部继续分页） -->
       <div class="community-list" @scroll="handleScroll">
-        <NGrid :x-gap="16" :y-gap="16" :cols="3" responsive="screen" item-responsive>
+        <NGrid :x-gap="16" :y-gap="16" :cols="2" responsive="screen" item-responsive>
           <NGridItem v-for="(item, index) in list" :key="item.id" span="3 s:2 m:1 l:1">
             <div class="community-card" :style="{ '--delay': `${index * 0.04}s` }" @click="openWebsite(item.website)">
               <div class="card-logo-wrap">
                 <img v-if="item.logo" :src="item.logo" class="card-logo" alt="logo" loading="lazy" @error="onLogoError" />
-                <SvgIcon icon="mdi:account-group" class="card-logo-fallback" />
               </div>
               <div class="card-body">
                 <div class="card-name" :title="item.communityName">{{ item.communityName || '-' }}</div>
@@ -232,23 +231,22 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 72px;
     height: 72px;
+    /* 高度锁死 72px；宽度随 logo 实际比例自适应，允许超过 72px（完整显示，不裁切） */
+    width: auto;
+    min-width: 72px;
+    padding: 0 10px;
     border-radius: 16px;
     background: rgba(102, 126, 234, 0.12);
     flex-shrink: 0;
+    box-sizing: border-box;
     overflow: hidden;
 
     .card-logo {
-      width: 100%;
+      display: block;
       height: 100%;
-      object-fit: cover;
-    }
-
-    .card-logo-fallback {
-      font-size: 34px;
-      color: #667eea;
-      display: none;
+      width: auto;
+      object-fit: contain;
     }
 
     /* logo 加载失败时显示默认图标 */
