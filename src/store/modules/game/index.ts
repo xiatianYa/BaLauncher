@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 import { SetupStoreId } from '@/enum'
 import { UserConnectionStatus, GisDataSendTimerState } from '@/constants/cs2'
 import type { GamePlatform } from '@/constants/app'
-import ServerWebsocket from '@/utils/ws/server'
+import ServerWebsocket, { sendPlayerAction, sendPlayerGameData, sendServerGameData } from '@/utils/ws/server'
 import { useGameStorage } from './useGameStorage'
 import { useServerQuery } from './useServerQuery'
 import { useGsiListener } from './useGsiListener'
@@ -71,6 +71,20 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /** 当前选中的待加入服务器信息 */
   const joinServerInfo = ref<Api.Game.SeverVo>()
+
+  /** 最近一次发起加入服务器请求的时间戳，10s 内抑制退出上报（避免切服时误清 GIS 数据） */
+  const lastJoinRequestTime = ref(0)
+  const QUIT_REPORT_SUPPRESS_WINDOW = 10000
+
+  /** 标记已发起加入服务器请求 */
+  function markJoinRequested(): void {
+    lastJoinRequestTime.value = Date.now()
+  }
+
+  /** 是否处于退出上报抑制窗口（10s 内刚发起过加入服务器请求） */
+  function isQuitReportSuppressed(): boolean {
+    return Date.now() - lastJoinRequestTime.value < QUIT_REPORT_SUPPRESS_WINDOW
+  }
 
   // ==================== 自动挤服状态 ====================
 
@@ -147,8 +161,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     lastSentAt: 0, sendTimer: null, pendingData: null, pendingServerData: null
   }
 
-  /** GSI 数据发送最小间隔（3秒） */
-  const GIS_SEND_MIN_INTERVAL = 3000
+  /** GSI 数据发送最小间隔（1秒） */
+  const GIS_SEND_MIN_INTERVAL = 1000
 
   // ==================== 工具函数 ====================
 
@@ -207,8 +221,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     if (!actionContent || !actionContent.trim()) {
       return;
     }
-    const payload = JSON.stringify({ serverId: Number(serverId), actionContent: String(actionContent).trim() })
-    ServerWebsocket.send('112', payload)
+    sendPlayerAction(serverId, actionContent)
   }
 
   const autoJoin = useAutoJoin({
@@ -244,16 +257,16 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
       gisSendState.sendTimer = null
     }
     if (gisSendState.pendingData) {
-      ServerWebsocket.send('110', JSON.stringify(gisSendState.pendingData))
+      sendPlayerGameData(gisSendState.pendingData)
       gisSendState.pendingData = null
     }
     if (gisSendState.pendingServerData) {
-      ServerWebsocket.send('111', JSON.stringify(gisSendState.pendingServerData))
+      sendServerGameData(gisSendState.pendingServerData)
       gisSendState.pendingServerData = null
     }
   }
 
-  /** 调度 GSI 数据发送：最快 3s 推送一次 */
+  /** 调度 GSI 数据发送：最快 1s 推送一次 */
   function scheduleGisSend(): void {
     if (gisSendState.sendTimer) return
     const elapsed = Date.now() - gisSendState.lastSentAt
@@ -288,6 +301,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     stopAutomaticJoinServer: () => fnGetters.stopAutomaticJoinServer(),
     sendPlayerData,
     sendServerData,
+    shouldSuppressQuitReport: isQuitReportSuppressed,
   })
 
   // 5. 游戏状态检查与启动
@@ -309,6 +323,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     stopAutomaticJoinServer: () => fnGetters.stopAutomaticJoinServer(),
     connectServerUsingSteamUrl: () => fnGetters.connectServerUsingSteamUrl(),
     connectToServerById: (id: number) => fnGetters.connectToServerById(id),
+    markJoinRequested,
   })
 
   // 6. 服务器查询

@@ -4,7 +4,6 @@ import {
   onBeforeUnmount,
   reactive,
   ref,
-  unref,
   watch,
 } from 'vue'
 import {
@@ -55,25 +54,6 @@ const emit = defineEmits<{
 const gameStore = useGameStore()
 const { dictOptions, dictType, dictLabel } = useDict()
 
-// ============================================================
-// 类型归一化工具（集中处理后端可能是「单对象 / 数组」的字段，避免调用点散落 as 断言）
-// ============================================================
-const normalizeUserGameDataList = (
-  v: unknown,
-): Api.Game.UserGameData[] => {
-  if (v == null) return []
-  if (Array.isArray(v)) return v as Api.Game.UserGameData[]
-  return [v as Api.Game.UserGameData]
-}
-
-const normalizePlayerActionLogList = (
-  v: unknown,
-): Api.Game.PlayerActionLog[] => {
-  if (v == null) return []
-  if (Array.isArray(v)) return v as Api.Game.PlayerActionLog[]
-  return [v as Api.Game.PlayerActionLog]
-}
-
 const dictItem = (
   dict: string,
   value?: string | number,
@@ -93,16 +73,12 @@ let rafId: number | null = null
 let lastTs = 0
 
 // ============================================================
-// 数据源：当前服务器 / 本地快照
+// 数据源：当前服务器 / 直接派生 store 原数据的响应式列表
 // ============================================================
 const currentServerId = computed<string>(() => {
   const sid = gameStore.joinServerInfo?.serverId
   return sid == null ? '' : String(sid)
 })
-
-const currentServerUserGameDataList = ref<Api.Game.UserGameData[]>([])
-const currentPlayingUserList = ref<Api.Game.UserGameData[]>([])
-const currentActionLogs = ref<Api.Game.PlayerActionLog[]>([])
 
 const JOIN_RELATED_ACTION_KEYWORDS: ReadonlySet<string> = new Set([
   '开始挤服',
@@ -128,34 +104,24 @@ const filterJoinRelatedLogs = (
   return list
 }
 
-// ============================================================
-// 快照刷新：玩家列表 / 操作动态 / 正在挤服头像集合
-// ============================================================
-const refreshPlayerSnapshots = () => {
-  const sid = unref(currentServerId)
-  if (!sid) {
-    currentServerUserGameDataList.value = []
-    return
-  }
-  const raw = gameStore.serverGameDataMap.userGameDataMap[sid]
-  const all = normalizeUserGameDataList(raw)
-  currentServerUserGameDataList.value = [...all]
-}
+// 存储约定：data-updater 已将 userGameDataMap[sid] / playerActionMap[sid] 统一为数组
+const currentServerUserGameDataList = computed<Api.Game.UserGameData[]>(() => {
+  const sid = currentServerId.value
+  if (!sid) return []
+  return gameStore.serverGameDataMap.userGameDataMap[sid]
+})
 
-const refreshActionLogs = () => {
-  const sid = unref(currentServerId)
-  if (!sid) {
-    currentActionLogs.value = []
-    currentPlayingUserList.value = []
-    return
-  }
-  const raw = gameStore.serverGameDataMap.playerActionMap[sid]
-  const all = normalizePlayerActionLogList(raw)
-  const filtered = filterJoinRelatedLogs([...all])
-  currentActionLogs.value = filtered
+const currentActionLogs = computed<Api.Game.PlayerActionLog[]>(() => {
+  const sid = currentServerId.value
+  if (!sid) return []
+  return filterJoinRelatedLogs([
+    ...gameStore.serverGameDataMap.playerActionMap[sid] || [],
+  ])
+})
 
+const currentPlayingUserList = computed<Api.Game.UserGameData[]>(() => {
   const lastActionByUserId = new Map<string, Api.Game.PlayerActionLog>()
-  for (const log of filtered) {
+  for (const log of currentActionLogs.value) {
     const uid = log?.loginUser?.id
     if (uid == null) continue
     lastActionByUserId.set(String(uid), log)
@@ -167,8 +133,8 @@ const refreshActionLogs = () => {
       playingUsers.push({ loginUser: last.loginUser })
     }
   }
-  currentPlayingUserList.value = playingUsers
-}
+  return playingUsers
+})
 
 // ============================================================
 // v-for key 辅助 + 时间戳格式化
@@ -201,52 +167,6 @@ const formatActionTime = (t?: string): string => {
   const ss = String(d.getSeconds()).padStart(2, '0')
   return `${hh}:${mm}:${ss}`
 }
-
-// ============================================================
-// 响应式刷新：watch + 兜底轮询
-// ============================================================
-watch(
-  [
-    () => gameStore.serverGameDataMap.userGameDataMap,
-    () => gameStore.serverGameDataMap.userGameDataMap[unref(currentServerId)],
-    () => gameStore.serverGameDataMap.playerActionMap,
-    () => gameStore.serverGameDataMap.playerActionMap[unref(currentServerId)],
-    () => unref(currentServerId),
-    () => props.showJoinServer,
-  ],
-  () => {
-    if (!props.showJoinServer) return
-    refreshPlayerSnapshots()
-    refreshActionLogs()
-  },
-  { deep: true, immediate: true, flush: 'post' },
-)
-
-let intervalId: ReturnType<typeof setInterval> | null = null
-watch(
-  () => props.showJoinServer,
-  (v) => {
-    if (intervalId != null) {
-      clearInterval(intervalId)
-      intervalId = null
-    }
-    if (v) {
-      intervalId = setInterval(() => {
-        if (!props.showJoinServer) return
-        refreshPlayerSnapshots()
-        refreshActionLogs()
-      }, 1000)
-    }
-  },
-  { immediate: true },
-)
-
-onBeforeUnmount(() => {
-  if (intervalId != null) {
-    clearInterval(intervalId)
-    intervalId = null
-  }
-})
 
 // ============================================================
 // 弹回头像动画（requestAnimationFrame 物理循环）
@@ -311,7 +231,7 @@ const step = (ts: number) => {
   lastTs = ts
 
   const keepKeys = new Set<string>()
-  for (const user of unref(currentPlayingUserList)) {
+  for (const user of currentPlayingUserList.value) {
     const userId = user?.loginUser?.id
     if (userId == null) continue
     const key = String(userId)
@@ -836,7 +756,7 @@ onBeforeUnmount(() => {
         <div class="server-players overflow-y-auto">
           <NGrid x-gap="5" :cols="1">
             <NGridItem v-for="(player, index) in currentServerUserGameDataList" :key="getPlayerKey(player, index)"
-              :name="index" class="mb-5px mt-5px" v-show="player.team && player.team !== 'unknown'">
+              :name="index" class="mb-5px mt-5px">
               <NCollapse accordion>
                 <NCollapseItem>
                   <template #header>

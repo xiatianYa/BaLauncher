@@ -223,9 +223,9 @@ declare namespace Api {
             /** 服务器信息映射表（key：服务器ID字符串） */
             serverInfoMap: Record<string, ServerInfoData>;
             /** 玩家信息映射表（key：服务器ID字符串，value：该服务器单个玩家或列表；本地合并后统一为列表） */
-            userGameDataMap: Record<string, Api.Game.UserGameData | Api.Game.UserGameData[]>;
+            userGameDataMap: Record<string, Api.Game.UserGameData[]>;
             /** 玩家操作动态列表映射表（key：服务器ID字符串，value：单条或多条操作日志；本地合并后统一为列表） */
-            playerActionMap: Record<string, Api.Game.PlayerActionLog | Api.Game.PlayerActionLog[]>;
+            playerActionMap: Record<string, Api.Game.PlayerActionLog[]>;
         }
 
         /**

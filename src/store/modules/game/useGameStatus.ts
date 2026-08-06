@@ -23,6 +23,8 @@ interface GameStatusDeps {
   stopAutomaticJoinServer: () => Promise<void>
   connectServerUsingSteamUrl: () => Promise<void>
   connectToServerById: (serverId: number) => void
+  /** 标记已发起加入服务器请求（用于抑制 10s 内的退出上报） */
+  markJoinRequested: () => void
 }
 
 /**
@@ -47,6 +49,7 @@ export function useGameStatus(deps: GameStatusDeps) {
     stopLogReading,
     stopAutomaticJoinServer,
     connectToServerById,
+    markJoinRequested,
   } = deps
 
   /** 游戏状态检查定时器 */
@@ -169,6 +172,8 @@ export function useGameStatus(deps: GameStatusDeps) {
     const ready = await ensureGameStartReady()
     if (!ready) return
 
+    // 标记已发起加入服务器请求：10s 内抑制退出上报，避免切服时 GIS 数据被误清
+    markJoinRequested()
     connectToServerById(joinInfo.serverId)
     const aLink = document.createElement('a')
     aLink.href = `steam://rungame/730/76561198977557298/+connect ${joinInfo.connectStr}`

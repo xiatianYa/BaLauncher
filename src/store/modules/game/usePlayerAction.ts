@@ -1,6 +1,6 @@
 import { unref } from 'vue'
 import type { Ref } from 'vue'
-import ServerWebsocket from '@/utils/ws/server'
+import { sendPlayerJoin } from '@/utils/ws/server'
 
 type MaybeRef<T> = T | Ref<T>
 
@@ -23,7 +23,7 @@ export function usePlayerAction(deps: PlayerActionDeps) {
    */
   function connectToServerById(serverId: number) {
 
-    const success = ServerWebsocket.send('101', serverId)
+    const success = sendPlayerJoin(serverId)
 
     if (!success) {
       window.$message?.warning('WebSocket 未连接，请稍后重试')

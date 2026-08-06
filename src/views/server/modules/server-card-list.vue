@@ -111,7 +111,6 @@ const getDotLevel = (server: Api.Game.SeverVo) => {
 };
 
 const getPlayerLevel = (server: Api.Game.SeverVo): string => {
-  console.log(server.numPlayers);
   if (server.numPlayers <= 20) return 'player-level-1';
   if (server.numPlayers <= 40) return 'player-level-2';
   if (server.numPlayers <= 60) return 'player-level-3';
@@ -121,6 +120,15 @@ const getPlayerLevel = (server: Api.Game.SeverVo): string => {
 
 // 服务器比赛阶段文案（来自字典 game_map_phase）
 const getMapPhaseText = (phase: string) => dictLabel('game_map_phase', phase) || phase;
+
+// 比分等级：CT 领先 → 蓝，T 领先 → 金，平局 → 中性（与玩家数徽标同款彩色发光边框）
+const getScoreLevel = (server: Api.Game.SeverVo) => {
+  const ct = Number(server.CTScore) || 0;
+  const t = Number(server.TScore) || 0;
+  if (ct > t) return 'score-level-ct';
+  if (t > ct) return 'score-level-t';
+  return 'score-level-draw';
+};
 
 // 获取源服务器信息
 const getSourceServerInfo = (server: Api.Game.SeverVo): Api.Game.Server | undefined => {
@@ -188,8 +196,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
                 {{ server.mapLabel ? server.mapLabel :
                   $t('server.noTranslation') }}
               </NEllipsis>
-              <div class="stat-chip chip-score mr-5px w-160px flex items-center justify-center"
-                v-show="server.mapPhase">
+              <div class="chip-score mr-5px" :class="getScoreLevel(server)" v-show="server.mapPhase">
                 <span class="team team-ct">{{ server.CTScore || '0' }}</span>
                 <span class="score-phase">{{ getMapPhaseText(server.mapPhase || '') }}</span>
                 <span class="team team-t">{{ server.TScore || '0' }}</span>
@@ -652,19 +659,6 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   white-space: nowrap;
 }
 
-.stat-chip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 8px;
-  border-radius: 10px;
-  font-size: 12px;
-  font-weight: 700;
-  color: #fff;
-  border: 1px solid rgba(var(--app-rgb), 0.25);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
 .chip-icon {
   font-size: 16px;
   opacity: 0.9;
@@ -679,12 +673,59 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 }
 
 .chip-score {
+  /* 与玩家数徽标完全一致的胶囊样式：紧凑自适应宽度 + 半透明材质 + 定位提升 */
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
   background: rgba(0, 0, 0, 0.45);
   border: 1px solid rgba(var(--app-rgb), 0.1);
-  padding: 3px 8px;
-  border-radius: 8px;
-  font-size: 11px;
-  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.55);
+    border-color: rgba(var(--app-rgb), 0.18);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+}
+
+/* 领先方发光边框（对齐玩家数徽标的 player-level-N 效果） */
+.chip-score.score-level-ct {
+  border-color: rgba(96, 165, 250, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(96, 165, 250, 0.2);
+
+  &:hover {
+    border-color: rgba(96, 165, 250, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 14px rgba(96, 165, 250, 0.3);
+  }
+}
+
+.chip-score.score-level-t {
+  border-color: rgba(251, 191, 36, 0.45);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15), 0 0 10px rgba(251, 191, 36, 0.2);
+
+  &:hover {
+    border-color: rgba(251, 191, 36, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 14px rgba(251, 191, 36, 0.3);
+  }
+}
+
+.chip-score.score-level-draw {
+  border-color: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+
+  &:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
 }
 
 .team {
@@ -723,12 +764,12 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 }
 
 .score-phase {
-  font-size: 10px;
-  opacity: 0.6;
+  /* 纯文字分隔（去掉内衬小 chip，与玩家数徽标的文字风格一致） */
+  font-size: 11px;
+  opacity: 0.7;
   font-weight: 500;
-  padding: 1px 6px;
-  background: rgba(var(--app-rgb), 0.08);
-  border-radius: 4px;
+  color: #fff;
+  white-space: nowrap;
 }
 
 @keyframes fadeInUp {

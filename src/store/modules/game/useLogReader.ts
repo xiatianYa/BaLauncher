@@ -1,6 +1,7 @@
 import { unref } from 'vue'
 import type { Ref } from 'vue'
 import { LOG_PATTERNS, UserConnectionStatus } from '@/constants/cs2'
+import { reportPlayerQuit } from '@/utils/ws/server'
 
 interface LogReaderDeps {
   csgo2Path: Ref<string>
@@ -117,6 +118,8 @@ export function useLogReader(deps: LogReaderDeps) {
             break
           case 'disconnected':
             safeLog('🔌 用户已断开连接')
+            // 用户退出服务器/退出游戏，上报 type 113
+            reportPlayerQuit()
             break
         }
       }

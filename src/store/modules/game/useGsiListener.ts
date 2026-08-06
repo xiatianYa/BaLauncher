@@ -1,6 +1,7 @@
 import { unref } from 'vue'
 import type { Ref } from 'vue'
 import { useAppStore } from '../app'
+import { reportPlayerQuit } from '@/utils/ws/server'
 
 interface GsiListenerDeps {
   isGsiRunning: Ref<boolean>
@@ -13,6 +14,8 @@ interface GsiListenerDeps {
   stopAutomaticJoinServer: () => Promise<void>
   sendPlayerData: (player: Api.Game.CsgoPlayer) => void
   sendServerData: (server: Api.Game.ServerInfoData) => void
+  /** 是否处于退出上报抑制窗口（10s 内刚发起过加入服务器请求） */
+  shouldSuppressQuitReport: () => boolean
 }
 
 /**
@@ -31,6 +34,7 @@ export function useGsiListener(deps: GsiListenerDeps) {
     stopAutomaticJoinServer,
     sendPlayerData,
     sendServerData,
+    shouldSuppressQuitReport,
   } = deps
 
   /** GSI数据事件处理器 */
@@ -51,6 +55,11 @@ export function useGsiListener(deps: GsiListenerDeps) {
             '当前地图': data.current,
             '目标服务器地图': unref(joinServerInfo)?.mapName || '未设置',
           })
+          // 地图名变更为 unknown：玩家可能已退出服务器/退出游戏，也可能正在切换服务器
+          // 10s 内刚发起过加入服务器请求（切服场景）→ 不报退出，避免 GIS 数据被误清
+          if (data.current.toLowerCase() === 'unknown' && !shouldSuppressQuitReport()) {
+            reportPlayerQuit()
+          }
           {
             const targetMap = unref(joinServerInfo)?.mapName
             const currentMap = data.current

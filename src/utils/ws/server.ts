@@ -99,4 +99,45 @@ const ServerWebsocket: ServerWebsocketType = {
   },
 };
 
+/**
+ * 上报玩家退出服务器/退出游戏（type=113，无需 data）
+ * GSI 地图名变更为 unknown、控制台日志 disconnected 时调用
+ */
+export function reportPlayerQuit(): void {
+  ServerWebsocket.send('113', '');
+}
+
+/**
+ * 上报玩家加入服务器（type=101）
+ * @param serverId 服务器ID
+ */
+export function sendPlayerJoin(serverId: number | string): boolean {
+  return ServerWebsocket.send('101', String(serverId));
+}
+
+/**
+ * 推送玩家游戏内数据（type=110）
+ * @param player 玩家数据
+ */
+export function sendPlayerGameData(player: Api.Game.CsgoPlayer): boolean {
+  return ServerWebsocket.send('110', JSON.stringify(player));
+}
+
+/**
+ * 推送服务器游戏内数据（type=111）
+ * @param server 服务器数据
+ */
+export function sendServerGameData(server: Api.Game.ServerInfoData): boolean {
+  return ServerWebsocket.send('111', JSON.stringify(server));
+}
+
+/**
+ * 上报玩家操作动态（type=112，如：开始挤服 / 暂停挤服 / 加入服务器）
+ * @param serverId 服务器ID
+ * @param actionContent 操作内容
+ */
+export function sendPlayerAction(serverId: number | string, actionContent: string): boolean {
+  return ServerWebsocket.send('112', JSON.stringify({ serverId: Number(serverId), actionContent: String(actionContent).trim() }));
+}
+
 export default ServerWebsocket;

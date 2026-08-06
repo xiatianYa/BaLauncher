@@ -82,7 +82,6 @@ export function useAutoJoin(deps: AutoJoinDeps) {
           isAutomatic.value = false
           isAutomaticRetry.value = false
           connectServerUsingSteamUrl()
-          window.$message?.success('连接成功')
           reportPlayerAction('加入服务器')
         }
       } else if (result.stopped) {
