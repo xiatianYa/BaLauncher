@@ -12,6 +12,8 @@ withDefaults(
     toolbars?: ToolbarNames[];
     /** 是否显示预览区 */
     preview?: boolean;
+    /** 是否仅预览（只读展示，隐藏编辑区，用于统一替代 MdPreview） */
+    previewOnly?: boolean;
     /** 主题变体：log = 更新日志（紫色主色），cfg = 配置编辑器（天蓝主色） */
     theme?: 'log' | 'cfg';
   }>(),
@@ -38,6 +40,7 @@ withDefaults(
       'next'
     ] as ToolbarNames[],
     preview: true,
+    previewOnly: false,
     theme: 'log'
   }
 );
@@ -61,6 +64,7 @@ const handleSave = (value: string) => emit('onSave', value);
     :model-value="modelValue"
     :toolbars="toolbars"
     :preview="preview"
+    :preview-only="previewOnly"
     @update:model-value="handleUpdate"
     @on-save="handleSave"
   />
