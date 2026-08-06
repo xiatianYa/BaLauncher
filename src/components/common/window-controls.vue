@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import SvgIcon from '@/components/custom/svg-icon.vue';
+import { onMounted, onBeforeUnmount, ref } from 'vue';
+import { fetchGetNoticeUnreadCount } from '@/service/api';
 
 const showCloseConfirm = ref<boolean>(false);
+/** 通知面板显示状态 */
+const showNoticePanel = ref<boolean>(false);
+/** 未读通知数量 */
+const unreadCount = ref(0);
 
+/** 轮询定时器 */
+let pollTimer: ReturnType<typeof setInterval> | null = null;
 
 const minimizeWindow = async () => {
   await window.ipcRenderer.invoke('window-minimize');
@@ -13,10 +19,40 @@ const closeWindow = () => {
   showCloseConfirm.value = true;
 };
 
+/** 切换通知面板 */
 const toggleNotifications = () => {
-  // 这里可以添加打开通知面板的逻辑
-  console.log('Toggle notifications');
+  showNoticePanel.value = !showNoticePanel.value;
 };
+
+/** 刷新未读数量 */
+const loadUnreadCount = async () => {
+  try {
+    const { data, error } = await fetchGetNoticeUnreadCount();
+    if (!error && typeof data === 'number') {
+      unreadCount.value = data;
+    }
+  } catch {
+    // 未登录等场景忽略
+  }
+};
+
+/** 通知面板未读变化：直接采用面板按列表统计的未读数，保持图标徽标与面板列表一致 */
+const handleUnreadCountChanged = (count: number) => {
+  unreadCount.value = count;
+};
+
+onMounted(() => {
+  loadUnreadCount();
+  // 定时轮询未读数（60s）
+  pollTimer = setInterval(loadUnreadCount, 60000);
+});
+
+onBeforeUnmount(() => {
+  if (pollTimer) {
+    clearInterval(pollTimer);
+    pollTimer = null;
+  }
+});
 </script>
 
 <template>
@@ -24,8 +60,9 @@ const toggleNotifications = () => {
     class="rounded-t-12px window-drag-area">
     <img src="@/assets/imgs/bluearchive.png" class="app-logo ml-10px" alt="Blue Archive" />
     <div class="window-controls-group">
-      <button class="window-control-btn" @click="toggleNotifications" :title="$t('windowControls.notifications')">
+      <button class="window-control-btn notice-btn" @click="toggleNotifications" :title="$t('windowControls.notifications')">
         <SvgIcon icon="mdi:bell-outline" class="window-control-icon" />
+        <span v-if="unreadCount > 0" class="notice-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
       </button>
       <button class="window-control-btn" @click="minimizeWindow" :title="$t('windowControls.minimize')">
         <SvgIcon icon="mdi:minus" class="window-control-icon" />
@@ -34,6 +71,9 @@ const toggleNotifications = () => {
         <SvgIcon icon="mdi:close" class="window-control-icon" />
       </button>
     </div>
+    <!-- 通知面板 + 点击外部关闭遮罩 -->
+    <div v-if="showNoticePanel" class="notice-mask" @click="showNoticePanel = false" />
+    <NoticePanel v-if="showNoticePanel" class="notice-panel-wrap" @changed="handleUnreadCountChanged" />
     <CloseConfirm v-model:showCloseConfirm="showCloseConfirm" />
   </NCard>
 </template>
@@ -60,6 +100,7 @@ const toggleNotifications = () => {
 }
 
 .window-control-btn {
+  position: relative;
   width: 32px;
   height: 32px;
   background: transparent;
@@ -89,5 +130,39 @@ const toggleNotifications = () => {
     border-color: #ff4757;
     color: white;
   }
+
+  /* 未读通知徽标 */
+  .notice-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: #ff4757;
+    border: 1.5px solid var(--n-color);
+    color: #fff;
+    font-size: 10px;
+    line-height: 13px;
+    text-align: center;
+    box-sizing: content-box;
+  }
+}
+
+/* 通知面板定位（铃铛右下方） */
+.notice-panel-wrap {
+  position: fixed;
+  top: 52px;
+  right: 56px;
+  z-index: 2000;
+}
+
+/* 点击外部关闭遮罩 */
+.notice-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 1999;
+  background: transparent;
 }
 </style>

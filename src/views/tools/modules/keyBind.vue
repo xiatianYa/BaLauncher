@@ -3,7 +3,6 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { NButton, NCard, NModal, NGrid, NGridItem, NInput } from 'naive-ui';
 import { useGameStore } from '@/store/modules/game';
 import { fetchGetMyKeyBinds, fetchAddKeyBind, fetchDeleteKeyBind, fetchUpdateKeyBind } from '@/service/api';
-import { MdEditor } from 'md-editor-v3';
 import dayjs from 'dayjs';
 import {
     systemLibraryItems as systemLibraryItemsConst,
@@ -689,7 +688,7 @@ onMounted(() => {
                     </NCollapse>
                 </div>
                 <div v-show="activeTab === 'local'" class="h-full">
-                    <MdEditor class="cfg-editor" v-model="localAutoexecCfg" :preview="false"
+                    <CommonMdEditor v-model="localAutoexecCfg" theme="cfg" :preview="false"
                         :toolbars="['revoke', 'next', 'save']" @onSave="saveLocalAutoexecCfg" />
                 </div>
             </NCard>
@@ -828,40 +827,6 @@ $accent: #4b9ef8; // 主色（天蓝）
 $accent-deep: #3a86e0; // 主色深（渐变末端 / hover）
 $accent-hover: #3f8fe8; // hover 渐变起点
 $accent-hover-deep: #2e72c4; // hover 渐变末端
-
-// ==================== 配置编辑器（MdEditor） ====================
-// 参考 updateLog 的透明化风格：背景透明融入卡片、文字/边框跟随深浅主题、主色天蓝
-.cfg-editor {
-    --md-color: rgba(var(--app-rgb), 0.8);
-    --md-bk-color: transparent;
-    --md-bk-color-outstand: rgba(var(--app-rgb), 0.03);
-    --md-bk-hover-color: rgba(var(--app-rgb), 0.06);
-    --md-border-color: rgba(var(--app-rgb), 0.08);
-    --md-border-hover-color: rgba($accent, 0.35);
-    --md-border-active-color: $accent;
-    --md-hover-color: $accent;
-    --md-theme-base-color: $accent;
-    --md-scrollbar-bg-color: rgba(var(--app-rgb), 0.08);
-    --md-scrollbar-thumb-color: rgba(var(--app-rgb), 0.18);
-    --md-scrollbar-thumb-hover-color: rgba($accent, 0.5);
-    --md-scrollbar-thumb-active-color: rgba($accent, 0.6);
-    background: transparent;
-    border: 1px solid rgba(var(--app-rgb), 0.08);
-    border-radius: 10px;
-    overflow: hidden;
-
-    /* 编辑区透明化 + 排版统一（字号 13px、行高 1.8，同 updateLog 预览区） */
-    :deep(.md-editor-content) {
-        background: transparent;
-    }
-
-    :deep(.md-editor-input) {
-        background: transparent;
-        font-size: 13px;
-        line-height: 1.8;
-        color: rgba(var(--app-rgb), 0.8);
-    }
-}
 
 .key-bind-container {
     display: flex;

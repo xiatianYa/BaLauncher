@@ -12,6 +12,7 @@ export * from './system/role';
 export * from './system/permission';
 export * from './system/user';
 export * from './system/file';
+export * from './system/notice';
 
 
 

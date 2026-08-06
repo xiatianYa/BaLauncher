@@ -1,8 +1,8 @@
 import { request } from '@/service/request';
 
-// =============== Notice Begin ===============
+// =============== Sys Notice Begin ===============
 
-/** save notice */
+/** 新增系统通知 */
 export function fetchSaveNotice(data: Api.System.SysNoticeAddDTO) {
   return request<boolean>({
     url: '/sysNotice/save',
@@ -11,15 +11,15 @@ export function fetchSaveNotice(data: Api.System.SysNoticeAddDTO) {
   });
 }
 
-/** remove notice */
-export function fetchRemoveNotice(id: number) {
+/** 删除系统通知 */
+export function fetchRemoveNotice(id: number | string) {
   return request<boolean>({
     url: `/sysNotice/remove/${id}`,
     method: 'delete'
   });
 }
 
-/** update notice */
+/** 修改系统通知 */
 export function fetchUpdateNotice(data: Api.System.SysNoticeUpdateDTO) {
   return request<boolean>({
     url: '/sysNotice/update',
@@ -28,23 +28,23 @@ export function fetchUpdateNotice(data: Api.System.SysNoticeUpdateDTO) {
   });
 }
 
-/** get notice list */
+/** 查询所有系统通知 */
 export function fetchGetNoticeList() {
-  return request<Api.System.NoticeVo[]>({
+  return request<Api.System.SysNoticeVo[]>({
     url: '/sysNotice/list',
     method: 'get'
   });
 }
 
-/** get notice info */
-export function fetchGetNoticeInfo(id: number) {
-  return request<Api.System.NoticeVo>({
+/** 获取系统通知详情 */
+export function fetchGetNoticeInfo(id: number | string) {
+  return request<Api.System.SysNoticeVo>({
     url: `/sysNotice/getInfo/${id}`,
     method: 'get'
   });
 }
 
-/** get notice page list */
+/** 分页查询系统通知 */
 export function fetchGetNoticePageList(params?: Api.System.SysNoticeSearchDTO) {
   return request<Api.System.NoticePageList>({
     url: '/sysNotice/page',
@@ -53,32 +53,32 @@ export function fetchGetNoticePageList(params?: Api.System.SysNoticeSearchDTO) {
   });
 }
 
-/** get current user's notice list */
+/** 获取当前用户的通知列表 */
 export function fetchGetMyNoticeList() {
-  return request<Api.System.NoticeVo[]>({
+  return request<Api.System.SysNoticeVo[]>({
     url: '/sysNotice/listMy',
     method: 'get'
   });
 }
 
-/** mark notice as read */
-export function fetchMarkAsRead(id: number) {
+/** 标记通知为已读 */
+export function fetchMarkNoticeAsRead(id: number | string) {
   return request<boolean>({
     url: `/sysNotice/markAsRead/${id}`,
     method: 'post'
   });
 }
 
-/** mark all notices as read */
-export function fetchMarkAllAsRead() {
+/** 标记所有通知为已读 */
+export function fetchMarkAllNoticesAsRead() {
   return request<boolean>({
     url: '/sysNotice/markAllAsRead',
     method: 'post'
   });
 }
 
-/** get unread notice count */
-export function fetchGetUnreadCount() {
+/** 获取未读通知数量 */
+export function fetchGetNoticeUnreadCount() {
   return request<number>({
     url: '/sysNotice/unreadCount',
     method: 'get'

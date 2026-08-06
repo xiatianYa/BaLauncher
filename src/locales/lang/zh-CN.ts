@@ -31,6 +31,17 @@ export default {
     minimize: '最小化',
     close: '关闭',
   },
+  notice: {
+    title: '通知中心',
+    empty: '暂无通知',
+    markAllRead: '全部已读',
+    markAllReadSuccess: '已全部标记为已读',
+    announce: '公告',
+    personal: '个人消息',
+    priorityNormal: '普通',
+    priorityImportant: '重要',
+    priorityUrgent: '紧急',
+  },
   closeConfirm: {
     title: '确定要退出应用吗？',
     hint: '进度已经保存好啦，安心去休息吧，老师！随时欢迎回来～',
@@ -503,6 +514,7 @@ export default {
     },
     dateFormat: 'YYYY年MM月DD日',
     loadFailed: '加载更新日志失败',
+    saveFailed: '保存失败',
     deleteFailed: '删除失败',
     deleteSuccess: '删除成功',
     addNewLog: '新增更新日志',
@@ -513,6 +525,80 @@ export default {
     deleteConfirmSuffix: '吗？',
     deleteConfirmTip: '删除后数据将无法恢复，请谨慎操作。',
     deleting: '删除中...',
+    /* ===== 通知日志视图（参考 roleManage 双视图切换） ===== */
+    noticeView: '通知日志',
+    noticeSubtitle: '管理推送给用户的通知消息',
+    noNotices: '暂无通知',
+    noticeSearchPlaceholder: '搜索通知标题',
+    noticeSearch: '搜索',
+    noticeStatusDraft: '草稿',
+    noticeStatusPublished: '已发布',
+    noticeStatusOffline: '已下线',
+    noticeRead: '已读',
+    noticeUnread: '未读',
+    noticeDeleteConfirmPrefix: '确定要删除通知',
+    noticeDeleteConfirmSuffix: '吗？',
+    noticeDeleteConfirmTip: '删除后用户将无法再查看该通知，请谨慎操作。',
+    /* ===== 通知新增/编辑弹窗 ===== */
+    noticeAdd: '新增通知',
+    noticeEdit: '编辑通知',
+    noticeForm: {
+      noticeType: {
+        label: '通知类型',
+        placeholder: '请选择通知类型',
+        required: '请选择通知类型'
+      },
+      title: {
+        label: '通知标题',
+        placeholder: '请输入通知标题',
+        required: '请输入通知标题'
+      },
+      content: {
+        label: '通知内容',
+        placeholder: '请输入通知内容',
+        required: '请输入通知内容'
+      },
+      priority: {
+        label: '优先级',
+        placeholder: '请选择优先级',
+        required: '请选择优先级'
+      },
+      status: {
+        label: '状态',
+        placeholder: '请选择状态',
+        required: '请选择状态'
+      },
+      receiverType: {
+        label: '接收类型',
+        placeholder: '请选择接收类型',
+        required: '请选择接收类型'
+      },
+      receiverId: {
+        label: '接收人',
+        placeholder: '请输入接收人ID',
+        required: '请填写接收人ID'
+      },
+      businessType: {
+        label: '业务类型',
+        placeholder: '请输入业务类型（如订单/系统/活动）'
+      },
+      businessId: {
+        label: '关联业务ID',
+        placeholder: '请输入关联业务ID'
+      },
+      jumpType: {
+        label: '跳转类型',
+        placeholder: '请输入跳转类型'
+      },
+      jumpParams: {
+        label: '跳转参数',
+        placeholder: '请输入跳转参数（JSON格式）'
+      },
+      expireTime: {
+        label: '过期时间',
+        placeholder: '请选择过期时间'
+      },
+    },
   },
   mapOrder: {
     title: '地图订阅',

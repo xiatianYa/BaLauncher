@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { NModal, NButton, NForm, NFormItem, NInput, NSelect, NSwitch, FormRules } from 'naive-ui';
-import { MdEditor } from 'md-editor-v3';
 import { $t } from '@/locales';
 
 import { fetchSaveLog } from '@/service/api';
@@ -135,24 +134,7 @@ const handleClose = (): void => {
                     </NFormItem>
                 </div>
                 <NFormItem :label="$t('updateLog.form.content.label')" path="content" class="content-item">
-                    <MdEditor v-model="formData.content" :toolbars="[
-                        'bold',
-                        'underline',
-                        'italic',
-                        'strikeThrough',
-                        'title',
-                        'sub',
-                        'sup',
-                        'quote',
-                        'unorderedList',
-                        'orderedList',
-                        'codeRow',
-                        'code',
-                        'link',
-                        'table',
-                        'revoke',
-                        'next'
-                    ]" />
+                    <CommonMdEditor v-model="formData.content" />
                 </NFormItem>
             </NForm>
         </div>
@@ -277,12 +259,6 @@ const handleClose = (): void => {
 .content-item {
   :deep(.n-form-item-blank) {
     display: block;
-  }
-
-  :deep(.md-editor) {
-    border-radius: 8px;
-    overflow: hidden;
-    border: 1px solid var(--input-border);
   }
 }
 

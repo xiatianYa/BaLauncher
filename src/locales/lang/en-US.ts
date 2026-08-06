@@ -31,6 +31,17 @@ export default {
     minimize: 'Minimize',
     close: 'Close',
   },
+  notice: {
+    title: 'Notification Center',
+    empty: 'No notifications',
+    markAllRead: 'Mark all as read',
+    markAllReadSuccess: 'All notifications marked as read',
+    announce: 'Announcement',
+    personal: 'Personal',
+    priorityNormal: 'Normal',
+    priorityImportant: 'Important',
+    priorityUrgent: 'Urgent',
+  },
   closeConfirm: {
     title: 'Are you sure you want to exit?',
     hint: 'All your progress is saved. Rest well, Sensei! Feel free to come back anytime!',
@@ -503,6 +514,7 @@ export default {
     },
     dateFormat: 'YYYY-MM-DD',
     loadFailed: 'Failed to load update logs',
+    saveFailed: 'Save failed',
     deleteFailed: 'Delete failed',
     deleteSuccess: 'Deleted successfully',
     addNewLog: 'Add New Update Log',
@@ -513,6 +525,80 @@ export default {
     deleteConfirmSuffix: '?',
     deleteConfirmTip: 'This action cannot be undone. Please proceed with caution.',
     deleting: 'Deleting...',
+    /* ===== Notice Log view (dual-view switcher referencing roleManage) ===== */
+    noticeView: 'Notice Log',
+    noticeSubtitle: 'Manage notifications pushed to users',
+    noNotices: 'No notices',
+    noticeSearchPlaceholder: 'Search notice title',
+    noticeSearch: 'Search',
+    noticeStatusDraft: 'Draft',
+    noticeStatusPublished: 'Published',
+    noticeStatusOffline: 'Offline',
+    noticeRead: 'Read',
+    noticeUnread: 'Unread',
+    noticeDeleteConfirmPrefix: 'Are you sure you want to delete the notice',
+    noticeDeleteConfirmSuffix: '?',
+    noticeDeleteConfirmTip: 'Users will no longer see this notice after deletion. Please proceed with caution.',
+    /* ===== Notice add/edit modal ===== */
+    noticeAdd: 'Add Notice',
+    noticeEdit: 'Edit Notice',
+    noticeForm: {
+      noticeType: {
+        label: 'Notice Type',
+        placeholder: 'Select notice type',
+        required: 'Please select notice type'
+      },
+      title: {
+        label: 'Notice Title',
+        placeholder: 'Enter notice title',
+        required: 'Please enter notice title'
+      },
+      content: {
+        label: 'Notice Content',
+        placeholder: 'Enter notice content',
+        required: 'Please enter notice content'
+      },
+      priority: {
+        label: 'Priority',
+        placeholder: 'Select priority',
+        required: 'Please select priority'
+      },
+      status: {
+        label: 'Status',
+        placeholder: 'Select status',
+        required: 'Please select status'
+      },
+      receiverType: {
+        label: 'Receiver Type',
+        placeholder: 'Select receiver type',
+        required: 'Please select receiver type'
+      },
+      receiverId: {
+        label: 'Receiver',
+        placeholder: 'Enter receiver ID',
+        required: 'Please enter receiver ID'
+      },
+      businessType: {
+        label: 'Business Type',
+        placeholder: 'Enter business type (e.g. order/system/activity)'
+      },
+      businessId: {
+        label: 'Business ID',
+        placeholder: 'Enter business ID'
+      },
+      jumpType: {
+        label: 'Jump Type',
+        placeholder: 'Enter jump type'
+      },
+      jumpParams: {
+        label: 'Jump Params',
+        placeholder: 'Enter jump params (JSON format)'
+      },
+      expireTime: {
+        label: 'Expire Time',
+        placeholder: 'Select expire time'
+      },
+    },
   },
   mapOrder: {
     title: 'Map Subscription',
