@@ -2,8 +2,11 @@
 import { NPopover } from 'naive-ui';
 import { computed, ref, watch } from 'vue';
 import { RouteRecordNameGeneric } from 'vue-router';
+import { VueDraggable } from 'vue-draggable-plus';
 import { useRouterPush } from '@/hooks/common/router';
 import { useRouteStore } from '@/store/modules/route';
+import { localStg } from '@/utils/storage';
+import { ROUTE_STORAGE_KEYS } from '@/constants/cache';
 
 const { routerPushByKey } = useRouterPush();
 
@@ -27,6 +30,11 @@ const goToRouterPath = (path: string) => {
     routerPushByKey(path)
 }
 
+// 保存导航排序（与添加/移除导航的持久化方式一致）
+const saveNavOrder = () => {
+    localStg.set(ROUTE_STORAGE_KEYS.SIDE_NAV_ROUTES, useRoute.SideNavRoutes);
+}
+
 // 监听路由变化，同步更新 selectedKey
 watch(
     () => useRoute.route.name,
@@ -41,25 +49,28 @@ watch(
 
 <template>
     <div class="menu-scroll p-10px">
-        <NGrid x-gap="12" :cols="1" :y-gap="8">
-            <NGridItem v-for="navItem in useRoute.SideNavRoutes" :key="navItem.key">
-                <NPopover trigger="hover" placement="right">
-                    <template #trigger>
-                        <div class="menu-item" :class="{ 'is-active': selectedKey === navItem.key }" @click="goToRouterPath(navItem.key)">
-                            <div class="menu-icon">
-                                <img :src="navItem.img" class="menu-icon-img">
+        <div class="menu-list">
+            <VueDraggable v-model="useRoute.SideNavRoutes" class="menu-list-body"
+                v-on:update="saveNavOrder">
+                <div v-for="navItem in useRoute.SideNavRoutes" :key="navItem.key" class="menu-list-item">
+                    <NPopover trigger="hover" placement="right">
+                        <template #trigger>
+                            <div class="menu-item" :class="{ 'is-active': selectedKey === navItem.key }" @click="goToRouterPath(navItem.key)">
+                                <div class="menu-icon">
+                                    <img :src="navItem.img" class="menu-icon-img">
+                                </div>
                             </div>
-                        </div>
-                    </template>
-                    <span class="font-bold font-size-12px">{{ $t(navItem.name) }}</span>
-                </NPopover>
-            </NGridItem>
-            <NGridItem>
+                        </template>
+                        <span class="font-bold font-size-12px">{{ $t(navItem.name) }}</span>
+                    </NPopover>
+                </div>
+            </VueDraggable>
+            <div class="menu-list-item">
                 <button class="menu-item add-nav-btn" @click="navItemVisible = true">
                     <SvgIcon :icon="allAdded ? 'ic:round-remove' : 'ic:round-plus'" class="add-nav-icon" />
                 </button>
-            </NGridItem>
-        </NGrid>
+            </div>
+        </div>
         <RightNavItemModal v-model:visible="navItemVisible" />
     </div>
 </template>
@@ -83,6 +94,24 @@ watch(
         border-radius: 4px;
         background: rgba(var(--app-rgb), 0.12);
     }
+}
+
+/* 拖拽排序列表：单列垂直排布，与原有 NGrid 一致 */
+.menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+/* 拖拽容器融入外层列表（display: contents），
+   使菜单项与添加按钮按同一列表排布，按钮占一格且不参与拖拽 */
+.menu-list-body {
+    display: contents;
+}
+
+.menu-list-item {
+    min-width: 0;
 }
 
 .menu-item {
@@ -138,7 +167,7 @@ watch(
     }
 }
 
-/* 添加/移除导航按钮：复用 menu-item 卡片布局，撑满网格格子；虚线边框更明显，无内层背景框 */
+/* 添加/移除导航按钮：复用 menu-item 卡片布局，撑满所在列表格子；虚线边框更明显，无内层背景框 */
 .add-nav-btn {
     width: 100%;
     height: 100%;

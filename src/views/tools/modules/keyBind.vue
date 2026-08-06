@@ -162,7 +162,7 @@ const toggleApplyBinding = async (systemName: string | undefined) => {
         // 已应用 → 取消应用：从 cfg 文件中移除该配置
         const res = await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, item.renderKeyConfigJson);
         success = res.success;
-        successMessage = $t('keyBind.messages.bindingRemoved');
+        successMessage = $t('keyBind.messages.applyCanceled');
         errorMessage = $t('keyBind.messages.removeFromCfgFailed');
     } else {
         // 未应用 → 应用：将配置写入 cfg 文件
@@ -367,7 +367,7 @@ const saveResetKeyAndClose = async () => {
             const header = buildLogHeader(currentResetItem.value.systemBindCfgVO?.systemName || '', capturedKey.value);
             const { success } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, header + '\n' + newRenderKeyConfigJson);
             if (success) {
-                window.$message?.success($t('keyBind.messages.resetSuccess'));
+                window.$message?.success($t('keyBind.messages.resetSuccessWithCfg'));
             } else {
                 window.$message?.error($t('keyBind.messages.writeCfgFailed'));
             }
@@ -664,6 +664,10 @@ onMounted(() => {
                                             item.key }}</span>
                                     </div>
                                     <div class="flex flex-col items-center justify-center w-150px gap-10px">
+                                        <NButton class="rounded-10px" :type="item.applied ? 'warning' : 'primary'" ghost
+                                            @click.stop="toggleApplyBinding(item.systemBindCfgVO?.systemName)">
+                                            {{ item.applied ? $t('keyBind.cancelApply') : $t('keyBind.applyConfig') }}
+                                        </NButton>
                                         <NButton class="rounded-10px" type="info" ghost
                                             @click.stop="resetAppliedBindingKey(item.systemBindCfgVO?.systemName)">{{
                                                 $t('keyBind.resetKey') }}
@@ -777,45 +781,32 @@ onMounted(() => {
             </div>
         </NModal>
         <!-- 新增/编辑配置弹框 -->
-        <NModal v-model:show="showAddConfigModal" :bordered="true" preset="card"
-            class="w-600px h-500px rounded-20px key-capture-wrapper overflow-auto"
-            :closable="false" size="medium">
+        <NModal v-model:show="showAddConfigModal" preset="card" class="w-560px rounded-16px"
+            :bordered="false" size="small" :closable="true" @close="closeAddConfigModal">
             <template #header>
-                <div class="flex items-center justify-between font-size-18px">
-                    <div class="font-size-16px">{{ isEditMode ? $t('keyBind.editPersonalConfig') :
-                        $t('keyBind.addPersonalConfig') }}</div>
-                    <NButton quaternary size="tiny" @click="closeAddConfigModal">
-                        <SvgIcon icon="material-symbols:close" />
-                    </NButton>
+                <div class="modal-header">
+                    <SvgIcon :icon="isEditMode ? 'mdi:pencil' : 'mdi:plus'" class="modal-header-icon" />
+                    <span>{{ isEditMode ? $t('keyBind.editPersonalConfig') : $t('keyBind.addPersonalConfig') }}</span>
                 </div>
             </template>
-            <div class="pt-20px pb-20px pl-20px pr-20px">
-                <div class="mb-20px">
-                    <div class="text-sm font-medium mb-5px">{{ $t('keyBind.configName') }}</div>
-                    <NInput v-model:value="newConfigName" :placeholder="$t('keyBind.configNamePlaceholder')" />
+            <div class="modal-form">
+                <div class="form-item">
+                    <label class="form-label">{{ $t('keyBind.configName') }}</label>
+                    <NInput v-model:value="newConfigName" :placeholder="$t('keyBind.configNamePlaceholder')" clearable />
                 </div>
-                <div class="mb-20px">
-                    <div class="text-sm font-medium mb-5px">{{ $t('keyBind.configContent') }}</div>
+                <div class="form-item">
+                    <label class="form-label">{{ $t('keyBind.configContent') }}</label>
                     <NInput v-model:value="newConfigJson" type="textarea"
                         :placeholder="$t('keyBind.configContentPlaceholder')" style="height: 260px" />
                 </div>
-            </div>
-            <template #footer>
-                <div class="flex flex-wrap gap-10px">
-                    <NButton type="warning" class="flex-1 rounded-5px" ghost @click="closeAddConfigModal">
-                        <template #icon>
-                            <SvgIcon icon="material-symbols:close" />
-                        </template>
-                        {{ $t('keyBind.cancel') }}
-                    </NButton>
-                    <NButton type="info" class="flex-1 rounded-5px" ghost @click="saveAddConfig">
-                        <template #icon>
-                            <SvgIcon icon="material-symbols:check" />
-                        </template>
-                        {{ isEditMode ? $t('keyBind.saveChanges') : $t('keyBind.addConfig') }}
-                    </NButton>
+                <div class="modal-actions">
+                    <button class="action-btn cancel" @click="closeAddConfigModal">{{ $t('keyBind.cancel') }}</button>
+                    <button class="action-btn confirm" @click="saveAddConfig">
+                        <SvgIcon icon="mdi:check" />
+                        <span>{{ isEditMode ? $t('keyBind.saveChanges') : $t('keyBind.addConfig') }}</span>
+                    </button>
                 </div>
-            </template>
+            </div>
         </NModal>
     </div>
 </template>
@@ -1348,6 +1339,84 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
     }
 
 
+}
+
+// ==================== 新增/编辑配置弹窗（teleport 到 body，参考 botGroup 弹窗风格） ====================
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--n-text-color);
+
+    .modal-header-icon {
+        font-size: 18px;
+        color: $accent;
+    }
+}
+
+.modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 4px 0;
+
+    .form-item {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+
+        .form-label {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: rgba(var(--app-rgb), 0.75);
+        }
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 6px;
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            flex: 1;
+            padding: 9px 2px;
+            border: 1px solid rgba(var(--app-rgb), 0.08);
+            border-radius: 9px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            background: rgba(var(--app-rgb), 0.06);
+            color: rgba(var(--app-rgb), 0.8);
+
+            &:hover {
+                transform: translateY(-1px);
+            }
+
+            &.cancel {
+                &:hover {
+                    background: rgba(var(--app-rgb), 0.12);
+                }
+            }
+
+            &.confirm {
+                color: $accent;
+                background: rgba($accent, 0.12);
+                border-color: rgba($accent, 0.25);
+
+                &:hover {
+                    background: rgba($accent, 0.22);
+                }
+            }
+        }
+    }
 }
 
 @keyframes dotPulse {
