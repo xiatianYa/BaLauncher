@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 import { NCheckbox, NCheckboxGroup, NCard, NGrid, NGridItem, NInput, NPagination, NModal, NSwitch } from 'naive-ui';
 import dayjs from 'dayjs';
 import { fetchGetUserPageList, fetchSaveUser, fetchUpdateUser, fetchDeleteUser, fetchGetAllRoles } from '@/service/api';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { useAuth } from '@/hooks/business/auth';
+import { useDict } from '@/hooks/business/dict';
 
 defineOptions({ name: 'UserManagePage' });
 
 const { isAdmin } = useAuth(); // 用户管理仅管理员可见
+const { dictLabel, dictOptions } = useDict();
 
 /* ===== 列表与分页 ===== */
 
@@ -24,11 +26,8 @@ const pagination = reactive({
   total: 0
 });
 
-/** 状态筛选选项 */
-const statusOptions = [
-  { label: $t('userManage.enabled'), value: '1' },
-  { label: $t('userManage.disabled'), value: '0' }
-];
+/** 状态筛选选项（来自字典 status） */
+const statusOptions = computed(() => dictOptions('status'));
 
 /* ===== 自定义下拉（不使用组件） ===== */
 
@@ -47,8 +46,9 @@ const formatDate = (date?: string | null) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm');
 };
 
-/** 状态文案 */
-const getStatusText = (status?: string | null) => (status === '1' ? $t('userManage.enabled') : $t('userManage.disabled'));
+/** 状态文案（来自字典 status） */
+const getStatusText = (status?: string | null) =>
+  dictLabel('status', status || '') || (status === '1' ? $t('userManage.enabled') : $t('userManage.disabled'));
 
 /** 加载分页数据 */
 const loadData = async () => {
@@ -107,7 +107,7 @@ const editForm = reactive({
   nickName: '',
   status: '1',
   /** 已选角色编码列表 */
-  userRoles: [] as string[]
+  userRoles: []
 });
 
 /** 全部角色选项（来自 /sysRole/getAllRoles） */
@@ -274,7 +274,7 @@ onMounted(() => {
             <div class="custom-select" :class="{ open: statusMenuOpen }">
               <div class="select-trigger" @click.stop="statusMenuOpen = !statusMenuOpen">
                 <span class="select-value" :class="{ placeholder: !pagination.status }">
-                  {{ pagination.status ? (pagination.status === '1' ? $t('userManage.enabled') : $t('userManage.disabled')) : $t('userManage.all') }}
+                  {{ pagination.status ? (dictLabel('status', pagination.status) || $t('userManage.all')) : $t('userManage.all') }}
                 </span>
                 <SvgIcon icon="mdi:chevron-down" class="select-arrow" />
               </div>

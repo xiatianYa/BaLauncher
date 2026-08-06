@@ -15,6 +15,7 @@ import {
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { useAuth } from '@/hooks/business/auth';
+import { useDict } from '@/hooks/business/dict';
 
 defineOptions({ name: 'BotGroupPage' });
 
@@ -23,6 +24,7 @@ const emit = defineEmits<{ back: [] }>();
 const gameStore = useGameStore();
 
 const { isAdmin } = useAuth(); // 操作按钮仅管理员可见
+const { dictLabel } = useDict();
 
 /* ===== 列表与分页 ===== */
 
@@ -41,15 +43,9 @@ const formatDate = (date?: string | null) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm');
 };
 
-/** 成员身份中文映射 */
-const getMemberRoleText = (role?: string | null) => {
-  const map: Record<string, string> = {
-    owner: $t('botGroup.member.role.owner'),
-    admin: $t('botGroup.member.role.admin'),
-    member: $t('botGroup.member.role.member')
-  };
-  return map[role || ''] || role || $t('botGroup.member.role.member');
-};
+/** 成员身份中文映射（来自字典 bot_member_role） */
+const getMemberRoleText = (role?: string | null) =>
+  dictLabel('bot_member_role', role || '') || role || $t('botGroup.member.role.member');
 
 /**
  * 根据社区列表解析偏好社区名称
@@ -76,12 +72,12 @@ const getRemainingStatus = (expireTime?: string | null) => {
   return 'normal';
 };
 
-/** 计算剩余天数 */
+/** 计算剩余天数（过期/今日到期文案来自字典 bot_group_expire_status） */
 const getRemainingDays = (expireTime?: string | null) => {
   if (!expireTime) return null;
   const diff = dayjs(expireTime).diff(dayjs(), 'day');
-  if (diff < 0) return $t('botGroup.expired');
-  if (diff === 0) return $t('botGroup.dueToday');
+  if (diff < 0) return dictLabel('bot_group_expire_status', 'expired') || $t('botGroup.expired');
+  if (diff === 0) return dictLabel('bot_group_expire_status', 'dueToday') || $t('botGroup.dueToday');
   return $t('botGroup.daysLeft', { count: diff });
 };
 

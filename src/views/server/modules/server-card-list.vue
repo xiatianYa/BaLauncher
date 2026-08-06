@@ -26,7 +26,7 @@ const emit = defineEmits<{
   (e: 'refresh', server: Api.Game.SeverVo): void;
 }>();
 
-const { dictOptions } = useDict();
+const { dictOptions, dictType, dictLabel } = useDict();
 
 // 虚拟滚动状态
 const listRef = ref<HTMLElement | null>(null);
@@ -81,12 +81,10 @@ const calculatePastMinutes = (targetTime: string) => {
   return Math.max(minutesDiff, 0);
 };
 
-// 获取 Ping 值对应的颜色类型
+// 获取 Ping 值对应的颜色类型（来自字典 ping_level）
 const getPingType = (ping?: number) => {
-  if (ping === undefined || ping === null) return 'info';
-  if (ping < 70) return 'success';
-  if (ping < 100) return 'warning';
-  return 'error';
+  const level = ping === undefined || ping === null ? 'unknown' : ping < 70 ? 'normal' : ping < 100 ? 'warning' : 'error';
+  return dictType('ping_level', level);
 };
 
 // 在线人数方格：1 名玩家 = 1 个方格，铺满卡片宽度
@@ -110,19 +108,8 @@ const getPlayerLevel = (server: Api.Game.SeverVo): string => {
   return 'player-level-5';
 };
 
-// 服务器状态中文映射
-const getMapPhaseText = (phase: string) => {
-  const phaseMap: Record<string, string> = {
-    'warmup': $t('server.mapPhase.warmup'),
-    'intermission': $t('server.mapPhase.intermission'),
-    'gameover': $t('server.mapPhase.gameover'),
-    'live': $t('server.mapPhase.live'),
-    'over': $t('server.mapPhase.over'),
-    'freezetime': $t('server.mapPhase.freezetime'),
-    'unknown': $t('server.mapPhase.unknown')
-  };
-  return phaseMap[phase] || phase;
-};
+// 服务器比赛阶段文案（来自字典 game_map_phase）
+const getMapPhaseText = (phase: string) => dictLabel('game_map_phase', phase) || phase;
 
 // 获取源服务器信息
 const getSourceServerInfo = (server: Api.Game.SeverVo): Api.Game.Server | undefined => {

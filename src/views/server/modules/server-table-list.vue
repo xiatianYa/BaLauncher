@@ -3,10 +3,13 @@ import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
 import { NButton, NTag, NTooltip } from 'naive-ui';
 import { computed, ref } from 'vue';
+import { useDict } from '@/hooks/business/dict';
 
 // 排序状态：none 默认 / asc 正序 / desc 倒序
 type SortOrder = 'none' | 'asc' | 'desc';
 type SortField = 'players' | 'ping' | null;
+
+const { dictType } = useDict();
 
 const props = defineProps<{
   servers: Api.Game.SeverVo[];
@@ -23,12 +26,10 @@ const emit = defineEmits<{
   (e: 'back'): void;
 }>();
 
-// 获取 Ping 值对应的 naive-ui Tag 类型
+// 获取 Ping 值对应的 naive-ui Tag 类型（来自字典 ping_level）
 const getPingType = (ping?: number) => {
-  if (ping === undefined || ping === null) return 'error';
-  if (ping < 70) return 'success';
-  if (ping < 100) return 'warning';
-  return 'error';
+  const level = ping === undefined || ping === null ? 'unknown' : ping < 70 ? 'normal' : ping < 100 ? 'warning' : 'error';
+  return dictType('ping_level', level);
 };
 
 // 根据在线人数获取颜色

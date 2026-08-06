@@ -53,7 +53,7 @@ const emit = defineEmits<{
 }>()
 
 const gameStore = useGameStore()
-const { dictOptions } = useDict()
+const { dictOptions, dictType, dictLabel } = useDict()
 
 // ============================================================
 // 类型归一化工具（集中处理后端可能是「单对象 / 数组」的字段，避免调用点散落 as 断言）
@@ -443,85 +443,15 @@ const queryServerMapType = (mapName: string | undefined) =>
 
 const getTeamColor = (team: string) => {
   if (!team) return 'default'
-  switch (team.toLowerCase()) {
-    case 'ct': return 'info'
-    case 't': return 'warning'
-    case 'spectator': return 'default'
-    default: return 'default'
-  }
+  return dictType('game_team', team.toLowerCase())
 }
 
 const getTeamLabel = (team: string) => {
   if (!team) return $t('serverJoin.team.unknown')
-  switch (team.toLowerCase()) {
-    case 'ct': return $t('serverJoin.team.ct')
-    case 't': return $t('serverJoin.team.t')
-    case 'spectator': return $t('serverJoin.team.spectator')
-    default: return team
-  }
+  return dictLabel('game_team', team.toLowerCase()) || team
 }
 
-const getWeaponName = (weaponName: string) => {
-  const weaponMap: Record<string, string> = {
-    // 步枪
-    weapon_ak47: 'AK-47',
-    weapon_m4a1_silencer: 'M4A1-S',
-    weapon_m4a4: 'M4A4',
-    weapon_aug: 'AUG',
-    weapon_sg556: 'SG 553',
-    weapon_famas: $t('serverJoin.weapon.famas'),
-    weapon_galilar: $t('serverJoin.weapon.galil'),
-    // 狙击枪
-    weapon_awp: 'AWP',
-    weapon_g3sg1: 'G3SG1',
-    weapon_scar20: 'SCAR-20',
-    weapon_ssg08: $t('serverJoin.weapon.ssg08'),
-    // 手枪
-    weapon_glock: $t('serverJoin.weapon.glock'),
-    weapon_usp_silencer: 'USP-S',
-    weapon_hkp2000: 'P2000',
-    weapon_p250: 'P250',
-    weapon_fiveseven: 'FN57',
-    weapon_deagle: $t('serverJoin.weapon.deagle'),
-    weapon_revolver: $t('serverJoin.weapon.revolver'),
-    weapon_cz75a: 'CZ75',
-    // 冲锋枪
-    weapon_mp7: 'MP7',
-    weapon_mp9: 'MP9',
-    weapon_bizon: $t('serverJoin.weapon.bizon'),
-    weapon_mac10: 'MAC-10',
-    weapon_ump45: 'UMP-45',
-    weapon_p90: 'P90',
-    weapon_mp5sd: 'MP5-SD',
-    weapon_mp5: 'MP5',
-    // 霰弹枪
-    weapon_nova: $t('serverJoin.weapon.nova'),
-    weapon_xm1014: 'XM1014',
-    weapon_sawedoff: $t('serverJoin.weapon.sawedoff'),
-    weapon_mag7: 'MAG-7',
-    weapon_m1014: 'M1014',
-    // 机枪
-    weapon_m249: 'M249',
-    weapon_negev: $t('serverJoin.weapon.negev'),
-    // 装备
-    weapon_c4: 'C4',
-    weapon_taser: $t('serverJoin.weapon.taser'),
-    weapon_knife: $t('serverJoin.weapon.knife'),
-    weapon_shield: $t('serverJoin.weapon.shield'),
-    weapon_zeus: $t('serverJoin.weapon.zeus'),
-    // 投掷物
-    weapon_molotov: $t('serverJoin.weapon.molotov'),
-    weapon_incgrenade: $t('serverJoin.weapon.incgrenade'),
-    weapon_flashbang: $t('serverJoin.weapon.flashbang'),
-    weapon_hegrenade: $t('serverJoin.weapon.hegrenade'),
-    weapon_smokegrenade: $t('serverJoin.weapon.smokegrenade'),
-    weapon_decoy: $t('serverJoin.weapon.decoy'),
-    weapon_tagrenade: $t('serverJoin.weapon.tagrenade'),
-    weapon_snowball: $t('serverJoin.weapon.snowball'),
-    weapon_bumpmine: $t('serverJoin.weapon.bumpmine'),
-  }
-  return weaponMap[weaponName] || weaponName
-}
+const getWeaponName = (weaponName: string) => dictLabel('game_weapon', weaponName) || weaponName
 
 const getOnLineColor = (players: number, maxPlayers: number) => {
   if (!players || !maxPlayers) return 'background-color: #00f91a;'

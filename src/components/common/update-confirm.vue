@@ -4,6 +4,8 @@ import { NModal, NProgress } from 'naive-ui';
 import { MdPreview } from 'md-editor-v3';
 import { fetchGetLogByVersion } from '@/service/api';
 import { useAuthStore } from '@/store/modules/auth';
+import { localStg } from '@/utils/storage';
+import { GAME_STORAGE_KEYS, APP_STORAGE_KEYS, ROUTE_STORAGE_KEYS } from '@/constants/cache';
 
 interface UpdateState {
   show: boolean;
@@ -84,8 +86,16 @@ const handleCancelUpdate = () => {
   updateLog.value = null;
 };
 
+/** 更新安装前清除缓存（保留用户数据 authData 与图片缓存 imageCache，其余全部清理） */
+const clearCacheBeforeUpdate = () => {
+  Object.values(GAME_STORAGE_KEYS).forEach((key) => localStg.remove(key));
+  Object.values(APP_STORAGE_KEYS).forEach((key) => localStg.remove(key));
+  Object.values(ROUTE_STORAGE_KEYS).forEach((key) => localStg.remove(key));
+};
+
 const handleInstallUpdate = async () => {
   clearCountdownTimer();
+  clearCacheBeforeUpdate(); // 安装更新前清除缓存，避免旧缓存影响新版本
   await window.ipcRenderer.invoke('install-update');
 };
 

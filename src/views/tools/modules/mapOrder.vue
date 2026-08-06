@@ -24,10 +24,8 @@ const { isAdmin } = useAuth();
 const { dictOptions } = useDict();
 const { ensureBound } = useBotBind(); // 添加订阅时需要先绑定QQ群成员
 const emit = defineEmits<{ back: [] }>();
-const isOrderOptions = [
-    { label: $t('mapOrder.yes'), value: '1' },
-    { label: $t('mapOrder.no'), value: '0' }
-];
+// 地图是否可订阅选项（来自字典 is_order）
+const isOrderOptions = computed(() => dictOptions('is_order'));
 
 /* ===== 数据状态 ===== */
 

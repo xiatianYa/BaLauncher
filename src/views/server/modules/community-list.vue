@@ -4,6 +4,9 @@ import { VueDraggable } from 'vue-draggable-plus';
 import { useGameStore } from '@/store/modules/game';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
+import { useDict } from '@/hooks/business/dict';
+
+const { dictType } = useDict();
 
 const props = defineProps<{
   selectedId: number | null;
@@ -16,13 +19,8 @@ const emit = defineEmits<{
 const gameStore = useGameStore();
 
 const getCommunityTagType = (playerNumber: number) => {
-  if (playerNumber < 300) {
-    return 'success';
-  } else if (playerNumber < 500) {
-    return 'warning';
-  } else {
-    return 'error';
-  }
+  const level = playerNumber < 300 ? 'normal' : playerNumber < 500 ? 'warning' : 'error';
+  return dictType('community_level', level);
 };
 
 const handleSelect = (id: number) => {

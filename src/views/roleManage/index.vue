@@ -17,10 +17,12 @@ import {
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { useAuth } from '@/hooks/business/auth';
+import { useDict } from '@/hooks/business/dict';
 
 defineOptions({ name: 'RoleManagePage' });
 
 const { isSuperAdmin } = useAuth(); // 角色管理仅超级管理员可见
+const { dictLabel } = useDict();
 
 /* ===== 列表与分页 ===== */
 
@@ -39,9 +41,9 @@ const formatDate = (date?: string | null) => {
   return dayjs(date).format('YYYY-MM-DD HH:mm');
 };
 
-/** 状态文案 */
+/** 状态文案（来自字典 status） */
 const getStatusText = (status?: string | null) =>
-  status === '1' ? $t('roleManage.enabled') : $t('roleManage.disabled');
+  dictLabel('status', status || '') || (status === '1' ? $t('roleManage.enabled') : $t('roleManage.disabled'));
 
 /** 加载分页数据 */
 const loadData = async () => {
