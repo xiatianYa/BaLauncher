@@ -181,13 +181,18 @@ const handleEditSubmit = async () => {
     window.$message?.warning($t('botGroup.message.inputGroupId'));
     return;
   }
+  const joinGroupUrl = String(editForm.joinGroupUrl ?? '').trim();
+  if (!joinGroupUrl) {
+    window.$message?.warning($t('botGroup.message.inputJoinUrl'));
+    return;
+  }
   const params: Api.Bot.BotGroupEdit = {
     id: isEditMode.value ? String(editForm.id ?? '') : undefined,
     groupId,
     communitys: Array.isArray(editForm.communityIds) ? editForm.communityIds.join(',') : '',
     isNotifyImage: editForm.isNotifyImage,
     isOrder: editForm.isOrder,
-    joinGroupUrl: String(editForm.joinGroupUrl ?? '').trim(),
+    joinGroupUrl,
     startTime: editForm.startTime ? formatDateTime(editForm.startTime) : '',
     expireTime: editForm.expireTime ? formatDateTime(editForm.expireTime) : ''
   };
@@ -435,8 +440,8 @@ onMounted(() => {
     <div class="search-bar">
       <div class="search-box">
         <SvgIcon icon="mdi:magnify" class="search-icon" />
-        <NInput v-model:value="pagination.groupId" :placeholder="$t('botGroup.searchPlaceholder')" clearable size="small"
-          @keyup.enter="handleSearch" @clear="handleSearch" />
+        <NInput v-model:value="pagination.groupId" :placeholder="$t('botGroup.searchPlaceholder')" clearable
+          size="small" @keyup.enter="handleSearch" @clear="handleSearch" />
       </div>
       <button class="icon-btn primary add-group-btn" @click="handleCreate">
         <SvgIcon icon="mdi:plus" />
@@ -454,7 +459,8 @@ onMounted(() => {
               <div class="group-id">
                 <SvgIcon icon="mdi:qqchat" class="qq-icon" />
                 <div class="group-title">
-                  <span class="group-name" :title="row.groupName">{{ row.groupName || $t('botGroup.unnamedGroup') }}</span>
+                  <span class="group-name" :title="row.groupName">{{ row.groupName || $t('botGroup.unnamedGroup')
+                    }}</span>
                   <span class="group-number">{{ row.groupId }}</span>
                 </div>
               </div>
@@ -492,13 +498,17 @@ onMounted(() => {
               <!-- 换图通知状态 -->
               <div class="notify-status" :class="{ active: row.isNotifyImage === 1 }">
                 <span class="dot" />
-                <span>{{ $t('botGroup.notifyImageStatus', { status: row.isNotifyImage === 1 ? $t('botGroup.enabled') : $t('botGroup.disabled') }) }}</span>
+                <span>{{ $t('botGroup.notifyImageStatus', {
+                  status: row.isNotifyImage === 1 ? $t('botGroup.enabled') :
+                    $t('botGroup.disabled') }) }}</span>
               </div>
 
               <!-- 地图订阅状态 -->
               <div class="notify-status" :class="{ active: row.isOrder === 1 }">
                 <span class="dot" />
-                <span>{{ $t('botGroup.mapOrderStatus', { status: row.isOrder === 1 ? $t('botGroup.enabled') : $t('botGroup.disabled') }) }}</span>
+                <span>{{ $t('botGroup.mapOrderStatus', {
+                  status: row.isOrder === 1 ? $t('botGroup.enabled') :
+                    $t('botGroup.disabled') }) }}</span>
               </div>
             </div>
 
@@ -551,9 +561,8 @@ onMounted(() => {
     </div>
 
     <!-- 群成员管理弹窗 -->
-    <NModal v-model:show="showMemberModal" preset="card" class="member-modal w-860px rounded-16px"
-      :bordered="false" size="small" :closable="true"
-      @close="handleCloseMemberModal">
+    <NModal v-model:show="showMemberModal" preset="card" class="member-modal w-860px rounded-16px" :bordered="false"
+      size="small" :closable="true" @close="handleCloseMemberModal">
       <template #header>
         <div class="member-modal-header">
           <div class="member-modal-icon-wrap">
@@ -562,7 +571,8 @@ onMounted(() => {
           <span>{{ $t('botGroup.member.manageTitle') }}</span>
           <span class="member-modal-group" :title="currentMemberGroup?.groupName">
             <SvgIcon icon="mdi:qqchat" class="group-tag-icon" />
-            <span class="member-modal-group-text">{{ currentMemberGroup?.groupName || currentMemberGroup?.groupId }}</span>
+            <span class="member-modal-group-text">{{ currentMemberGroup?.groupName || currentMemberGroup?.groupId
+              }}</span>
           </span>
         </div>
       </template>
@@ -577,13 +587,14 @@ onMounted(() => {
                 <SvgIcon icon="mdi:account-multiple" class="member-list-title-icon" />
                 <span>{{ $t('botGroup.member.listTitle') }}</span>
               </div>
-              <span class="member-list-count">{{ $t('botGroup.member.total', { count: memberPagination.total }) }}</span>
+              <span class="member-list-count">{{ $t('botGroup.member.total', { count: memberPagination.total })
+                }}</span>
             </div>
           </template>
           <div class="member-list" :class="{ loading: memberLoading }">
             <div v-for="(member, index) in memberList" :key="member.id" class="member-card"
-              :class="{ selected: selectedMember?.id === member.id }"
-              :style="{ '--delay': `${index * 0.04}s` }" @click="handleSelectMember(member)">
+              :class="{ selected: selectedMember?.id === member.id }" :style="{ '--delay': `${index * 0.04}s` }"
+              @click="handleSelectMember(member)">
               <div class="member-avatar">
                 <SvgIcon icon="mdi:qqchat" />
               </div>
@@ -705,7 +716,8 @@ onMounted(() => {
                     <SvgIcon v-else icon="mdi:map" class="subscribe-map-fallback" />
                   </div>
                   <div class="subscribe-card-info">
-                    <span class="subscribe-map-name">{{ sub.gameMap?.mapLabel || sub.gameMap?.mapName || $t('botGroup.subscribe.unknownMap')
+                    <span class="subscribe-map-name">{{ sub.gameMap?.mapLabel || sub.gameMap?.mapName ||
+                      $t('botGroup.subscribe.unknownMap')
                       }}</span>
                     <span class="subscribe-map-origin">{{ sub.gameMap?.mapName }}</span>
                   </div>
@@ -718,7 +730,8 @@ onMounted(() => {
                       <SvgIcon icon="mdi:qqchat" />
                       QQ
                     </span>
-                    <button class="subscribe-delete-btn" :title="$t('botGroup.subscribe.deleteTitle')" @click.stop="handleDeleteSubscribe(sub)">
+                    <button class="subscribe-delete-btn" :title="$t('botGroup.subscribe.deleteTitle')"
+                      @click.stop="handleDeleteSubscribe(sub)">
                       <SvgIcon icon="mdi:trash-can-outline" />
                     </button>
                   </div>
@@ -731,8 +744,8 @@ onMounted(() => {
     </NModal>
 
     <!-- 删除订阅确认弹窗 -->
-    <NModal v-model:show="showDeleteSubModal" preset="card" class="delete-modal rounded-16px w-400px"
-      :bordered="false" size="small" :closable="false">
+    <NModal v-model:show="showDeleteSubModal" preset="card" class="delete-modal rounded-16px w-400px" :bordered="false"
+      size="small" :closable="false">
       <template #header>
         <div class="delete-modal-header">
           <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
@@ -743,7 +756,7 @@ onMounted(() => {
         <p class="delete-modal-text">
           {{ $t('botGroup.subscribe.deleteConfirmPrefix') }}
           <span class="delete-modal-target">{{ currentDeleteSub?.gameMap?.mapLabel || currentDeleteSub?.gameMap?.mapName
-            }}</span>
+          }}</span>
           {{ $t('botGroup.subscribe.deleteConfirmSuffix') }}
         </p>
         <p class="delete-modal-tip">{{ $t('botGroup.subscribe.deleteConfirmTip') }}</p>
@@ -758,8 +771,8 @@ onMounted(() => {
     </NModal>
 
     <!-- 删除确认弹窗 -->
-    <NModal v-model:show="showDeleteModal" preset="card" class="delete-modal rounded-16px w-400px"
-      :bordered="false" size="small" :closable="false">
+    <NModal v-model:show="showDeleteModal" preset="card" class="delete-modal rounded-16px w-400px" :bordered="false"
+      size="small" :closable="false">
       <template #header>
         <div class="delete-modal-header">
           <SvgIcon icon="mdi:delete-alert" class="delete-modal-icon" />
@@ -784,8 +797,8 @@ onMounted(() => {
     </NModal>
 
     <!-- 编辑 / 新增弹窗 -->
-    <NModal v-model:show="showEditModal" preset="card" class="w-520px rounded-16px"
-      :bordered="false" size="small" :closable="true">
+    <NModal v-model:show="showEditModal" preset="card" class="w-520px rounded-16px" :bordered="false" size="small"
+      :closable="true">
       <template #header>
         <div class="modal-header">
           <SvgIcon :icon="isEditMode ? 'mdi:pencil' : 'mdi:plus'" class="modal-header-icon" />
@@ -808,12 +821,16 @@ onMounted(() => {
         <div class="form-item">
           <label class="form-label">{{ $t('botGroup.modal.joinGroupUrlLabel') }}</label>
           <div class="input-with-copy">
-            <NInput v-model:value="editForm.joinGroupUrl"
-              :placeholder="$t('botGroup.modal.joinGroupUrlPlaceholder')" clearable />
+            <NInput v-model:value="editForm.joinGroupUrl" :placeholder="$t('botGroup.modal.joinGroupUrlPlaceholder')"
+              clearable />
             <button class="copy-link-btn" :title="$t('botGroup.modal.copyJoinUrl')" :disabled="!editForm.joinGroupUrl"
               @click="handleCopyJoinUrl">
               <SvgIcon icon="mdi:content-copy" />
             </button>
+          </div>
+          <div class="form-hint">
+            <SvgIcon icon="mdi:link-variant" class="form-hint-icon" />
+            <span>{{ $t('botGroup.modal.joinGroupUrlExample', { url: 'https://qm.qq.com/q/tXUXMfJ3EW' }) }}</span>
           </div>
         </div>
         <div class="form-item">
@@ -825,25 +842,27 @@ onMounted(() => {
           <label class="form-label">{{ $t('botGroup.modal.notifyImageLabel') }}</label>
           <div class="switch-wrap">
             <NSwitch v-model:value="editForm.isNotifyImage" :checked-value="1" :unchecked-value="0" />
-            <span class="switch-text">{{ editForm.isNotifyImage === 1 ? $t('botGroup.enabled') : $t('botGroup.disabled') }}</span>
+            <span class="switch-text">{{ editForm.isNotifyImage === 1 ? $t('botGroup.enabled') : $t('botGroup.disabled')
+              }}</span>
           </div>
         </div>
         <div class="form-item">
           <label class="form-label">{{ $t('botGroup.modal.mapOrderLabel') }}</label>
           <div class="switch-wrap">
             <NSwitch v-model:value="editForm.isOrder" :checked-value="1" :unchecked-value="0" />
-            <span class="switch-text">{{ editForm.isOrder === 1 ? $t('botGroup.enabled') : $t('botGroup.disabled') }}</span>
+            <span class="switch-text">{{ editForm.isOrder === 1 ? $t('botGroup.enabled') : $t('botGroup.disabled')
+              }}</span>
           </div>
         </div>
         <div v-if="isEditMode" class="form-item">
           <label class="form-label">{{ $t('botGroup.effectiveTime') }}</label>
-          <NDatePicker v-model:value="editForm.startTime" type="datetime" clearable :placeholder="$t('botGroup.modal.startTimePlaceholder')"
-            class="w-full" />
+          <NDatePicker v-model:value="editForm.startTime" type="datetime" clearable
+            :placeholder="$t('botGroup.modal.startTimePlaceholder')" class="w-full" />
         </div>
         <div v-if="isEditMode" class="form-item">
           <label class="form-label">{{ $t('botGroup.expireTime') }}</label>
-          <NDatePicker v-model:value="editForm.expireTime" type="datetime" clearable :placeholder="$t('botGroup.modal.expireTimePlaceholder')"
-            class="w-full" />
+          <NDatePicker v-model:value="editForm.expireTime" type="datetime" clearable
+            :placeholder="$t('botGroup.modal.expireTimePlaceholder')" class="w-full" />
         </div>
         <div class="modal-actions">
           <button class="action-btn cancel" @click="showEditModal = false">{{ $t('botGroup.cancel') }}</button>
@@ -2266,6 +2285,24 @@ onMounted(() => {
           opacity: 0.4;
           cursor: not-allowed;
         }
+      }
+    }
+
+    .form-hint {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: rgba(var(--app-rgb), 0.65);
+      background: rgba(102, 126, 234, 0.06);
+      border: 1px dashed rgba(102, 126, 234, 0.3);
+
+      .form-hint-icon {
+        font-size: 14px;
+        color: #667eea;
+        flex-shrink: 0;
       }
     }
 

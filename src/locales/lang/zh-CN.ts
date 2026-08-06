@@ -909,6 +909,7 @@ export default {
     deleteConfirmTip: '删除后数据将无法恢复，请谨慎操作。',
     message: {
       inputGroupId: '请输入 QQ 群号',
+      inputJoinUrl: '请输入入群链接',
       saveFailed: '保存失败',
       addFailed: '新增失败',
       saveSuccess: '保存成功',
@@ -958,7 +959,8 @@ export default {
       groupIdLabel: 'QQ 群号',
       groupIdPlaceholder: '请输入 QQ 群号',
       joinGroupUrlLabel: '入群链接',
-      joinGroupUrlPlaceholder: '复制 QQ 群邀请的网址链接，粘贴到此（选填）',
+      joinGroupUrlPlaceholder: '复制 QQ 群邀请的网址链接，粘贴到此',
+      joinGroupUrlExample: '入群链接示例: {url}',
       copyJoinUrl: '复制入群链接',
       communityLabel: '偏好社区',
       communityPlaceholder: '选择偏好社区',

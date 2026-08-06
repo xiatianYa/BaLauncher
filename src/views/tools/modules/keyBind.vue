@@ -791,11 +791,11 @@ onMounted(() => {
             </template>
             <div class="modal-form">
                 <div class="form-item">
-                    <label class="form-label">{{ $t('keyBind.configName') }}</label>
+                    <label class="form-label required">{{ $t('keyBind.configName') }}</label>
                     <NInput v-model:value="newConfigName" :placeholder="$t('keyBind.configNamePlaceholder')" clearable />
                 </div>
                 <div class="form-item">
-                    <label class="form-label">{{ $t('keyBind.configContent') }}</label>
+                    <label class="form-label required">{{ $t('keyBind.configContent') }}</label>
                     <NInput v-model:value="newConfigJson" type="textarea"
                         :placeholder="$t('keyBind.configContentPlaceholder')" style="height: 260px" />
                 </div>
@@ -1372,6 +1372,12 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
             font-size: 12.5px;
             font-weight: 600;
             color: rgba(var(--app-rgb), 0.75);
+
+            &.required::before {
+                content: '*';
+                margin-right: 4px;
+                color: #f5576c;
+            }
         }
     }
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NGrid, NGridItem, NTag, NEllipsis } from 'naive-ui';
+import { NTag, NEllipsis } from 'naive-ui';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useDict } from '@/hooks/business/dict';
 import { $t } from '@/locales';
@@ -55,22 +55,32 @@ const visibleServers = computed(() => {
 const paddingTop = computed(() => startRow.value * ROW_HEIGHT);
 const paddingBottom = computed(() => (totalRows.value - endRow.value) * ROW_HEIGHT);
 
+/* ===== 滚动更新节流：rAF 合并到每帧只触发一次重渲染 ===== */
+let rafId = 0;
 const updateVisibleRange = () => {
   const el = listRef.value;
   if (!el) return;
   scrollTop.value = el.scrollTop;
   containerHeight.value = el.clientHeight;
 };
+const scheduleUpdate = () => {
+  if (rafId) return;
+  rafId = window.requestAnimationFrame(() => {
+    rafId = 0;
+    updateVisibleRange();
+  });
+};
 
 onMounted(() => {
   updateVisibleRange();
-  listRef.value?.addEventListener('scroll', updateVisibleRange, { passive: true });
-  window.addEventListener('resize', updateVisibleRange);
+  listRef.value?.addEventListener('scroll', scheduleUpdate, { passive: true });
+  window.addEventListener('resize', scheduleUpdate);
 });
 
 onUnmounted(() => {
-  listRef.value?.removeEventListener('scroll', updateVisibleRange);
-  window.removeEventListener('resize', updateVisibleRange);
+  if (rafId) window.cancelAnimationFrame(rafId);
+  listRef.value?.removeEventListener('scroll', scheduleUpdate);
+  window.removeEventListener('resize', scheduleUpdate);
 });
 
 // 计算目标时间到当前时间的分钟差
@@ -101,6 +111,7 @@ const getDotLevel = (server: Api.Game.SeverVo) => {
 };
 
 const getPlayerLevel = (server: Api.Game.SeverVo): string => {
+  console.log(server.numPlayers);
   if (server.numPlayers <= 20) return 'player-level-1';
   if (server.numPlayers <= 40) return 'player-level-2';
   if (server.numPlayers <= 60) return 'player-level-3';
@@ -144,8 +155,8 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 <template>
   <div ref="listRef" class="server-card-list h-full overflow-auto p-5px relative">
     <div class="virtual-scroll-spacer" :style="{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px` }">
-      <NGrid :x-gap="12" :y-gap="12" :cols="2">
-        <NGridItem v-for="(server, index) in visibleServers" :key="server.connectStr || index"
+      <div class="card-grid">
+        <div v-for="(server, index) in visibleServers" :key="server.connectStr || index"
           :style="{ '--delay': `${Math.min((startRow * ITEMS_PER_ROW + index) * 0.03, 0.4)}s` }">
           <div class="sercer-card overflow-hidden flex flex-col"
             v-if="server.isOnline && getSourceServerInfo(server)?.serverName">
@@ -161,7 +172,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
             </div>
             <div class="flex justify-between">
               <NEllipsis
-                class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold w-220px"
+                class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold flex-1 min-w-0"
                 :max-line="1">
                 {{ server.mapName }}
               </NEllipsis>
@@ -240,8 +251,8 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
               </div>
             </div>
           </div>
-        </NGridItem>
-      </NGrid>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -253,6 +264,18 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 .server-card-list {
   overflow-anchor: none;
   overscroll-behavior: contain;
+}
+
+/* 卡片网格（用原生 CSS Grid 替代 NGrid，减少组件渲染开销） */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  /* 允许子项收缩，避免长内容撑爆网格列导致徽标被挤出卡片 */
+  > * {
+    min-width: 0;
+  }
 }
 
 .sercer-card {
@@ -388,7 +411,6 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
       align-items: center;
       flex: 3;
       background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(4px);
       cursor: pointer;
       color: rgba(34, 197, 94, 0.85);
       transition: all 0.2s ease;
@@ -409,7 +431,6 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
       align-items: center;
       flex-grow: 2;
       background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(4px);
       cursor: pointer;
       color: rgba(59, 130, 246, 0.85);
       transition: all 0.2s ease;
@@ -432,7 +453,6 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
       align-items: center;
       flex: 3;
       background: rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(4px);
       cursor: pointer;
       color: rgba(249, 115, 22, 0.85);
       transition: all 0.2s ease;
@@ -483,6 +503,9 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 }
 
 .player-badge {
+  /* 定位提升到背景图/遮罩之上：非定位元素会被 z-index:0 的定位背景盖住 */
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   gap: 5px;
@@ -493,7 +516,6 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   font-weight: 600;
   color: #fff;
   background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(8px);
   border: 1px solid rgba(var(--app-rgb), 0.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
@@ -605,7 +627,6 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   font-weight: 600;
   color: #fff;
   background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(8px);
   border: 1px solid rgba(var(--app-rgb), 0.1);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
@@ -642,7 +663,6 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   color: #fff;
   border: 1px solid rgba(var(--app-rgb), 0.25);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  backdrop-filter: blur(6px);
 }
 
 .chip-icon {
@@ -660,7 +680,6 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
 
 .chip-score {
   background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(8px);
   border: 1px solid rgba(var(--app-rgb), 0.1);
   padding: 3px 8px;
   border-radius: 8px;

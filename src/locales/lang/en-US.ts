@@ -909,6 +909,7 @@ export default {
     deleteConfirmTip: 'This action cannot be undone. Please proceed with caution.',
     message: {
       inputGroupId: 'Please enter the QQ group ID',
+      inputJoinUrl: 'Please enter the invite link',
       saveFailed: 'Save failed',
       addFailed: 'Add failed',
       saveSuccess: 'Saved successfully',
@@ -958,7 +959,8 @@ export default {
       groupIdLabel: 'QQ Group ID',
       groupIdPlaceholder: 'Please enter the QQ group ID',
       joinGroupUrlLabel: 'Invite Link',
-      joinGroupUrlPlaceholder: 'Paste the QQ group invite URL here (optional)',
+      joinGroupUrlPlaceholder: 'Paste the QQ group invite URL here',
+      joinGroupUrlExample: 'Invite link example: {url}',
       copyJoinUrl: 'Copy Invite Link',
       communityLabel: 'Preferred Community',
       communityPlaceholder: 'Select preferred community',
