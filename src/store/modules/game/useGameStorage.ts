@@ -54,7 +54,13 @@ export function useGameStorage(deps: StorageDeps) {
         ...savedAutomaticJoinConfig,
       }
     }
-    if (savedApplyKeyBindItems) applyKeyBindItems.value = savedApplyKeyBindItems
+    // 旧版本数据无 applied 字段：旧逻辑添加绑定时会自动写入 cfg，故默认视为已应用
+    if (savedApplyKeyBindItems) {
+      applyKeyBindItems.value = savedApplyKeyBindItems.map(item => ({
+        ...item,
+        applied: item.applied ?? true,
+      }))
+    }
     if (savedSelectedStartItems) selectedStartItems.value = savedSelectedStartItems
     if (savedIsFullscreen !== null) isFullscreen.value = savedIsFullscreen
     if (savedServerViewModule) serverViewModule.value = savedServerViewModule

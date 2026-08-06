@@ -18,17 +18,17 @@ onMounted(() => {
 </script>
 
 <template>
-  <!-- 整体页面圆角：外层留 10px 边距，圆角直接加在各卡片外圈对应角（边框随圆角走，不被裁剪） -->
+  <!-- 整体页面圆角：窗口四个外角（顶栏上两角、侧边栏左下角、主内容右下角）统一 12px 圆角；卡片相互衔接处一律直角，保证边框无缝连接 -->
   <div class="flex flex-col w-full h-full">
     <WindowControls />
     <div class="flex h-full overflow-hidden">
-      <NCard :class="['sidebar-card', themeStore.layout.mode === 'expand' ? 'expanded' : 'collapsed', 'rounded-bl-16px', 'h-full']"
+      <NCard :class="['sidebar-card', themeStore.layout.mode === 'expand' ? 'expanded' : 'collapsed', 'h-full']"
         content-class="flex flex-col" content-style="padding:5px;">
         <WindowsMenu />
         <WindowsHeader />
         <WindowsFooter />
       </NCard>
-      <NCard class="main-card overflow-hidden" content-class="flex-1 h-full">
+      <NCard class="main-card" content-class="flex-1 h-full">
         <RouterView />
       </NCard>
     </div>
@@ -48,6 +48,11 @@ onMounted(() => {
     stroke 0.3s ease !important;
   border-top: none;
   border-right: none;
+  /* 衔接处一律直角：与顶栏、主内容卡片贴合无缝；仅左下角保留窗口外圆角（与主卡片右下角统一 12px） */
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 0;
   /* 高度约束：让内部 flex 列（菜单/头部/底部）在容器内排列，避免溢出挤压 */
   height: 100%;
   min-height: 0;
@@ -56,6 +61,11 @@ onMounted(() => {
 /* 主内容卡片：去掉顶边线，与顶部控制栏无缝衔接 */
 .main-card {
   border-top: none;
+  /* 衔接处一律直角：与顶栏、侧边栏贴合无缝；仅右下角保留窗口外圆角（与侧边栏左下角统一 12px） */
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 12px;
 }
 
 /* 展开状态的宽度 */

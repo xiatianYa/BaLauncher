@@ -41,7 +41,7 @@ watch(
     <div class="menu-scroll p-10px">
         <NGrid x-gap="12" :cols="2" :y-gap="8">
             <NGridItem v-for="navItem in useRoute.SideNavRoutes" :key="navItem.key">
-                <div class="menu-item" @click="goToRouterPath(navItem.key)">
+                <div class="menu-item" :class="{ 'is-active': selectedKey === navItem.key }" @click="goToRouterPath(navItem.key)">
                     <div class="menu-icon">
                         <img :src="navItem.img" class="menu-icon-img">
                     </div>
@@ -98,6 +98,21 @@ watch(
         border-color: rgba(102, 126, 234, 0.35);
         transform: translateY(-2px);
         box-shadow: 0 8px 16px rgba(0, 0, 0, 0.18);
+    }
+
+    /* 当前激活菜单高亮：紫色边框 + 紫色背景，图标保持原色 */
+    &.is-active {
+        background-color: rgba(102, 126, 234, 0.12);
+        border-color: #667eea;
+        box-shadow: 0 8px 16px rgba(102, 126, 234, 0.25);
+
+        .menu-icon {
+            background-color: rgba(102, 126, 234, 0.18);
+        }
+
+        .menu-name {
+            color: #667eea;
+        }
     }
 
     .menu-icon {

@@ -103,6 +103,8 @@ declare namespace Api {
       renderKeyConfigJson: string;
       /** 配置库类型(系统 | 自定义) */
       configType: string;
+      /** 是否已应用到 cfg 文件（false=待应用，true=已写入 cfg） */
+      applied?: boolean;
     };
 
     /** KeyBind list */

@@ -12,7 +12,7 @@ import {
     ZELibaryCfgOption as ZELibaryCfgOptionConst
 } from '@/constants/keyBind';
 import { $t } from '@/locales';
-import Command from '@/assets/imgs/tool/Command.png';
+import Command from '@/assets/imgs/tool/command.png';
 
 defineOptions({ name: 'keyBind' });
 
@@ -126,18 +126,63 @@ const removeAppliedBinding = async (systemName: string | undefined) => {
     if (index === -1) return;
     const item = applyKeyBindItems.value[index];
 
-    // 从 cfg 文件中移除配置
-    const paths = await window.ipcRenderer.invoke('auto-detect-paths');
-    if (paths.csgo2Path && item.renderKeyConfigJson) {
-        const { success } = await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, item.renderKeyConfigJson);
-        if (!success) {
-            window.$message?.error($t('keyBind.messages.removeFromCfgFailed'));
-            return;
+    // 已应用时先从 cfg 文件中移除配置，再删除绑定项
+    if (item.applied) {
+        const paths = await window.ipcRenderer.invoke('auto-detect-paths');
+        if (paths.csgo2Path && item.renderKeyConfigJson) {
+            const { success } = await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, item.renderKeyConfigJson);
+            if (!success) {
+                window.$message?.error($t('keyBind.messages.removeFromCfgFailed'));
+                return;
+            }
         }
     }
     // 用 filter 创建新数组，触发计算属性 setter
     applyKeyBindItems.value = applyKeyBindItems.value.filter((_, i) => i !== index);
     window.$message?.success($t('keyBind.messages.bindingRemoved'));
+};
+
+/** 应用 / 取消应用配置（写入或移除 cfg 中的对应配置） */
+const toggleApplyBinding = async (systemName: string | undefined) => {
+    if (!systemName) return;
+    const index = applyKeyBindItems.value.findIndex(item => item.systemBindCfgVO?.systemName === systemName);
+    if (index === -1) return;
+    const item = applyKeyBindItems.value[index];
+
+    const paths = await window.ipcRenderer.invoke('auto-detect-paths');
+    if (!paths.csgo2Path) {
+        window.$message?.error($t('keyBind.messages.csgoPathNotFound'));
+        return;
+    }
+
+    let success = false;
+    let successMessage = '';
+    let errorMessage = '';
+
+    if (item.applied) {
+        // 已应用 → 取消应用：从 cfg 文件中移除该配置
+        const res = await window.ipcRenderer.invoke('remove-autoexec-cfg-content', paths.csgo2Path, item.renderKeyConfigJson);
+        success = res.success;
+        successMessage = $t('keyBind.messages.bindingRemoved');
+        errorMessage = $t('keyBind.messages.removeFromCfgFailed');
+    } else {
+        // 未应用 → 应用：将配置写入 cfg 文件
+        const header = buildLogHeader(item.systemBindCfgVO?.configDesc || item.systemBindCfgVO?.systemName || '', item.key);
+        const res = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, header + '\n' + item.renderKeyConfigJson);
+        success = res.success;
+        successMessage = $t('keyBind.messages.applySuccess');
+        errorMessage = $t('keyBind.messages.applyFailed');
+    }
+
+    if (success) {
+        // 用新数组更新 applied 状态，触发计算属性 setter
+        const newItems = [...applyKeyBindItems.value];
+        newItems[index] = { ...item, applied: !item.applied };
+        applyKeyBindItems.value = newItems;
+        window.$message?.success(successMessage);
+    } else {
+        window.$message?.error(errorMessage);
+    }
 };
 
 /** 重置已应用的绑定按键 */
@@ -436,6 +481,7 @@ const saveAndCloseCapture = () => {
                 keyConfigJson: currentSelectedItem.value.keyConfigJson,
                 renderKeyConfigJson,
                 configType: 'system',
+                applied: false, // 默认未应用：需用户点击"应用配置"后才写入 cfg
                 systemBindCfgVO: {
                     systemName: currentSelectedItem.value.systemName,
                     systemIcon: currentSelectedItem.value.systemIcon,
@@ -444,33 +490,12 @@ const saveAndCloseCapture = () => {
             };
             // 用展开运算符创建新数组，触发计算属性 setter
             applyKeyBindItems.value = [...applyKeyBindItems.value, newBindItem];
-
-            const header = buildLogHeader(currentSelectedItem.value.configDesc || currentSelectedItem.value.systemName, capturedKey.value);
-            applyKeyBinds(header + '\n' + renderKeyConfigJson);
         }
-    } else {
-        // 使用自定义配置
-        applyKeyBinds('');
     }
     closeKeyCapture();
 };
 
 /* ===== 配置应用 ===== */
-
-/** 写入 Cfg 文件 */
-const applyKeyBinds = async (content: string) => {
-    const paths = await window.ipcRenderer.invoke('auto-detect-paths');
-    if (!paths.csgo2Path) {
-        window.$message?.error($t('keyBind.messages.csgoPathNotFound'));
-        return;
-    }
-    const { error } = await window.ipcRenderer.invoke('write-autoexec-cfg', paths.csgo2Path, content);
-    if (!error) {
-        window.$message?.success($t('keyBind.messages.applySuccess'));
-    } else {
-        window.$message?.error($t('keyBind.messages.applyFailed'));
-    }
-};
 
 /** 保存本地 autoexec.cfg（覆盖整个文件） */
 const saveLocalAutoexecCfg = async () => {
@@ -664,7 +689,7 @@ onMounted(() => {
                     </NCollapse>
                 </div>
                 <div v-show="activeTab === 'local'" class="h-full">
-                    <MdEditor v-model="localAutoexecCfg" :preview="false"
+                    <MdEditor class="cfg-editor" v-model="localAutoexecCfg" :preview="false"
                         :toolbars="['revoke', 'next', 'save']" @onSave="saveLocalAutoexecCfg" />
                 </div>
             </NCard>
@@ -772,8 +797,8 @@ onMounted(() => {
                 </div>
                 <div class="mb-20px">
                     <div class="text-sm font-medium mb-5px">{{ $t('keyBind.configContent') }}</div>
-                    <MdEditor v-model="newConfigJson" :preview="false"
-                        :toolbars="['revoke', 'next']" />
+                    <NInput v-model:value="newConfigJson" type="textarea"
+                        :placeholder="$t('keyBind.configContentPlaceholder')" style="height: 260px" />
                 </div>
             </div>
             <template #footer>
@@ -803,6 +828,40 @@ $accent: #4b9ef8; // 主色（天蓝）
 $accent-deep: #3a86e0; // 主色深（渐变末端 / hover）
 $accent-hover: #3f8fe8; // hover 渐变起点
 $accent-hover-deep: #2e72c4; // hover 渐变末端
+
+// ==================== 配置编辑器（MdEditor） ====================
+// 参考 updateLog 的透明化风格：背景透明融入卡片、文字/边框跟随深浅主题、主色天蓝
+.cfg-editor {
+    --md-color: rgba(var(--app-rgb), 0.8);
+    --md-bk-color: transparent;
+    --md-bk-color-outstand: rgba(var(--app-rgb), 0.03);
+    --md-bk-hover-color: rgba(var(--app-rgb), 0.06);
+    --md-border-color: rgba(var(--app-rgb), 0.08);
+    --md-border-hover-color: rgba($accent, 0.35);
+    --md-border-active-color: $accent;
+    --md-hover-color: $accent;
+    --md-theme-base-color: $accent;
+    --md-scrollbar-bg-color: rgba(var(--app-rgb), 0.08);
+    --md-scrollbar-thumb-color: rgba(var(--app-rgb), 0.18);
+    --md-scrollbar-thumb-hover-color: rgba($accent, 0.5);
+    --md-scrollbar-thumb-active-color: rgba($accent, 0.6);
+    background: transparent;
+    border: 1px solid rgba(var(--app-rgb), 0.08);
+    border-radius: 10px;
+    overflow: hidden;
+
+    /* 编辑区透明化 + 排版统一（字号 13px、行高 1.8，同 updateLog 预览区） */
+    :deep(.md-editor-content) {
+        background: transparent;
+    }
+
+    :deep(.md-editor-input) {
+        background: transparent;
+        font-size: 13px;
+        line-height: 1.8;
+        color: rgba(var(--app-rgb), 0.8);
+    }
+}
 
 .key-bind-container {
     display: flex;

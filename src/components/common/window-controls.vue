@@ -41,6 +41,9 @@ const toggleNotifications = () => {
 <style scoped lang="scss">
 .window-drag-area {
   -webkit-app-region: drag;
+  /* 仅保留顶部两角圆角，底部与内容卡片衔接处为直角，避免圆角对不上产生缺口 */
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .app-logo {

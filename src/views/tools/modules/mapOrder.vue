@@ -504,7 +504,7 @@ onMounted(() => {
         <div class="subscribe-modal-new">
             <div class="subscribe-header">
                 <div class="character-image">
-                    <img src="@/assets/imgs/tool/3594431.png" alt="character" />
+                    <img src="@/assets/imgs/tool/character.png" alt="character" />
                 </div>
                 <div class="header-glow"></div>
             </div>
@@ -537,7 +537,7 @@ onMounted(() => {
         <div class="subscribe-modal-new pt-20px pb-20px pl-20px pr-20px">
             <div class="subscribe-header mb-20px">
                 <div class="character-image">
-                    <img src="@/assets/imgs/tool/3594431.png" alt="character" />
+                    <img src="@/assets/imgs/tool/character.png" alt="character" />
                 </div>
                 <div class="header-glow"></div>
             </div>

@@ -247,6 +247,8 @@ const permPageLoading = ref(false);
 const permPageList = ref<Api.System.SysPermissionVo[]>([]);
 /** 权限分页参数 */
 const permPagePagination = reactive({
+  code: '',
+  description: '',
   current: 1,
   size: 9,
   total: 0
@@ -257,6 +259,8 @@ const loadPermissionPageData = async () => {
   permPageLoading.value = true;
   try {
     const params: Api.System.SysPermissionSearchDTO = {
+      code: permPagePagination.code || null,
+      description: permPagePagination.description || null,
       current: permPagePagination.current,
       size: permPagePagination.size
     };
@@ -268,6 +272,12 @@ const loadPermissionPageData = async () => {
   } finally {
     permPageLoading.value = false;
   }
+};
+
+/** 权限搜索：重置到第一页后重新查询 */
+const handlePermissionSearch = () => {
+  permPagePagination.current = 1;
+  loadPermissionPageData();
 };
 
 /** 权限分页切换 */
@@ -426,6 +436,19 @@ onMounted(() => {
             <NInput v-model:value="pagination.roleName" :placeholder="$t('roleManage.searchRolePlaceholder')" clearable size="small" />
           </div>
           <button v-if="viewMode === 'role'" class="search-btn" :title="$t('roleManage.search')" @click="handleSearch">
+            <SvgIcon icon="mdi:magnify" />
+            <span>{{ $t('roleManage.search') }}</span>
+          </button>
+          <div v-if="viewMode === 'permission'" class="search-box">
+            <SvgIcon icon="mdi:magnify" class="search-icon" />
+            <NInput v-model:value="permPagePagination.code" :placeholder="$t('roleManage.searchPermissionResourcePlaceholder')" clearable size="small" />
+          </div>
+          <div v-if="viewMode === 'permission'" class="search-box">
+            <SvgIcon icon="mdi:magnify" class="search-icon" />
+            <NInput v-model:value="permPagePagination.description" :placeholder="$t('roleManage.searchPermissionDescPlaceholder')" clearable size="small" />
+          </div>
+          <button v-if="viewMode === 'permission'" class="search-btn" :title="$t('roleManage.search')"
+            @click="handlePermissionSearch">
             <SvgIcon icon="mdi:magnify" />
             <span>{{ $t('roleManage.search') }}</span>
           </button>
