@@ -21,7 +21,7 @@ const toggleNotifications = () => {
 
 <template>
   <NCard content-class="h-52px flex justify-between items-center" content-style="padding: 5px;"
-    class="rounded-none window-drag-area">
+    class="rounded-t-12px window-drag-area">
     <img src="@/assets/imgs/bluearchive.png" class="app-logo ml-10px" alt="Blue Archive" />
     <div class="window-controls-group">
       <button class="window-control-btn" @click="toggleNotifications" :title="$t('windowControls.notifications')">

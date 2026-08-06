@@ -31,7 +31,10 @@ async function createWindow(onDidFinishLoad?: (win: BrowserWindow) => void) {
       sandbox: true,
     },
     autoHideMenuBar: true,
-    frame: false
+    frame: false,
+    // 启动加载期间窗口背景透明（无背景色），应用加载完成后由主题背景覆盖
+    transparent: true,
+    backgroundColor: '#00000000'
   })
 
   if (VITE_DEV_SERVER_URL) {

@@ -160,96 +160,101 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
       <NGrid :x-gap="12" :y-gap="12" :cols="2">
         <NGridItem v-for="(server, index) in visibleServers" :key="server.connectStr || index"
           :style="{ '--delay': `${Math.min((startRow * ITEMS_PER_ROW + index) * 0.03, 0.4)}s` }">
-        <div class="sercer-card overflow-hidden flex flex-col"
-          v-if="server.isOnline && getSourceServerInfo(server)?.serverName">
-          <img v-if="server.mapUrl" class="server-card-bg" v-lazy="server.mapUrl" />
-          <div class="z-9 server-dots" :class="`level-${getDotLevel(server)}`">
-            <span v-for="i in getDotTotal(server)" :key="i" class="server-dot"
-              :class="{ filled: i <= getDotFilled(server) }"></span>
-          </div>
-          <div class="server-card-mask"></div>
-          <div
-            class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold whitespace-nowrap text-ellipsis overflow-hidden">
-            {{ server.serverName }}
-          </div>
-          <div class="flex justify-between">
-            <NEllipsis
-              class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold w-220px"
-              :max-line="1">
-              {{ server.mapName }}
-            </NEllipsis>
-            <div class="player-badge mr-5px" :class="getPlayerLevel(server)">
-              <SvgIcon icon="mdi:account-group" class="player-icon" />
-              <span class="player-num">{{ server.numPlayers }}<span class="player-sep">/</span>{{ server.maxPlayers
+          <div class="sercer-card overflow-hidden flex flex-col"
+            v-if="server.isOnline && getSourceServerInfo(server)?.serverName">
+            <img v-if="server.mapUrl" class="server-card-bg" v-lazy="server.mapUrl" />
+            <div class="z-9 server-dots" :class="`level-${getDotLevel(server)}`">
+              <span v-for="i in getDotTotal(server)" :key="i" class="server-dot"
+                :class="{ filled: i <= getDotFilled(server) }"></span>
+            </div>
+            <div class="server-card-mask"></div>
+            <div
+              class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold whitespace-nowrap text-ellipsis overflow-hidden">
+              {{ server.serverName }}
+            </div>
+            <div class="flex justify-between">
+              <NEllipsis
+                class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold w-220px"
+                :max-line="1">
+                {{ server.mapName }}
+              </NEllipsis>
+              <div class="player-badge mr-5px" :class="getPlayerLevel(server)">
+                <SvgIcon icon="mdi:account-group" class="player-icon" />
+                <span class="player-num">{{ server.numPlayers }}<span class="player-sep">/</span>{{ server.maxPlayers
                 }}</span>
+              </div>
             </div>
-          </div>
-          <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
-            <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
-            <NEllipsis class="flex items-center justify-center flex-1">
-              {{ server.mapLabel ? server.mapLabel :
-                $t('server.noTranslation') }}
-            </NEllipsis>
-            <div class="stat-chip chip-score mr-5px w-160px flex items-center justify-center" v-show="server.mapPhase">
-              <span class="team team-ct">{{ server.CTScore || '0' }}</span>
-              <span class="score-phase">{{ getMapPhaseText(server.mapPhase || '') }}</span>
-              <span class="team team-t">{{ server.TScore || '0' }}</span>
+            <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
+              <SvgIcon icon="tdesign:translate" class="mr-5px font-size-18px" />
+              <NEllipsis class="flex items-center justify-center flex-1">
+                {{ server.mapLabel ? server.mapLabel :
+                  $t('server.noTranslation') }}
+              </NEllipsis>
+              <div class="stat-chip chip-score mr-5px w-160px flex items-center justify-center"
+                v-show="server.mapPhase">
+                <span class="team team-ct">{{ server.CTScore || '0' }}</span>
+                <span class="score-phase">{{ getMapPhaseText(server.mapPhase || '') }}</span>
+                <span class="team team-t">{{ server.TScore || '0' }}</span>
+              </div>
             </div>
-          </div>
-          <div class="flex-y-center ml-5px mt-6px position-relative font-bold">
-            <NTag size="small" round class="mr-3px" ghost
-              :type="dictOptions('game_type').find((item: any) => item.value === server.type)?.type || 'primary'"
-              v-show="server.type">
-              {{dictOptions('game_type').find((item: any) => item.value === server.type)?.label}}
-            </NTag>
-            <NTag v-for="(tag, idx) in server.tag" :key="idx" size="small" round class="mr-3px" type="success"
-              v-show="server.tag.length > 0">
-              {{dictOptions('game_tag').find((item: any) => item.value === tag)?.label}}
-            </NTag>
-            <NTag size="small" round class="mr-3px" ghost :type="getPingType(server.ping)">
-              {{ server.ping ? `${server.ping}ms` : '???' }}
-            </NTag>
-            <NTag v-if="server.dateTimeOriginal" size="small" round class="mr-3px" ghost type="info">
-              {{ $t('server.minutesAgo', { count: calculatePastMinutes(server.dateTimeOriginal) }) }}
-            </NTag>
-          </div>
-          <div class="server-card-button mt-6px">
-            <div class="one-btn h-30px" @click="handleJoin(server)">
-              <SvgIcon icon="iconamoon:enter" class="text-22px" />
+            <div class="flex items-center ml-5px mt-6px position-relative font-bold">
+              <NTag size="small" round class="mr-3px" ghost
+                :type="dictOptions('game_type').find((item: any) => item.value === server.type)?.type || 'primary'"
+                v-show="server.type">
+                {{dictOptions('game_type').find((item: any) => item.value === server.type)?.label}}
+              </NTag>
+              <NTag v-for="(tag, idx) in server.tag" :key="idx" size="small" round class="mr-3px" type="success"
+                v-show="server.tag.length > 0">
+                {{dictOptions('game_tag').find((item: any) => item.value === tag)?.label}}
+              </NTag>
+              <NTag size="small" round class="mr-3px" ghost :type="getPingType(server.ping)">
+                {{ server.ping ? `${server.ping}ms` : '???' }}
+              </NTag>
+              <!-- 上线时间徽标：参考在线人数样式，其他 Tag 靠左、徽标靠右 -->
+              <div v-if="server.dateTimeOriginal" class="online-time-badge ml-auto mr-5px">
+                <SvgIcon icon="mdi:clock-outline" class="online-time-icon" />
+                <span class="online-time-num">
+                  {{ $t('server.minutesAgo', { count: calculatePastMinutes(server.dateTimeOriginal) }) }}
+                </span>
+              </div>
             </div>
-            <div class="two-btn h-30px" @click="handleCopy(server)">
-              <SvgIcon icon="solar:copy-outline" class="text-22px" />
-            </div>
-            <div class="three-btn h-30px" @click="handleAutoJoin(server)">
-              <SvgIcon icon="material-symbols:alarm-smart-wake-outline" class="text-22px" />
-            </div>
-          </div>
-        </div>
-        <div v-else class="sercer-card overflow-hidden flex flex-col">
-          <div class="server-offline-bg"></div>
-          <div class="z-9 server-offline"></div>
-          <div class="server-card-mask"></div>
-          <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
-            <SvgIcon icon="material-symbols:cloud-off" class="mr-5px font-size-18px text-yellow-400" />
-            {{ getSourceServerInfo(server)?.serverName }}
-          </div>
-          <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
-            <SvgIcon icon="mdi:server-off" class="mr-5px font-size-16px text-gray-400" />
-            {{ $t('server.offline') }}
-          </div>
-          <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#a0a0a0 font-bold">
-            {{ $t('server.waiting') }}
-          </div>
-          <div class="server-card-button mt-6px">
-            <div class="three-btn h-30px" @click="handleRefresh(server)">
-              <div :class="{ 'refresh-icon-spinning': refreshingAddrs.includes(server.connectStr) }">
-                <SvgIcon icon="material-symbols:refresh" class="text-22px" />
+            <div class="server-card-button mt-6px"> 
+              <div class="one-btn h-30px" @click="handleJoin(server)">
+                <SvgIcon icon="iconamoon:enter" class="text-22px" />
+              </div>
+              <div class="two-btn h-30px" @click="handleCopy(server)">
+                <SvgIcon icon="solar:copy-outline" class="text-22px" />
+              </div>
+              <div class="three-btn h-30px" @click="handleAutoJoin(server)">
+                <SvgIcon icon="material-symbols:alarm-smart-wake-outline" class="text-22px" />
               </div>
             </div>
           </div>
-        </div>
-      </NGridItem>
-    </NGrid>
+          <div v-else class="sercer-card overflow-hidden flex flex-col">
+            <div class="server-offline-bg"></div>
+            <div class="z-9 server-offline"></div>
+            <div class="server-card-mask"></div>
+            <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
+              <SvgIcon icon="material-symbols:cloud-off" class="mr-5px font-size-18px text-yellow-400" />
+              {{ getSourceServerInfo(server)?.serverName }}
+            </div>
+            <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#fff font-bold">
+              <SvgIcon icon="mdi:server-off" class="mr-5px font-size-16px text-gray-400" />
+              {{ $t('server.offline') }}
+            </div>
+            <div class="mt-6px ml-5px font-size-13px flex items-center position-relative color-#a0a0a0 font-bold">
+              {{ $t('server.waiting') }}
+            </div>
+            <div class="server-card-button mt-6px">
+              <div class="three-btn h-30px" @click="handleRefresh(server)">
+                <div :class="{ 'refresh-icon-spinning': refreshingAddrs.includes(server.connectStr) }">
+                  <SvgIcon icon="material-symbols:refresh" class="text-22px" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </NGridItem>
+      </NGrid>
     </div>
   </div>
 </template>
@@ -591,6 +596,44 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   margin: 0 2px;
   opacity: 0.45;
   font-weight: 400;
+}
+
+/* 上线时间徽标（参考在线人数 player-badge 样式） */
+.online-time-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 13px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(var(--app-rgb), 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.55);
+    border-color: rgba(var(--app-rgb), 0.18);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  }
+}
+
+.online-time-icon {
+  font-size: 13px;
+  opacity: 0.9;
+  color: #667eea;
+}
+
+.online-time-num {
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
 }
 
 .stat-chip {

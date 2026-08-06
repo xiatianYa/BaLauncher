@@ -259,7 +259,8 @@ const getSortOrder = (field: SortField) => {
   grid-template-columns: 2fr 1.5fr 1.2fr 80px 100px 100px;
   gap: 16px;
   padding: 0 16px 8px;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
+  // 分隔线颜色随主题变化（--app-rgb 深色为白、浅色为暖黑）
+  border-bottom: 1px solid rgba(var(--app-rgb), 0.08);
 
   .th {
     font-size: 13px;
@@ -278,7 +279,8 @@ const getSortOrder = (field: SortField) => {
       transition: color 0.2s ease;
 
       &:hover {
-        color: rgba(255,255,255,0.9);
+        // 排序表头悬停高亮颜色随主题变化
+        color: rgba(var(--app-rgb), 0.9);
       }
 
       .sort-icon {
@@ -309,7 +311,8 @@ const getSortOrder = (field: SortField) => {
   align-items: center;
   padding: 16px;
   border-radius: 12px;
-  background: rgba(255,255,255,0.03);
+  // 行背景色随主题变化，浅色主题下不再是一块淡白
+  background: rgba(var(--app-rgb), 0.03);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.25s ease;
   overflow: hidden;
@@ -365,7 +368,8 @@ const getSortOrder = (field: SortField) => {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: rgba(255,255,255,0.95);
+    // 服务器名颜色随主题变化
+    color: rgba(var(--app-rgb), 0.95);
   }
 }
 
@@ -384,7 +388,8 @@ const getSortOrder = (field: SortField) => {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: rgba(255,255,255,0.9);
+    // 地图名颜色随主题变化
+    color: rgba(var(--app-rgb), 0.9);
   }
 
   .map-label {
