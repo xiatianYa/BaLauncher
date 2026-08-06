@@ -8,6 +8,9 @@ declare namespace Api {
     /** Community list */
     type CommunityList = Community[];
 
+    /** Community page list */
+    type CommunityPageList = Common.PaginatingQueryRecord<Community>;
+
     /** Community */
     type Community = Common.CommonRecord<{
       /** community name */

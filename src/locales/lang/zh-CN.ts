@@ -11,6 +11,7 @@ export default {
   routes: {
     home: '首页',
     server: '服务器',
+    community: '社区导航',
     tools: '工具箱',
     setting: '设置',
     updateLog: '更新日志',
@@ -102,6 +103,16 @@ export default {
         cancel: '取消',
       },
     },
+  },
+  community: {
+    placeholderDesc: '社区导航功能建设中，敬请期待。',
+    subtitle: '游戏社区导航',
+    empty: '暂无社区数据',
+    loading: '加载中...',
+    noMore: '没有更多了',
+    visit: '前往',
+    noWebsite: '该社区暂未配置网站',
+    refresh: '刷新',
   },
   tools: {
     title: '工具箱',

@@ -11,10 +11,7 @@ import iconServer from '@/assets/imgs/menu/menu-server.png';
 import iconTools from '@/assets/imgs/menu/menu-tools.png';
 import iconSetting from '@/assets/imgs/menu/menu-setting.png';
 import iconUpdateLog from '@/assets/imgs/menu/menu-update-log.png';
-import iconHall from '@/assets/imgs/menu/menu-hall.png';
-import iconRole from '@/assets/imgs/menu/menu-role.png';
-import iconUser from '@/assets/imgs/menu/menu-user.png';
-import iconDict from '@/assets/imgs/menu/menu-dict.png';
+import iconCommunity from '@/assets/imgs/menu/menu-community.png';
 
 
 export const useRouteStore = defineStore(SetupStoreId.Route, () => {
@@ -80,6 +77,13 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       key: "tools",
       icon: "gg:toolbox",
       img: iconTools,
+      isPersistent: true
+    },
+    {
+      name: "routes.community",
+      key: "community",
+      icon: "mdi:account-group",
+      img: iconCommunity,
       isPersistent: true
     },
     {

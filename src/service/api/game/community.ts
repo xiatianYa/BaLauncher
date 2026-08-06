@@ -2,7 +2,7 @@ import { request } from '@/service/request';
 
 // 获取社区列表(分页)
 export function fetchGetCommunityPage(params?: Api.Game.CommunitySearchParams) {
-  return request<Api.Game.CommunityList>({
+  return request<Api.Game.CommunityPageList>({
     url: '/gameCommunity/page',
     method: 'get',
     params

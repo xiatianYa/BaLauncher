@@ -10,6 +10,7 @@ import iconDict from '@/assets/imgs/menu/menu-dict.png';
 import iconTools from '@/assets/imgs/menu/menu-tools.png';
 import iconSetting from '@/assets/imgs/menu/menu-setting.png';
 import iconUpdateLog from '@/assets/imgs/menu/menu-update-log.png';
+import iconCommunity from '@/assets/imgs/menu/menu-community.png';
 
 
 
@@ -30,6 +31,13 @@ const isAdmin = computed(() =>
 );
 
 const SideNavRoutes: Api.Route.SideNavItem[] = reactive([
+    {
+        name: "routes.community",
+        key: "community",
+        icon: "mdi:account-group",
+        img: iconCommunity,
+        isPersistent: true
+    },
     {
         name: "routes.tools",
         key: "tools",

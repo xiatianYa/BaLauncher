@@ -2,28 +2,21 @@
 import { useAuthStore } from '@/store/modules/auth';
 import { ThemeColor } from '@/constants/app';
 import { $t } from '@/locales';
+import { useDict } from '@/hooks/business/dict';
 
 const authStore = useAuthStore();
+const { dictLabel, dictType } = useDict();
 interface RoleInfo {
   label: string;
   type: ThemeColor;
 }
 
 const getRoleInfo = (role: string) : RoleInfo => {
-  switch (role) {
-    case 'R_SUPER':
-      //返回RoleInfo
-      return { label: $t('layout.header.roles.superAdmin'), type: 'error' };
-    case 'R_ADMIN':
-      //返回RoleInfo
-      return { label: $t('layout.header.roles.admin'), type: 'warning' };
-    case 'R_USER':
-      //返回RoleInfo
-      return { label: $t('layout.header.roles.user'), type: 'info' };
-    default:
-      //返回RoleInfo
-      return { label: role || $t('layout.header.roles.guest'), type: 'default' }; 
-  }
+  // 角色信息从系统字典 user_role 读取（label 文案 + 颜色类型）
+  return {
+    label: dictLabel('user_role', role) || role || dictLabel('user_role', 'guest'),
+    type: dictType('user_role', role)
+  };
 };
 </script>
 

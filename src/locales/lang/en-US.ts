@@ -11,6 +11,7 @@ export default {
   routes: {
     home: 'Home',
     server: 'Server',
+    community: 'Community',
     tools: 'Tools',
     setting: 'Settings',
     updateLog: 'VerLog',
@@ -102,6 +103,16 @@ export default {
         cancel: 'Cancel',
       },
     },
+  },
+  community: {
+    placeholderDesc: 'Community navigation is under construction. Stay tuned!',
+    subtitle: 'Game Community',
+    empty: 'No communities yet',
+    loading: 'Loading...',
+    noMore: 'No more',
+    visit: 'Visit',
+    noWebsite: 'This community has no website yet',
+    refresh: 'Refresh',
   },
   tools: {
     title: 'Tools',

@@ -35,6 +35,15 @@ function createVueRoutes(): RouteRecordRaw[] {
                     }
                 },
                 {
+                    path: 'community',
+                    name: 'community',
+                    component: () => import('@/views/community/index.vue'),
+                    meta: {
+                        title: '社区导航',
+                        requiresAuth: false
+                    }
+                },
+                {
                     path: 'tools',
                     name: 'tools',
                     component: () => import('@/views/tools/index.vue'),
