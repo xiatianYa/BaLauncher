@@ -21,8 +21,14 @@ const WEATHER_API_BASE = 'https://kt6hf2gam9.re.qweatherapi.com/weather/v1/curre
 /** Geo 城市查询接口（根据经纬度反查城市信息） */
 const GEO_API_BASE = 'https://kt6hf2gam9.re.qweatherapi.com/geo/v2/city/lookup'
 
-/** IP 定位服务（免 Key，返回当前公网 IP 对应的城市级经纬度） */
+/** IP 定位服务（免 Key，返回指定公网 IP 对应的城市级经纬度） */
 const GEO_API_URL = 'https://ipwho.is/'
+
+/** IPv4 出口查询端点（域名仅 A 记录，强制走 IPv4，避免 IPv6 定位误判） */
+const IPV4_ENDPOINT = 'https://4.ipwho.de/ip'
+
+/** 定位请求超时（毫秒），避免服务不可达时长时间阻塞 */
+const GEO_TIMEOUT = 5000
 
 /** IP 定位失败时的兜底坐标（北京） */
 const FALLBACK_LAT = 39.92
@@ -115,10 +121,25 @@ interface CachedLocation {
 /** 缓存的定位结果 */
 let locationCache: CachedLocation | null = null
 
+/** 请求定位服务并解析 JSON（带超时，避免服务不可达时长时间阻塞） */
+async function fetchGeoWithTimeout(url: string): Promise<GeoLocationResponse> {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), GEO_TIMEOUT)
+  try {
+    const res = await fetch(url, { signal: controller.signal })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return (await res.json()) as GeoLocationResponse
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
 /**
  * 获取当前经纬度（基于公网 IP 定位，城市级精度，对天气查询足够）
- * - 结果缓存 10 分钟
- * - 定位失败时回退到默认坐标（北京，不缓存，下次重试）
+ * - 优先强制 IPv4 定位：IPv6 出口会被 GeoIP 按 WHOIS 注册地误判
+ *   （如电信 240e:3bb 段会被定位到北京），故先取 IPv4 出口 IP 再精确查询
+ * - IPv4 查询失败时回退到普通 IP 定位，结果缓存 10 分钟
+ * - 全部失败时回退到默认坐标（北京，不缓存，下次重试）
  */
 async function getCurrentLocation(): Promise<{ latitude: number; longitude: number; city: string }> {
   // 命中缓存则直接返回
@@ -126,25 +147,41 @@ async function getCurrentLocation(): Promise<{ latitude: number; longitude: numb
     return locationCache
   }
 
-  try {
-    const res = await fetch(GEO_API_URL)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = (await res.json()) as GeoLocationResponse
-
-    if (data.success && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
-      locationCache = {
-        latitude: data.latitude,
-        longitude: data.longitude,
-        city: data.city || '',
-        expireAt: Date.now() + LOCATION_CACHE_TTL
-      }
-      return locationCache
+  const applyCache = (data: GeoLocationResponse) => {
+    locationCache = {
+      latitude: data.latitude!,
+      longitude: data.longitude!,
+      city: data.city || '',
+      expireAt: Date.now() + LOCATION_CACHE_TTL
     }
-    throw new Error('定位数据无效')
+    return locationCache
+  }
+
+  // 1) 强制 IPv4 定位：先取 IPv4 出口 IP，再按该 IP 精确查询
+  try {
+    const res = await fetch(IPV4_ENDPOINT, { signal: AbortSignal.timeout(GEO_TIMEOUT) })
+    const ipv4 = res.ok ? (await res.text()).trim() : ''
+    if (/^\d+(\.\d+){3}$/.test(ipv4)) {
+      const data = await fetchGeoWithTimeout(`${GEO_API_URL}${ipv4}`)
+      if (data.success && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+        return applyCache(data)
+      }
+    }
+  } catch (error) {
+    console.warn('[WEATHER] IPv4 定位失败，回退到普通 IP 定位:', error)
+  }
+
+  // 2) 普通 IP 定位（可能走 IPv6 出口，结果可能不准，仅作保底）
+  try {
+    const data = await fetchGeoWithTimeout(GEO_API_URL)
+    if (data.success && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
+      return applyCache(data)
+    }
   } catch (error) {
     console.warn('[WEATHER] IP 定位失败，回退默认坐标:', error)
-    return { latitude: FALLBACK_LAT, longitude: FALLBACK_LON, city: 'Beijing' }
   }
+
+  return { latitude: FALLBACK_LAT, longitude: FALLBACK_LON, city: 'Beijing' }
 }
 
 /* ============ 天气请求 ============ */

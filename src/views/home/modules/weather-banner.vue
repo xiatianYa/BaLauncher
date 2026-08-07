@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { $t } from '@/locales';
+import { useAuthStore } from '@/store/modules/auth';
 import SvgIcon from '@/components/custom/svg-icon.vue';
+import HomeEmptyState from './empty-state.vue';
 
 defineOptions({
   name: 'WeatherBanner'
 });
+
+const authStore = useAuthStore();
 
 /** 天气数据（主进程 fetchCurrentWeather 返回，weather 字段为 JSON 字符串需解析） */
 const weather = ref<Api.Weather.Current | null>(null);
@@ -133,8 +137,15 @@ const metrics = computed(() => {
   ];
 });
 
-/** 获取并解析天气数据 */
+/** 获取并解析天气数据（未登录不发请求，直接显示无数据） */
 const fetchWeather = async () => {
+  if (!authStore.isLogin) {
+    loading.value = false;
+    error.value = $t('home.noData');
+    weather.value = null;
+    city.value = '';
+    return;
+  }
   loading.value = true;
   error.value = '';
   try {
@@ -154,6 +165,14 @@ const fetchWeather = async () => {
 };
 
 onMounted(fetchWeather);
+
+// 未登录时 home 页面可能先于登录挂载，登录成功后补拉一次天气
+watch(
+  () => authStore.isLogin,
+  (v) => {
+    if (v) fetchWeather();
+  }
+);
 </script>
 
 <template>
@@ -180,13 +199,9 @@ onMounted(fetchWeather);
       </div>
     </div>
 
-    <!-- 加载失败 -->
-    <div v-else-if="error || !weather" class="empty-state">
-      <div class="empty-icon-wrap">
-        <SvgIcon icon="mdi:weather-cloudy-alert" class="empty-icon" />
-      </div>
-      <p class="empty-title">{{ error || $t('home.weatherFetchFailed') }}</p>
-    </div>
+    <!-- 加载失败 / 未登录无数据 -->
+    <HomeEmptyState v-else-if="error || !weather" icon="mdi:weather-cloudy-alert"
+      :title="error || $t('home.weatherFetchFailed')" />
 
     <!-- 天气数据 -->
     <div v-else class="weather-body">
@@ -298,39 +313,6 @@ onMounted(fetchWeather);
           box-shadow: 0 0 4px rgba(67, 233, 123, 0.6);
         }
       }
-    }
-  }
-
-  /* 空状态 */
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    color: rgba(var(--app-rgb), 0.4);
-
-    .empty-icon-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: rgba(var(--app-rgb), 0.08);
-
-      .empty-icon {
-        font-size: 22px;
-        color: rgba(var(--app-rgb), 0.6);
-      }
-    }
-
-    .empty-title {
-      margin: 0;
-      font-size: 12px;
-      font-weight: 500;
-      color: rgba(var(--app-rgb), 0.7);
     }
   }
 

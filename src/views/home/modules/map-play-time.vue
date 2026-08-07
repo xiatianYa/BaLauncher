@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { fetchGetMapPlayCountList } from '@/service/api';
+import { useAuthStore } from '@/store/modules/auth';
 import SvgIcon from '@/components/custom/svg-icon.vue';
+import HomeEmptyState from './empty-state.vue';
 import { $t } from '@/locales';
 
+const authStore = useAuthStore();
 const mapPlayCountList = ref<Api.Game.GameMapPlayCountVo[]>([]);
 
 const rankColors = ['#ff4d4f', '#faad14', '#52c41a', '#4096ff', '#722ed1', '#13c2c2', '#eb2f96', '#fa8c16'];
@@ -28,12 +31,23 @@ const sortedMapList = computed(() => {
 /** 空状态：无排行数据 */
 const isEmpty = computed(() => sortedMapList.value.length === 0);
 
-onMounted(async () => {
+/** 未登录时不发请求，登录后才加载数据（home 页面可能先于登录挂载） */
+const loadData = async () => {
+    if (!authStore.isLogin) return;
     const { data, error } = await fetchGetMapPlayCountList();
     if (!error && data) {
         mapPlayCountList.value = data;
     }
-});
+};
+
+onMounted(loadData);
+
+watch(
+    () => authStore.isLogin,
+    (v) => {
+        if (v) loadData();
+    }
+);
 </script>
 
 <template>
@@ -47,12 +61,7 @@ onMounted(async () => {
         </div>
 
         <!-- 空状态 -->
-        <div v-if="isEmpty" class="empty-state">
-            <div class="empty-icon-wrap">
-                <SvgIcon icon="mdi:map-outline" class="empty-icon" />
-            </div>
-            <p class="empty-title">{{ $t('home.noData') }}</p>
-        </div>
+        <HomeEmptyState v-if="isEmpty" icon="mdi:map-outline" :title="$t('home.noData')" />
 
         <!-- 排行列表 -->
         <div v-else class="map-list">
@@ -133,38 +142,6 @@ onMounted(async () => {
                 text-overflow: ellipsis;
                 white-space: nowrap;
             }
-        }
-    }
-
-    .empty-state {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        color: rgba(var(--app-rgb), 0.4);
-
-        .empty-icon-wrap {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 56px;
-            height: 56px;
-            border-radius: 14px;
-            background: rgba(var(--app-rgb), 0.08);
-
-            .empty-icon {
-                font-size: 28px;
-                color: rgba(var(--app-rgb), 0.6);
-            }
-        }
-
-        .empty-title {
-            margin: 0;
-            font-size: 13.5px;
-            font-weight: 500;
-            color: rgba(var(--app-rgb), 0.7);
         }
     }
 

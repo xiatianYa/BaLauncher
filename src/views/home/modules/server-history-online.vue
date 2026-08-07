@@ -4,6 +4,8 @@ import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { useGameStore } from '@/store/modules/game';
 import { useThemeStore } from '@/store/modules/theme';
+import { useAuthStore } from '@/store/modules/auth';
+import HomeEmptyState from './empty-state.vue';
 import { fetchGetCommunityOnlineBar } from '@/service/api';
 import { ECOption, useEcharts } from '@/hooks/common/echarts';
 import type { BarSeriesOption } from 'echarts/charts';
@@ -15,6 +17,7 @@ defineOptions({
 
 const gameStore = useGameStore();
 const themeStore = useThemeStore();
+const authStore = useAuthStore();
 
 /* ===== 图表类型切换 ===== */
 
@@ -29,9 +32,9 @@ const CHART_TYPE_OPTIONS = [
 /* ===== 时间范围选择 ===== */
 
 const HOUR_OPTIONS = [
-  { label: '一天', value: 24 },
-  { label: '三天', value: 72 },
-  { label: '一周', value: 168 }
+  { label: $t('home.timeRangeOneDay'), value: 24 },
+  { label: $t('home.timeRangeThreeDays'), value: 72 },
+  { label: $t('home.timeRangeOneWeek'), value: 168 }
 ];
 const selectedHours = ref(24);
 
@@ -218,7 +221,7 @@ const buildPieOptions = (): ECOption => {
       distanceToLabelLine: 4,
       formatter: (params: any) => {
         const pct = params.percent >= 1 ? params.percent.toFixed(0) : '<1';
-        return `{name|${params.name}}\n{count|${params.value} 人 · ${pct}%}`;
+        return `{name|${params.name}}\n{count|${params.value} ${$t('home.onlineUser')} · ${pct}%}`;
       },
       rich: {
         name: {
@@ -319,6 +322,11 @@ const isPieEmpty = computed(() => pieData.value.length === 0);
 /* ===== 数据获取 ===== */
 
 const fetchBarData = async () => {
+  if (!authStore.isLogin) {
+    loading.value = false;
+    error.value = '';
+    return;
+  }
   loading.value = true;
   error.value = '';
   try {
@@ -372,7 +380,20 @@ const handleChartTypeChange = (type: ChartType) => {
   renderChart();
 };
 
-onMounted(renderChart);
+/** 未登录时不发请求，登录后才加载数据（home 页面可能先于登录挂载） */
+const loadChartData = async () => {
+  if (!authStore.isLogin) return;
+  await renderChart();
+};
+
+onMounted(loadChartData);
+
+watch(
+  () => authStore.isLogin,
+  (v) => {
+    if (v) loadChartData();
+  }
+);
 
 // 主题切换时重新渲染图表，让 ECharts 的 dark/light 主题 + tooltip 配色同步生效
 watch(() => themeStore.darkMode, () => {
@@ -418,30 +439,15 @@ watch(() => themeStore.darkMode, () => {
     </div>
 
     <!-- 加载失败 -->
-    <div v-else-if="chartType === 'bar' && error" class="empty-state">
-      <div class="empty-icon-wrap">
-        <SvgIcon icon="mdi:chart-line-variant" class="empty-icon" />
-      </div>
-      <p class="empty-title">{{ error }}</p>
-    </div>
+    <HomeEmptyState v-else-if="chartType === 'bar' && error" icon="mdi:chart-line-variant" :title="error" />
 
     <!-- 柱状图空数据 -->
-    <div v-else-if="chartType === 'bar' && isBarEmpty" class="empty-state">
-      <div class="empty-icon-wrap">
-        <SvgIcon icon="mdi:chart-line" class="empty-icon" />
-      </div>
-      <p class="empty-title">{{ $t('home.noData') }}</p>
-      <span class="empty-tip">{{ $t('home.underConstruction') }}</span>
-    </div>
+    <HomeEmptyState v-else-if="chartType === 'bar' && isBarEmpty" icon="mdi:chart-line" :title="$t('home.noData')"
+      :description="$t('home.underConstruction')" />
 
     <!-- 饼图空数据 -->
-    <div v-else-if="chartType === 'pie' && isPieEmpty" class="empty-state">
-      <div class="empty-icon-wrap">
-        <SvgIcon icon="mdi:chart-pie" class="empty-icon" />
-      </div>
-      <p class="empty-title">{{ $t('home.noData') }}</p>
-      <span class="empty-tip">{{ $t('home.underConstruction') }}</span>
-    </div>
+    <HomeEmptyState v-else-if="chartType === 'pie' && isPieEmpty" icon="mdi:chart-pie" :title="$t('home.noData')"
+      :description="$t('home.underConstruction')" />
 
     <!-- 图表 -->
     <div v-else ref="domRef" class="chart-container" />
@@ -606,64 +612,28 @@ watch(() => themeStore.darkMode, () => {
     }
   }
 
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    color: rgba(var(--app-rgb), 0.4);
-
-    .empty-icon-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
-      background: rgba(var(--app-rgb), 0.08);
-
-      .empty-icon {
-        font-size: 28px;
-        color: rgba(var(--app-rgb), 0.6);
-      }
+  @keyframes cardIn {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(0.98);
     }
 
-    .empty-title {
-      margin: 0;
-      font-size: 13.5px;
-      font-weight: 500;
-      color: rgba(var(--app-rgb), 0.7);
-    }
-
-    .empty-tip {
-      font-size: 11.5px;
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
     }
   }
-}
 
-@keyframes cardIn {
-  from {
-    opacity: 0;
-    transform: translateY(16px) scale(0.98);
-  }
+  @keyframes skeletonPulse {
 
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
+    0%,
+    100% {
+      opacity: 0.4;
+    }
 
-@keyframes skeletonPulse {
-
-  0%,
-  100% {
-    opacity: 0.4;
-  }
-
-  50% {
-    opacity: 0.8;
+    50% {
+      opacity: 0.8;
+    }
   }
 }
 </style>

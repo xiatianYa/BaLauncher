@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useGameStore } from '@/store/modules/game';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
+import HomeEmptyState from './empty-state.vue';
 
 defineOptions({
   name: 'ServerCurrentOnline'
@@ -47,13 +48,8 @@ const isEmpty = computed(() => onlineServers.value.length === 0);
     </div>
 
     <!-- 空状态 -->
-    <div v-if="isEmpty" class="empty-state">
-      <div class="empty-icon-wrap">
-        <SvgIcon icon="mdi:server-off" class="empty-icon" />
-      </div>
-      <p class="empty-title">{{ $t('home.noData') }}</p>
-      <span class="empty-tip">{{ $t('home.serverCurrentOnlineTip') }}</span>
-    </div>
+    <HomeEmptyState v-if="isEmpty" icon="mdi:server-off" :title="$t('home.noData')"
+      :description="$t('home.serverCurrentOnlineTip')" />
 
     <!-- 数据统计 -->
     <div v-else class="online-body">
@@ -182,42 +178,6 @@ const isEmpty = computed(() => onlineServers.value.length === 0);
         background: #43e97b;
         box-shadow: 0 0 4px rgba(67, 233, 123, 0.6);
       }
-    }
-  }
-
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    color: rgba(var(--app-rgb), 0.4);
-
-    .empty-icon-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
-      background: rgba(var(--app-rgb), 0.08);
-
-      .empty-icon {
-        font-size: 28px;
-        color: rgba(var(--app-rgb), 0.6);
-      }
-    }
-
-    .empty-title {
-      margin: 0;
-      font-size: 13.5px;
-      font-weight: 500;
-      color: rgba(var(--app-rgb), 0.7);
-    }
-
-    .empty-tip {
-      font-size: 11.5px;
     }
   }
 

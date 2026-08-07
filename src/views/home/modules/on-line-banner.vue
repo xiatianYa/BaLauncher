@@ -3,6 +3,7 @@ import { computed } from 'vue';
 import { useAppStore } from '@/store/modules/app';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
+import HomeEmptyState from './empty-state.vue';
 import { useDict } from '@/hooks/business/dict';
 import { ThemeColor } from '@/constants/app';
 
@@ -79,13 +80,8 @@ defineOptions({
     </div>
 
     <!-- 空状态 -->
-    <div v-else class="empty-state">
-      <div class="empty-icon-wrap">
-        <SvgIcon icon="mdi:account-off-outline" class="empty-icon" />
-      </div>
-      <p class="empty-title">{{ $t('home.noData') }}</p>
-      <span class="empty-tip">{{ $t('home.onlineUserTip') }}</span>
-    </div>
+    <HomeEmptyState v-else icon="mdi:account-off-outline" :title="$t('home.noData')"
+      :description="$t('home.onlineUserTip')" />
   </div>
 </template>
 
@@ -259,43 +255,8 @@ defineOptions({
       }
     }
   }
-
-  .empty-state {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    color: rgba(var(--app-rgb), 0.4);
-
-    .empty-icon-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
-      background: rgba(var(--app-rgb), 0.08);
-
-      .empty-icon {
-        font-size: 28px;
-        color: rgba(var(--app-rgb), 0.6);
-      }
-    }
-
-    .empty-title {
-      margin: 0;
-      font-size: 13.5px;
-      font-weight: 500;
-      color: rgba(var(--app-rgb), 0.7);
-    }
-
-    .empty-tip {
-      font-size: 11.5px;
-    }
-  }
 }
+
 
 @keyframes cardIn {
   from {
