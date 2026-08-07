@@ -10,6 +10,7 @@ import { setupAutomaticJoinIpc } from './automaticJoin'
 import { setupCs2CfgIpc } from './cs2Cfg'
 import { setupNotificationIpc } from '../notificationWindow'
 import { setupAgreementIpc } from './agreementWindow'
+import { setupWeatherIpc } from './weather'
 
 export function setupAllIpcHandlers() {
   setupWindowControlIpc()
@@ -23,4 +24,5 @@ export function setupAllIpcHandlers() {
   setupCs2CfgIpc()
   setupNotificationIpc(ipcMain)
   setupAgreementIpc()
+  setupWeatherIpc()
 }

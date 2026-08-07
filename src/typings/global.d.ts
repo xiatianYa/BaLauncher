@@ -37,6 +37,7 @@ declare global {
       getImageCacheInfo: () => Promise<{ count: number; totalSize: number }>;
       clearImageCache: () => Promise<{ success: boolean }>;
       openExternalWindow: (url: string) => Promise<void>;
+      fetchCurrentWeather: () => Promise<{ token: string; latitude: number; longitude: number; city: string; weather: string }>;
     };
   }
 

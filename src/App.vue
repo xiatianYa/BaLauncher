@@ -108,10 +108,10 @@ const themeOverrides = computed(() => {
       // 文字
       textColorBase: '#2e2b26',
       textColor1: '#2e2b26',
-      textColor2: '#6f685c',
-      textColor3: '#a59d90',
-      textColorDisabled: '#c4bcb0',
-      placeholderColor: '#b0a99c',
+      textColor2: '#595348',
+      textColor3: '#7d7568',
+      textColorDisabled: '#b0a79a',
+      placeholderColor: '#8e8677',
       // 边框/分隔线
       borderColor: '#e7ded4',
       borderColorHover: '#d5c9ba',
@@ -121,7 +121,7 @@ const themeOverrides = computed(() => {
       inputColorDisabled: '#f7f0ea',
       inputColorFocus: '#fffdfa',
       // 图标/关闭按钮
-      iconColor: '#a59d90',
+      iconColor: '#8a8172',
       iconColorHover: '#2e2b26',
       iconColorPressed: '#2e2b26',
       closeColorHover: '#efe7de',

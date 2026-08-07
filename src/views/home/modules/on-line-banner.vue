@@ -1,8 +1,39 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import { useAppStore } from '@/store/modules/app';
+import { $t } from '@/locales';
+import SvgIcon from '@/components/custom/svg-icon.vue';
+import { useDict } from '@/hooks/business/dict';
+import { ThemeColor } from '@/constants/app';
 
 // 应用仓库
 const appStore = useAppStore();
+const { dictLabel, dictType } = useDict();
+
+/** 角色信息 */
+interface RoleInfo {
+  label: string;
+  type: ThemeColor;
+}
+
+/** 在线玩家数量 */
+const onlineCount = computed(() => appStore.onlineUserList.length);
+
+/** 根据角色 code 获取显示信息 */
+const getRoleInfo = (role: string): RoleInfo => ({
+  label: dictLabel('user_role', role) || role || dictLabel('user_role', 'guest'),
+  type: dictType('user_role', role)
+});
+
+/** ThemeColor → 自定义标签色值映射 */
+const ROLE_COLOR_MAP: Record<ThemeColor, { color: string; bg: string; border: string }> = {
+  error: { color: '#f5576c', bg: 'rgba(245, 87, 108, 0.12)', border: 'rgba(245, 87, 108, 0.2)' },
+  warning: { color: '#f0a020', bg: 'rgba(240, 160, 32, 0.12)', border: 'rgba(240, 160, 32, 0.2)' },
+  success: { color: '#43e97b', bg: 'rgba(67, 233, 123, 0.12)', border: 'rgba(67, 233, 123, 0.2)' },
+  info: { color: '#4facfe', bg: 'rgba(79, 172, 254, 0.12)', border: 'rgba(79, 172, 254, 0.2)' },
+  primary: { color: '#667eea', bg: 'rgba(var(--app-rgb), 0.12)', border: 'rgba(var(--app-rgb), 0.2)' },
+  default: { color: 'rgba(var(--app-rgb), 0.55)', bg: 'rgba(var(--app-rgb), 0.08)', border: 'transparent' }
+};
 
 defineOptions({
   name: 'CreativityBanner'
@@ -10,19 +41,271 @@ defineOptions({
 </script>
 
 <template>
-  <NCard :bordered="true" size="small" class="card-wrapper h-400px" content-class="flex overflow-auto"
-    content-style="padding:10px 10px 10px 10px" header-style="padding:5px 10px 5px 10px;">
-    <NGrid cols="4 s:6 m:8 l:10 xl:12 2xl:14" responsive="screen">
-      <NGridItem v-for="(user, index) in appStore.onlineUserList" :key="index">
-        <NPopover trigger="hover" placement="top">
-          <template #trigger>
-            <img v-lazy="user.avatar" class="h-40px w-40px rounded-full" />
-          </template>
-          <span class="font-bold font-size-12px">{{ user.nickName }}</span>
-        </NPopover>
-      </NGridItem>
-    </NGrid>
-  </NCard>
+  <div class="dash-card online-banner-card">
+    <!-- 卡片头部：标题 + 数量徽章 -->
+    <div class="card-header">
+      <div class="card-title">
+        <SvgIcon icon="mdi:account-group" class="card-title-icon" />
+        <span>{{ $t('home.onlineUser') }}</span>
+      </div>
+      <span class="count-badge">
+        <span class="dot" />
+        {{ onlineCount }}
+      </span>
+    </div>
+
+    <!-- 在线玩家列表 -->
+    <div v-if="onlineCount > 0" class="online-list">
+      <div v-for="(user, index) in appStore.onlineUserList" :key="index" class="online-item">
+        <img v-lazy="user.avatar" class="online-avatar" />
+        <div class="online-info">
+          <span class="online-name">{{ user.nickName }}</span>
+          <div v-if="user.roleCodes?.length" class="online-roles">
+            <span
+              v-for="role in user.roleCodes"
+              :key="role"
+              class="online-role-tag"
+              :style="{
+                color: ROLE_COLOR_MAP[getRoleInfo(role).type].color,
+                background: ROLE_COLOR_MAP[getRoleInfo(role).type].bg,
+                borderColor: ROLE_COLOR_MAP[getRoleInfo(role).type].border
+              }"
+            >
+              {{ getRoleInfo(role).label }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 空状态 -->
+    <div v-else class="empty-state">
+      <div class="empty-icon-wrap">
+        <SvgIcon icon="mdi:account-off-outline" class="empty-icon" />
+      </div>
+      <p class="empty-title">{{ $t('home.noData') }}</p>
+      <span class="empty-tip">{{ $t('home.onlineUserTip') }}</span>
+    </div>
+  </div>
 </template>
 
-<style scoped></style>
+<style scoped lang="scss">
+.dash-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(var(--app-rgb), 0.04);
+  border: 1px solid rgba(var(--app-rgb), 0.07);
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  animation: cardIn 0.45s ease-out forwards;
+  box-sizing: border-box;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-3px);
+    background: rgba(var(--app-rgb), 0.07);
+    border-color: rgba(var(--app-rgb), 0.35);
+    box-shadow: 0 12px 28px rgba(var(--app-rgb), 0.12);
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-shrink: 0;
+
+    .card-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+
+      .card-title-icon {
+        font-size: 17px;
+        color: #667eea;
+        flex-shrink: 0;
+      }
+
+      span {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: var(--n-text-color);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
+    .count-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #43e97b;
+      background: rgba(67, 233, 123, 0.1);
+      border: 1px solid rgba(67, 233, 123, 0.25);
+      flex-shrink: 0;
+
+      .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #43e97b;
+        box-shadow: 0 0 4px rgba(67, 233, 123, 0.6);
+      }
+    }
+  }
+
+  .online-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 2px 4px 2px 2px;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 3px;
+      background: rgba(var(--app-rgb), 0.18);
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: rgba(var(--app-rgb), 0.3);
+    }
+
+    .online-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(var(--app-rgb), 0.03);
+      border: 1px solid rgba(var(--app-rgb), 0.06);
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: rgba(var(--app-rgb), 0.07);
+        border-color: rgba(var(--app-rgb), 0.35);
+        transform: translateX(2px);
+      }
+
+      .online-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        object-fit: cover;
+        border: 2px solid rgba(var(--app-rgb), 0.25);
+        flex-shrink: 0;
+        transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        cursor: pointer;
+
+        &:hover {
+          transform: scale(1.08);
+          border-color: #667eea;
+          box-shadow: 0 4px 12px rgba(var(--app-rgb), 0.35);
+        }
+      }
+
+      .online-info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+
+        .online-name {
+          font-size: 12px;
+          font-weight: 500;
+          color: var(--n-text-color);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .online-roles {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px;
+
+          .online-role-tag {
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+            padding: 1px 7px;
+            border-radius: 8px;
+            font-size: 10.5px;
+            font-weight: 500;
+            border: 1px solid transparent;
+          }
+        }
+      }
+    }
+  }
+
+  .empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: rgba(var(--app-rgb), 0.4);
+
+    .empty-icon-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      background: rgba(var(--app-rgb), 0.08);
+
+      .empty-icon {
+        font-size: 28px;
+        color: rgba(var(--app-rgb), 0.6);
+      }
+    }
+
+    .empty-title {
+      margin: 0;
+      font-size: 13.5px;
+      font-weight: 500;
+      color: rgba(var(--app-rgb), 0.7);
+    }
+
+    .empty-tip {
+      font-size: 11.5px;
+    }
+  }
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+</style>

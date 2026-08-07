@@ -184,5 +184,23 @@ declare namespace Api {
 
     /** 地图订阅分页 */
     type GameMapOrderPageList = Common.PaginatingQueryRecord<GameMapOrderVo>;
+
+    /** 社区在线人数柱状图 - 数据系列 */
+    type CommunityOnlineSeriesVo = {
+      /** 社区ID */
+      communityId: number;
+      /** 社区名称 */
+      communityName: string;
+      /** 各时间点的在线人数 */
+      data: number[];
+    };
+
+    /** 社区在线人数柱状图 VO */
+    type CommunityOnlineBarVo = {
+      /** X轴时间轴（每半小时一个点位） */
+      timeAxis: string[];
+      /** 各社区的数据系列 */
+      series: CommunityOnlineSeriesVo[];
+    };
   }
 }

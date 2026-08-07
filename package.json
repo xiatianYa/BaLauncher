@@ -70,6 +70,7 @@
     "animejs": "^4.3.6",
     "cs2-gsi-z": "^2.0.0",
     "electron-updater": "^6.6.2",
+    "jose": "^6.2.8",
     "md-editor-v3": "^6.4.0",
     "pixi.js": "^8.17.1",
     "steam-server-query": "^1.1.3",

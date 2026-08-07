@@ -117,3 +117,12 @@ export function fetchGetServerMapTimeline(serverId: number, params?: Api.Common.
     }
   });
 }
+
+// 获取社区在线人数柱状图数据
+export function fetchGetCommunityOnlineBar(hours?: number) {
+  return request<Api.Game.CommunityOnlineBarVo>({
+    url: '/gameServerMapRecord/getCommunityOnlineBar',
+    method: 'get',
+    params: { hours }
+  });
+}

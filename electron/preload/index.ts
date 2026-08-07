@@ -81,6 +81,9 @@ contextBridge.exposeInMainWorld("ipcRenderer", {
   openExternalWindow(url: string) {
     return ipcRenderer.invoke('open-external-window', url);
   },
+  fetchCurrentWeather() {
+    return ipcRenderer.invoke('fetch-current-weather');
+  },
 });
 
 // --------- Preload scripts loading ---------

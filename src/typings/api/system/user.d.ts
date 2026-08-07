@@ -30,6 +30,7 @@ declare namespace Api {
       avatar: string;
       id: number;
       nickName: string;
+      roleCodes?: string[];
     }
 
     /** 用户分页列表 */
