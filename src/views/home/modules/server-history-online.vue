@@ -47,23 +47,27 @@ const chartData = ref<Api.Game.CommunityOnlineBarVo | null>(null);
 
 /* ===== 饼图数据（实时汇总，无需 loading） ===== */
 
+/** 社区 ID → 名称 映射（社区列表极少变化，预建 Map 避免逐条 find） */
+const communityNameMap = computed(() => {
+  const map = new Map<number, string>();
+  gameStore.communityList.forEach(c => map.set(c.id, c.communityName));
+  return map;
+});
+
 /** 各社区实时在线人数汇总 */
 const pieData = computed(() => {
   const map = new Map<number, number>();
   gameStore.currentServerWsList.forEach(server => {
     const id = server.communityId;
-    if (id == null) return;
+    if (id == null || !(server.numPlayers || 0)) return;
     map.set(id, (map.get(id) ?? 0) + (server.numPlayers || 0));
   });
 
   return Array.from(map.entries())
-    .map(([communityId, count]) => {
-      const community = gameStore.communityList.find(c => c.id === communityId);
-      return {
-        name: community?.communityName ?? `#${communityId}`,
-        value: count
-      };
-    })
+    .map(([communityId, count]) => ({
+      name: communityNameMap.value.get(communityId) ?? `#${communityId}`,
+      value: count
+    }))
     .sort((a, b) => b.value - a.value);
 });
 

@@ -22,10 +22,13 @@ const formatPlayCount = (count: number): string => {
     return $t('home.playCount', { count });
 };
 
+/** 排行展示条数上限（卡片内滚动，控制初始渲染 DOM 数量） */
+const DISPLAY_MAX = 50;
+
 const sortedMapList = computed(() => {
     return [...mapPlayCountList.value]
         .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
-        .slice(0, 100);
+        .slice(0, DISPLAY_MAX);
 });
 
 /** 空状态：无排行数据 */
@@ -65,8 +68,7 @@ watch(
 
         <!-- 排行列表 -->
         <div v-else class="map-list">
-            <div v-for="(item, index) in sortedMapList" :key="item.mapId || index"
-                class="map-item" :style="{ '--delay': `${Math.min(index, 10) * 0.04}s` }">
+            <div v-for="(item, index) in sortedMapList" :key="item.mapId || index" class="map-item">
                 <div class="map-rank" :style="{
                     backgroundColor: index < 3 ? rankColors[index] : 'rgba(var(--app-rgb), 0.06)',
                     color: index < 3 ? '#fff' : 'rgba(var(--app-rgb), 0.4)'
@@ -172,9 +174,6 @@ watch(
             background: rgba(var(--app-rgb), 0.03);
             border: 1px solid rgba(var(--app-rgb), 0.06);
             transition: all 0.25s ease;
-            animation: cardIn 0.4s ease-out forwards;
-            animation-delay: var(--delay);
-            opacity: 0;
 
             &:hover {
                 background: rgba(var(--app-rgb), 0.07);

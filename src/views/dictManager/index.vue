@@ -1095,8 +1095,8 @@ onUnmounted(() => {
         min-width: 100%;
         padding: 5px;
         border-radius: 10px;
-        background: #1e1f24;
-        border: 1px solid rgba(var(--app-rgb), 0.1);
+        background: var(--n-color);
+        border: 1px solid var(--n-border-color);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
         box-sizing: border-box;
 

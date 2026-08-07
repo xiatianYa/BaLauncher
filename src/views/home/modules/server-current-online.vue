@@ -11,9 +11,14 @@ defineOptions({
 
 const gameStore = useGameStore();
 
-/** 在线服务器列表（WebSocket 全量推送，含 numPlayers 实时人数） */
+/** 展示列表上限：避免 WebSocket 全量推送时渲染过多 DOM */
+const DISPLAY_MAX = 30;
+
+/** 在线服务器列表（WebSocket 全量推送，按人数降序） */
 const onlineServers = computed(() =>
-  gameStore.currentServerWsList.filter(server => (server.numPlayers || 0) > 0)
+  gameStore.currentServerWsList
+    .filter(server => (server.numPlayers || 0) > 0)
+    .sort((a, b) => (b.numPlayers || 0) - (a.numPlayers || 0))
 );
 
 /** 在线服务器总数 */
@@ -24,10 +29,16 @@ const totalPlayers = computed(() =>
   onlineServers.value.reduce((sum, server) => sum + (server.numPlayers || 0), 0)
 );
 
-/** 最大在线服务器（按人数排序取第一） */
+/** 最大在线服务器（单次遍历取最大，避免额外排序） */
 const maxServer = computed(() =>
-  [...onlineServers.value].sort((a, b) => (b.numPlayers || 0) - (a.numPlayers || 0))[0]
+  onlineServers.value.reduce<Api.Game.SeverVo | null>(
+    (max, server) => (max == null || (server.numPlayers || 0) > (max.numPlayers || 0) ? server : max),
+    null
+  )
 );
+
+/** 展示用服务器列表（仅渲染前 N 条） */
+const displayServers = computed(() => onlineServers.value.slice(0, DISPLAY_MAX));
 
 /** 空状态：当前没有任何在线服务器 */
 const isEmpty = computed(() => onlineServers.value.length === 0);
@@ -91,7 +102,7 @@ const isEmpty = computed(() => onlineServers.value.length === 0);
 
       <!-- 服务器列表 -->
       <div class="server-list">
-        <div v-for="server in onlineServers" :key="server.serverId" class="server-item">
+        <div v-for="server in displayServers" :key="server.serverId" class="server-item">
           <div class="server-item-left">
             <span class="server-name" :title="server.serverName">{{ server.serverName }}</span>
             <span class="server-map">{{ server.mapLabel || server.mapName }}</span>

@@ -656,10 +656,9 @@ onMounted(() => {
         z-index: 10;
         padding: 4px;
         border-radius: 10px;
-        background: rgba(28, 32, 44, 0.98);
-        border: 1px solid rgba(var(--app-rgb), 0.1);
+        background: var(--n-color);
+        border: 1px solid var(--n-border-color);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        backdrop-filter: blur(10px);
 
         .select-option {
           display: flex;

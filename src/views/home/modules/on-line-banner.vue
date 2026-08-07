@@ -17,6 +17,12 @@ interface RoleInfo {
   type: ThemeColor;
 }
 
+/** 渲染列表上限：卡片视口仅约 120px，避免在线人数过多时渲染大量 DOM */
+const DISPLAY_MAX = 100;
+
+/** 单个用户最多展示的角色数 */
+const MAX_ROLES = 3;
+
 /** 在线玩家数量 */
 const onlineCount = computed(() => appStore.onlineUserList.length);
 
@@ -35,6 +41,30 @@ const ROLE_COLOR_MAP: Record<ThemeColor, { color: string; bg: string; border: st
   primary: { color: '#667eea', bg: 'rgba(var(--app-rgb), 0.12)', border: 'rgba(var(--app-rgb), 0.2)' },
   default: { color: 'rgba(var(--app-rgb), 0.55)', bg: 'rgba(var(--app-rgb), 0.08)', border: 'transparent' }
 };
+
+/** 展示用在线用户（预计算角色标签样式，避免模板内重复字典查询与样式查找） */
+interface OnlineUserItem {
+  user: Api.System.OnLineUser;
+  roles: Array<{ label: string; style: Record<string, string> }>;
+}
+
+const onlineItems = computed<OnlineUserItem[]>(() =>
+  appStore.onlineUserList.slice(0, DISPLAY_MAX).map(user => ({
+    user,
+    roles: (user.roleCodes || []).slice(0, MAX_ROLES).map(role => {
+      const info = getRoleInfo(role);
+      const colors = ROLE_COLOR_MAP[info.type];
+      return {
+        label: info.label,
+        style: {
+          color: colors.color,
+          background: colors.bg,
+          borderColor: colors.border
+        }
+      };
+    })
+  }))
+);
 
 defineOptions({
   name: 'CreativityBanner'
@@ -57,22 +87,13 @@ defineOptions({
 
     <!-- 在线玩家列表 -->
     <div v-if="onlineCount > 0" class="online-list">
-      <div v-for="(user, index) in appStore.onlineUserList" :key="index" class="online-item">
-        <img v-lazy="user.avatar" class="online-avatar" />
+      <div v-for="item in onlineItems" :key="item.user.id" class="online-item">
+        <img v-lazy="item.user.avatar" class="online-avatar" />
         <div class="online-info">
-          <span class="online-name">{{ user.nickName }}</span>
-          <div v-if="user.roleCodes?.length" class="online-roles">
-            <span
-              v-for="role in user.roleCodes"
-              :key="role"
-              class="online-role-tag"
-              :style="{
-                color: ROLE_COLOR_MAP[getRoleInfo(role).type].color,
-                background: ROLE_COLOR_MAP[getRoleInfo(role).type].bg,
-                borderColor: ROLE_COLOR_MAP[getRoleInfo(role).type].border
-              }"
-            >
-              {{ getRoleInfo(role).label }}
+          <span class="online-name">{{ item.user.nickName }}</span>
+          <div v-if="item.roles.length" class="online-roles">
+            <span v-for="role in item.roles" :key="role.label" class="online-role-tag" :style="role.style">
+              {{ role.label }}
             </span>
           </div>
         </div>
