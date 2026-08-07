@@ -231,11 +231,9 @@ onMounted(() => {
     display: flex;
     align-items: center;
     justify-content: center;
+    /* 固定宽高 72px，logo 等比缩放完整显示在区域内，不裁切 */
+    width: 72px;
     height: 72px;
-    /* 高度锁死 72px；宽度随 logo 实际比例自适应，允许超过 72px（完整显示，不裁切） */
-    width: auto;
-    min-width: 72px;
-    padding: 0 10px;
     border-radius: 16px;
     background: rgba(102, 126, 234, 0.12);
     flex-shrink: 0;
@@ -244,8 +242,8 @@ onMounted(() => {
 
     .card-logo {
       display: block;
+      width: 100%;
       height: 100%;
-      width: auto;
       object-fit: contain;
     }
 

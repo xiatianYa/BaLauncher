@@ -137,7 +137,7 @@ onMounted(() => {
 <style scoped lang="scss">
 .notice-panel {
   width: 380px;
-  max-height: 480px;
+  /* 高度随内容自适应，通知内容必须显示齐全（不设最大高度/内部滚动） */
   display: flex;
   flex-direction: column;
   border-radius: 14px;
@@ -170,16 +170,12 @@ onMounted(() => {
   }
 }
 
-/* 列表 */
+/* 列表（高度随内容撑开，不内部滚动，保证全部通知可见） */
 .notice-list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 8px;
-  /* 每条通知之间的间距 */
   display: flex;
   flex-direction: column;
   gap: 10px;
+  padding: 8px;
 }
 
 /* 通知项 */
@@ -252,10 +248,9 @@ onMounted(() => {
       margin: 0;
       font-size: 12px;
       color: rgba(var(--app-rgb), 0.55);
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
+      /* 内容完整显示，不做行数截断；保留换行、长串自动换行 */
+      white-space: pre-wrap;
+      word-break: break-word;
       line-height: 1.6;
     }
 

@@ -8,6 +8,14 @@ export function fetchGetBindToken() {
   });
 }
 
+/** 查询全部用户名称（通知按用户发送时接收人下拉选项） */
+export function fetchGetAllUserNames() {
+  return request<Api.System.SysUserNameOption[]>({
+    url: '/sysUser/allUserNames',
+    method: 'get'
+  });
+}
+
 /** 分页查询用户 */
 export function fetchGetUserPageList(params?: Api.System.SysUserSearchDTO) {
   return request<Api.System.SysUserPageList>({

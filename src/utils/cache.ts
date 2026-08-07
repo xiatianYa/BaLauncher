@@ -10,7 +10,7 @@ import {
 export type CacheScope = 'game' | 'app' | 'auth' | 'route' | 'image';
 
 /** 分类 -> localStorage 存储键集合（image 为磁盘图片缓存，通过 IPC 清理） */
-const SCOPE_STORAGE_KEYS: Record<Exclude<CacheScope, 'image'>, Record<string, string>> = {
+export const SCOPE_STORAGE_KEYS: Record<Exclude<CacheScope, 'image'>, Record<string, string>> = {
   game: GAME_STORAGE_KEYS,
   app: APP_STORAGE_KEYS,
   auth: AUTH_STORAGE_KEYS,
@@ -38,4 +38,35 @@ export async function clearLocalCache(scopes: CacheScope[]): Promise<void> {
   if (scopes.includes('image')) {
     await window.ipcRenderer.clearImageCache();
   }
+}
+
+/** 格式化字节大小（B/KB/MB） */
+export function formatBytes(size: number): string {
+  if (size < 1024) {
+    return `${size}B`;
+  }
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(2)}KB`;
+  }
+  return `${(size / (1024 * 1024)).toFixed(2)}MB`;
+}
+
+/** 计算单个分类在 localStorage 中的占用字节数（按 UTF-16 双字节近似估算） */
+export function getScopeStorageSize(scope: Exclude<CacheScope, 'image'>): number {
+  let size = 0;
+  Object.values(SCOPE_STORAGE_KEYS[scope]).forEach((key) => {
+    const value = localStg.get(key as keyof StorageType.Local);
+    if (value !== null && value !== undefined) {
+      size += (key.length + JSON.stringify(value).length) * 2;
+    }
+  });
+  return size;
+}
+
+/** 计算全部 localStorage 占用字节数 */
+export function getLocalStorageSize(): number {
+  return (Object.keys(SCOPE_STORAGE_KEYS) as Exclude<CacheScope, 'image'>[]).reduce(
+    (sum, scope) => sum + getScopeStorageSize(scope),
+    0
+  );
 }

@@ -36,6 +36,14 @@ declare namespace Api {
     /** 用户分页列表 */
     type SysUserPageList = Common.PaginatingQueryRecord<SysUserVo>;
 
+    /** 用户名称选项（后端 Options<String>：label 显示名，value 实际值） */
+    type SysUserNameOption = {
+      /** 显示的值 */
+      label: string;
+      /** 实际值 */
+      value: string;
+    };
+
     /** 用户 VO */
     type SysUserVo = Common.CommonRecord<{
       /** 用户名 */

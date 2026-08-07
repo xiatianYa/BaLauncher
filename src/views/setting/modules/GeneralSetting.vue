@@ -2,35 +2,35 @@
 import { ref, computed } from 'vue'
 import { NGrid, NGridItem, NButton, NInput, NText } from 'naive-ui'
 import type { GamePlatform } from '@/constants/app'
-import { useGameStore } from '@/store/modules/game'
+import { useAppStore } from '@/store/modules/app'
 import { START_ITEMS } from '@/constants/startItems'
 import { $t } from '@/locales'
 
-const gameStore = useGameStore()
+const appStore = useAppStore()
 
 const isDetectingSteam = ref(false)
 const isDetectingCsgo = ref(false)
 
 const GamePlatform = computed({
-  get: () => gameStore.GamePlatform,
-  set: (val: GamePlatform) => gameStore.setGamePlatform(val),
+  get: () => appStore.gamePlatform,
+  set: (val: GamePlatform) => appStore.setGamePlatform(val),
 })
 
 const csgo2Path = computed({
-  get: () => gameStore.csgo2Path,
-  set: (val: string) => gameStore.setCsgo2Path(val),
+  get: () => appStore.csgo2Path,
+  set: (val: string) => appStore.setCsgo2Path(val),
 })
 
 const steamPath = computed({
-  get: () => gameStore.steamPath,
-  set: (val: string) => gameStore.setSteamPath(val),
+  get: () => appStore.steamPath,
+  set: (val: string) => appStore.setSteamPath(val),
 })
 
 const selectedStartItemsList = computed(() => {
   const presetItems = START_ITEMS.filter((item: { value: string }) =>
-    gameStore.selectedStartItems.includes(item.value),
+    appStore.selectedStartItems.includes(item.value),
   )
-  const customValues = gameStore.selectedStartItems.filter(
+  const customValues = appStore.selectedStartItems.filter(
     value => !START_ITEMS.some((item: { value: string }) => item.value === value),
   )
   const customItems = customValues.map(value => ({ label: value, value }))
@@ -45,11 +45,11 @@ const addCustomStartItem = () => {
     window.$message?.warning($t('settings.messages.enterStartOption'))
     return
   }
-  if (gameStore.selectedStartItems.includes(value)) {
+  if (appStore.selectedStartItems.includes(value)) {
     window.$message?.warning($t('settings.messages.startOptionExists'))
     return
   }
-  gameStore.toggleStartItem(value)
+  appStore.toggleStartItem(value)
   customStartItem.value = ''
   window.$message?.success($t('updateLog.addSuccess'))
 }
@@ -167,10 +167,10 @@ const selectPlatform = (platform: 'international' | 'perfect') => {
           <NGrid :cols="3" :x-gap="12" :y-gap="12">
             <NGridItem v-for="item in START_ITEMS" :key="item.value">
               <NButton class="w-full" ghost
-                :type="gameStore.selectedStartItems.includes(item.value) ? 'primary' : 'default'"
-                @click="gameStore.toggleStartItem(item.value)">
+                :type="appStore.selectedStartItems.includes(item.value) ? 'primary' : 'default'"
+                @click="appStore.toggleStartItem(item.value)">
                 <template #icon>
-                  <SvgIcon v-if="gameStore.selectedStartItems.includes(item.value)" icon="ic:sharp-clear" />
+                  <SvgIcon v-if="appStore.selectedStartItems.includes(item.value)" icon="ic:sharp-clear" />
                 </template>
                 {{ item.label }}
               </NButton>

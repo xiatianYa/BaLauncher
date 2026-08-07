@@ -2,12 +2,24 @@
 @import './nprogress.css';
 @import './transition.css';
 
+html {
+  /* 鼠标主题变量：默认应用主题自定义指针，data-cursor=system 时切回系统默认 */
+  --cursor-default: url('../../assets/pointer/WangXiaoTaoPoint.png') 8 8, auto;
+  --cursor-pointer: url('../../assets/pointer/WangXiaoTaoPoint.png') 8 8, pointer;
+  overflow-x: hidden;
+}
+
+/* 系统默认鼠标主题 */
+html[data-cursor='system'] {
+  --cursor-default: auto;
+  --cursor-pointer: pointer;
+}
+
 html,
 body,
 #app {
   height: 100%;
-  /* 使用更小的光标，通过调整 URL 参数或使用不同大小的文件 */
-  cursor: url('../../assets/pointer/WangXiaoTaoPoint.png') 8 8, auto;
+  cursor: var(--cursor-default);
   letter-spacing: 0.01em;
 }
 
@@ -19,10 +31,6 @@ body,
     box-shadow 0.3s ease,
     fill 0.3s ease,
     stroke 0.3s ease !important;
-}
-
-html {
-  overflow-x: hidden;
 }
 
 /* 确保所有元素都继承字体和光标设置 */
@@ -37,7 +45,7 @@ button,
 input,
 select,
 textarea {
-  cursor: url('../../assets/pointer/WangXiaoTaoPoint.png') 8 8, pointer;
+  cursor: var(--cursor-pointer);
 }
 
 /* 选中整个垂直滚动条，并设置其宽度 */

@@ -4,15 +4,7 @@ import { useGameStore } from '@/store/modules/game';
 import { computed, ref, onMounted } from 'vue';
 import { fetchGetServerMapTimeline } from '@/service/api';
 import { $t } from '@/locales';
-import dayjs from 'dayjs';
-import 'dayjs/locale/zh-cn';
-import localeData from 'dayjs/plugin/localeData';
-import weekday from 'dayjs/plugin/weekday';
 import SvgIcon from '@/components/custom/svg-icon.vue';
-
-dayjs.extend(localeData);
-dayjs.extend(weekday);
-dayjs.locale('zh-cn');
 
 defineOptions({ name: 'ServerMapRecordPage' });
 

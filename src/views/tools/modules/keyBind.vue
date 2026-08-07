@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { NButton, NCard, NModal, NGrid, NGridItem, NInput } from 'naive-ui';
 import { useGameStore } from '@/store/modules/game';
+import { useAppStore } from '@/store/modules/app';
 import { fetchGetMyKeyBinds, fetchAddKeyBind, fetchDeleteKeyBind, fetchUpdateKeyBind } from '@/service/api';
 import dayjs from 'dayjs';
 import {
@@ -20,6 +21,7 @@ const emit = defineEmits<{ back: [] }>();
 /* ===== 状态 ===== */
 
 const gameStore = useGameStore();
+const appStore = useAppStore();
 
 const activeTab = ref<'library' | 'local' | 'user'>('library');
 const selectedSystemConfig = ref<string | null>(null);
@@ -53,10 +55,10 @@ const currentCfgOptions = computed(() => {
     }
 });
 
-// 用户已应用的按键绑定项（来自 gameStore）
+// 用户已应用的按键绑定项（来自 appStore）
 const applyKeyBindItems = computed({
-    get: () => gameStore.applyKeyBindItems,
-    set: (items) => gameStore.setApplyKeyBindItems(items)
+    get: () => appStore.applyKeyBindItems,
+    set: (items) => appStore.setApplyKeyBindItems(items)
 });
 
 /* ===== 工具函数 ===== */

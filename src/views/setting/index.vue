@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { NCard, NText } from 'naive-ui'
 import ThemeSetting from './modules/ThemeSetting.vue'
+import MouseSetting from './modules/MouseSetting.vue'
 import GeneralSetting from './modules/GeneralSetting.vue'
 import CacheSetting from './modules/CacheSetting.vue'
 import AboutSetting from './modules/AboutSetting.vue'
@@ -43,8 +44,9 @@ onMounted(() => {
       <!-- 设置内容 -->
       <div class="setting-body">
         <ThemeSetting class="setting-section" style="--delay: 0s" />
-        <GeneralSetting class="setting-section" style="--delay: 0.08s" />
-        <CacheSetting ref="cacheSettingRef" class="setting-section" style="--delay: 0.16s" />
+        <MouseSetting class="setting-section" style="--delay: 0.06s" />
+        <GeneralSetting class="setting-section" style="--delay: 0.12s" />
+        <CacheSetting ref="cacheSettingRef" class="setting-section" style="--delay: 0.18s" />
         <AboutSetting ref="aboutSettingRef" class="setting-section" style="--delay: 0.24s" />
       </div>
     </NCard>

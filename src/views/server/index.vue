@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useGameStore } from '@/store/modules/game';
+import { useAppStore } from '@/store/modules/app';
 import LoadingSpinner from '@/components/custom/loading-spinner.vue';
 import { ref, onUnmounted, nextTick, onMounted, computed } from 'vue';
 import OpenGameConfirm from '@/views/server/modules/open-game-confirm.vue';
@@ -18,6 +19,7 @@ defineOptions({
 });
 
 const gameStore = useGameStore();
+const appStore = useAppStore();
 
 // 服务器列表是否加载状态
 const serverLoading = ref<boolean>(false);
@@ -47,14 +49,14 @@ const moduleMap: Record<UnionKey.ServerLayoutModule, ServerLayoutModule> = {
   'tableModal': { label: $t('tools.tableModal'), component: ServerTableList },
 };
 
-const activeModule = computed(() => moduleMap[gameStore.serverViewModule]);
+const activeModule = computed(() => moduleMap[appStore.serverViewModule]);
 
 // 切换社区
 const selectCommunity = async (id: number) => {
   //点击相同社区 不进行加载
-  if (gameStore.selectedCommunityId === id || serverLoading.value || isRefreshing.value) return;
+  if (appStore.selectedCommunityId === id || serverLoading.value || isRefreshing.value) return;
   serverLoading.value = true;
-  gameStore.setSelectedCommunityId(id);
+  appStore.setSelectedCommunityId(id);
   await queryServerInfos(true, true);
   serverLoading.value = false;
 };
@@ -176,7 +178,7 @@ onUnmounted(() => {
 
 <template>
   <NCard class="w-full h-full" content-class="flex h-full w-full" content-style="padding:0px;" :bordered="false">
-    <NCard :class="['rounded-10px', gameStore.isFullscreen ? 'fixed inset-0 z-999 m-0px rounded-10px' : 'm-10px']"
+    <NCard :class="['rounded-10px', appStore.isFullscreen ? 'fixed inset-0 z-999 m-0px rounded-10px' : 'm-10px']"
       content-style="padding:10px;" content-class="h-full flex flex-col flex-1 overflow-hidden"
       header-style="padding:10px 20px 10px 20px" v-if="!serverLoading" :segmented="{
         content: true,
@@ -203,7 +205,7 @@ onUnmounted(() => {
           <NTooltip placement="bottom">
             <template #trigger>
               <NButton class="rounded-5px p-8px" type="default" strong dashed
-                @click="gameStore.toggleServerViewModule()">
+                @click="appStore.toggleServerViewModule()">
                 <template #icon>
                   <SvgIcon icon="material-symbols:view-list" />
                 </template>
@@ -213,13 +215,13 @@ onUnmounted(() => {
           </NTooltip>
           <NTooltip placement="bottom">
             <template #trigger>
-              <NButton class="rounded-5px p-8px" type="default" strong dashed @click="gameStore.toggleFullscreen()">
+              <NButton class="rounded-5px p-8px" type="default" strong dashed @click="appStore.toggleFullscreen()">
                 <template #icon>
-                  <SvgIcon :icon="gameStore.isFullscreen ? 'iconamoon:screen-normal' : 'iconamoon:screen-full'" />
+                  <SvgIcon :icon="appStore.isFullscreen ? 'iconamoon:screen-normal' : 'iconamoon:screen-full'" />
                 </template>
               </NButton>
             </template>
-            {{ gameStore.isFullscreen ? $t('server.exitFullscreen') : $t('server.fullscreen') }}
+            {{ appStore.isFullscreen ? $t('server.exitFullscreen') : $t('server.fullscreen') }}
           </NTooltip>
           <div class="countdown-container cursor-pointer" @click="queryServerInfos(true, false)" v-if="!isRefreshing">
             <svg v-if="!isRefreshing" class="countdown-svg" width="40" height="40">
@@ -274,7 +276,7 @@ onUnmounted(() => {
           </div>
         </div>
       </template>
-      <component :is="activeModule.component" @back="gameStore.serverViewModule = 'cardModel'"
+      <component :is="activeModule.component" @back="appStore.serverViewModule = 'cardModel'"
         :servers="gameStore.currentServerList" :map-list="gameStore.mapList"
         :source-server-list="gameStore.serverDataList" :refreshing-addrs="gameStore.refreshingServerAddrs"
         @join="joinServer" @copy="copyServerAddr" @auto-join="openAutoJoinServer" @refresh="refreshServerInfo" />
@@ -282,7 +284,7 @@ onUnmounted(() => {
     <NCard class="m-10px rounded-10px" content-style="padding:10px;" content-class="h-full flex flex-col flex-1" v-else>
       <LoadingSpinner :loading="serverLoading" />
     </NCard>
-    <CommunityList :selected-id="gameStore.selectedCommunityId" @select="selectCommunity" />
+    <CommunityList :selected-id="appStore.selectedCommunityId" @select="selectCommunity" />
     <OpenGameConfirm v-model:showGameConfirm="showOpenGameConfirm" />
     <OpenGameJoin v-model:showJoinServer="showJoinServerConfirm" />
     <!-- 挤服悬浮托盘 -->

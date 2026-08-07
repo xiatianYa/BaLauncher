@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { onMounted, onBeforeUnmount, ref } from 'vue';
+import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { fetchGetNoticeUnreadCount } from '@/service/api';
+import { useAuthStore } from '@/store/modules/auth';
+
+const authStore = useAuthStore();
 
 const showCloseConfirm = ref<boolean>(false);
 /** 通知面板显示状态 */
@@ -24,15 +27,19 @@ const toggleNotifications = () => {
   showNoticePanel.value = !showNoticePanel.value;
 };
 
-/** 刷新未读数量 */
+/** 刷新未读数量（未登录不请求，登录后由 watch 触发） */
 const loadUnreadCount = async () => {
+  if (!authStore.isLogin) {
+    unreadCount.value = 0;
+    return;
+  }
   try {
     const { data, error } = await fetchGetNoticeUnreadCount();
     if (!error && typeof data === 'number') {
       unreadCount.value = data;
     }
   } catch {
-    // 未登录等场景忽略
+    // 忽略请求异常
   }
 };
 
@@ -46,6 +53,14 @@ onMounted(() => {
   // 定时轮询未读数（60s）
   pollTimer = setInterval(loadUnreadCount, 60000);
 });
+
+// 组件常驻挂载，登录后立即刷新一次未读数（未登录时挂载请求无数据）
+watch(
+  () => authStore.isLogin,
+  (v) => {
+    if (v) loadUnreadCount();
+  }
+);
 
 onBeforeUnmount(() => {
   if (pollTimer) {

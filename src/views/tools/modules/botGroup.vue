@@ -23,7 +23,9 @@ const emit = defineEmits<{ back: [] }>();
 
 const gameStore = useGameStore();
 
-const { isAdmin } = useAuth(); // 操作按钮仅管理员可见
+const { isAdmin, hasRole } = useAuth();
+/** 群管理角色（R_GROUP）：可查看「群友管理 / 编辑群」按钮（删除仍仅管理员） */
+const isGroupManager = computed(() => isAdmin.value || hasRole('R_GROUP'));
 const { dictLabel } = useDict();
 
 /* ===== 列表与分页 ===== */
@@ -512,7 +514,7 @@ onMounted(() => {
               </div>
             </div>
 
-            <div v-if="isAdmin" class="card-actions">
+            <div v-if="isGroupManager" class="card-actions">
               <button class="action-btn members" @click="handleMembers(row)">
                 <SvgIcon icon="mdi:account-group" />
                 <span>{{ $t('botGroup.memberManage') }}</span>
@@ -521,7 +523,7 @@ onMounted(() => {
                 <SvgIcon icon="mdi:pencil" />
                 <span>{{ $t('botGroup.edit') }}</span>
               </button>
-              <button class="action-btn delete" @click="handleDelete(row)">
+              <button v-if="isAdmin" class="action-btn delete" @click="handleDelete(row)">
                 <SvgIcon icon="mdi:delete" />
                 <span>{{ $t('botGroup.delete') }}</span>
               </button>

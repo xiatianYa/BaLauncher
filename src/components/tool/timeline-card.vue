@@ -75,7 +75,7 @@ onMounted(() => {
                         :options="mapOptions"
                         :filterable="true"
                         clearable
-                        placeholder="搜索地图"
+                        :placeholder="$t('tools.searchMap')"
                         style="width: 180px"
                         size="small"
                     />

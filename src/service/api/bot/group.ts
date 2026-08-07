@@ -21,7 +21,7 @@ export function fetchInsertBotGroup(params: Api.Bot.BotGroupEdit) {
 /** 修改机器人群 */
 export function fetchUpdateBotGroup(params: Api.Bot.BotGroupEdit) {
   return request({
-    url: '/botGroup/update',
+    url: '/botGroup/updateByGroup',
     method: 'put',
     data: params
   });

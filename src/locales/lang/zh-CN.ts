@@ -91,6 +91,11 @@ export default {
       register: '注册账号',
       otherMethods: '其他方式登录',
     },
+    notify: {
+      loginSuccess: '登录成功',
+      loginFailed: '登录失败',
+      welcomeBack: '欢迎回来，{name}老师！',
+    },
   },
   layout: {
     menuConfig: '菜单配置',
@@ -148,6 +153,9 @@ export default {
     noTimelineData: '暂无时间线数据',
     selectServerTip: '请选择服务器查看时间线',
     allLoaded: '已加载全部记录',
+    searchMap: '搜索地图',
+    playDuration: '游玩时长 {count}分钟',
+    onlinePlayers: '在线人数',
     botBind: {
       title: '绑定QQ群成员',
       desc: '使用地图订阅功能前，需要先将当前账号与QQ群成员绑定。',
@@ -224,6 +232,11 @@ export default {
     general: '常规设置',
     subtitle: '应用参数与偏好设置',
     theme: '主题设置',
+    mouseTheme: '鼠标主题',
+    mouseThemeApp: '应用主题',
+    mouseThemeAppDesc: '使用自定义指针',
+    mouseThemeSystem: '系统默认',
+    mouseThemeSystemDesc: '使用系统默认指针',
     language: '语言设置',
     about: '关于',
     version: '当前版本',
@@ -309,6 +322,7 @@ export default {
     timeRangeOneDay: '一天',
     timeRangeThreeDays: '三天',
     timeRangeOneWeek: '一周',
+    serverHistoryFetchFailed: '历史数据获取失败',
     serverOnlineCount: '在线服务器',
     playersOnline: '在线玩家',
     mostPlayersServer: '人气最高',
@@ -579,8 +593,13 @@ export default {
       },
       receiverId: {
         label: '接收人',
-        placeholder: '请输入接收人ID',
-        required: '请填写接收人ID'
+        placeholder: '请选择接收人',
+        required: '请选择接收人'
+      },
+      receiverRole: {
+        label: '接收角色',
+        placeholder: '请选择角色',
+        required: '请选择接收角色'
       },
       businessType: {
         label: '业务类型',

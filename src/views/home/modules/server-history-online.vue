@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { $t } from '@/locales';
+import { i18n, $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { useGameStore } from '@/store/modules/game';
 import { useThemeStore } from '@/store/modules/theme';
@@ -24,17 +24,18 @@ const authStore = useAuthStore();
 type ChartType = 'bar' | 'pie';
 const chartType = ref<ChartType>('bar');
 
+/** 选项存 key，模板内 $t 渲染，保证语言切换时文案同步更新 */
 const CHART_TYPE_OPTIONS = [
-  { label: $t('home.communityHistoryOnline'), value: 'bar' as ChartType },
-  { label: $t('home.communityRealtimeOnline'), value: 'pie' as ChartType }
+  { labelKey: 'home.communityHistoryOnline', value: 'bar' as ChartType },
+  { labelKey: 'home.communityRealtimeOnline', value: 'pie' as ChartType }
 ];
 
 /* ===== 时间范围选择 ===== */
 
 const HOUR_OPTIONS = [
-  { label: $t('home.timeRangeOneDay'), value: 24 },
-  { label: $t('home.timeRangeThreeDays'), value: 72 },
-  { label: $t('home.timeRangeOneWeek'), value: 168 }
+  { labelKey: 'home.timeRangeOneDay', value: 24 },
+  { labelKey: 'home.timeRangeThreeDays', value: 72 },
+  { labelKey: 'home.timeRangeOneWeek', value: 168 }
 ];
 const selectedHours = ref(24);
 
@@ -221,7 +222,7 @@ const buildPieOptions = (): ECOption => {
       distanceToLabelLine: 4,
       formatter: (params: any) => {
         const pct = params.percent >= 1 ? params.percent.toFixed(0) : '<1';
-        return `{name|${params.name}}\n{count|${params.value} ${$t('home.onlineUser')} · ${pct}%}`;
+        return `{name|${params.name}}\n{count|${params.value}${$t('home.people')} · ${pct}%}`;
       },
       rich: {
         name: {
@@ -283,7 +284,7 @@ const buildPieOptions = (): ECOption => {
       textStyle: { color: isDark ? '#e8ecf4' : '#2e2b26', fontSize: 12, fontWeight: 500 },
       formatter: (params: any) => {
         const pct = params.percent >= 0.1 ? params.percent.toFixed(2) : '<0.1';
-        return `${params.marker} ${params.name}<br/>  ${$t('home.onlineUser')}：<b>${params.value}</b> (${pct}%)`;
+        return `${params.marker} ${params.name}<br/>  ${$t('home.onlineUser')}: <b>${params.value}</b> (${pct}%)`;
       },
       extraCssText: isDark
         ? 'box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); backdrop-filter: blur(8px);'
@@ -332,7 +333,7 @@ const fetchBarData = async () => {
   try {
     const { data, error: err } = await fetchGetCommunityOnlineBar(selectedHours.value);
     if (err) {
-      error.value = err.message || $t('home.weatherFetchFailed');
+      error.value = err.message || $t('home.serverHistoryFetchFailed');
       return;
     }
     if (!data || !data.series || data.series.length === 0) {
@@ -342,7 +343,7 @@ const fetchBarData = async () => {
     chartData.value = data;
   } catch (e) {
     console.error('[SERVER-HISTORY] 获取社区在线人数失败:', e);
-    error.value = $t('home.weatherFetchFailed');
+    error.value = $t('home.serverHistoryFetchFailed');
   } finally {
     loading.value = false;
   }
@@ -403,6 +404,15 @@ watch(() => themeStore.darkMode, () => {
     updateOptions(() => buildPieOptions());
   }
 });
+
+// 语言切换时重新渲染图表，让 y 轴名称 / tooltip / 图例等 $t 文案同步更新
+watch(() => i18n.global.locale.value, () => {
+  if (chartType.value === 'bar' && chartData.value) {
+    updateOptions(() => buildBarOptions(chartData.value!));
+  } else if (chartType.value === 'pie' && !isPieEmpty.value) {
+    updateOptions(() => buildPieOptions());
+  }
+});
 </script>
 
 <template>
@@ -418,14 +428,14 @@ watch(() => themeStore.darkMode, () => {
         <div class="chart-type-selector">
           <button v-for="opt in CHART_TYPE_OPTIONS" :key="opt.value" class="chart-type-btn"
             :class="{ active: chartType === opt.value }" @click="handleChartTypeChange(opt.value)">
-            {{ opt.label }}
+            {{ $t(opt.labelKey) }}
           </button>
         </div>
         <!-- 时间范围（仅柱状图） -->
         <div v-if="chartType === 'bar'" class="hours-selector">
           <button v-for="opt in HOUR_OPTIONS" :key="opt.value" class="hours-btn"
             :class="{ active: selectedHours === opt.value }" @click="handleHoursChange(opt.value)">
-            {{ opt.label }}
+            {{ $t(opt.labelKey) }}
           </button>
         </div>
       </div>
@@ -480,14 +490,18 @@ watch(() => themeStore.darkMode, () => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 8px;
+    gap: 6px;
     flex-shrink: 0;
+    /* 兜底：窄卡片时允许按钮组换行，避免英文文案溢出变形 */
+    flex-wrap: wrap;
 
     .card-title {
       display: flex;
       align-items: center;
       gap: 7px;
       min-width: 0;
+      /* 占满剩余空间，标题过长时收缩省略，避免挤压右侧按钮 */
+      flex: 1;
 
       .card-title-icon {
         font-size: 17px;
@@ -509,6 +523,9 @@ watch(() => themeStore.darkMode, () => {
       display: flex;
       align-items: center;
       gap: 6px;
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     /* 图表类型切换（参照 botGroup pill 按钮风格） */
@@ -521,7 +538,7 @@ watch(() => themeStore.darkMode, () => {
       border: 1px solid rgba(var(--app-rgb), 0.08);
 
       .chart-type-btn {
-        padding: 3px 10px;
+        padding: 3px 8px;
         border: none;
         border-radius: 6px;
         font-size: 11px;
@@ -555,7 +572,7 @@ watch(() => themeStore.darkMode, () => {
       border: 1px solid rgba(var(--app-rgb), 0.08);
 
       .hours-btn {
-        padding: 3px 10px;
+        padding: 3px 8px;
         border: none;
         border-radius: 6px;
         font-size: 11px;

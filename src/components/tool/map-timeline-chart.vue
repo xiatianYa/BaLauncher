@@ -8,11 +8,15 @@
 <script setup lang="ts">
 import { watch, nextTick } from 'vue';
 import dayjs from 'dayjs';
+import { useI18n } from 'vue-i18n';
+import { $t } from '@/locales';
 import { ECOption, useEcharts } from '@/hooks/common/echarts';
 
 defineOptions({
     name: 'MapTimelineChart'
 });
+
+const { locale } = useI18n();
 
 const props = defineProps<{
     /** x 轴时间数据（ISO 时间字符串数组） */
@@ -127,7 +131,7 @@ function updateChartData() {
     const yMax = maxCount > 64 ? maxCount : 64;
 
     const newSeries = [{
-        name: '在线人数',
+        name: $t('tools.onlinePlayers'),
         type: 'line' as const,
         data: props.playerCountAxis,
         smooth: true,
@@ -186,6 +190,12 @@ watch(
     },
     { deep: true, immediate: true }
 );
+
+/** 语言切换时重渲染图表（series 名称等随语言变化） */
+watch(locale, async () => {
+    await nextTick();
+    updateChartData();
+});
 </script>
 
 <template>

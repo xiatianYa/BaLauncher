@@ -21,6 +21,7 @@ import {
   NText,
 } from 'naive-ui'
 import { useGameStore } from '@/store/modules/game'
+import { useAppStore } from '@/store/modules/app'
 import { useDict } from '@/hooks/business/dict'
 import { $t } from '@/locales'
 import SvgIcon from '@/components/custom/svg-icon.vue'
@@ -52,6 +53,7 @@ const emit = defineEmits<{
 }>()
 
 const gameStore = useGameStore()
+const appStore = useAppStore()
 const { dictOptions, dictType, dictLabel } = useDict()
 
 const dictItem = (
@@ -469,14 +471,14 @@ onBeforeUnmount(() => {
                 <div class="font-bold">
                   {{
                     $t('serverJoin.personCount', {
-                      count: gameStore.automaticJoinConfig.joinServerPersonValue,
+                      count: appStore.automaticJoinConfig.joinServerPersonValue,
                     })
                   }}
                 </div>
               </NTag>
             </NSpace>
-            <NSlider :value="gameStore.automaticJoinConfig.joinServerPersonValue" :step="1" :min="1" :max="63"
-              :tooltip="false" @update:value="gameStore.setJoinServerPersonValue" />
+            <NSlider :value="appStore.automaticJoinConfig.joinServerPersonValue" :step="1" :min="1" :max="63"
+              :tooltip="false" @update:value="appStore.setJoinServerPersonValue" />
             <NSpace justify="space-between">
               <div class="font-bold font-size-10px">
                 {{ $t('serverJoin.personCount', { count: 1 }) }}
@@ -502,14 +504,14 @@ onBeforeUnmount(() => {
                 <div class="font-bold">
                   {{
                     $t('serverJoin.threadCount', {
-                      count: gameStore.automaticJoinConfig.joinServerCountValue,
+                      count: appStore.automaticJoinConfig.joinServerCountValue,
                     })
                   }}
                 </div>
               </NTag>
             </NSpace>
-            <NSlider :value="gameStore.automaticJoinConfig.joinServerCountValue" :step="1" :min="1" :max="6"
-              :tooltip="false" @update:value="gameStore.setJoinServerCountValue" />
+            <NSlider :value="appStore.automaticJoinConfig.joinServerCountValue" :step="1" :min="1" :max="6"
+              :tooltip="false" @update:value="appStore.setJoinServerCountValue" />
             <NSpace justify="space-between">
               <div class="font-bold font-size-10px">
                 {{ $t('serverJoin.threadCount', { count: 1 }) }}
@@ -535,14 +537,14 @@ onBeforeUnmount(() => {
                 <div class="font-bold">
                   {{
                     $t('serverJoin.delayMs', {
-                      delay: gameStore.automaticJoinConfig.joinServerDelayValue,
+                      delay: appStore.automaticJoinConfig.joinServerDelayValue,
                     })
                   }}
                 </div>
               </NTag>
             </NSpace>
-            <NSlider :value="gameStore.automaticJoinConfig.joinServerDelayValue" :step="100" :min="0" :max="5000"
-              :tooltip="false" @update:value="gameStore.setJoinServerDelayValue" />
+            <NSlider :value="appStore.automaticJoinConfig.joinServerDelayValue" :step="100" :min="0" :max="5000"
+              :tooltip="false" @update:value="appStore.setJoinServerDelayValue" />
             <NSpace justify="space-between">
               <div class="font-bold font-size-10px">
                 {{ $t('serverJoin.delayMs', { delay: 0 }) }}
@@ -570,8 +572,8 @@ onBeforeUnmount(() => {
                   {{ $t('serverJoin.autoRetry') }}
                 </div>
               </div>
-              <NSwitch :value="gameStore.automaticJoinConfig.joinServerAutoRetryValue" :round="false"
-                @update:value="gameStore.setJoinServerAutoRetryValue" />
+              <NSwitch :value="appStore.automaticJoinConfig.joinServerAutoRetryValue" :round="false"
+                @update:value="appStore.setJoinServerAutoRetryValue" />
             </NSpace>
             <div class="flex items-center font-bold font-size-12px mt-5px">
               <div class="font-size-16px mr-5px">
@@ -592,8 +594,8 @@ onBeforeUnmount(() => {
                   {{ $t('serverJoin.gisPush') }}
                 </div>
               </div>
-              <NSwitch :value="gameStore.automaticJoinConfig.pushGisValue" :round="false"
-                @update:value="gameStore.setPushGisValue" />
+              <NSwitch :value="appStore.automaticJoinConfig.pushGisValue" :round="false"
+                @update:value="appStore.setPushGisValue" />
             </NSpace>
             <div class="flex items-center font-bold font-size-12px mt-5px">
               <div class="font-size-16px mr-5px">

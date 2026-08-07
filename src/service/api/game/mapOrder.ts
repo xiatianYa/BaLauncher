@@ -14,7 +14,7 @@ export function fetchGetGameMapOrderPage(
 /** 删除地图订阅（按订阅ID） */
 export function fetchRemoveGameMapOrder(id: string) {
   return request({
-    url: `/gameMapOrder/remove/${id}`,
+    url: `/gameMapOrder/removeByGroup/${id}`,
     method: 'delete'
   });
 }

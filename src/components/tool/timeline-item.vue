@@ -1,14 +1,10 @@
-<!--
- * @component TimelineItem
- * @description 时间线单条记录 —— 左侧地图封面 + 右侧在线人数折线图
- * @author BaLauncher
- * @design 采用 flex 横向布局，35% 封面区 + 65% 图表区，封面叠加渐变遮罩展示地图名称与游玩时长
- -->
 <script setup lang="ts">
-import { useThemeStore } from '@/store/modules/theme';
-import { NCard, NEllipsis } from 'naive-ui';
+import {  NEllipsis } from 'naive-ui';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import dayjs from 'dayjs';
+import { computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { $t } from '@/locales';
 import MapTimelineChart from './map-timeline-chart.vue';
 
 defineOptions({ name: 'TimelineItem' });
@@ -20,19 +16,22 @@ const props = defineProps<{
     index: number;
 }>();
 
-const themeStore = useThemeStore();
+const { locale } = useI18n();
 
-/** 中文星期映射表 */
-const WEEKDAY_MAP = ['日', '一', '二', '三', '四', '五', '六'] as const;
+/** 星期文案（随语言切换） */
+const weekDay = computed(() => $t('home.weekDay') as unknown as string[]);
 
 /**
- * 将 ISO 时间字符串格式化为可读的完整时间
- * @example "2026-04-25T14:30:00" → "2026年04月25日 14时:30分 周五"
+ * 将 ISO 时间字符串格式化为可读的完整时间（跟随当前语言）
+ * @example zh: "2026年04月25日 14:30 周五" / en: "2026-04-25 14:30 Fri"
  */
 const formatFullTime = (timeStr: string): string => {
     if (!timeStr) return '';
     const d = dayjs(timeStr);
-    return `${d.format('YYYY年MM月DD日 HH时:mm分')} 周${WEEKDAY_MAP[d.day()]}`;
+    const isZh = locale.value === 'zh-CN';
+    const datePart = isZh ? d.format('YYYY年MM月DD日 HH:mm') : d.format('YYYY-MM-DD HH:mm');
+    const weekPart = isZh ? `周${weekDay.value[d.day()]}` : weekDay.value[d.day()];
+    return `${datePart} ${weekPart}`;
 };
 </script>
 
@@ -59,7 +58,7 @@ const formatFullTime = (timeStr: string): string => {
                     </NEllipsis>
                     <div class="record-time">
                         <SvgIcon icon="mdi:clock-outline" class="time-icon" />
-                        游玩时长 {{ item.totalPlayMinutes }}分钟
+                        {{ $t('tools.playDuration', { count: item.totalPlayMinutes }) }}
                     </div>
                 </div>
             </div>

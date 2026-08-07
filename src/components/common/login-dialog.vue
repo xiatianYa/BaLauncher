@@ -3,11 +3,11 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { useAuthStore } from '@/store/modules/auth';
 import { useThemeStore } from '@/store/modules/theme';
 import { useI18n } from 'vue-i18n';
-import { setLocale } from '@/locales';
+import { $t, setLocale } from '@/locales';
 
 const authStore = useAuthStore();
 const themeStore = useThemeStore();
-const { locale, t } = useI18n();
+const { locale } = useI18n();
 
 /** 登录框背景色：直接由主题状态驱动，不依赖 naive 注入的 CSS 变量（弹窗重新打开时可能失效） */
 const loginBgColor = computed(() => (themeStore.darkMode ? '#1c2130' : '#faf7f2'));
@@ -15,8 +15,8 @@ const loginBgColor = computed(() => (themeStore.darkMode ? '#1c2130' : '#faf7f2'
 const langMenuBgColor = computed(() => (themeStore.darkMode ? '#242a3a' : '#ffffff'));
 
 const langOptions = computed<{ label: string; key: App.I18n.LangType; icon: string }[]>(() => [
-  { label: t('settings.langOptions.zhCN'), key: 'zh-CN', icon: 'mdi:translate' },
-  { label: t('settings.langOptions.enUS'), key: 'en-US', icon: 'mdi:translate' }
+  { label: $t('settings.langOptions.zhCN'), key: 'zh-CN', icon: 'mdi:translate' },
+  { label: $t('settings.langOptions.enUS'), key: 'en-US', icon: 'mdi:translate' }
 ]);
 
 /** 当前语言显示文案 */
@@ -67,16 +67,16 @@ interface Account {
 
 const accounts = computed<Account[]>(() => [
   {
-    label: t('login.oauth.qq'),
+    label: $t('login.oauth.qq'),
     icon: 'basil:qq-outline',
     type: 'qq',
-    desc: t('login.oauth.qqDesc')
+    desc: $t('login.oauth.qqDesc')
   },
   {
-    label: t('login.oauth.steam'),
+    label: $t('login.oauth.steam'),
     icon: 'mdi:steam',
     type: 'steam',
-    desc: t('login.oauth.steamDesc')
+    desc: $t('login.oauth.steamDesc')
   }
 ]);
 

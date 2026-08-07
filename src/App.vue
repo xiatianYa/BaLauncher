@@ -2,6 +2,7 @@
 import { NConfigProvider, darkTheme, zhCN, dateZhCN, enUS, dateEnUS } from 'naive-ui';
 import { computed, ref, watch } from 'vue';
 import { useThemeStore } from '@/store/modules/theme';
+import { useAppStore } from '@/store/modules/app';
 import { i18n } from '@/locales';
 import ThemeTransition from '@/components/common/theme-transition.vue';
 
@@ -11,6 +12,7 @@ defineOptions({
 
 
 const themeStore = useThemeStore();
+const appStore = useAppStore();
 
 const naiveDarkTheme = computed(() => (themeStore.darkMode ? darkTheme : undefined));
 
@@ -30,6 +32,15 @@ watch(
     // 旧主题背景色作为遮罩填充，扫描线扫过后露出新主题
     themeTransition.value = isDark ? '#fbf1f1' : '#161a26';
   }
+);
+
+/** 监听鼠标主题：在 html 上标记 data-cursor，global.css 据此切换默认/自定义光标 */
+watch(
+  () => appStore.mouseCursor,
+  cursor => {
+    document.documentElement.dataset.cursor = cursor;
+  },
+  { immediate: true }
 );
 
 /** 动画播放完毕后移除覆盖层 */
@@ -108,30 +119,30 @@ const themeOverrides = computed(() => {
       // 文字
       textColorBase: '#2e2b26',
       textColor1: '#2e2b26',
-      textColor2: '#595348',
-      textColor3: '#7d7568',
-      textColorDisabled: '#b0a79a',
-      placeholderColor: '#8e8677',
+      textColor2: '#4b453b',
+      textColor3: '#6f6759',
+      textColorDisabled: '#a89f90',
+      placeholderColor: '#80786a',
       // 边框/分隔线
-      borderColor: '#e7ded4',
-      borderColorHover: '#d5c9ba',
-      dividerColor: '#efe7de',
+      borderColor: '#d9cdbe',
+      borderColorHover: '#c3b5a2',
+      dividerColor: '#e5dbcf',
       // 输入框
       inputColor: '#fffdfa',
       inputColorDisabled: '#f7f0ea',
       inputColorFocus: '#fffdfa',
       // 图标/关闭按钮
-      iconColor: '#8a8172',
+      iconColor: '#786f60',
       iconColorHover: '#2e2b26',
       iconColorPressed: '#2e2b26',
-      closeColorHover: '#efe7de',
+      closeColorHover: '#e5dbcf',
       closeIconColorHover: '#2e2b26',
       // 滚动条
-      scrollbarColor: '#d8cdc0',
-      scrollbarColorHover: '#c6b9a9',
+      scrollbarColor: '#cfc2b3',
+      scrollbarColorHover: '#bcae9c',
       // 开关/复选轨道与底色
-      trackColor: '#e7ddd2',
-      railColor: '#e7ddd2',
+      trackColor: '#e2d8cb',
+      railColor: '#e2d8cb',
       baseColor: '#ffffff',
       checkMarkColor: '#ffffff'
     }

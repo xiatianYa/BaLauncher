@@ -4,7 +4,7 @@ import { NModal, NForm, NFormItem, NInput, NInputNumber, NSelect, NDatePicker, F
 import dayjs from 'dayjs';
 import { $t } from '@/locales';
 import { useDict } from '@/hooks/business/dict';
-import { fetchSaveNotice, fetchUpdateNotice } from '@/service/api';
+import { fetchSaveNotice, fetchUpdateNotice, fetchGetAllUserNames, fetchGetAllRoles } from '@/service/api';
 
 interface Emits {
     (e: 'update:showNoticeModal', value: boolean): void;
@@ -54,7 +54,7 @@ const formData = ref<{
     priority: 0,
     status: 1,
     receiverType: 0,
-    receiverId: 0,
+    receiverId: null,
     businessType: '',
     businessId: null,
     jumpType: '',
@@ -102,10 +102,14 @@ const rules: FormRules = {
         trigger: 'change'
     },
     receiverId: {
-        // 仅指定接收人（非全体）时需要填写接收人ID
+        // 仅指定接收人/角色（非全体）时需要填写接收人ID
         validator: (_rule, value) => {
             if (formData.value.receiverType !== 0 && (value === null || value === undefined || value === '')) {
-                return new Error($t('updateLog.noticeForm.receiverId.required'));
+                return new Error(
+                    formData.value.receiverType === 2
+                        ? $t('updateLog.noticeForm.receiverRole.required')
+                        : $t('updateLog.noticeForm.receiverId.required')
+                );
             }
             return true;
         },
@@ -137,6 +141,50 @@ const statusOptions = numDictOptions('sys_notice_status');
 /** 接收类型选项（字典 sys_notice_receiver_type：0=全体 1=指定用户 2=按角色） */
 const receiverTypeOptions = numDictOptions('sys_notice_receiver_type');
 
+/** 指定用户（receiverType=1）下拉选项：用户名称列表 */
+const userOptions = ref<{ label: string; value: number }[]>([]);
+/** 按角色（receiverType=2）下拉选项：角色列表 */
+const roleOptions = ref<{ label: string; value: number }[]>([]);
+/** 接收人/角色选项加载状态 */
+const loadingReceiverOptions = ref(false);
+
+/** 加载全部用户名称（按需加载，选项已有则跳过） */
+const loadUserOptions = async (): Promise<void> => {
+    if (userOptions.value.length > 0) return;
+    loadingReceiverOptions.value = true;
+    try {
+        const { data, error } = await fetchGetAllUserNames();
+        if (!error && data) {
+            userOptions.value = data.map(item => ({ label: item.label, value: Number(item.value) }));
+        }
+    } finally {
+        loadingReceiverOptions.value = false;
+    }
+};
+
+/** 加载全部角色（按需加载，选项已有则跳过） */
+const loadRoleOptions = async (): Promise<void> => {
+    if (roleOptions.value.length > 0) return;
+    loadingReceiverOptions.value = true;
+    try {
+        const { data, error } = await fetchGetAllRoles();
+        if (!error && data) {
+            roleOptions.value = data.map(item => ({ label: item.roleName, value: Number(item.id) }));
+        }
+    } finally {
+        loadingReceiverOptions.value = false;
+    }
+};
+
+/** 切换接收类型时按需加载对应选项（编辑回填同样触发） */
+watch(
+    () => formData.value.receiverType,
+    (v) => {
+        if (v === 1) loadUserOptions();
+        else if (v === 2) loadRoleOptions();
+    }
+);
+
 /** 监听编辑对象，回填表单 */
 watch(
     () => props.editNotice,
@@ -151,7 +199,7 @@ watch(
                 priority: Number(notice.priority ?? 0),
                 status: Number(notice.status ?? 1),
                 receiverType: Number(notice.receiverType ?? 0),
-                receiverId: notice.receiverId ? Number(notice.receiverId) : 0,
+                receiverId: notice.receiverId ? Number(notice.receiverId) : null,
                 businessType: notice.businessType || '',
                 businessId: notice.businessId ? Number(notice.businessId) : null,
                 jumpType: notice.jumpType || '',
@@ -232,7 +280,7 @@ const handleClose = (): void => {
         priority: 0,
         status: 1,
         receiverType: 0,
-        receiverId: 0,
+        receiverId: null,
         businessType: '',
         businessId: null,
         jumpType: '',
@@ -283,9 +331,16 @@ const handleClose = (): void => {
                         :placeholder="$t('updateLog.noticeForm.receiverType.placeholder')" />
                 </NFormItem>
                 <NFormItem v-if="formData.receiverType !== 0"
-                    :label="$t('updateLog.noticeForm.receiverId.label')" path="receiverId">
-                    <NInputNumber v-model:value="formData.receiverId" :min="1" class="w-full"
+                    :label="formData.receiverType === 2 ? $t('updateLog.noticeForm.receiverRole.label') : $t('updateLog.noticeForm.receiverId.label')"
+                    path="receiverId">
+                    <!-- 指定用户：用户名称搜索下拉 -->
+                    <NSelect v-if="formData.receiverType === 1" v-model:value="formData.receiverId"
+                        :options="userOptions" filterable clearable :loading="loadingReceiverOptions"
                         :placeholder="$t('updateLog.noticeForm.receiverId.placeholder')" />
+                    <!-- 按角色：角色搜索下拉 -->
+                    <NSelect v-else v-model:value="formData.receiverId" :options="roleOptions" filterable clearable
+                        :loading="loadingReceiverOptions"
+                        :placeholder="$t('updateLog.noticeForm.receiverRole.placeholder')" />
                 </NFormItem>
                 <NFormItem :label="$t('updateLog.noticeForm.businessType.label')" path="businessType">
                     <NInput v-model:value="formData.businessType"

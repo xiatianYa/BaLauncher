@@ -1,10 +1,10 @@
 import { reactive, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { defineStore } from 'pinia'
 import { SetupStoreId } from '@/enum'
 import { UserConnectionStatus, GisDataSendTimerState } from '@/constants/cs2'
-import type { GamePlatform } from '@/constants/app'
 import ServerWebsocket, { sendPlayerAction, sendPlayerGameData, sendServerGameData } from '@/utils/ws/server'
-import { useGameStorage } from './useGameStorage'
+import { useAppStore } from '@/store/modules/app'
 import { useServerQuery } from './useServerQuery'
 import { useGsiListener } from './useGsiListener'
 import { useLogReader } from './useLogReader'
@@ -17,7 +17,7 @@ import { usePlayerAction } from './usePlayerAction'
  * 管理游戏相关状态、服务器列表、自动挤服、GSI数据等功能
  *
  * 已拆分为多个 composable：
- * - useGameStorage: 本地存储读写
+ * - appStore: 本地存储读写（game/app 持久化设置统一管理）
  * - useServerQuery: 服务器查询
  * - useGsiListener: GSI事件监听
  * - useLogReader: 日志解析
@@ -26,6 +26,21 @@ import { usePlayerAction } from './usePlayerAction'
  * - usePlayerAction: 玩家动作管理
  */
 export const useGameStore = defineStore(SetupStoreId.Game, () => {
+  // ==================== 持久化设置 ====================
+  // 游戏/应用持久化设置统一由 appStore 管理（含 localStorage 读写），此处仅解耦引用
+  const appStore = useAppStore()
+  const {
+    gamePlatform: GamePlatform,
+    csgo2Path,
+    steamPath,
+    automaticJoinConfig,
+    applyKeyBindItems,
+    selectedStartItems,
+    isFullscreen,
+    serverViewModule,
+    selectedCommunityId
+  } = storeToRefs(appStore)
+
   // ==================== 列表数据 ====================
 
   /** 社区列表 */
@@ -52,17 +67,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     userGameDataMap: {},
     playerActionMap: {},
   })
-
-  // ==================== 用户设置 ====================
-
-  /** 按键绑定配置项 */
-  const applyKeyBindItems = ref<Api.Game.ApplyKeyBindItem[]>([])
-
-  /** 游戏启动项列表 */
-  const selectedStartItems = ref<string[]>([])
-
-  /** 当前选中的社区ID */
-  const selectedCommunityId = ref<number | null>(null)
 
   // ==================== 服务器相关 ====================
 
@@ -100,15 +104,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   /** 自动挤服计数 */
   const automaticCount = ref(0)
 
-  /** 自动挤服配置 */
-  const automaticJoinConfig = ref<Api.Game.AutomaticJoinConfig>({
-    joinServerPersonValue: 63,
-    joinServerCountValue: 2,
-    joinServerAutoRetryValue: true,
-    pushGisValue: true,
-    joinServerDelayValue: 0
-  })
-
   // ==================== 游戏状态 ====================
 
   /** 游戏是否正在运行 */
@@ -125,23 +120,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /** 用户连接服务器状态 */
   const userConnectionStatus = ref<UserConnectionStatus>('idle')
-
-  /** 是否全屏显示服务器列表 */
-  const isFullscreen = ref(false)
-
-  /** 服务器列表视图模式（卡片/表格） */
-  const serverViewModule = ref<UnionKey.ServerLayoutModule>('cardModel')
-
-  // ==================== 平台与路径 ====================
-
-  /** 游戏平台（国际服/完美服） */
-  const GamePlatform = ref<GamePlatform>('international')
-
-  /** CS2 游戏路径 */
-  const csgo2Path = ref('')
-
-  /** Steam 安装路径 */
-  const steamPath = ref('')
 
   // ==================== 游戏实时信息 ====================
 
@@ -192,18 +170,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // ==================== 组合各 Composable ====================
 
-  // 1. 存储相关
-  const storage = useGameStorage({
-    gamePlatform: GamePlatform,
-    csgo2Path,
-    steamPath,
-    automaticJoinConfig,
-    applyKeyBindItems,
-    selectedStartItems,
-    isFullscreen,
-    serverViewModule,
-    selectedCommunityId,
-  })
+  // 1. 存储相关 - 已统一迁至 appStore 管理（loadSettingsFromStorage / applyCommunityOrder / saveCommunityOrder 等）
 
   // 2. 自动挤服 - 通过 getter 延迟引用 game status 的函数
   /**
@@ -336,9 +303,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     currentGisServerList,
     selectedCommunityId,
     joinServerInfo,
-    loadSettingsFromStorage: storage.loadSettingsFromStorage,
-    applyCommunityOrder: storage.applyCommunityOrder,
-    saveCommunityOrder: storage.saveCommunityOrder,
+    loadSettingsFromStorage: appStore.loadSettingsFromStorage,
+    applyCommunityOrder: appStore.applyCommunityOrder,
+    saveCommunityOrder: appStore.saveCommunityOrder,
   })
 
   // 7. 玩家动作管理
@@ -389,14 +356,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     /** WebSocket 推送的服务器游戏实时数据（服务器信息+玩家数据映射） */
     serverGameDataMap,
 
-    // ---- 用户设置 ----
-    /** 按键绑定配置项 */
-    applyKeyBindItems,
-    /** 游戏启动项列表 */
-    selectedStartItems,
-    /** 当前选中的社区ID */
-    selectedCommunityId,
-
     // ---- 服务器相关 ----
     /** 正在刷新的服务器地址列表 */
     refreshingServerAddrs,
@@ -410,8 +369,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     isJoinServerTrayVisible,
     /** 自动挤服计数 */
     automaticCount,
-    /** 自动挤服配置 */
-    automaticJoinConfig,
 
     // ---- 游戏状态 ----
     /** 游戏是否正在运行 */
@@ -424,54 +381,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     isLogReading,
     /** 用户连接服务器状态 */
     userConnectionStatus,
-    /** 是否全屏显示服务器列表 */
-    isFullscreen,
-    /** 服务器列表视图模式 */
-    serverViewModule,
-
-    // ---- 平台与路径 ----
-    /** 游戏平台 */
-    GamePlatform,
-    /** CS2 游戏路径 */
-    csgo2Path,
-    /** Steam 安装路径 */
-    steamPath,
 
     // ---- 游戏实时信息 ----
     /** 当前游戏服务器信息 */
     gameServerInfo,
     /** 当前玩家游戏内信息 */
     gamePlayerInfo,
-
-    // ---- 方法 - 存储 ----
-    /** 设置游戏平台 */
-    setGamePlatform: storage.setGamePlatform,
-    /** 设置 CS2 路径 */
-    setCsgo2Path: storage.setCsgo2Path,
-    /** 设置 Steam 路径 */
-    setSteamPath: storage.setSteamPath,
-    /** 切换全屏模式 */
-    toggleFullscreen: storage.toggleFullscreen,
-    /** 切换服务器列表视图模式 */
-    toggleServerViewModule: storage.toggleServerViewModule,
-    /** 设置选中的社区ID */
-    setSelectedCommunityId: storage.setSelectedCommunityId,
-    /** 设置自动挤服人数阈值 */
-    setJoinServerPersonValue: storage.setJoinServerPersonValue,
-    /** 设置自动挤服线程数 */
-    setJoinServerCountValue: storage.setJoinServerCountValue,
-    /** 设置是否自动重试挤服 */
-    setJoinServerAutoRetryValue: storage.setJoinServerAutoRetryValue,
-    /** 设置是否推送 GIS 数据 */
-    setPushGisValue: storage.setPushGisValue,
-    /** 设置挤服延迟 */
-    setJoinServerDelayValue: storage.setJoinServerDelayValue,
-    /** 设置按键绑定配置 */
-    setApplyKeyBindItems: storage.setApplyKeyBindItems,
-    /** 设置游戏启动项 */
-    setSelectedStartItems: storage.setSelectedStartItems,
-    /** 切换单个启动项 */
-    toggleStartItem: storage.toggleStartItem,
 
     // ---- 方法 - 游戏状态 ----
     /** 检查游戏运行状态 */

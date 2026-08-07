@@ -1,16 +1,14 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
 import { NButton } from 'naive-ui'
-import { localStg } from '@/utils/storage'
 import { $t } from '@/locales'
-import { clearLocalCache, type CacheScope } from '@/utils/cache'
 import {
-  ROUTE_STORAGE_KEYS,
-  APP_STORAGE_KEYS,
-  GAME_STORAGE_KEYS,
-  AUTH_STORAGE_KEYS,
-  ALL_STORAGE_KEYS,
-} from '@/constants/cache'
+  clearLocalCache,
+  formatBytes,
+  getLocalStorageSize,
+  getScopeStorageSize,
+  type CacheScope,
+} from '@/utils/cache'
 
 const cacheSize = ref('0 KB')
 const cacheModalVisible = ref(false)
@@ -54,49 +52,11 @@ const loadImageCacheSize = async () => {
   }
 }
 
-/** 格式化字节大小 */
-const formatBytes = (size: number) => {
-  if (size < 1024) {
-    return `${size}B`
-  } else if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(2)}KB`
-  }
-  return `${(size / (1024 * 1024)).toFixed(2)}MB`
-}
-
 const getCacheTypeSize = (type: string) => {
-  let size = 0
-
-  const getKeySize = (key: string) => {
-    const value = localStg.get(key as keyof StorageType.Local)
-    if (value) {
-      size += (key.length + JSON.stringify(value).length) * 2
-    }
-  }
-
-  switch (type) {
-    case 'gameSettings':
-      Object.values(GAME_STORAGE_KEYS).forEach(getKeySize)
-      break
-    case 'appSettings':
-      Object.values(APP_STORAGE_KEYS).forEach(getKeySize)
-      break
-    case 'authData':
-      Object.values(AUTH_STORAGE_KEYS).forEach(getKeySize)
-      break
-    case 'routeData':
-      Object.values(ROUTE_STORAGE_KEYS).forEach(getKeySize)
-      break
-    case 'imageCache':
-      return imageCacheSize.value
-  }
-
-  if (size < 1024) {
-    return `${size}B`
-  } else if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(2)}KB`
-  }
-  return `${(size / (1024 * 1024)).toFixed(2)}MB`
+  if (type === 'imageCache') return imageCacheSize.value
+  // 其余类型按 scope 统一从 cache.ts 统计（localStorage 占用）
+  const scope = CACHE_TYPE_SCOPE[type]
+  return scope ? formatBytes(getScopeStorageSize(scope as Exclude<CacheScope, 'image'>)) : '0 B'
 }
 
 const selectedCacheTypes = ref<string[]>([])
@@ -111,13 +71,8 @@ const toggleCacheType = (type: string) => {
 }
 
 const calculateCacheSize = async () => {
-  let size = 0
-  Object.values(ALL_STORAGE_KEYS).forEach((key) => {
-    const value = localStg.get(key as keyof StorageType.Local)
-    if (value) {
-      size += (key.length + JSON.stringify(value).length) * 2
-    }
-  })
+  // localStorage 占用统一从 cache.ts 统计
+  let size = getLocalStorageSize()
 
   // 加上图片磁盘缓存大小
   try {
@@ -127,13 +82,7 @@ const calculateCacheSize = async () => {
     // 忽略 IPC 调用失败
   }
 
-  if (size < 1024) {
-    cacheSize.value = `${size} B`
-  } else if (size < 1024 * 1024) {
-    cacheSize.value = `${(size / 1024).toFixed(2)} KB`
-  } else {
-    cacheSize.value = `${(size / (1024 * 1024)).toFixed(2)} MB`
-  }
+  cacheSize.value = formatBytes(size)
 }
 
 const clearCache = () => {

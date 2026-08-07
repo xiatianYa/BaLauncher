@@ -14,6 +14,14 @@ declare namespace UnionKey {
   /** Theme scheme */
   type ThemeScheme = 'light' | 'dark';
 
+  /**
+   * The mouse cursor theme
+   *
+   * - app: 应用主题自定义指针
+   * - system: 系统默认指针
+   */
+  type MouseCursor = 'app' | 'system';
+
   /** The tool module */
   type ToolModule = 'keyBind' | 'mapOrder' | 'serverMapRecord' | 'botGroup';
 

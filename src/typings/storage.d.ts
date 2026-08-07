@@ -44,6 +44,8 @@ declare namespace StorageType {
     theme: string;
     /** The volume */
     volume: number;
+    /** The mouse cursor theme */
+    mouseCursor: UnionKey.MouseCursor;
     /** The community order */
     communityOrder: number[];
     /** The custom community ids */

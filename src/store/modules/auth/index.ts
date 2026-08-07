@@ -8,6 +8,7 @@ import { AUTH_STORAGE_KEYS } from '@/constants/cache';
 import { useRouterPush } from "@/hooks/common/router";
 import { useGameStore } from "@/store/modules/game";
 import { useDictStore } from "@/store/modules/dict";
+import { $t } from '@/locales';
 
 /** Auth store */
 export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
@@ -150,14 +151,14 @@ export const useAuthStore = defineStore(SetupStoreId.Auth, () => {
         await redirectFromLogin(needRedirect);
 
         window.$notification?.success({
-          title: "登陆成功",
-          content: `欢迎回来,${userInfo.userName}!`,
+          title: $t('login.notify.loginSuccess'),
+          content: $t('login.notify.welcomeBack', { name: userInfo.userName }),
           duration: 4500,
         });
       }
     } else {
       window.$notification?.error({
-        title: "登陆失败",
+        title: $t('login.notify.loginFailed'),
         content: error.message,
         duration: 4500,
       });

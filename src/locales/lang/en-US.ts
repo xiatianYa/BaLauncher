@@ -91,6 +91,11 @@ export default {
       register: 'Register',
       otherMethods: 'Other login methods',
     },
+    notify: {
+      loginSuccess: 'Login Successful',
+      loginFailed: 'Login Failed',
+      welcomeBack: 'Welcome back, {name}!',
+    },
   },
   layout: {
     menuConfig: 'Menu Settings',
@@ -148,6 +153,9 @@ export default {
     noTimelineData: 'No timeline data',
     selectServerTip: 'Select a server to view timeline',
     allLoaded: 'All records loaded',
+    searchMap: 'Search map',
+    playDuration: 'Played {count}min',
+    onlinePlayers: 'Online Players',
     botBind: {
       title: 'Bind QQ Group Member',
       desc: 'Before using map subscription, bind the current account to a QQ group member.',
@@ -224,6 +232,11 @@ export default {
     general: 'General',
     subtitle: 'App settings and preferences',
     theme: 'Theme',
+    mouseTheme: 'Mouse Theme',
+    mouseThemeApp: 'App Theme',
+    mouseThemeAppDesc: 'Custom pointer',
+    mouseThemeSystem: 'System Default',
+    mouseThemeSystemDesc: 'System default pointer',
     language: 'Language',
     about: 'About',
     version: 'Version',
@@ -300,8 +313,8 @@ export default {
     weekDay: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     onlineUser: 'Online Users',
     onlineUserTip: 'Players will appear here when they come online',
-    communityHistoryOnline: 'Community History',
-    communityRealtimeOnline: 'Community Real-time',
+    communityHistoryOnline: 'History',
+    communityRealtimeOnline: 'Realtime',
     serverCurrentOnline: 'Servers Online Now',
     serverHistoryOnline: 'Server Online History',
     serverCurrentOnlineTip: 'Real-time status of connected servers',
@@ -309,6 +322,7 @@ export default {
     timeRangeOneDay: '1 day',
     timeRangeThreeDays: '3 days',
     timeRangeOneWeek: '1 week',
+    serverHistoryFetchFailed: 'Failed to load history data',
     serverOnlineCount: 'Servers',
     playersOnline: 'Players',
     mostPlayersServer: 'Most Popular',
@@ -579,8 +593,13 @@ export default {
       },
       receiverId: {
         label: 'Receiver',
-        placeholder: 'Enter receiver ID',
-        required: 'Please enter receiver ID'
+        placeholder: 'Select receiver',
+        required: 'Please select receiver'
+      },
+      receiverRole: {
+        label: 'Receiver Role',
+        placeholder: 'Select role',
+        required: 'Please select role'
       },
       businessType: {
         label: 'Business Type',

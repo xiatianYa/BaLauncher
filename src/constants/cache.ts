@@ -19,7 +19,8 @@ export const GAME_STORAGE_KEYS = {
 export const APP_STORAGE_KEYS = {
   THEME: 'theme' as const,
   VOLUME: 'volume' as const,
-  LANG: 'lang' as const
+  LANG: 'lang' as const,
+  MOUSE_CURSOR: 'mouseCursor' as const
 };
 
 // 认证存储键
