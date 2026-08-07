@@ -32,8 +32,8 @@ declare namespace Api {
 
     /** map params */
     type MapParams = {
-      /** 记录ID */
-      id: number;
+      /** 记录ID（新增时传 null） */
+      id: number | null;
       /** 地图名称 */
       mapName: string;
       /** 译名 */
@@ -76,7 +76,7 @@ declare namespace Api {
       systemOrder: string | null;
       /** QQ订阅 */
       qqOrder: string | null;
-      /** 扩展地图 */
+      /** 扩展地图（可能不存在） */
       exgMap: {
         /** 地图名称 */
         Name: string;
@@ -92,7 +92,7 @@ declare namespace Api {
         isOrder: boolean;
         /** 称号 */
         achievement10: string;
-      };
+      } | null;
     }>;
 
     /** 修改地图订阅 params */

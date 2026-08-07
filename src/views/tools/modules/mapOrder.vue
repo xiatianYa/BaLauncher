@@ -44,7 +44,7 @@ const showEditModal = ref(false);
 const currentEditMap = ref<Api.Game.MapVo | null>(null);
 const showMapEditModal = ref(false);
 const isMapAddMode = ref(false);
-const mapEditForm = reactive<Api.Game.MapParams>({ id: 0, mapName: '', mapLabel: '', mapUrl: '', type: '', tag: [], artifact: [], isOrder: '0' });
+const mapEditForm = reactive<Api.Game.MapParams>({ id: null, mapName: '', mapLabel: '', mapUrl: '', type: '', tag: [], artifact: [], isOrder: '0' });
 const mapEditLoading = ref(false);
 const mapUploadLoading = ref(false);
 
@@ -101,7 +101,7 @@ const handleDeleteSubscribe = async () => {
 /* ===== 地图新增 / 编辑 ===== */
 
 const resetMapEditForm = () => {
-    mapEditForm.id = 0;
+    mapEditForm.id = null;
     mapEditForm.mapName = '';
     mapEditForm.mapLabel = '';
     mapEditForm.mapUrl = '';
@@ -282,8 +282,16 @@ const getMapTags = (mapName?: string) => {
     const tags = getMapTypeInfo(mapName)?.tag;
     return tags ? (Array.isArray(tags) ? tags : [tags]) : [];
 };
-const getGameTypeOption = (type?: string) => (type ? dictOptions('game_type').find(item => item.value === type) : undefined);
-const getGameTagOption = (tag?: string) => (tag ? dictOptions('game_tag').find(item => item.value === tag) : undefined);
+/** 地图难度字典选项（值统一转字符串，避免运行时数字/字符串不一致导致下拉框与标签空白） */
+const gameTypeOptions = computed(() => dictOptions('game_type').map(item => ({ ...item, value: String(item.value) })));
+/** 地图标签字典选项（同上，统一转字符串） */
+const gameTagOptions = computed(() => dictOptions('game_tag').map(item => ({ ...item, value: String(item.value) })));
+/** 匹配难度字典项（数值与字符串均可匹配） */
+const getGameTypeOption = (type?: string | number | null) =>
+    type != null && type !== '' ? gameTypeOptions.value.find(item => item.value === String(type)) : undefined;
+/** 匹配标签字典项 */
+const getGameTagOption = (tag?: string | number | null) =>
+    tag != null && tag !== '' ? gameTagOptions.value.find(item => item.value === String(tag)) : undefined;
 
 /* ===== 搜索监听 ===== */
 
@@ -460,11 +468,11 @@ onMounted(() => {
                                 <div class="subscribe-item-meta">
                                     <div class="meta-item">
                                         <span class="meta-label">{{ $t('mapOrder.achievement') }}</span>
-                                        <span class="meta-value">{{ map.exgMap.achievement10 || '-' }}</span>
+                                        <span class="meta-value">{{ map.exgMap?.achievement10 || '-' }}</span>
                                     </div>
                                     <div class="meta-item">
                                         <span class="meta-label">{{ $t('mapOrder.cooldown') }}</span>
-                                        <span class="meta-value">{{ map.exgMap.cooldownMinute }} {{
+                                        <span class="meta-value">{{ map.exgMap?.cooldownMinute }} {{
                                             $t('mapOrder.minutes') }}</span>
                                     </div>
                                     <div class="meta-item">
@@ -478,11 +486,15 @@ onMounted(() => {
                                 <div class="subscribe-item-extra">
                                     <div class="extra-item">
                                         <span class="extra-label">{{ $t('mapOrder.lastRun') }}:</span>
-                                        <span class="extra-value">{{ dayjs(map.exgMap.lastRun).format('YYYY-MM-DD HH:mm:ss') || '-' }}</span>
+                                        <span class="extra-value">
+                                            {{ map.exgMap?.lastRun ? dayjs(map.exgMap.lastRun).format('YYYY-MM-DD HH:mm:ss') : '-' }}
+                                        </span>
                                     </div>
                                     <div class="extra-item">
                                         <span class="extra-label">{{ $t('mapOrder.deadline') }}:</span>
-                                        <span class="extra-value">{{ dayjs(map.exgMap.deadline).format('YYYY-MM-DD HH:mm:ss') || '-' }}</span>
+                                        <span class="extra-value">
+                                            {{ map.exgMap?.deadline ? dayjs(map.exgMap.deadline).format('YYYY-MM-DD HH:mm:ss') : '-' }}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
