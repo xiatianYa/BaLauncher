@@ -127,12 +127,12 @@ const joinServer = async (server: Api.Game.SeverVo) => {
 
 // 打开自动连接服务器窗口
 const openAutoJoinServer = (server: Api.Game.SeverVo) => {
-  gameStore.joinServerInfo = server;
   //如果正在挤服 则不能打开其他挤服窗口
   if (gameStore.isJoinServerTrayVisible) {
     window.$message?.error($t('server.joinBusy'));
     return;
   }
+  gameStore.joinServerInfo = server;
   showJoinServerConfirm.value = true;
 }
 
