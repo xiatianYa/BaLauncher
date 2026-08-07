@@ -16,6 +16,14 @@ export function fetchGetAllUserNames() {
   });
 }
 
+/** 查询当前登录用户详细信息 */
+export function fetchGetMyInfo() {
+  return request<Api.System.SysUserVo>({
+    url: '/sysUser/getMyInfo',
+    method: 'get'
+  });
+}
+
 /** 分页查询用户 */
 export function fetchGetUserPageList(params?: Api.System.SysUserSearchDTO) {
   return request<Api.System.SysUserPageList>({

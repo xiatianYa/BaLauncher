@@ -1,14 +1,20 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useAuthStore } from '@/store/modules/auth';
+import UserProfileModal from '@/components/common/user-profile-modal.vue';
 
 const authStore = useAuthStore();
+
+/** 个人资料弹窗显示状态 */
+const showProfile = ref(false);
 </script>
 
 <template>
-  <div class="global-header-container" v-if="authStore.isLogin">
-    <div class="avatar-card">
+  <div class="global-header-container cursor-pointer" v-if="authStore.isLogin">
+    <div class="avatar-card" @click="showProfile = true">
       <NAvatar round size="small" :src="authStore.userInfo.avatar" />
     </div>
+    <UserProfileModal v-model:show="showProfile" />
   </div>
   <div class="global-header-container" v-else>
     <div class="login-icon-btn" @click="authStore.loginModalVisibel = true">

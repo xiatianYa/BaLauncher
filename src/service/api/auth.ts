@@ -41,6 +41,33 @@ export function fetchGetUserInfo() {
 }
 
 /**
+ * 当前登录用户绑定 QQ 账号
+ *
+ * @param accessToken QQ accessToken
+ * @param openId QQ openId
+ */
+export function fetchBindQQ(accessToken: string, openId: string) {
+  return request<boolean>({
+    url: '/auth/bindQQ',
+    method: 'post',
+    data: { accessToken, openId }
+  });
+}
+
+/**
+ * 当前登录用户绑定 Steam 账号
+ *
+ * @param openId Steam openId
+ */
+export function fetchBindSteam(openId: string) {
+  return request<boolean>({
+    url: '/auth/bindSteam',
+    method: 'post',
+    data: { openId }
+  });
+}
+
+/**
  * Refresh token
  *
  * @param refreshToken Refresh token

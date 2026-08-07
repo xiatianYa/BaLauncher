@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import { useAuthStore } from '@/store/modules/auth';
 import { ThemeColor } from '@/constants/app';
 import { $t } from '@/locales';
 import { useDict } from '@/hooks/business/dict';
+import UserProfileModal from '@/components/common/user-profile-modal.vue';
 
 const authStore = useAuthStore();
 const { dictLabel, dictType } = useDict();
+
+/** 个人资料弹窗显示状态 */
+const showProfile = ref(false);
 interface RoleInfo {
   label: string;
   type: ThemeColor;
@@ -22,7 +27,7 @@ const getRoleInfo = (role: string) : RoleInfo => {
 
 <template>
   <div class="global-header-container" v-if="authStore.isLogin">
-    <div class="user-info-card">
+    <div class="user-info-card" @click="showProfile = true">
       <NAvatar round size="large" :src="authStore.userInfo.avatar" class="user-avatar" />
       <div class="user-info">
         <NEllipsis :max="1" class="user-name">{{ authStore.userInfo.userName }}</NEllipsis>
@@ -31,6 +36,7 @@ const getRoleInfo = (role: string) : RoleInfo => {
         </NTag>
       </div>
     </div>
+    <UserProfileModal v-model:show="showProfile" />
   </div>
   <div class="global-header-container" v-else>
     <div class="login-prompt" @click="authStore.loginModalVisibel = true">

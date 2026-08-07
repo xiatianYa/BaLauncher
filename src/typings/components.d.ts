@@ -52,6 +52,7 @@ declare module 'vue' {
     TimelineCard: typeof import('./../components/tool/timeline-card.vue')['default']
     TimelineItem: typeof import('./../components/tool/timeline-item.vue')['default']
     UpdateConfirm: typeof import('./../components/common/update-confirm.vue')['default']
+    UserProfileModal: typeof import('./../components/common/user-profile-modal.vue')['default']
     WindowControls: typeof import('./../components/common/window-controls.vue')['default']
     WindowsFooter: typeof import('./../layout/windows-layout/modules/windows-footer/index.vue')['default']
     WindowsHeader: typeof import('./../layout/windows-layout/modules/windows-header/index.vue')['default']

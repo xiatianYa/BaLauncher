@@ -18,7 +18,6 @@ const { dictLabel, dictOptions } = useDict();
 const loading = ref(false);
 const list = ref<Api.System.SysUserVo[]>([]);
 const pagination = reactive({
-  userName: '',
   nickName: '',
   status: null as string | null,
   current: 1,
@@ -55,7 +54,6 @@ const loadData = async () => {
   loading.value = true;
   try {
     const params: Api.System.SysUserSearchDTO = {
-      userName: pagination.userName || null,
       nickName: pagination.nickName || null,
       status: pagination.status || null,
       current: pagination.current,
@@ -79,7 +77,6 @@ const handleSearch = () => {
 
 /** 重置查询条件 */
 const handleReset = () => {
-  pagination.userName = '';
   pagination.nickName = '';
   pagination.status = null;
   pagination.current = 1;
@@ -103,7 +100,6 @@ const isEditMode = ref(true);
 /** 编辑表单 */
 const editForm = reactive({
   id: '',
-  userName: '',
   nickName: '',
   status: '1',
   /** 已选角色编码列表 */
@@ -133,7 +129,6 @@ const handleCreate = () => {
   isEditMode.value = false;
   Object.assign(editForm, {
     id: '',
-    userName: '',
     nickName: '',
     status: '1',
     userRoles: []
@@ -146,7 +141,6 @@ const handleEdit = (row: Api.System.SysUserVo) => {
   isEditMode.value = true;
   Object.assign(editForm, {
     id: String(row.id ?? ''),
-    userName: row.userName || '',
     nickName: row.nickName || '',
     status: row.status === '1' ? '1' : '0',
     userRoles: [...(row.userRoles || [])]
@@ -156,15 +150,14 @@ const handleEdit = (row: Api.System.SysUserVo) => {
 
 /** 保存（新增 / 修改） */
 const handleEditSubmit = async () => {
-  const userName = editForm.userName.trim();
-  if (!userName) {
-    window.$message?.warning($t('userManage.messages.pleaseEnterUserName'));
+  const nickName = editForm.nickName.trim();
+  if (!nickName) {
+    window.$message?.warning($t('userManage.messages.pleaseEnterNickName'));
     return;
   }
   const params: Api.System.SysUserFormDTO = {
     id: isEditMode.value ? editForm.id : undefined,
-    userName,
-    nickName: editForm.nickName.trim(),
+    nickName,
     status: editForm.status,
     userRoles: editForm.userRoles
   };
@@ -258,12 +251,6 @@ onMounted(() => {
         <!-- 搜索栏 -->
         <div class="search-bar">
           <div class="search-field">
-            <span class="field-label">{{ $t('userManage.userName') }}</span>
-            <div class="search-box">
-              <NInput v-model:value="pagination.userName" :placeholder="$t('userManage.userNamePlaceholder')" clearable size="small" />
-            </div>
-          </div>
-          <div class="search-field">
             <span class="field-label">{{ $t('userManage.nickName') }}</span>
             <div class="search-box">
               <NInput v-model:value="pagination.nickName" :placeholder="$t('userManage.nickNamePlaceholder')" clearable size="small" />
@@ -318,8 +305,7 @@ onMounted(() => {
                       <SvgIcon v-else icon="mdi:account" class="user-icon" />
                     </div>
                     <div class="user-title">
-                      <span class="user-name" :title="row.userName">{{ row.userName || $t('userManage.unknownUser') }}</span>
-                      <span class="user-nick">{{ row.nickName || $t('userManage.noNickName') }}</span>
+                      <span class="user-name" :title="row.nickName">{{ row.nickName || $t('userManage.noNickName') }}</span>
                     </div>
                   </div>
                   <div class="status-badge" :class="{ enabled: row.status === '1' }">
@@ -404,10 +390,6 @@ onMounted(() => {
         </template>
         <div class="modal-form">
           <div class="form-item">
-            <label class="form-label">{{ $t('userManage.userName') }}</label>
-            <NInput v-model:value="editForm.userName" :placeholder="$t('userManage.userNamePlaceholder')" clearable />
-          </div>
-          <div class="form-item">
             <label class="form-label">{{ $t('userManage.nickName') }}</label>
             <NInput v-model:value="editForm.nickName" :placeholder="$t('userManage.nickNamePlaceholder')" clearable />
           </div>
@@ -455,7 +437,7 @@ onMounted(() => {
         <div class="delete-modal-body">
           <p class="delete-modal-text">
             {{ $t('userManage.deleteConfirmPrefix') }}
-            <span class="delete-modal-target">{{ currentDeleteRow?.userName }}</span>
+            <span class="delete-modal-target">{{ currentDeleteRow?.nickName }}</span>
             {{ $t('userManage.deleteConfirmSuffix') }}
           </p>
           <p class="delete-modal-tip">{{ $t('userManage.deleteConfirmTip') }}</p>
@@ -852,14 +834,6 @@ onMounted(() => {
             font-size: 15px;
             font-weight: 700;
             color: var(--n-text-color);
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-          }
-
-          .user-nick {
-            font-size: 11px;
-            color: rgba(var(--app-rgb), 0.45);
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;

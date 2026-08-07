@@ -8,17 +8,15 @@ declare namespace Api {
 
     /** user search params */
     type UserSearchParams = CommonType.RecordNullable<
-      Pick<Api.System.User, 'userName' | 'nickName' | 'status'> &
+      Pick<Api.System.User, 'nickName' | 'status'> &
       Api.Common.CommonSearchParams
     >;
 
     /** 用户数据 */
     type User = Common.CommonRecord<{
-      /** user name */
-      userName: string;
-      /** user nick name */
+      /** 用户昵称 */
       nickName: string;
-      /** user role code collection */
+      /** 用户角色 code 集合 */
       userRoles: string[];
     }>;
 
@@ -46,8 +44,6 @@ declare namespace Api {
 
     /** 用户 VO */
     type SysUserVo = Common.CommonRecord<{
-      /** 用户名 */
-      userName: string;
       /** QQ第三方标识 */
       qqOpenId?: string;
       /** Steam第三方标识 */
@@ -66,8 +62,6 @@ declare namespace Api {
 
     /** 用户查询 DTO */
     type SysUserSearchDTO = CommonType.RecordNullable<{
-      /** 用户名 */
-      userName?: string;
       /** 昵称 */
       nickName?: string;
       /** 邮箱 */
@@ -80,10 +74,8 @@ declare namespace Api {
     type SysUserFormDTO = CommonType.RecordNullable<{
       /** 用户ID(修改时必填) */
       id?: string;
-      /** 用户名 */
-      userName: string;
       /** 昵称 */
-      nickName?: string;
+      nickName: string;
       /** 是否启用(0:禁用,1:启用) */
       status: string;
       /** 用户角色编码列表 */
