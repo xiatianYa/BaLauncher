@@ -26,6 +26,8 @@ declare namespace Api {
     }>;
 
     type CommunityParams = {
+      /** 社区 ID（修改时必填） */
+      id?: number;
       /** community name */
       communityName: string;
       /** community logo */

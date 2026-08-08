@@ -14,7 +14,7 @@ const useRoute = useRouteStore();
 const navItemVisible = ref<boolean>(false);
 
 // 可选导航全集（与添加导航弹窗中的选项一致）
-const ALL_NAV_KEYS = ['tools', 'updateLog', 'roleManage', 'userManage', 'dictManage', 'setting'];
+const ALL_NAV_KEYS = ['tools', 'updateLog', 'roleManage', 'userManage', 'dictManage', 'communityManage', 'setting'];
 
 // 是否所有可选导航均已添加：全部添加后按钮显示为"移除"
 const allAdded = computed(() =>

@@ -33,7 +33,17 @@ const listRef = ref<HTMLElement | null>(null);
 const containerHeight = ref(0);
 const scrollTop = ref(0);
 
-const totalRows = computed(() => Math.ceil(props.servers.length / ITEMS_PER_ROW));
+/** 离线卡片判定（与模板渲染一致：离线或缺少源服务器信息） */
+const isOfflineCard = (server: Api.Game.SeverVo) => !(server.isOnline && getSourceServerInfo(server)?.serverName);
+
+/** 展示列表：在线服务器在前、离线服务器置底（组内保持原有顺序） */
+const displayServers = computed(() => {
+  const online = props.servers.filter(s => !isOfflineCard(s));
+  const offline = props.servers.filter(isOfflineCard);
+  return [...online, ...offline];
+});
+
+const totalRows = computed(() => Math.ceil(displayServers.value.length / ITEMS_PER_ROW));
 
 const startRow = computed(() => {
   const row = Math.floor(scrollTop.value / ROW_HEIGHT);
@@ -48,8 +58,8 @@ const endRow = computed(() => {
 
 const visibleServers = computed(() => {
   const startIndex = startRow.value * ITEMS_PER_ROW;
-  const endIndex = Math.min(props.servers.length, endRow.value * ITEMS_PER_ROW);
-  return props.servers.slice(startIndex, endIndex);
+  const endIndex = Math.min(displayServers.value.length, endRow.value * ITEMS_PER_ROW);
+  return displayServers.value.slice(startIndex, endIndex);
 });
 
 const paddingTop = computed(() => startRow.value * ROW_HEIGHT);

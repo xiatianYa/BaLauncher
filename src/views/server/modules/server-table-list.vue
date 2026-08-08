@@ -77,24 +77,35 @@ const getPlayerPercent = (server: Api.Game.SeverVo) => {
 const sortField = ref<SortField>(null);
 const sortOrder = ref<SortOrder>('none');
 
-// 根据排序状态返回服务器列表
+// 根据排序状态返回服务器列表；无论是否排序，离线服务器始终置底（在线在前、离线在后）
 const sortedServers = computed(() => {
-  if (sortField.value === null || sortOrder.value === 'none') return props.servers;
+  const sortFn =
+    sortField.value === null || sortOrder.value === 'none'
+      ? null
+      : (a: Api.Game.SeverVo, b: Api.Game.SeverVo) => {
+          let v1 = 0;
+          let v2 = 0;
 
-  return [...props.servers].sort((a, b) => {
-    let v1 = 0;
-    let v2 = 0;
+          if (sortField.value === 'players') {
+            v1 = a.numPlayers ?? 0;
+            v2 = b.numPlayers ?? 0;
+          } else if (sortField.value === 'ping') {
+            v1 = a.ping ?? Number.MAX_SAFE_INTEGER;
+            v2 = b.ping ?? Number.MAX_SAFE_INTEGER;
+          }
 
-    if (sortField.value === 'players') {
-      v1 = a.numPlayers ?? 0;
-      v2 = b.numPlayers ?? 0;
-    } else if (sortField.value === 'ping') {
-      v1 = a.ping ?? Number.MAX_SAFE_INTEGER;
-      v2 = b.ping ?? Number.MAX_SAFE_INTEGER;
-    }
+          return sortOrder.value === 'asc' ? v1 - v2 : v2 - v1;
+        };
 
-    return sortOrder.value === 'asc' ? v1 - v2 : v2 - v1;
-  });
+  const online = props.servers.filter(s => !isServerOffline(s));
+  const offline = props.servers.filter(isServerOffline);
+
+  if (sortFn) {
+    online.sort(sortFn);
+    offline.sort(sortFn);
+  }
+
+  return [...online, ...offline];
 });
 
 // 切换排序状态：none -> asc -> desc -> none

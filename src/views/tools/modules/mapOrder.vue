@@ -6,7 +6,7 @@ import { useDebounceFn } from '@vueuse/core';
 import { useGameStore } from '@/store/modules/game';
 import { useAuth } from '@/hooks/business/auth';
 import { useDict } from '@/hooks/business/dict';
-import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList, fetchUpdateMapSubscribe, fetchUpdateMap, fetchInsertMap, fetchUploadFile } from '@/service/api';
+import { fetchAddMapSubscribe, fetchDeleteMapSubscribe, fetchGetMapPage, fetchGetUserSubscribeList, fetchUpdateMapSubscribe, fetchUpdateMap, fetchInsertMap, fetchDeleteMapById, fetchUploadFile } from '@/service/api';
 import { $t } from '@/locales';
 import dayjs from 'dayjs';
 import { useBotBind } from '@/hooks/business/botBind';
@@ -47,6 +47,9 @@ const isMapAddMode = ref(false);
 const mapEditForm = reactive<Api.Game.MapParams>({ id: null, mapName: '', mapLabel: '', mapUrl: '', type: '', tag: [], artifact: [], isOrder: '0' });
 const mapEditLoading = ref(false);
 const mapUploadLoading = ref(false);
+const showDeleteMapModal = ref(false);
+const deleteMapLoading = ref(false);
+const currentDeleteMap = ref<Api.Game.MapVo | null>(null);
 
 /* ===== 订阅状态判断 ===== */
 
@@ -128,6 +131,34 @@ const handleOpenMapEdit = (map: Api.Game.MapVo) => {
     mapEditForm.artifact = typeof map.artifact === 'string' ? JSON.parse(map.artifact || '[]') : (map.artifact || []);
     mapEditForm.isOrder = map.isOrder || '0';
     showMapEditModal.value = true;
+};
+
+/* ===== 地图删除 ===== */
+
+/** 打开删除确认弹窗（仅管理员） */
+const handleDeleteMap = (map: Api.Game.MapVo) => {
+    currentDeleteMap.value = map;
+    showDeleteMapModal.value = true;
+};
+
+/** 确认删除地图 */
+const handleConfirmDeleteMap = async () => {
+    if (!currentDeleteMap.value) return;
+    deleteMapLoading.value = true;
+    try {
+        const { error } = await fetchDeleteMapById(currentDeleteMap.value.id);
+        if (error) {
+            window.$message?.error(error.message || $t('mapOrder.deleteFailed'));
+            return;
+        }
+        window.$message?.success($t('mapOrder.deleteSuccess'));
+        showDeleteMapModal.value = false;
+        currentDeleteMap.value = null;
+        await fetchMapList(searchKeyword.value);
+        await gameStore.initServerList();
+    } finally {
+        deleteMapLoading.value = false;
+    }
 };
 
 const handleUploadImage = async ({ file, onFinish, onError }: UploadCustomRequestOptions) => {
@@ -411,6 +442,10 @@ onMounted(() => {
                                         <SvgIcon icon="material-symbols:edit-outline" />
                                         <span>{{ $t('mapOrder.editMap') }}</span>
                                     </div>
+                                    <div v-if="isAdmin" class="action-btn delete" @click="handleDeleteMap(map)">
+                                        <SvgIcon icon="material-symbols:delete-outline" />
+                                        <span>{{ $t('mapOrder.deleteMap') }}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -634,6 +669,38 @@ onMounted(() => {
                     {{ $t('mapOrder.confirm') }}
                 </NButton>
                 <NButton class="flex-1 rounded-5px" @click="showMapEditModal = false">
+                    <template #icon>
+                        <SvgIcon icon="material-symbols:close" />
+                    </template>
+                    {{ $t('mapOrder.cancel') }}
+                </NButton>
+            </div>
+        </div>
+    </NModal>
+    <NModal v-model:show="showDeleteMapModal" :bordered="true" preset="card" class="w-400px rounded-20px"
+        :closable="false" size="small">
+        <template #header>
+            <div class="delete-map-header">
+                <SvgIcon icon="material-symbols:delete-outline" class="delete-map-header-icon" />
+                <span>{{ $t('mapOrder.deleteConfirmTitle') }}</span>
+            </div>
+        </template>
+        <div class="delete-map-body">
+            <p class="delete-map-text">
+                {{ $t('mapOrder.deleteConfirmPrefix') }}
+                <span class="delete-map-target">{{ currentDeleteMap?.mapName }}</span>
+                {{ $t('mapOrder.deleteConfirmSuffix') }}
+            </p>
+            <p class="delete-map-tip">{{ $t('mapOrder.deleteMapTip') }}</p>
+            <div class="flex gap-10px mt-15px">
+                <NButton type="error" class="flex-1 rounded-5px" :loading="deleteMapLoading"
+                    @click="handleConfirmDeleteMap">
+                    <template #icon>
+                        <SvgIcon icon="material-symbols:delete-outline" />
+                    </template>
+                    {{ $t('mapOrder.confirmDelete') }}
+                </NButton>
+                <NButton class="flex-1 rounded-5px" @click="showDeleteMapModal = false">
                     <template #icon>
                         <SvgIcon icon="material-symbols:close" />
                     </template>
@@ -970,6 +1037,19 @@ onMounted(() => {
                             &:hover {
                                 background: rgba(240, 160, 32, 0.15);
                                 border-color: rgba(240, 160, 32, 0.35);
+                            }
+                        }
+
+                        &.delete {
+                            width: 100%;
+                            flex: none;
+                            color: #e88080;
+                            background: rgba(232, 128, 128, 0.08);
+                            border-color: rgba(232, 128, 128, 0.2);
+
+                            &:hover {
+                                background: rgba(232, 128, 128, 0.15);
+                                border-color: rgba(232, 128, 128, 0.35);
                             }
                         }
 
@@ -1646,6 +1726,41 @@ onMounted(() => {
         .placeholder-icon {
             font-size: 28px;
         }
+    }
+}
+
+/* ===== 删除地图确认弹窗 ===== */
+.delete-map-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--n-text-color);
+
+    .delete-map-header-icon {
+        font-size: 18px;
+        color: #e88080;
+    }
+}
+
+.delete-map-body {
+    .delete-map-text {
+        margin: 0;
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: rgba(var(--app-rgb), 0.85);
+
+        .delete-map-target {
+            font-weight: 600;
+            color: #e88080;
+        }
+    }
+
+    .delete-map-tip {
+        margin: 6px 0 0;
+        font-size: 12px;
+        color: rgba(var(--app-rgb), 0.45);
     }
 }
 </style>

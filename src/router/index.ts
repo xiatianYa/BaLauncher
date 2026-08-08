@@ -97,6 +97,15 @@ function createVueRoutes(): RouteRecordRaw[] {
                         requiresAuth: false
                     }
                 },
+                {
+                    path: 'communityManage',
+                    name: 'communityManage',
+                    component: () => import('@/views/communityManage/index.vue'),
+                    meta: {
+                        title: '社区管理',
+                        requiresAuth: false
+                    }
+                },
             ]
         }
     ];
