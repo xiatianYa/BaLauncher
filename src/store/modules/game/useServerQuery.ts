@@ -121,6 +121,9 @@ export function useServerQuery(deps: ServerQueryDeps) {
       const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses)
       if (success) {
         infoResponseList.forEach((item: any) => {
+          // 本地查询失败（如服务器离线）时不覆盖任何已有数据，保留源服务器名称/地图等信息
+          if (item.success === false) return
+
           const listServer = unref(currentServerList).find(s => s.connectStr === item.addr)
           if (listServer) {
             listServer.numPlayers = item.players
@@ -177,6 +180,9 @@ export function useServerQuery(deps: ServerQueryDeps) {
     if (!success) return
 
     infoResponseList.forEach((item: any) => {
+      // 查询失败（如服务器离线）时不覆盖 ping，保留原值
+      if (item.success === false) return
+
       const server = unref(currentServerList).find(s => s.connectStr === item.addr)
       if (server) {
         server.ping = item.ping

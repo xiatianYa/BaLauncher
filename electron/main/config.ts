@@ -21,7 +21,8 @@ export const indexHtml = path.join(RENDERER_DIST, 'index.html')
 export function initializeApp() {
   if (os.release().startsWith('6.1') || os.release().startsWith('10.0.2')) app.disableHardwareAcceleration()
   
-  if (process.platform === 'win32') app.setAppUserModelId(app.getName())
+  // 与 electron-builder 的 appId 保持一致，确保任务栏分组与右键菜单图标正确关联
+  if (process.platform === 'win32') app.setAppUserModelId('com.bluearchive.balauncher')
   
   if (!app.requestSingleInstanceLock()) {
     app.quit()

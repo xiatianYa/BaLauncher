@@ -1,13 +1,14 @@
 // @see https://www.electron.build/configuration/configuration
 {
   $schema: "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  appId: "YourAppID",
+  appId: "com.bluearchive.balauncher",
   asar: true,
   productName: "蔚蓝档案登录器",
   directories: {
     output: "release/${version}",
   },
   files: ["dist", "dist-electron"],
+  afterPack: "scripts/afterPack.cjs", // 用独立 rcedit 注入 exe 图标/版本信息（见脚本内注释）
   publish: {
     provider: "generic",
     url: "https://test.bluearchive.top/statics/soft/",
@@ -26,7 +27,10 @@
     ],
     artifactName: "${productName}-Windows-${version}-Setup.${ext}",
     icon: "public/favicon.ico",
-    signAndEditExecutable: false, // 未配置签名证书，关闭 exe 签名，避免 winCodeSign 解压失败
+    // 关闭 exe 签名与内置 rcedit：其 rcedit 会触发 winCodeSign 下载，
+    // 内含 darwin 符号链接，无符号链接权限的机器解压失败。
+    // exe 图标/版本信息改由 scripts/afterPack.cjs 注入
+    signAndEditExecutable: false,
   },
   nsis: {
     oneClick: false,
