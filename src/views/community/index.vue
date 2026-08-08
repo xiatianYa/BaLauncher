@@ -131,8 +131,8 @@ onMounted(() => {
           <p>{{ $t('community.empty') }}</p>
         </div>
 
-        <!-- 加载更多 / 没有更多 -->
-        <div v-if="list.length > 0" class="load-status">
+        <!-- 加载更多 / 没有更多（参考 updateLog：加载完毕时带装饰分隔线） -->
+        <div v-if="list.length > 0" class="load-status" :class="{ finished }">
           <span v-if="loading">{{ $t('community.loading') }}</span>
           <span v-else-if="finished">{{ $t('community.noMore') }}</span>
         </div>
@@ -324,19 +324,19 @@ onMounted(() => {
   }
 }
 
-/* 空状态 */
+/* 空状态（参考 updateLog：占满剩余空间并垂直居中，避免挤在顶部） */
 .empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  height: 100%;
   gap: 12px;
-  padding: 80px 20px;
-  color: rgba(var(--app-rgb), 0.5);
+  color: rgba(var(--app-rgb), 0.4);
 
   .empty-icon {
-    font-size: 56px;
-    opacity: 0.4;
+    font-size: 48px;
+    opacity: 0.5;
   }
 
   p {
@@ -345,14 +345,24 @@ onMounted(() => {
   }
 }
 
-/* 加载更多 / 没有更多提示 */
+/* 加载更多 / 没有更多提示（加载完毕时参考 updateLog finished-indicator：文字两侧装饰分隔线） */
 .load-status {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px 0 4px;
+  gap: 8px;
+  padding: 10px 0;
   font-size: 12px;
-  color: rgba(var(--app-rgb), 0.4);
+  color: rgba(var(--app-rgb), 0.35);
+
+  &.finished::before,
+  &.finished::after {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.5;
+  }
 }
 
 @keyframes cardIn {
