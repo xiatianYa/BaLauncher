@@ -198,10 +198,10 @@ function generateNotificationHtml(data: NotificationData, notificationId: number
 
     .notification-card {
       width: 360px;
-      height: 136px;
+      height: 144px;
       background: rgba(35, 38, 45, 0.96);
       border-radius: 14px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 0 18px rgba(0, 0, 0, 0.18);
       padding: 14px;
       display: flex;
       gap: 14px;

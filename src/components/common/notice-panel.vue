@@ -137,7 +137,7 @@ onMounted(() => {
 <style scoped lang="scss">
 .notice-panel {
   width: 380px;
-  /* 高度随内容自适应，通知内容必须显示齐全（不设最大高度/内部滚动） */
+  /* 高度随内容自适应；通知过多时由列表内部滚动（见 .notice-list） */
   display: flex;
   flex-direction: column;
   border-radius: 14px;
@@ -170,12 +170,24 @@ onMounted(() => {
   }
 }
 
-/* 列表（高度随内容撑开，不内部滚动，保证全部通知可见） */
+/* 列表（超出最大高度时内部滚动，避免通知过多溢出面板） */
 .notice-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 8px;
+  max-height: 420px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(var(--app-rgb), 0.15);
+    border-radius: 3px;
+  }
 }
 
 /* 通知项 */
