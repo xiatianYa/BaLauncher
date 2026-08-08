@@ -43,10 +43,10 @@ const getBaseURL = () => {
   }
   // 生产环境
   else if (process.env.NODE_ENV === 'production') {
-    return 'https://www.bluearchive.top/api';
+    return 'https://test.bluearchive.top/api';
   }
   // 测试环境
-  return 'https://www.bluearchive.top/api';
+  return 'https://test.bluearchive.top/api';
 };
 
 // 创建 axios 实例 - 关键修改：确保Cookie正确携带

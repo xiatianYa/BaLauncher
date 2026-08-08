@@ -10,7 +10,7 @@
   files: ["dist", "dist-electron"],
   publish: {
     provider: "generic",
-    url: "https://www.bluearchive.top/statics/soft/",
+    url: "https://test.bluearchive.top/statics/soft/",
   },
   mac: {
     target: ["dmg"],
@@ -26,6 +26,7 @@
     ],
     artifactName: "${productName}-Windows-${version}-Setup.${ext}",
     icon: "public/favicon.ico",
+    signAndEditExecutable: false, // 未配置签名证书，关闭 exe 签名，避免 winCodeSign 解压失败
   },
   nsis: {
     oneClick: false,

@@ -4,7 +4,7 @@ import { createMessageHandlers } from './handlers';
 import type { ServerWebsocketType } from './types';
 
 // 连接地址
-const wsUrl = process.env.NODE_ENV === 'development' ? 'ws://127.0.0.1:8080/ws/server/' : 'wss://www.bluearchive.top/websocket/ws/server/';
+const wsUrl = process.env.NODE_ENV === 'development' ? 'ws://127.0.0.1:8080/ws/server/' : 'wss://test.bluearchive.top/websocket/ws/server/';
 
 // 定义ServerWebsocket实例
 const ServerWebsocket: ServerWebsocketType = {

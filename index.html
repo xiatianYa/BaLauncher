@@ -6,9 +6,247 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';" />
     <title>蔚蓝档案登录器</title>
+    <style>
+      /* ===== 应用加载动画：由 index.html 静态渲染，Vue bundle 加载前即可显示，避免白屏 =====
+         加载层保持纯透明（角色图悬浮于透明窗口之上），页面由渲染进程在加载动画
+         完全结束（淡出移除）后才挂载，保证动画期间页面不会透出 */
+      #app-loading {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        z-index: 999;
+        transition: opacity 0.6s ease;
+      }
+
+      #app-loading.finish {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .loading-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        width: 100%;
+        height: 100%;
+      }
+
+      .loading-image {
+        position: absolute;
+        width: 200px;
+        height: 300px;
+        object-fit: contain;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+        animation: float 2s ease-in-out infinite;
+      }
+
+      .loading-image.active {
+        opacity: 1;
+      }
+
+      @keyframes float {
+        0%, 100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-30px);
+        }
+      }
+
+      .character-stage {
+        position: absolute;
+        left: 50%;
+        top: 48%;
+        width: 200px;
+        height: 300px;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+      }
+
+      /* 加载进度百分比（相对角色图容器定位，水平中心与角色图完全对齐，位于图片下方） */
+      .loading-progress {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 100%;
+        margin-top: 40px;
+        display: flex;
+        justify-content: center;
+        align-items: baseline;
+        gap: 3px;
+        z-index: 5;
+        font-family: 'MiSans', 'HarmonyOS Sans SC', 'PingFang SC', 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        user-select: none;
+        pointer-events: none;
+      }
+
+      .progress-num {
+        font-size: 24px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: 0.5px;
+        color: rgba(255, 255, 255, 0.95);
+        text-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+      }
+
+      .progress-sym {
+        font-size: 16px;
+        font-weight: 600;
+        color: rgba(190, 204, 255, 0.95);
+        text-shadow: 0 0 8px rgba(102, 126, 234, 0.45);
+      }
+
+      .core-glow {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 340px;
+        height: 440px;
+        transform: translate(-50%, -50%) scale(0.85);
+        border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(102, 126, 234, 0.55) 0%, rgba(102, 126, 234, 0.22) 42%, transparent 72%);
+        opacity: 0.6;
+        animation: glow-breathe 2.6s ease-in-out infinite;
+        pointer-events: none;
+      }
+
+      .halo-ring {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 320px;
+        height: 420px;
+        transform: translate(-50%, -50%);
+        border-radius: 50%;
+        border: 1.5px dashed rgba(150, 172, 255, 0.45);
+        animation: halo-spin 14s linear infinite;
+        pointer-events: none;
+      }
+
+      .halo-ring::after {
+        content: "";
+        position: absolute;
+        inset: 16px;
+        border-radius: 50%;
+        border: 1px solid rgba(120, 140, 255, 0.22);
+      }
+
+      @keyframes glow-breathe {
+        0%, 100% {
+          transform: translate(-50%, -50%) scale(0.85);
+          opacity: 0.55;
+        }
+        50% {
+          transform: translate(-50%, -50%) scale(1.12);
+          opacity: 1;
+        }
+      }
+
+      @keyframes halo-spin {
+        from {
+          transform: translate(-50%, -50%) rotate(0deg);
+        }
+        to {
+          transform: translate(-50%, -50%) rotate(360deg);
+        }
+      }
+    </style>
   </head>
   <body style="background: transparent;">
     <div id="app" style="background: transparent;"></div>
+
+    <!-- 应用加载动画：Vue 应用挂载前静态渲染，挂载完成后由 __removeLoading__ 移除 -->
+    <div id="app-loading">
+      <div class="loading-container">
+        <div class="core-glow"></div>
+        <div class="halo-ring"></div>
+        <div class="character-stage">
+          <img class="loading-image" src="/imgs/ALuoNa01.png" alt="loading" />
+          <img class="loading-image" src="/imgs/ALuoNa02.png" alt="loading" />
+          <img class="loading-image" src="/imgs/ALuoNa03.png" alt="loading" />
+          <img class="loading-image" src="/imgs/ALuoNa04.png" alt="loading" />
+          <div class="loading-progress">
+            <span class="progress-num">0</span><span class="progress-sym">%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        // 最短展示时长：应用初始化过快时也保证用户能体验到加载动画
+        var MIN_DISPLAY_MS = 3000;
+        // 兜底超时：应用长时间未完成初始化时自动移除，避免加载层永久遮挡
+        var SAFE_TIMEOUT_MS = 20000;
+        var startedAt = Date.now();
+        var finished = false;
+        var finishHandlers = [];
+
+        var loadingEl = document.getElementById('app-loading');
+        if (!loadingEl) {
+          window.__loadingDone__ = Promise.resolve();
+          return;
+        }
+        var numEl = loadingEl.querySelector('.loading-progress .progress-num');
+
+        // 角色图轮播：每 1 秒切换一张，首张立即显示
+        var images = loadingEl.querySelectorAll('.loading-image');
+        var currentIndex = 0;
+        if (images.length > 0) images[currentIndex].classList.add('active');
+        setInterval(function () {
+          images[currentIndex].classList.remove('active');
+          currentIndex = (currentIndex + 1) % images.length;
+          images[currentIndex].classList.add('active');
+        }, 1000);
+
+        // 模拟加载进度：先快后慢（剩余越多增长越快），封顶 99.2%，移除时强制跳到 100%
+        var progress = 0;
+        var progressTimer = setInterval(function () {
+          progress += Math.max((100 - progress) * 0.05, 0.2);
+          if (progress >= 99.2) progress = 99.2;
+          if (numEl) numEl.textContent = Math.floor(progress);
+        }, 100);
+
+        // 完成加载：进度读满 → 淡出 → 移除 DOM 并通知等待方（渲染进程此时才挂载页面）
+        function finishLoading() {
+          if (finished) return;
+          finished = true;
+          clearInterval(progressTimer);
+          if (numEl) numEl.textContent = '100';
+          loadingEl.classList.add('finish');
+          setTimeout(function () {
+            if (loadingEl.parentNode) loadingEl.parentNode.removeChild(loadingEl);
+            finishHandlers.forEach(function (fn) { fn(); });
+            finishHandlers = [];
+          }, 600);
+        }
+
+        // 渲染进程在应用初始化完成后调用：保证最短展示时长后再淡出
+        window.__removeLoading__ = function () {
+          if (finished) return;
+          var waitMs = Math.max(0, MIN_DISPLAY_MS - (Date.now() - startedAt));
+          setTimeout(finishLoading, waitMs);
+        };
+
+        // 渲染进程等待此 Promise：加载动画完全结束后再挂载页面，保证透明加载层期间页面不透出
+        window.__loadingDone__ = new Promise(function (resolve) {
+          if (finished) resolve();
+          else finishHandlers.push(resolve);
+        });
+
+        // 兜底：应用长时间未完成初始化时自动结束加载层
+        setTimeout(window.__removeLoading__, SAFE_TIMEOUT_MS);
+      })();
+    </script>
+
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

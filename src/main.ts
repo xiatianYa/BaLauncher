@@ -27,9 +27,12 @@ async function setupApp() {
     error: 'https://www.bluearchive.top/statics/system/error.gif'
   });
 
-  app.mount('#app');
+  // 应用初始化完成，通知加载动画结束（保证最短展示时长后淡出）
+  window.__removeLoading__?.();
+  // 等待加载动画完全结束（淡出移除）再挂载页面：加载层为纯透明背景，避免页面提前透出
+  await window.__loadingDone__;
 
-  window.postMessage({ payload: 'removeLoading' }, '*');
+  app.mount('#app');
 }
 
 setupApp();

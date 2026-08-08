@@ -12,6 +12,10 @@ declare global {
     $message?: import('naive-ui').MessageProviderInst;
     /** Notification instance */
     $notification?: import('naive-ui').NotificationProviderInst;
+    /** 移除应用加载动画（由 index.html 内联脚本定义，应用初始化完成后调用） */
+    __removeLoading__?: () => void;
+    /** 加载动画完成通知（由 index.html 内联脚本定义）：resolve 后即可挂载页面 */
+    __loadingDone__?: Promise<void>;
     /** IPC Renderer */
     ipcRenderer: {
       on: (channel: string, listener: (...args: any[]) => void) => void;
