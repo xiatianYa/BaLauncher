@@ -185,9 +185,10 @@ defineOptions({
     min-height: 0;
     overflow-y: auto;
     scrollbar-gutter: stable;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+    /* 一行多个玩家：网格自动换行，卡片宽度不足时自动增减每行数量 */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    align-content: start;
     gap: 6px;
     padding: 2px 4px 2px 2px;
 
@@ -211,8 +212,9 @@ defineOptions({
     .online-item {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 6px 8px;
+      gap: 6px;
+      min-width: 0;
+      padding: 4px 8px;
       border-radius: 8px;
       background: rgba(var(--app-rgb), 0.03);
       border: 1px solid rgba(var(--app-rgb), 0.06);
@@ -225,9 +227,9 @@ defineOptions({
       }
 
       .online-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 8px;
+        width: 26px;
+        height: 26px;
+        border-radius: 7px;
         object-fit: cover;
         border: 2px solid rgba(var(--app-rgb), 0.25);
         flex-shrink: 0;
@@ -246,10 +248,10 @@ defineOptions({
         min-width: 0;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        gap: 1px;
 
         .online-name {
-          font-size: 12px;
+          font-size: 11.5px;
           font-weight: 500;
           color: var(--n-text-color);
           overflow: hidden;
@@ -260,20 +262,54 @@ defineOptions({
         .online-roles {
           display: flex;
           flex-wrap: wrap;
-          gap: 4px;
+          gap: 3px;
 
           .online-role-tag {
             display: inline-flex;
             align-items: center;
             flex-shrink: 0;
-            padding: 1px 7px;
-            border-radius: 8px;
-            font-size: 10.5px;
+            padding: 0 5px;
+            border-radius: 7px;
+            font-size: 10px;
             font-weight: 500;
             border: 1px solid transparent;
           }
         }
       }
+    }
+  }
+
+  /* 紧凑空状态：本卡片高度受限（120px），改为横向布局（图标 + 文字并排），避免内容被压扁 */
+  :deep(.home-empty) {
+    flex-direction: row;
+    gap: 10px;
+    padding: 4px;
+
+    .home-empty-icon {
+      width: 40px;
+      height: 40px;
+      flex-shrink: 0;
+
+      &::before {
+        inset: -5px;
+      }
+
+      .home-empty-svg {
+        font-size: 20px;
+      }
+    }
+
+    .home-empty-text {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .home-empty-title {
+      font-size: 12.5px;
+    }
+
+    .home-empty-desc {
+      font-size: 11.5px;
     }
   }
 }

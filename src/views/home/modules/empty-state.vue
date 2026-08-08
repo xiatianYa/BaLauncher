@@ -20,8 +20,10 @@ defineProps<{
     <div class="home-empty-icon">
       <SvgIcon :icon="icon" class="home-empty-svg" />
     </div>
-    <div class="home-empty-title">{{ title }}</div>
-    <div v-if="description" class="home-empty-desc">{{ description }}</div>
+    <div class="home-empty-text">
+      <div class="home-empty-title">{{ title }}</div>
+      <div v-if="description" class="home-empty-desc">{{ description }}</div>
+    </div>
   </div>
 </template>
 
@@ -61,6 +63,15 @@ defineProps<{
       color: #667eea;
       filter: drop-shadow(0 2px 6px rgba(102, 126, 234, 0.35));
     }
+  }
+
+  .home-empty-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    text-align: center;
   }
 
   .home-empty-title {

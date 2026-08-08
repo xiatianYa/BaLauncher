@@ -81,7 +81,7 @@ const weekText = computed(() => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 20px;
+  padding: 10px 20px;
   border-radius: 14px;
   background: rgba(var(--app-rgb), 0.04);
   border: 1px solid rgba(var(--app-rgb), 0.07);
@@ -115,8 +115,8 @@ const weekText = computed(() => {
     }
 
     .welcome-title {
-      margin-top: 4px;
-      font-size: 20px;
+      margin-top: 2px;
+      font-size: 18px;
       font-weight: 700;
       color: var(--n-text-color);
       letter-spacing: 0.5px;
@@ -126,7 +126,7 @@ const weekText = computed(() => {
     }
 
     .welcome-sub {
-      margin-top: 3px;
+      margin-top: 2px;
       font-size: 12px;
       color: rgba(var(--app-rgb), 0.55);
     }
@@ -145,7 +145,7 @@ const weekText = computed(() => {
       gap: 2px;
 
       .time {
-        font-size: 22px;
+        font-size: 20px;
         font-weight: 700;
         line-height: 1.1;
         color: var(--n-text-color);
