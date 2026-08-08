@@ -649,7 +649,7 @@ onUnmounted(() => {
 
         <!-- 分页 -->
         <div v-if="pagination.total > 0" class="pagination-bar">
-          <NPagination v-model:value="pagination.current" :total="pagination.total" :item-count="pagination.total"
+          <NPagination v-model:page="pagination.current" :item-count="pagination.total"
             :page-size="pagination.size" @update-page="handlePageChange" />
         </div>
       </div>
@@ -834,7 +834,7 @@ onUnmounted(() => {
 
           <!-- 子项分页 -->
           <div v-if="itemPagination.total > 0" class="item-pagination">
-            <NPagination v-model:value="itemPagination.current" :item-count="itemPagination.total"
+            <NPagination v-model:page="itemPagination.current" :item-count="itemPagination.total"
               :page-size="itemPagination.size" @update-page="handleItemPageChange" />
           </div>
         </div>

@@ -454,9 +454,8 @@ onMounted(() => {
                 <LoadingSpinner :loading="mapLoading" v-else="mapLoading" />
                 <template #footer>
                     <div class="flex justify-center">
-                        <NPagination v-model:value="pagination.current" :total="pagination.total"
-                            :item-count="pagination.total" :page-size="pagination.size"
-                            @update-page="handlePageChange" />
+                        <NPagination v-model:page="pagination.current" :item-count="pagination.total"
+                            :page-size="pagination.size" @update-page="handlePageChange" />
                     </div>
                 </template>
             </NCard>

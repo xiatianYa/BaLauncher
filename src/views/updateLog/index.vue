@@ -496,7 +496,7 @@ onMounted(() => {
 
         <!-- 通知分页 -->
         <div v-if="noticePagination.total > 0" class="notice-pagination-bar">
-          <NPagination v-model:value="noticePagination.current" :total="noticePagination.total"
+          <NPagination v-model:page="noticePagination.current" :item-count="noticePagination.total"
             :page-size="noticePagination.size" @update-page="handleNoticePageChange" />
         </div>
       </div>

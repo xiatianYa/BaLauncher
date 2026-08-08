@@ -558,7 +558,7 @@ onMounted(() => {
 
     <!-- 分页 -->
     <div v-if="pagination.total > 0" class="pagination-bar">
-      <NPagination v-model:value="pagination.current" :total="pagination.total" :item-count="pagination.total"
+      <NPagination v-model:page="pagination.current" :item-count="pagination.total"
         :page-size="pagination.size" @update-page="handlePageChange" />
     </div>
 
@@ -632,9 +632,8 @@ onMounted(() => {
           </div>
           <template #footer>
             <div v-if="memberPagination.total > 0" class="member-pagination">
-              <NPagination v-model:value="memberPagination.current" :total="memberPagination.total"
-                :item-count="memberPagination.total" :page-size="memberPagination.size"
-                @update-page="handleMemberPageChange" />
+              <NPagination v-model:page="memberPagination.current" :item-count="memberPagination.total"
+                :page-size="memberPagination.size" @update-page="handleMemberPageChange" />
             </div>
           </template>
         </NCard>

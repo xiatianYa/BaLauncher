@@ -577,14 +577,13 @@ onMounted(() => {
 
         <!-- 角色分页 -->
         <div v-if="viewMode === 'role' && pagination.total > 0" class="pagination-bar">
-          <NPagination v-model:value="pagination.current" :total="pagination.total" :item-count="pagination.total"
+          <NPagination v-model:page="pagination.current" :item-count="pagination.total"
             :page-size="pagination.size" @update-page="handlePageChange" />
         </div>
         <!-- 权限分页 -->
         <div v-else-if="viewMode === 'permission' && permPagePagination.total > 0" class="pagination-bar">
-          <NPagination v-model:value="permPagePagination.current" :total="permPagePagination.total"
-            :item-count="permPagePagination.total" :page-size="permPagePagination.size"
-            @update-page="handlePermissionPageChange" />
+          <NPagination v-model:page="permPagePagination.current" :item-count="permPagePagination.total"
+            :page-size="permPagePagination.size" @update-page="handlePermissionPageChange" />
         </div>
       </div>
 
