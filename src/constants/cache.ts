@@ -18,6 +18,7 @@ export const GAME_STORAGE_KEYS = {
 // 应用设置存储键
 export const APP_STORAGE_KEYS = {
   THEME: 'theme' as const,
+  THEME_SCHEME: 'themeScheme' as const,
   VOLUME: 'volume' as const,
   LANG: 'lang' as const,
   MOUSE_CURSOR: 'mouseCursor' as const

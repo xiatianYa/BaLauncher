@@ -49,6 +49,8 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   const volume = ref(getStg(APP_STORAGE_KEYS.VOLUME, 0.5))
   const mouseCursor = ref<UnionKey.MouseCursor>(getStg(APP_STORAGE_KEYS.MOUSE_CURSOR, 'app'))
   const locale = ref<App.I18n.LangType>(getStg(APP_STORAGE_KEYS.LANG, 'zh-CN'))
+  /** 明暗主题：启动时从本地存储读取，切换后持久化，避免每次启动都回退到默认深色主题 */
+  const themeScheme = ref<UnionKey.ThemeScheme>(getStg<UnionKey.ThemeScheme>(APP_STORAGE_KEYS.THEME_SCHEME, 'dark'))
   const onlineUserList = ref<Api.System.OnLineUser[]>([])
 
   // 音频映射（key：角色名）
@@ -121,6 +123,12 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   function setMouseCursor(cursor: UnionKey.MouseCursor): void {
     mouseCursor.value = cursor
     setStg(APP_STORAGE_KEYS.MOUSE_CURSOR, cursor)
+  }
+
+  /** 设置明暗主题并持久化 */
+  function setThemeScheme(scheme: UnionKey.ThemeScheme): void {
+    themeScheme.value = scheme
+    setStg(APP_STORAGE_KEYS.THEME_SCHEME, scheme)
   }
 
   // ==================== 游戏存储读写 ====================
@@ -257,9 +265,11 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     onlineUserList,
     volume,
     mouseCursor,
+    themeScheme,
     setTheme,
     setVolume,
     setMouseCursor,
+    setThemeScheme,
 
     // ---- 游戏持久化设置 ----
     gamePlatform,

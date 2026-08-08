@@ -42,6 +42,8 @@ declare namespace StorageType {
     selectedStartItems: string[];
     /** The theme */
     theme: string;
+    /** The theme scheme (light/dark) */
+    themeScheme: UnionKey.ThemeScheme;
     /** The volume */
     volume: number;
     /** The mouse cursor theme */

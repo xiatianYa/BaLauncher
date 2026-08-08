@@ -2,12 +2,15 @@ import { computed, ref, toRefs } from 'vue';
 import type { Ref } from 'vue';
 import { defineStore } from 'pinia';
 import { SetupStoreId } from '@/enum';
+import { useAppStore } from '@/store/modules/app';
 
 /** Theme store */
 export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
-    /** Theme settings */
+    const appStore = useAppStore();
+
+    /** Theme settings：明暗主题从 appStore 读取，保证启动时沿用上次选择而不是默认深色 */
     const settings: Ref<App.Theme.ThemeSetting> = ref({
-        themeScheme: 'dark',
+        themeScheme: appStore.themeScheme,
         layout: {
             mode: 'collapse'
         }
@@ -30,6 +33,8 @@ export const useThemeStore = defineStore(SetupStoreId.Theme, () => {
      */
     function setThemeScheme(themeScheme: UnionKey.ThemeScheme) {
         settings.value.themeScheme = themeScheme;
+        // 持久化到 appStore，下次启动从 appStore 读取保持所选主题
+        appStore.setThemeScheme(themeScheme);
     }
 
     /**

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
+import { onBeforeUnmount, onMounted } from 'vue';
 
 interface Props {
   /** 旧主题背景色：作为遮罩填充，扫描环掠过后逐块露出新主题 */
@@ -17,8 +17,16 @@ const emit = defineEmits<{ (e: 'finished'): void }>();
 /** 与下方 CSS 动画时长一致（ms），扫描结束后通知父组件卸载 */
 const ANIM_DURATION = 850;
 
+let timer: number | undefined;
+
 onMounted(() => {
-  setTimeout(() => emit('finished'), ANIM_DURATION);
+  timer = window.setTimeout(() => emit('finished'), ANIM_DURATION);
+});
+
+// 组件可能被父组件提前重挂载（动画播放中再次切换主题），此时必须清理计时器，
+// 否则旧计时器到点后仍会触发 finished，把新一轮的遮罩误移除
+onBeforeUnmount(() => {
+  if (timer !== undefined) window.clearTimeout(timer);
 });
 </script>
 

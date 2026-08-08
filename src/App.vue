@@ -23,14 +23,17 @@ const naiveDateLocale = computed(() => (i18n.global.locale.value === 'zh-CN' ? d
 /** 主题切换遮罩状态：记录旧主题背景色，由 ThemeTransition 组件播放 X 光扫描过渡 */
 const themeTransition = ref<string | null>(null);
 
+/** 遮罩 key：每次切换递增，强制 ThemeTransition 重挂载，保证动画播放中再次切换也能重新播放扫描动画 */
+const themeTransitionKey = ref(0);
+
 /** 监听主题切换：瞬间切换主题，旧主题色遮罩以 X 光扫描线扫过，逐列揭出新主题 */
 watch(
   () => themeStore.darkMode,
   isDark => {
-    // 动画进行中忽略连续切换，避免遮罩重叠
-    if (themeTransition.value) return;
     // 旧主题背景色作为遮罩填充，扫描线扫过后露出新主题
     themeTransition.value = isDark ? '#fbf1f1' : '#161a26';
+    // key 递增强制重挂载遮罩：动画播放中连续切换时，主题变色也不会丢掉过渡动画
+    themeTransitionKey.value += 1;
   }
 );
 
@@ -154,6 +157,7 @@ const themeOverrides = computed(() => {
   <!-- 主题切换遮罩：X 光扫描线扫过，逐列揭出新主题 -->
   <ThemeTransition
     v-if="themeTransition"
+    :key="themeTransitionKey"
     :color="themeTransition"
     @finished="handleTransitionFinished"
   />
