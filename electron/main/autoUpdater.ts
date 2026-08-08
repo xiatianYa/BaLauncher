@@ -33,7 +33,7 @@ function initAutoUpdater(win: BrowserWindow) {
   autoUpdater.autoInstallOnAppQuit = true
   autoUpdater.setFeedURL({
     provider: 'generic',
-    url: 'https://test.bluearchive.top/statics/soft/',
+    url: 'https://www.bluearchive.top/statics/soft/',
   })
 
   autoUpdater.on('checking-for-update', () => {

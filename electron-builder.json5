@@ -11,7 +11,7 @@
   afterPack: "scripts/afterPack.cjs", // 用独立 rcedit 注入 exe 图标/版本信息（见脚本内注释）
   publish: {
     provider: "generic",
-    url: "https://test.bluearchive.top/statics/soft/",
+    url: "https://www.bluearchive.top/statics/soft/",
   },
   mac: {
     target: ["dmg"],
