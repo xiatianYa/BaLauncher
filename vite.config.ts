@@ -102,5 +102,13 @@ export default defineConfig(({ command }) => {
       }
     },
     clearScreen: false,
+    // 使用 Sass modern API 编译，消除 legacy-js-api 弃用警告（Dart Sass 2.0 将移除 legacy API）
+    css: {
+      preprocessorOptions: {
+        scss: {
+          api: 'modern'
+        }
+      }
+    },
   }
 })

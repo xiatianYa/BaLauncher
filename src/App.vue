@@ -188,4 +188,10 @@ const themeOverrides = computed(() => {
   --app-rgb: 40, 34, 28;
   color-scheme: light;
 }
+
+/* 模态遮罩跟随窗口圆角：主窗口为透明圆角（12px），遮罩默认铺满矩形会盖住透明四角，
+   导致打开弹窗时窗口四角变成方形，这里给遮罩同款圆角让四角透出 */
+.n-modal-mask {
+  border-radius: 12px;
+}
 </style>
