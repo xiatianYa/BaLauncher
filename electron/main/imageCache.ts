@@ -8,11 +8,13 @@ import path from 'node:path'
  *
  * 原理：
  * 1. 注册自定义协议 `img-cache://`（必须在 app ready 之前调用 registerImageCacheScheme）
- * 2. app ready 后通过 session.webRequest 拦截所有远程图片请求（resourceType === 'image'）
- * 3. 已缓存的图片：直接重定向到 `img-cache://local/<文件名>`，由 protocol.handle 从磁盘读取
- * 4. 未缓存的图片：放行原网络请求，同时在后台下载并写入缓存目录，下次访问命中本地
+ * 2. app ready 后通过 session.webRequest 拦截所有远程图片/视频请求（resourceType === 'image' | 'media'）
+ * 3. 已缓存的资源：直接重定向到 `img-cache://local/<文件名>`，由 protocol.handle 从磁盘读取
+ * 4. 未缓存的资源：放行原网络请求，同时在后台下载并写入缓存目录，下次访问命中本地
  *
- * 覆盖范围：地图缩略图(mapUrl)、社区 logo、用户头像、按键图标、通知窗口图片等所有远程图片
+ * 覆盖范围：地图缩略图(mapUrl)、社区 logo、用户头像、按键图标、通知窗口图片、视频等远程图片/媒体
+ * 仅缓存常见图片（png/jpg/jpeg/gif/webp/bmp/avif/ico）与视频（mp4/webm/mkv/mov/avi/flv），
+ * SVG 与无扩展名等未知格式一律不缓存
  */
 
 /** 自定义图片缓存协议名 */
@@ -24,17 +26,24 @@ const CACHE_DIR_NAME = 'image-cache'
 /** 下载超时时间（毫秒） */
 const DOWNLOAD_TIMEOUT = 15000
 
-/** 图片扩展名 -> MIME 类型映射 */
+/** 允许缓存的扩展名 -> MIME 类型映射（仅图片与视频；SVG 可含脚本、未知扩展名等一律不缓存） */
 const MIME_MAP: Record<string, string> = {
+  // 图片
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
   '.gif': 'image/gif',
   '.webp': 'image/webp',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
   '.bmp': 'image/bmp',
-  '.avif': 'image/avif'
+  '.avif': 'image/avif',
+  '.ico': 'image/x-icon',
+  // 视频
+  '.mp4': 'video/mp4',
+  '.webm': 'video/webm',
+  '.mkv': 'video/x-matroska',
+  '.mov': 'video/quicktime',
+  '.avi': 'video/x-msvideo',
+  '.flv': 'video/x-flv',
 }
 
 /** 缓存目录绝对路径 */
@@ -63,10 +72,10 @@ export function registerImageCacheScheme(): void {
 
 /**
  * 根据 URL 计算缓存文件名（hash + 原扩展名）
+ * 仅返回 MIME_MAP 允许的扩展名；SVG、无扩展名等不允许缓存的 URL 返回 null
  */
-function getCacheFileName(url: string): string {
-  // 从 URL 提取扩展名，默认使用 .img
-  let ext = '.img'
+function getCacheFileName(url: string): string | null {
+  let ext = ''
   try {
     const pathname = new URL(url).pathname
     const match = pathname.match(/\.([a-zA-Z0-9]{2,5})$/i)
@@ -74,25 +83,30 @@ function getCacheFileName(url: string): string {
       ext = `.${match[1].toLowerCase()}`
     }
   } catch {
-    // URL 解析失败时使用默认扩展名
+    // URL 解析失败时按不缓存处理
   }
+  if (!ext) return null
   const hash = createHash('sha256').update(url).digest('hex').slice(0, 32)
   return `${hash}${ext}`
 }
 
 /**
- * 获取 URL 对应的缓存文件完整路径
+ * 获取 URL 对应的缓存文件完整路径；不支持缓存的 URL 返回空字符串
  */
 function getCacheFilePath(url: string): string {
-  return path.join(cacheDir, getCacheFileName(url))
+  const fileName = getCacheFileName(url)
+  return fileName ? path.join(cacheDir, fileName) : ''
 }
 
 /**
- * 下载远程图片并写入缓存目录
+ * 下载远程图片/视频并写入缓存目录
  */
 async function downloadToCache(url: string): Promise<void> {
-  // 已存在缓存文件则跳过
+  // 不允许缓存的 URL（SVG、无扩展名等）直接跳过
   const filePath = getCacheFilePath(url)
+  if (!filePath) return
+
+  // 已存在缓存文件则跳过
   if (fs.existsSync(filePath)) return
 
   // 避免同一 URL 并发重复下载
@@ -165,21 +179,21 @@ function initImageCache(): void {
     }
   })
 
-  // 拦截所有远程图片请求
+  // 拦截所有远程图片/视频请求
   session.defaultSession.webRequest.onBeforeRequest(
     { urls: ['http://*/*', 'https://*/*'] },
     (details, callback) => {
-      // 只处理图片类型请求
-      if (details.resourceType !== 'image') {
+      // 只处理图片与视频类型请求（media 包含 <video>/<audio> 等媒体资源）
+      if (details.resourceType !== 'image' && details.resourceType !== 'media') {
         callback({})
         return
       }
 
-      const filePath = getCacheFilePath(details.url)
+      // 不允许缓存的 URL（SVG、无扩展名等）直接放行，不写入缓存
+      const fileName = getCacheFileName(details.url)
 
-      if (fs.existsSync(filePath)) {
+      if (fileName && fs.existsSync(path.join(cacheDir, fileName))) {
         // 命中缓存：重定向到本地协议，不再请求网络
-        const fileName = path.basename(filePath)
         callback({ redirectURL: `${CACHE_SCHEME}://local/${fileName}` })
       } else {
         // 未命中缓存：放行网络请求，后台下载缓存
