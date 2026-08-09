@@ -22,6 +22,11 @@ const icons: Record<UnionKey.ThemeScheme, string> = {
 
 const icon = computed(() => icons[themeStore.themeScheme]);
 
+/** 下拉菜单阴影：浅色主题下减淡，避免过重 */
+const menuShadow = computed(() =>
+  themeStore.darkMode ? '0 12px 32px rgba(0, 0, 0, 0.4)' : '0 8px 24px rgba(31, 41, 55, 0.12)'
+);
+
 const changeThemeLayout = () => {
   if (themeStore.layout.mode === 'expand') {
     themeStore.setThemeLayout('collapse')
@@ -120,7 +125,7 @@ onBeforeUnmount(() => {
 
       <!-- 自定义下拉菜单 -->
       <transition name="menu-fade">
-        <div v-if="menuVisible" class="footer-menu">
+        <div v-if="menuVisible" class="footer-menu" :style="{ boxShadow: menuShadow }">
           <template v-for="option in options" :key="option.key">
             <div v-if="option.key === 'logout' || option.key === 'login'" class="footer-menu-divider" />
             <div class="footer-menu-item mt-5px" :class="{ active: locale === option.key }"
@@ -207,7 +212,7 @@ onBeforeUnmount(() => {
   }
 }
 
-/* 自定义下拉菜单 */
+/* 自定义下拉菜单：背景/边框/文字跟随主题（naive 注入的 CSS 变量） */
 .footer-menu {
   position: absolute;
   bottom: calc(100% + 8px);
@@ -216,9 +221,8 @@ onBeforeUnmount(() => {
   min-width: 120px;
   padding: 6px;
   border-radius: 10px;
-  background: rgba(26, 30, 44, 0.97);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  background: var(--n-color);
+  border: 1px solid var(--n-border-color);
   z-index: 20;
 
   .footer-menu-item {
@@ -247,7 +251,7 @@ onBeforeUnmount(() => {
     .footer-menu-item-text {
       flex: 1;
       font-size: 13px;
-      color: rgba(255, 255, 255, 0.85);
+      color: var(--n-text-color);
       white-space: nowrap;
     }
 
@@ -261,7 +265,7 @@ onBeforeUnmount(() => {
   .footer-menu-divider {
     height: 1px;
     margin: 4px 2px;
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(var(--app-rgb), 0.08);
   }
 }
 

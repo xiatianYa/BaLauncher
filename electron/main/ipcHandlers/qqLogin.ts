@@ -2,6 +2,7 @@ import { ipcMain, BrowserWindow } from 'electron'
 import path from 'node:path'
 import axios from 'axios'
 import querystring from 'node:querystring'
+import { getMainWindow } from '../windowManager'
 
 let qqLoginWindow: BrowserWindow | null = null
 
@@ -157,7 +158,10 @@ export function setupQqLoginIpc() {
           sandbox: true
         },
         autoHideMenuBar: true,
-        frame: false
+        frame: false,
+        // 依附主窗口：不出现在 ALT+TAB/任务栏，避免多个应用条目残留；主窗口关闭时随之销毁
+        parent: getMainWindow() || undefined,
+        skipTaskbar: true
       })
 
       qqLoginWindow.once('ready-to-show', () => {

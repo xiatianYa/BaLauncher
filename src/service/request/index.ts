@@ -39,7 +39,7 @@ export function isSuccessResult<T>(result: RequestResult<T>): result is SuccessR
 const getBaseURL = () => {
   // 开发环境
   if (process.env.NODE_ENV === 'development') {
-    return 'https://www.bluearchive.top/api'; // 本地开发通常使用代理
+    return '/api'; // 本地开发通常使用代理
   }
   // 生产环境
   else if (process.env.NODE_ENV === 'production') {

@@ -65,16 +65,16 @@ const WEATHER_ICONS: Record<string, string> = {
   '499': 'mdi:weather-snowy-heavy', // 雪
   '500': 'mdi:weather-fog', // 薄雾
   '501': 'mdi:weather-fog', // 雾
-  '502': 'mdi:weather-haze', // 霾
+  '502': 'mdi:weather-hazy', // 霾
   '503': 'mdi:weather-windy', // 扬沙
   '504': 'mdi:weather-windy', // 浮尘
   '507': 'mdi:weather-windy', // 强沙尘暴
   '508': 'mdi:weather-windy', // 沙尘暴
   '509': 'mdi:weather-fog', // 浓雾
   '510': 'mdi:weather-fog', // 强浓雾
-  '511': 'mdi:weather-haze', // 中度霾
-  '512': 'mdi:weather-haze', // 重度霾
-  '513': 'mdi:weather-haze', // 严重霾
+  '511': 'mdi:weather-hazy', // 中度霾
+  '512': 'mdi:weather-hazy', // 重度霾
+  '513': 'mdi:weather-hazy', // 严重霾
   '514': 'mdi:weather-fog', // 大雾
   '515': 'mdi:weather-fog', // 特强浓雾
   '900': 'mdi:weather-sunny-alert', // 热

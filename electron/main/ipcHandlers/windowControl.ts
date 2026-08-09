@@ -18,6 +18,8 @@ export function setupWindowControlIpc() {
     if (!win) return
 
     const childWindow = new BrowserWindow({
+      // 不在 ALT+TAB/任务栏显示，避免多个应用条目残留
+      skipTaskbar: true,
       webPreferences: {
         preload,
         nodeIntegration: true,
@@ -43,6 +45,8 @@ export function setupWindowControlIpc() {
       minHeight: 480,
       autoHideMenuBar: true,
       backgroundColor: '#161a26',
+      // 不在 ALT+TAB/任务栏显示，避免多个应用条目残留
+      skipTaskbar: true,
       webPreferences: {
         nodeIntegration: false,
         contextIsolation: true,

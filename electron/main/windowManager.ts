@@ -65,6 +65,12 @@ async function createWindow(onDidFinishLoad?: (win: BrowserWindow) => void) {
     if (url.startsWith('https:')) shell.openExternal(url)
     return { action: 'deny' }
   });
+
+  // 主窗口关闭即退出应用：辅助窗口（协议/登录等）仍开着时 window-all-closed 不会触发，
+  // 若不强制退出，进程和窗口会残留，导致 ALT+TAB/任务栏出现多个应用条目
+  win.on('closed', () => {
+    if (process.platform !== 'darwin') app.quit()
+  })
 }
 
 export function setupWindowEvents(onDidFinishLoad?: (win: BrowserWindow) => void) {

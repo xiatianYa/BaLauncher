@@ -76,16 +76,16 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   /** 当前选中的待加入服务器信息 */
   const joinServerInfo = ref<Api.Game.SeverVo>()
 
-  /** 最近一次发起加入服务器请求的时间戳，10s 内抑制退出上报（避免切服时误清 GIS 数据） */
+  /** 最近一次发起加入服务器请求的时间戳，3 分钟内抑制退出上报（避免切服时误清 GIS 数据） */
   const lastJoinRequestTime = ref(0)
-  const QUIT_REPORT_SUPPRESS_WINDOW = 10000
+  const QUIT_REPORT_SUPPRESS_WINDOW = 3 * 60 * 1000
 
   /** 标记已发起加入服务器请求 */
   function markJoinRequested(): void {
     lastJoinRequestTime.value = Date.now()
   }
 
-  /** 是否处于退出上报抑制窗口（10s 内刚发起过加入服务器请求） */
+  /** 是否处于退出上报抑制窗口（3 分钟内刚发起过加入服务器请求） */
   function isQuitReportSuppressed(): boolean {
     return Date.now() - lastJoinRequestTime.value < QUIT_REPORT_SUPPRESS_WINDOW
   }
@@ -139,8 +139,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     lastSentAt: 0, sendTimer: null, pendingData: null, pendingServerData: null
   }
 
-  /** GSI 数据发送最小间隔（1秒） */
-  const GIS_SEND_MIN_INTERVAL = 1000
+  /** GSI 数据发送最小间隔（5秒） */
+  const GIS_SEND_MIN_INTERVAL = 5000
 
   // ==================== 工具函数 ====================
 

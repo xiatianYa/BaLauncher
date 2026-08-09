@@ -130,7 +130,10 @@ export function useServerQuery(deps: ServerQueryDeps) {
             listServer.mapName = item.map
             listServer.maxPlayers = item.maxPlayers
             listServer.serverName = item.name
-            const map = unref(mapList).find(m => m.id === item.mapId)
+            // A2S 查询（query-game-servers）返回的数据没有 mapId，只有原始地图名 item.map，
+            // 原先按 mapId 匹配 mapList 永远匹配不上，导致换图后 mapUrl/mapLabel 等地图信息不更新。
+            // 改为按地图名匹配（与 open-game-join / mapOrder 中 mapName 匹配逻辑一致）
+            const map = unref(mapList).find(m => m.mapName === item.map)
             if (map) {
               listServer.mapId = map.id
               listServer.mapLabel = map.mapLabel
@@ -138,6 +141,14 @@ export function useServerQuery(deps: ServerQueryDeps) {
               listServer.type = map.type
               listServer.tag = map.tag
               listServer.artifact = map.artifact
+            } else if (item.map) {
+              // 地图不在维护的地图列表中（如自定义/工坊地图）时清空旧地图信息，避免残留上一张地图的图片与译名
+              listServer.mapId = 0
+              listServer.mapLabel = ''
+              listServer.mapUrl = ''
+              listServer.type = ''
+              listServer.tag = []
+              listServer.artifact = ''
             }
           }
         })

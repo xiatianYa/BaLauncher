@@ -11,6 +11,8 @@ const { locale } = useI18n();
 
 /** 登录框背景色：直接由主题状态驱动，不依赖 naive 注入的 CSS 变量（弹窗重新打开时可能失效） */
 const loginBgColor = computed(() => (themeStore.darkMode ? '#1c2130' : '#faf7f2'));
+/** 登录弹窗阴影：浅色主题下阴影过重，随主题减淡 */
+const loginShadow = computed(() => (themeStore.darkMode ? '0 24px 64px rgba(0, 0, 0, 0.45)' : '0 12px 32px rgba(31, 41, 55, 0.1)'));
 /** 语言下拉面板背景色 */
 const langMenuBgColor = computed(() => (themeStore.darkMode ? '#242a3a' : '#ffffff'));
 
@@ -28,7 +30,7 @@ const currentLangLabel = computed(() => {
 /* ===== 自定义语言下拉 ===== */
 
 /** 下拉菜单展开状态 */
-const langMenuVisible = ref(false);
+const langMenuVisible = ref(false); 
 /** 下拉容器引用（用于点击外部关闭） */
 const langDropdownRef = ref<HTMLElement | null>(null);
 
@@ -156,7 +158,8 @@ const openAgreement = (type: 'user' | 'privacy') => {
 
 <template>
   <NModal v-model:show="authStore.loginModalVisibel" class="login-modal w-880px" :bordered="false" :closable="false"
-    :close-on-esc="false" :mask-closable="false">
+    :close-on-esc="false" :mask-closable="false"
+    :style="{ boxShadow: loginShadow, borderRadius: '20px', overflow: 'hidden', background: 'transparent' }">
     <div class="login-body" :style="{ background: loginBgColor }">
       <!-- 左侧：背景图 + 品牌标语 -->
       <div class="login-bg-panel">
@@ -233,7 +236,8 @@ const openAgreement = (type: 'user' | 'privacy') => {
   overflow: hidden;
   background: transparent;
   border: none;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.45);
+  /* 阴影与圆角裁切由 :style 内联绑定（scoped 样式无法可靠作用到 NModal teleport 的根节点，
+     内联保证 .n-modal 圆角裁切，避免四角露出方形白块/方形阴影） */
 }
 
 .login-body {
@@ -249,6 +253,8 @@ const openAgreement = (type: 'user' | 'privacy') => {
   position: relative;
   flex: 0 0 52%;
   overflow: hidden;
+  /* 与 login-body 圆角一致：避免父级裁切圆角时图片边缘抗锯齿透出浅色底形成白边 */
+  border-radius: 20px 0 0 20px;
 
   .login-bg-img {
     width: 100%;

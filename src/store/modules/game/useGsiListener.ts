@@ -14,7 +14,7 @@ interface GsiListenerDeps {
   stopAutomaticJoinServer: () => Promise<void>
   sendPlayerData: (player: Api.Game.CsgoPlayer) => void
   sendServerData: (server: Api.Game.ServerInfoData) => void
-  /** 是否处于退出上报抑制窗口（10s 内刚发起过加入服务器请求） */
+  /** 是否处于退出上报抑制窗口（3 分钟内刚发起过加入服务器请求） */
   shouldSuppressQuitReport: () => boolean
 }
 
@@ -56,8 +56,8 @@ export function useGsiListener(deps: GsiListenerDeps) {
             '目标服务器地图': unref(joinServerInfo)?.mapName || '未设置',
           })
           // 地图名变更为 unknown：玩家可能已退出服务器/退出游戏，也可能正在切换服务器
-          // 10s 内刚发起过加入服务器请求（切服场景）→ 不报退出，避免 GIS 数据被误清
-          if (data.current.toLowerCase() === 'unknown' && !shouldSuppressQuitReport()) {
+          // 仅当存在目标服务器地图（joinServerInfo.mapName）且不在 3 分钟抑制窗口内才上报退出，避免 GIS 数据被误清
+          if (data.current.toLowerCase() === 'unknown' && unref(joinServerInfo)?.mapName && !shouldSuppressQuitReport()) {
             reportPlayerQuit()
           }
           {
