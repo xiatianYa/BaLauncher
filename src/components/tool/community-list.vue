@@ -7,7 +7,6 @@
 <script setup lang="ts">
 import { useThemeStore } from '@/store/modules/theme';
 import { useGameStore } from '@/store/modules/game';
-import { computed } from 'vue';
 import { NCard, NEmpty } from 'naive-ui';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
@@ -79,15 +78,20 @@ const gameStore = useGameStore();
 
 <style scoped lang="scss">
 .community-card {
+    height: 100%;
+    overflow-y: auto;
+
     :deep(.n-card-header) {
+        position: sticky;
+        top: 0;
+        z-index: 1;
         padding: 10px 14px;
         border-bottom: 1px solid var(--n-border-color);
+        background: var(--n-color);
     }
 
     :deep(.n-card__content) {
         padding: 6px;
-        overflow-y: auto;
-        max-height: calc(100vh - 160px);
     }
 }
 

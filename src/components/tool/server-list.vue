@@ -75,15 +75,20 @@ const emit = defineEmits<{
 
 <style scoped lang="scss">
 .server-card {
+    height: 100%;
+    overflow-y: auto;
+
     :deep(.n-card-header) {
+        position: sticky;
+        top: 0;
+        z-index: 1;
         padding: 10px 14px;
         border-bottom: 1px solid var(--n-border-color);
+        background: var(--n-color);
     }
 
     :deep(.n-card__content) {
         padding: 6px;
-        overflow-y: auto;
-        max-height: calc(100vh - 160px);
     }
 }
 

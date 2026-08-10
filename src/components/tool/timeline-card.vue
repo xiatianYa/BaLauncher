@@ -140,6 +140,9 @@ onMounted(() => {
     overflow-y: auto;
 
     :deep(.n-card-header) {
+        position: sticky;
+        top: 0;
+        z-index: 1;
         padding: 12px 14px;
         border-bottom: 1px solid var(--n-border-color);
         background: var(--n-color-embedded);
@@ -305,7 +308,7 @@ onMounted(() => {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    height: calc(100vh - 160px);
+    height: 100%;
     color: var(--n-text-color-3);
     gap: 10px;
 
