@@ -1,172 +1,23 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
-import dayjs from 'dayjs';
 import { NModal, NProgress } from 'naive-ui';
 import { $t } from '@/locales';
-import { fetchGetLogByVersion } from '@/service/api';
 import { useAuthStore } from '@/store/modules/auth';
-import { useDict } from '@/hooks/business/dict';
-import { clearLocalCache } from '@/utils/cache';
-
-interface UpdateState {
-  show: boolean;
-  downloading: boolean;
-  downloaded: boolean;
-  progress: number;
-  speed: string;
-  percent: string;
-}
-
-const state = ref<UpdateState>({
-  show: false,
-  downloading: false,
-  downloaded: false,
-  progress: 0,
-  speed: '0 KB/s',
-  percent: '0%'
-});
+import { useAppUpdate } from '@/hooks/business/useAppUpdate';
 
 const authStore = useAuthStore();
 
-const updateLog = ref<Api.System.UpdateLogVo | null>(null);
-const loadingUpdateLog = ref(false);
-const latestVersion = ref<string>('');
-
-const { dictLabel } = useDict();
-
-/** 格式化更新时间 */
-const formatDateTime = (dateStr?: string): string =>
-  dateStr ? dayjs(dateStr).format($t('updateLog.dateFormat')) : '';
-
-/** 更新类型文案（来自字典 sys_updateLog_type） */
-const updateTypeLabel = computed(() => {
-  const updateType = updateLog.value?.updateType;
-  return updateType ? dictLabel('sys_updateLog_type', updateType) : '';
-});
-
-/** 下载完成后自动重启倒计时（秒） */
-const autoRestartCountdown = ref(0);
-let countdownTimer: ReturnType<typeof setInterval> | null = null;
-
-/** 清理自动重启倒计时 */
-const clearCountdownTimer = () => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer);
-    countdownTimer = null;
-  }
-  autoRestartCountdown.value = 0;
-};
-
-const showUpdateConfirm = async () => {
-  clearCountdownTimer();
-  state.value.downloading = false;
-  state.value.downloaded = false;
-  state.value.progress = 0;
-  state.value.speed = '0 KB/s';
-  state.value.percent = '0%';
-
-  await loadUpdateLog();
-};
-
-const loadUpdateLog = async () => {
-  if (!latestVersion.value) return;
-  loadingUpdateLog.value = true;
-  try {
-    const { data, error } = await fetchGetLogByVersion(latestVersion.value);
-    if (!error) {
-      state.value.show = true;
-      updateLog.value = data;
-    }
-  } catch (error) {
-    console.error('加载更新日志失败:', error);
-  } finally {
-    loadingUpdateLog.value = false;
-  }
-};
-
-const handleConfirmUpdate = () => {
-  state.value.downloading = true;
-  state.value.progress = 0;
-  window.ipcRenderer.invoke('download-update');
-};
-
-const handleCancelUpdate = () => {
-  clearCountdownTimer();
-  state.value.show = false;
-  state.value.downloading = false;
-  state.value.downloaded = false;
-  state.value.progress = 0;
-  updateLog.value = null;
-};
-
-/** 更新安装前清除缓存（保留登录态 auth 与地图资源 imageCache，其余全部清理） */
-const clearCacheBeforeUpdate = async () => {
-  await clearLocalCache(['game', 'app', 'route']);
-};
-
-const handleInstallUpdate = async () => {
-  clearCountdownTimer();
-  await clearCacheBeforeUpdate(); // 安装更新前清除缓存，避免旧缓存影响新版本
-  await window.ipcRenderer.invoke('install-update');
-};
-
-const updateAvailableHandler = (_: any, info: any) => {
-  if (info && info.version) {
-    latestVersion.value = info.version;
-  }
-  showUpdateConfirm();
-};
-
-const updateDownloadingHandler = (_: any, info: any) => {
-  if (info.percent) {
-    state.value.progress = Math.min(Math.max(info.percent, 0), 100);
-    state.value.percent = `${state.value.progress.toFixed(2)}%`;
-  }
-  if (info.bytesPerSecond) {
-    const speedInKB = info.bytesPerSecond / 1024;
-    if (speedInKB > 1024) {
-      state.value.speed = `${(speedInKB / 1024).toFixed(2)} MB/s`;
-    } else {
-      state.value.speed = `${speedInKB.toFixed(2)} KB/s`;
-    }
-  }
-};
-
-/** 下载完成：进度条读满后，3 秒后自动关闭应用完成更新 */
-const updateDownloadedHandler = () => {
-  state.value.downloading = false;
-  state.value.downloaded = true;
-  state.value.progress = 100;
-  state.value.percent = '100%';
-  startAutoRestartCountdown();
-};
-
-/** 启动 3 秒自动重启倒计时 */
-const startAutoRestartCountdown = () => {
-  clearCountdownTimer();
-  autoRestartCountdown.value = 3;
-  countdownTimer = setInterval(() => {
-    autoRestartCountdown.value -= 1;
-    if (autoRestartCountdown.value <= 0) {
-      clearCountdownTimer();
-      handleInstallUpdate();
-    }
-  }, 1000);
-};
-
-onMounted(() => {
-  window.ipcRenderer.on('update-available', updateAvailableHandler);
-  window.ipcRenderer.on('update-downloading', updateDownloadingHandler);
-  window.ipcRenderer.on('update-downloaded', updateDownloadedHandler);
-  showUpdateConfirm();
-});
-
-onUnmounted(() => {
-  clearCountdownTimer();
-  window.ipcRenderer.off('update-available', updateAvailableHandler);
-  window.ipcRenderer.off('update-downloading', updateDownloadingHandler);
-  window.ipcRenderer.off('update-downloaded', updateDownloadedHandler);
-});
+const {
+  state,
+  updateLog,
+  loadingUpdateLog,
+  latestVersion,
+  autoRestartCountdown,
+  updateTypeLabel,
+  formatDateTime,
+  handleConfirmUpdate,
+  handleCancelUpdate,
+  handleInstallUpdate
+} = useAppUpdate();
 </script>
 
 <template>

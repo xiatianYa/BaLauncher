@@ -60,6 +60,7 @@ export default {
     updateNow: '立即更新',
     installNow: '立即安装',
     restartCountdown: '更新将在 {count} 秒后自动重启',
+    error: '更新失败，请稍后重试',
   },
   login: {
     oauth: {

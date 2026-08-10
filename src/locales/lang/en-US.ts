@@ -60,6 +60,7 @@ export default {
     updateNow: 'Update Now',
     installNow: 'Install Now',
     restartCountdown: 'Update will restart automatically in {count}s',
+    error: 'Update failed, please try again later',
   },
   login: {
     oauth: {

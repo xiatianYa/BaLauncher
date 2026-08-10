@@ -71,16 +71,23 @@ function initAutoUpdater(win: BrowserWindow) {
 
 // 检查更新
 export function checkForUpdates(win: BrowserWindow, delay: number = 2000) {
+  console.log('[autoUpdater] checkForUpdates 被调用, isPackaged:', app.isPackaged);
   if (app.isPackaged && isWindowAvailable(win)) {
+    console.log('[autoUpdater] 初始化并将在', delay, 'ms 后检查更新');
     initAutoUpdater(win)
     setTimeout(() => {
       // 再次检查窗口是否可用
       if (isWindowAvailable(win)) {
+        console.log('[autoUpdater] 开始调用 autoUpdater.checkForUpdates()');
         autoUpdater.checkForUpdates().catch((err) => {
-          console.error('检查更新失败:', err)
+          console.error('[autoUpdater] 检查更新失败:', err)
         })
+      } else {
+        console.warn('[autoUpdater] 窗口不可用，跳过检查更新');
       }
     }, delay)
+  } else {
+    console.log('[autoUpdater] 跳过检查更新: isPackaged=', app.isPackaged, ', windowAvailable=', isWindowAvailable(win));
   }
 }
 
