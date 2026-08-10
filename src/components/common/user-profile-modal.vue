@@ -246,7 +246,7 @@ const handleUnbindGroup = async () => {
                 </span>
               </div>
             </div>
-            <NButton size="small" type="error" tertiary :disabled="!isGroupBound || unbindingGroup"
+            <NButton size="small" type="primary" dashed :disabled="!isGroupBound || unbindingGroup"
               :loading="unbindingGroup" @click="handleUnbindGroup">
               {{ $t('profile.unbind') }}
             </NButton>
