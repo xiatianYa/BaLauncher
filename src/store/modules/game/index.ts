@@ -34,10 +34,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     csgo2Path,
     steamPath,
     automaticJoinConfig,
-    applyKeyBindItems,
     selectedStartItems,
-    isFullscreen,
-    serverViewModule,
     selectedCommunityId
   } = storeToRefs(appStore)
 
@@ -80,7 +77,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   const lastJoinRequestTime = ref(0)
   const QUIT_REPORT_SUPPRESS_WINDOW = 3 * 60 * 1000
 
-  /** 标记已发起加入服务器请求 */
+  /** 标记已连接成功（仅连接器发起的连接成功后才调用） */
   function markJoinRequested(): void {
     lastJoinRequestTime.value = Date.now()
   }
@@ -88,6 +85,19 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   /** 是否处于退出上报抑制窗口（3 分钟内刚发起过加入服务器请求） */
   function isQuitReportSuppressed(): boolean {
     return Date.now() - lastJoinRequestTime.value < QUIT_REPORT_SUPPRESS_WINDOW
+  }
+
+  /** 最近一次发起连接（steam://rungame +connect）的时间戳，用于区分连接器发起的连接与玩家自行进入的服务器 */
+  const lastConnectAttemptTime = ref(0)
+
+  /** 记录发起了一次连接（由 connectServerUsingSteamUrl 调用） */
+  function markConnectAttempt(): void {
+    lastConnectAttemptTime.value = Date.now()
+  }
+
+  /** 是否在抑制窗口内发起过连接（说明 in_game 很可能来自本次连接器发起的连接） */
+  function hasRecentConnectAttempt(): boolean {
+    return Date.now() - lastConnectAttemptTime.value < QUIT_REPORT_SUPPRESS_WINDOW
   }
 
   // ==================== 自动挤服状态 ====================
@@ -101,8 +111,19 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   /** 是否处于自动重试状态 */
   const isAutomaticRetry = ref(false)
 
-  /** 自动挤服计数 */
-  const automaticCount = ref(0)
+  // ==================== 本地挤服日志 ====================
+
+  /** 本地挤服日志（按时间正序追加，界面倒序展示，只保留最近 50 条） */
+  const autoJoinLogs = ref<GameStore.AutoJoinLogItem[]>([])
+  const MAX_AUTO_JOIN_LOGS = 50
+
+  /** 追加一条本地挤服日志（只保留最近 50 条） */
+  function pushAutoJoinLog(content: string): void {
+    autoJoinLogs.value.push({ time: Date.now(), content })
+    if (autoJoinLogs.value.length > MAX_AUTO_JOIN_LOGS) {
+      autoJoinLogs.value = autoJoinLogs.value.slice(-MAX_AUTO_JOIN_LOGS)
+    }
+  }
 
   // ==================== 游戏状态 ====================
 
@@ -172,7 +193,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   // 1. 存储相关 - 已统一迁至 appStore 管理（loadSettingsFromStorage / applyCommunityOrder / saveCommunityOrder 等）
 
-  // 2. 自动挤服 - 通过 getter 延迟引用 game status 的函数
+  // 2. 自动挤服（useAutoJoin 通过 getter 延迟引用 game status 的函数）
   /**
    * 通过 WebSocket 上报玩家操作动态（对应 Java CODE_PLAYER_ACTION → type=112）
    * @param actionContent 动态内容（如：开始挤服 / 暂停挤服 / 加入服务器）
@@ -182,12 +203,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     const serverId = serverIdOverwrite != null
       ? String(serverIdOverwrite)
       : (joinServerInfo.value?.serverId != null ? String(joinServerInfo.value.serverId) : '')
-    if (!serverId) {
-      return;
-    }
-    if (!actionContent || !actionContent.trim()) {
-      return;
-    }
+    if (!serverId || !actionContent?.trim()) return
     sendPlayerAction(serverId, actionContent)
   }
 
@@ -196,8 +212,9 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     automaticJoinConfig,
     isAutomatic,
     isAutomaticRetry,
-    automaticCount,
+    userConnectionStatus,
     safeLog,
+    pushAutoJoinLog,
     ensureGameStartReady: () => fnGetters.ensureGameStartReady(),
     connectServerUsingSteamUrl: () => fnGetters.connectServerUsingSteamUrl(),
     resetRetryFlag: () => fnGetters.resetRetryFlag(),
@@ -212,7 +229,11 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     isAutomatic,
     automaticJoinConfig,
     safeLog,
+    pushAutoJoinLog,
     startAutomaticJoinServer: () => fnGetters.startAutomaticJoinServer(),
+    stopAutomaticJoinServer: () => fnGetters.stopAutomaticJoinServer(),
+    markJoinRequested,
+    hasRecentConnectAttempt,
   })
 
   // 4. GSI 监听 - 通过 getter 延迟引用 autoJoin 的函数
@@ -265,9 +286,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     isAutomatic,
     isJoinServerTrayVisible,
     safeLog,
+    pushAutoJoinLog,
     stopAutomaticJoinServer: () => fnGetters.stopAutomaticJoinServer(),
     sendPlayerData,
     sendServerData,
+    markJoinRequested,
+    hasRecentConnectAttempt,
     shouldSuppressQuitReport: isQuitReportSuppressed,
   })
 
@@ -288,9 +312,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     startLogReading: logReader.startLogReading,
     stopLogReading: logReader.stopLogReading,
     stopAutomaticJoinServer: () => fnGetters.stopAutomaticJoinServer(),
-    connectServerUsingSteamUrl: () => fnGetters.connectServerUsingSteamUrl(),
     connectToServerById: (id: number) => fnGetters.connectToServerById(id),
-    markJoinRequested,
+    markConnectAttempt,
   })
 
   // 6. 服务器查询
@@ -309,9 +332,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   })
 
   // 7. 玩家动作管理
-  const playerAction = usePlayerAction({
-    serverDataList,
-  })
+  const playerAction = usePlayerAction()
 
   // ==================== 绑定真实实现到 getter ====================
   fnGetters.ensureGameStartReady = gameStatus.ensureGameStartReady
@@ -367,8 +388,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     isAutomatic,
     /** 挤服托盘是否可见 */
     isJoinServerTrayVisible,
-    /** 自动挤服计数 */
-    automaticCount,
+    /** 本地挤服日志（客户端本地记录） */
+    autoJoinLogs,
 
     // ---- 游戏状态 ----
     /** 游戏是否正在运行 */

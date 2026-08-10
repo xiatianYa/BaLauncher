@@ -1,4 +1,4 @@
-import { unref } from 'vue'
+import { unref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { useAppStore } from '../app'
 import { reportPlayerQuit } from '@/utils/ws/server'
@@ -11,9 +11,15 @@ interface GsiListenerDeps {
   isAutomatic: Ref<boolean>
   isJoinServerTrayVisible: Ref<boolean>
   safeLog: (message: string, ...args: unknown[]) => void
+  /** 追加一条本地挤服日志（右侧挤服日志面板展示） */
+  pushAutoJoinLog: (content: string) => void
   stopAutomaticJoinServer: () => Promise<void>
   sendPlayerData: (player: Api.Game.CsgoPlayer) => void
   sendServerData: (server: Api.Game.ServerInfoData) => void
+  /** 标记已连接成功（用于抑制 3 分钟内的退出上报，避免切服时 GIS 数据被误清） */
+  markJoinRequested: () => void
+  /** 是否在抑制窗口内发起过连接（用于判断地图匹配是否来自连接器发起的连接） */
+  hasRecentConnectAttempt: () => boolean
   /** 是否处于退出上报抑制窗口（3 分钟内刚发起过加入服务器请求） */
   shouldSuppressQuitReport: () => boolean
 }
@@ -31,14 +37,25 @@ export function useGsiListener(deps: GsiListenerDeps) {
     isAutomatic,
     isJoinServerTrayVisible,
     safeLog,
+    pushAutoJoinLog,
     stopAutomaticJoinServer,
     sendPlayerData,
     sendServerData,
+    markJoinRequested,
+    hasRecentConnectAttempt,
     shouldSuppressQuitReport,
   } = deps
 
   /** GSI数据事件处理器 */
   let gsiDataHandler: ((_event: unknown, res: unknown) => void) | null = null
+
+  /** 挤服成功是否已处理：进入目标地图时 GSI 会连续推送多次 map:nameChanged，只处理一次避免重复播报音频/提示 */
+  let joinSuccessHandled = false
+
+  // 新一轮自动挤服开始时重置成功处理标志
+  watch(isAutomatic, (val) => {
+    if (val) joinSuccessHandled = false
+  })
 
   /** 监听GSI数据 */
   function listenToGsiData(): void {
@@ -60,22 +77,26 @@ export function useGsiListener(deps: GsiListenerDeps) {
           if (data.current.toLowerCase() === 'unknown' && unref(joinServerInfo)?.mapName && !shouldSuppressQuitReport()) {
             reportPlayerQuit()
           }
-          {
-            const targetMap = unref(joinServerInfo)?.mapName
-            const currentMap = data.current
-            if (targetMap && currentMap && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) && unref(isAutomatic)) {
-              safeLog('✅ 用户已成功连接到目标服务器')
-              isJoinServerTrayVisible.value = false
-              stopAutomaticJoinServer()
+          const targetMap = unref(joinServerInfo)?.mapName
+          const currentMap = data.current
+          if (targetMap && currentMap && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) && (unref(isAutomatic) || hasRecentConnectAttempt())) {
+            // 防止连续 map:nameChanged 事件重复执行成功逻辑（重复播报音频/提示）
+            if (joinSuccessHandled) break
+            joinSuccessHandled = true
+            safeLog('✅ 用户已成功连接到目标服务器')
+            pushAutoJoinLog('GSI 检测到已连接到目标服务器')
+            // 连接成功后才标记加入请求，抑制 3 分钟内的退出上报（避免切服时 GIS 数据被误清）
+            markJoinRequested()
+            isJoinServerTrayVisible.value = false
+            stopAutomaticJoinServer()
 
-              const appStore = useAppStore()
-              const currentTheme = appStore.currentTheme
-              const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜']
-              const audio = new Audio(audioSrc)
-              audio.volume = appStore.volume
-              audio.play()
-              window.$message?.success('连接成功')
-            }
+            const appStore = useAppStore()
+            const currentTheme = appStore.currentTheme
+            const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜']
+            const audio = new Audio(audioSrc)
+            audio.volume = appStore.volume
+            audio.play()
+            window.$message?.success('连接成功')
           }
           break
 

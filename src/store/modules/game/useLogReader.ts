@@ -10,7 +10,15 @@ interface LogReaderDeps {
   isAutomatic: Ref<boolean>
   automaticJoinConfig: Ref<Api.Game.AutomaticJoinConfig>
   safeLog: (message: string, ...args: unknown[]) => void
+  /** 追加一条本地挤服日志（右侧挤服日志面板展示） */
+  pushAutoJoinLog: (content: string) => void
   startAutomaticJoinServer: () => Promise<void>
+  /** 停止自动挤服（进入游戏判定连接成功后调用） */
+  stopAutomaticJoinServer: () => Promise<void>
+  /** 标记已连接成功（用于抑制 3 分钟内的退出上报，避免切服时 GIS 数据被误清） */
+  markJoinRequested: () => void
+  /** 是否在抑制窗口内发起过连接（用于判断 in_game 是否来自连接器发起的连接） */
+  hasRecentConnectAttempt: () => boolean
 }
 
 /**
@@ -25,11 +33,22 @@ export function useLogReader(deps: LogReaderDeps) {
     isAutomatic,
     automaticJoinConfig,
     safeLog,
+    pushAutoJoinLog,
     startAutomaticJoinServer,
+    stopAutomaticJoinServer,
+    markJoinRequested,
+    hasRecentConnectAttempt,
   } = deps
 
   /** 防止 connection_failed 重复触发重试的标志 */
   let hasRetriedForThisConnection = false
+
+  /**
+   * 是否跳过首个日志事件。
+   * 主进程 logReader 每次启动都会从文件头（position 0）读取，因此首个事件是整份历史日志快照；
+   * 快照中的旧状态行（in_game/connecting 等）不应触发挤服停止/重启/退出上报等副作用。
+   */
+  let skipSnapshotEvent = true
 
   /** 控制台日志事件处理器 */
   let consoleLogHandler: ((_event: unknown, logData: string) => void) | null = null
@@ -82,6 +101,9 @@ export function useLogReader(deps: LogReaderDeps) {
 
   /** 监听控制台日志 */
   function listenToConsoleLog(): void {
+    // 每次启动日志读取都重置快照跳过标志（主进程从文件头重新读取）
+    skipSnapshotEvent = true
+
     consoleLogHandler = (_event, logData: string) => {
       const lines = logData.split('\n')
 
@@ -96,28 +118,51 @@ export function useLogReader(deps: LogReaderDeps) {
       const logContent = parseLogContent(logData)
 
       if (logContent) {
+        // 首个事件是启动时读取的全量历史快照，忽略其中的状态，避免误触发挤服停止/重启/退出上报
+        if (skipSnapshotEvent) {
+          skipSnapshotEvent = false
+          return
+        }
+
         userConnectionStatus.value = logContent.status
 
         switch (logContent.status) {
           case 'in_game':
             safeLog('✅ 用户已成功进入游戏')
+            pushAutoJoinLog('连接成功，已进入游戏')
+            // 仅当本次连接由连接器发起（正在自动挤服 或 近期发起过连接）时才标记加入请求，
+            // 否则玩家自行进入其他服务器时也会触发，导致误抑制退出上报
+            if (unref(isAutomatic) || hasRecentConnectAttempt()) {
+              markJoinRequested()
+            }
             hasRetriedForThisConnection = false
+            // 双通道成功检测：进入游戏即判定连接成功，停止自动挤服
+            stopAutomaticJoinServer()
             break
           case 'connection_failed':
             safeLog('❌ 服务器已满员，连接被拒绝')
+            pushAutoJoinLog('服务器已满员，连接被拒绝')
             if (unref(isAutomatic) && unref(automaticJoinConfig).joinServerAutoRetryValue && !hasRetriedForThisConnection) {
               hasRetriedForThisConnection = true
-              startAutomaticJoinServer()
+              // 人满被拒后等待 5s 冷却再重新挤服，避免高频重复 connect；期间若用户停止挤服则不再重启
+              window.setTimeout(() => {
+                if (unref(isAutomatic)) {
+                  startAutomaticJoinServer()
+                }
+              }, 5000)
             }
             break
           case 'map_loading':
             safeLog('📦 用户正在加载地图')
+            pushAutoJoinLog('正在加载地图')
             break
           case 'connecting':
             safeLog('🔗 用户正在连接服务器')
+            pushAutoJoinLog('正在连接服务器')
             break
           case 'disconnected':
             safeLog('🔌 用户已断开连接')
+            pushAutoJoinLog('已断开连接')
             // 用户退出服务器/退出游戏，上报 type 113
             reportPlayerQuit()
             break

@@ -21,10 +21,9 @@ interface GameStatusDeps {
   startLogReading: (delayMs?: number) => Promise<void>
   stopLogReading: () => Promise<void>
   stopAutomaticJoinServer: () => Promise<void>
-  connectServerUsingSteamUrl: () => Promise<void>
   connectToServerById: (serverId: number) => void
-  /** 标记已发起加入服务器请求（用于抑制 10s 内的退出上报） */
-  markJoinRequested: () => void
+  /** 记录发起了一次连接（用于后续区分连接成功是否来自连接器） */
+  markConnectAttempt: () => void
 }
 
 /**
@@ -49,7 +48,7 @@ export function useGameStatus(deps: GameStatusDeps) {
     stopLogReading,
     stopAutomaticJoinServer,
     connectToServerById,
-    markJoinRequested,
+    markConnectAttempt,
   } = deps
 
   /** 游戏状态检查定时器 */
@@ -172,8 +171,9 @@ export function useGameStatus(deps: GameStatusDeps) {
     const ready = await ensureGameStartReady()
     if (!ready) return
 
-    // 标记已发起加入服务器请求：10s 内抑制退出上报，避免切服时 GIS 数据被误清
-    markJoinRequested()
+    // 记录发起连接的时间戳：连接成功（日志 in_game / GSI 地图匹配）后才调用 markJoinRequested，
+    // 通过该时间戳区分本次连接成功是否来自连接器，避免玩家自行进入其他服务器时误触发退出上报抑制
+    markConnectAttempt()
     connectToServerById(joinInfo.serverId)
     const aLink = document.createElement('a')
     aLink.href = `steam://rungame/730/76561198977557298/+connect ${joinInfo.connectStr}`

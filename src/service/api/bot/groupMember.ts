@@ -18,3 +18,11 @@ export function fetchBotGroupMemberIsBound() {
     method: 'get'
   });
 }
+
+/** 当前登录用户解除自己的群成员绑定 */
+export function fetchBotGroupMemberUnbind() {
+  return request<boolean>({
+    url: '/botGroupMember/unbind',
+    method: 'delete'
+  });
+}

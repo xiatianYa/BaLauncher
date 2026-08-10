@@ -126,7 +126,11 @@ const currentPlayingUserList = computed<Api.Game.UserGameData[]>(() => {
   for (const log of currentActionLogs.value) {
     const uid = log?.loginUser?.id
     if (uid == null) continue
-    lastActionByUserId.set(String(uid), log)
+    const key = String(uid)
+    // currentActionLogs 按时间降序，首次遇到的就是该玩家最新的动作；跳过后续旧记录，避免旧记录覆盖新记录
+    if (!lastActionByUserId.has(key)) {
+      lastActionByUserId.set(key, log)
+    }
   }
   const playingUsers: Api.Game.UserGameData[] = []
   for (const last of lastActionByUserId.values()) {
@@ -168,6 +172,25 @@ const formatActionTime = (t?: string): string => {
   const mm = String(d.getMinutes()).padStart(2, '0')
   const ss = String(d.getSeconds()).padStart(2, '0')
   return `${hh}:${mm}:${ss}`
+}
+
+// 本地挤服日志（时间正序追加，界面倒序展示：最新的在最上面）
+const displayedAutoJoinLogs = computed<GameStore.AutoJoinLogItem[]>(() =>
+  [...gameStore.autoJoinLogs].reverse(),
+)
+
+const formatLogTime = (time: number): string => {
+  const d = new Date(time)
+  if (Number.isNaN(d.getTime())) return ''
+  const hh = String(d.getHours()).padStart(2, '0')
+  const mm = String(d.getMinutes()).padStart(2, '0')
+  const ss = String(d.getSeconds()).padStart(2, '0')
+  return `${hh}:${mm}:${ss}`
+}
+
+const getJoinLogKey = (log: GameStore.AutoJoinLogItem, fallbackIndex: number): string => {
+  const fp = `${log?.time ?? ''}|${log?.content ?? ''}`
+  return fp.length ? fp : `join_log_idx_${fallbackIndex}`
 }
 
 // ============================================================
@@ -397,6 +420,8 @@ const handleCancelExit = () => {
 }
 
 const startJoinServer = () => {
+  // 开始新一轮挤服时清空本地挤服日志（从托盘恢复窗口不触发，避免日志被误清）
+  gameStore.autoJoinLogs.length = 0
   gameStore.reportPlayerAction('开始挤服')
   gameStore.startAutomaticJoinServer()
 }
@@ -434,7 +459,12 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <NModal v-model:show="props.showJoinServer" preset="card" class="w-750px rounded-md flex" size="small"
+  <NModal v-model:show="props.showJoinServer" preset="card"
+    :class="['rounded-md', 'flex']"
+    :style="{
+      width: gameStore.isAutomatic ? '980px' : '750px',
+      transition: 'width 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+    }" size="small"
     :bordered="true" :closable="false" :onMaskClick="handleCancelExit" :mask-closable="false" :close-on-esc="false"
     content-style="padding:0px;">
     <div class="game-join-container">
@@ -702,58 +732,58 @@ onBeforeUnmount(() => {
       <!-- 右侧：服务器卡片 + 玩家列表 -->
       <div class="game-join-info" v-if="gameStore.joinServerInfo">
         <div class="server-card overflow-hidden flex flex-col">
-          <img v-if="gameStore.joinServerInfo.mapUrl" class="server-card-bg" :src="gameStore.joinServerInfo.mapUrl" />
-          <div class="server-online" :style="`
-              ${getOnLineColor(
-            gameStore.joinServerInfo.numPlayers,
-            gameStore.joinServerInfo.maxPlayers,
-          )}
-              width: ${(gameStore.joinServerInfo.numPlayers
+            <img v-if="gameStore.joinServerInfo.mapUrl" class="server-card-bg" :src="gameStore.joinServerInfo.mapUrl" />
+            <div class="server-online" :style="`
+                ${getOnLineColor(
+              gameStore.joinServerInfo.numPlayers,
+              gameStore.joinServerInfo.maxPlayers,
+            )}
+                width: ${(gameStore.joinServerInfo.numPlayers
               / gameStore.joinServerInfo.maxPlayers)
-            * 100
-            }%;
-            `"></div>
-          <div class="server-card-mask"></div>
-          <div class="mt-8px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
-            {{ gameStore.joinServerInfo.serverName }}
-          </div>
-          <div class="mt-6px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
-            <SvgIcon icon="tdesign:translate" class="mr-5px font-size-16px" />
-            {{
-              gameStore.joinServerInfo.mapLabel || $t('server.noTranslation')
-            }}
-          </div>
-          <div class="mt-6px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
-            <SvgIcon icon="mdi:map-legend" class="mr-5px font-size-16px" />
-            {{ gameStore.joinServerInfo.mapName }}
-            ({{ gameStore.joinServerInfo.numPlayers }}/{{
-              gameStore.joinServerInfo.maxPlayers
-            }})
-          </div>
-          <div v-if="queryServerMapType(gameStore?.joinServerInfo?.mapName)"
-            class="flex items-center ml-8px mt-6px position-relative font-bold">
-            <NTag size="small" round class="mr-3px" ghost :type="dictItem('game_type', gameStore?.joinServerInfo?.type)?.type
-              || 'primary'
-              " v-show="gameStore?.joinServerInfo.type">
-              {{ dictItem('game_type', gameStore?.joinServerInfo?.type)?.label }}
-            </NTag>
-            <NTag v-for="(tag, index) in gameStore.joinServerInfo.tag" :key="index" size="small" round class="mr-3px"
-              type="success">
-              {{ dictItem('game_tag', tag)?.label }}
-            </NTag>
-          </div>
-          <div class="flex items-center ml-8px mt-6px mb-6px position-relative font-bold">
-            <div class="mr-5px cursor-pointer hover:opacity-80" @click="copyServerAddr">
-              <SvgIcon icon="material-symbols:bring-your-own-ip" class="font-size-14px color-#a5a5a5" />
+              * 100
+              }%;
+              `"></div>
+            <div class="server-card-mask"></div>
+            <div class="mt-8px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
+              {{ gameStore.joinServerInfo.serverName }}
             </div>
-            <div class="font-size-12px color-#a5a5a5 font-bold">
-              {{ gameStore.joinServerInfo.connectStr }}
+            <div class="mt-6px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
+              <SvgIcon icon="tdesign:translate" class="mr-5px font-size-16px" />
+              {{
+                gameStore.joinServerInfo.mapLabel || $t('server.noTranslation')
+              }}
             </div>
-            <div class="ml-5px cursor-pointer hover:opacity-80" @click="copyServerAddr">
-              <SvgIcon icon="mdi:content-copy" class="font-size-14px color-#a5a5a5" />
+            <div class="mt-6px ml-8px font-size-13px flex items-center position-relative color-#fff font-bold">
+              <SvgIcon icon="mdi:map-legend" class="mr-5px font-size-16px" />
+              {{ gameStore.joinServerInfo.mapName }}
+              ({{ gameStore.joinServerInfo.numPlayers }}/{{
+                gameStore.joinServerInfo.maxPlayers
+              }})
+            </div>
+            <div v-if="queryServerMapType(gameStore?.joinServerInfo?.mapName)"
+              class="flex items-center ml-8px mt-6px position-relative font-bold">
+              <NTag size="small" round class="mr-3px" ghost :type="dictItem('game_type', gameStore?.joinServerInfo?.type)?.type
+                || 'primary'
+                " v-show="gameStore?.joinServerInfo.type">
+                {{ dictItem('game_type', gameStore?.joinServerInfo?.type)?.label }}
+              </NTag>
+              <NTag v-for="(tag, index) in gameStore.joinServerInfo.tag" :key="index" size="small" round class="mr-3px"
+                type="success">
+                {{ dictItem('game_tag', tag)?.label }}
+              </NTag>
+            </div>
+            <div class="flex items-center ml-8px mt-6px mb-6px position-relative font-bold">
+              <div class="mr-5px cursor-pointer hover:opacity-80" @click="copyServerAddr">
+                <SvgIcon icon="material-symbols:bring-your-own-ip" class="font-size-14px color-#a5a5a5" />
+              </div>
+              <div class="font-size-12px color-#a5a5a5 font-bold">
+                {{ gameStore.joinServerInfo.connectStr }}
+              </div>
+              <div class="ml-5px cursor-pointer hover:opacity-80" @click="copyServerAddr">
+                <SvgIcon icon="mdi:content-copy" class="font-size-14px color-#a5a5a5" />
+              </div>
             </div>
           </div>
-        </div>
 
         <div class="server-players overflow-y-auto">
           <NGrid x-gap="5" :cols="1">
@@ -842,6 +872,30 @@ onBeforeUnmount(() => {
               </NCollapse>
             </NGridItem>
           </NGrid>
+        </div>
+      </div>
+
+      <!-- 右侧：挤服日志（独立新列，仅挤服时显示） -->
+      <div class="join-status-panel" v-if="gameStore.isAutomatic">
+        <div class="join-status-header">
+          <SvgIcon icon="material-symbols:article-outline" class="join-status-head-icon" />
+          <span>{{ $t('serverJoin.logTitle') }}</span>
+        </div>
+        <div class="join-status-body">
+          <div v-if="displayedAutoJoinLogs.length" class="join-status-list">
+            <div v-for="(log, index) in displayedAutoJoinLogs" :key="getJoinLogKey(log, index)"
+              class="join-status-item">
+              <span class="join-status-dot"></span>
+              <span class="join-status-text">
+                <span class="join-status-time">[{{ formatLogTime(log.time) }}]</span>
+                <span class="join-status-content">{{ log.content }}</span>
+              </span>
+            </div>
+          </div>
+          <div v-else class="join-status-empty">
+            <SvgIcon icon="mdi:radar" class="empty-icon" />
+            <span>{{ $t('serverJoin.statusPolling') }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1038,7 +1092,7 @@ onBeforeUnmount(() => {
   .game-join-info {
     display: flex;
     flex-direction: column;
-    flex: 0.9;
+    flex: 1;
     height: 100%;
     overflow: hidden;
     background-color: rgba(133, 133, 133, 0.1);
@@ -1089,6 +1143,101 @@ onBeforeUnmount(() => {
         padding: 10px;
         border-radius: 8px;
         background-color: rgba(133, 133, 133, 0.1);
+      }
+    }
+  }
+
+  .join-status-panel {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    background-color: rgba(133, 133, 133, 0.1);
+    border-radius: 10px;
+
+    .join-status-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+
+      .join-status-head-icon {
+        font-size: 15px;
+        color: #5470ee;
+      }
+    }
+
+    .join-status-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .join-status-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .join-status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background-color: rgba(0, 0, 0, 0.08);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .join-status-dot {
+      flex: 0 0 auto;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, rgba(0, 249, 26, 1), rgba(84, 112, 238, 1));
+      box-shadow: 0 0 0 2px rgba(var(--app-rgb), 0.06);
+    }
+
+    .join-status-text {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      opacity: 0.95;
+    }
+
+    .join-status-time {
+      margin-right: 4px;
+      opacity: 0.6;
+    }
+
+    .join-status-content {
+      opacity: 0.85;
+    }
+
+    .join-status-empty {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      opacity: 0.6;
+
+      .empty-icon {
+        font-size: 20px;
       }
     }
   }

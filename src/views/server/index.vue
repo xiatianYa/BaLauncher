@@ -53,12 +53,11 @@ const activeModule = computed(() => moduleMap[appStore.serverViewModule]);
 
 // 切换社区
 const selectCommunity = async (id: number) => {
-  //点击相同社区 不进行加载
-  if (appStore.selectedCommunityId === id || serverLoading.value || isRefreshing.value) return;
-  serverLoading.value = true;
+  // 点击相同社区不进行加载；搜索/刷新进行中也允许切换社区，
+  // 过期查询的结果会在写入前按社区一致性校验丢弃（见 useServerQuery），不会覆盖新社区数据
+  if (appStore.selectedCommunityId === id) return;
   appStore.setSelectedCommunityId(id);
   await queryServerInfos(true, true);
-  serverLoading.value = false;
 };
 
 // 恢复挤服窗口
@@ -91,9 +90,11 @@ const startCountdown = (reset: boolean = true) => {
 };
 
 // 查询服务器列表 源服务器
+// 进行中的查询计数：搜索/刷新进行中允许再次发起查询（如切换社区），
+// 全部查询结束后才关闭加载态并重启倒计时，避免较早发起的查询提前收尾导致加载态卡死
+let queryCount = 0;
 const queryServerInfos = async (showAnimationFlag: boolean = true, isCache: boolean = false) => {
-  if (isRefreshing.value) return;
-
+  queryCount++;
   isRefreshing.value = true;
   if (showAnimationFlag) {
     serverLoading.value = true;
@@ -107,12 +108,14 @@ const queryServerInfos = async (showAnimationFlag: boolean = true, isCache: bool
       await gameStore.queryServerInfosResponse();
     }
   } finally {
-    if (showAnimationFlag) {
+    queryCount--;
+    if (queryCount <= 0) {
+      queryCount = 0;
       serverLoading.value = false;
-    }
-    isRefreshing.value = false;
+      isRefreshing.value = false;
 
-    startCountdown(true);
+      startCountdown(true);
+    }
   }
 };
 
@@ -123,13 +126,13 @@ const joinServer = async (server: Api.Game.SeverVo) => {
     window.$message?.error($t('server.joinBusy'));
     return;
   }
+  gameStore.joinServerInfo = server;
   if (!gameStore.isGameRunning) {
     showOpenGameConfirm.value = true;
   } else {
     // 连接服务器
     gameStore.connectServerUsingSteamUrl();
   }
-  gameStore.joinServerInfo = server;
 }
 
 // 打开自动连接服务器窗口
@@ -207,6 +210,32 @@ onUnmounted(() => {
             </template>
             {{ $t('server.openGame.gameStarted') }}
           </NButton>
+          <!-- GSI 服务状态 -->
+          <NTooltip placement="bottom">
+            <template #trigger>
+              <NButton class="rounded-5px p-8px" type="tertiary" strong dashed>
+                <template #icon>
+                  <span class="w-8px h-8px rounded-full inline-block"
+                    :class="gameStore.isGsiRunning ? 'bg-green-400' : 'bg-gray-300'" />
+                </template>
+                {{ $t('server.gsiService') }}
+              </NButton>
+            </template>
+            {{ gameStore.isGsiRunning ? $t('server.gsiRunning') : $t('server.gsiStopped') }}
+          </NTooltip>
+          <!-- 日志监听状态 -->
+          <NTooltip placement="bottom">
+            <template #trigger>
+              <NButton class="rounded-5px p-8px" type="tertiary" strong dashed>
+                <template #icon>
+                  <span class="w-8px h-8px rounded-full inline-block"
+                    :class="gameStore.isLogReading ? 'bg-green-400' : 'bg-gray-300'" />
+                </template>
+                {{ $t('server.logReader') }}
+              </NButton>
+            </template>
+            {{ gameStore.isLogReading ? $t('server.logRunning') : $t('server.logStopped') }}
+          </NTooltip>
           <NTooltip placement="bottom">
             <template #trigger>
               <NButton class="rounded-5px p-8px" type="default" strong dashed

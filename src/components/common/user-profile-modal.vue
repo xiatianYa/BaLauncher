@@ -8,7 +8,7 @@
 import { computed, ref, watch } from 'vue';
 import { NAvatar, NButton, NModal, NSpin, NTag } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
-import { fetchBindQQ, fetchBindSteam, fetchGetMyInfo } from '@/service/api';
+import { fetchBindQQ, fetchBindSteam, fetchBotGroupMemberIsBound, fetchBotGroupMemberUnbind, fetchGetMyInfo } from '@/service/api';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import dayjs from 'dayjs';
@@ -36,13 +36,21 @@ const detail = ref<Api.System.SysUserVo | null>(null);
 const loading = ref(false);
 /** 正在绑定的平台 */
 const binding = ref<'qq' | 'steam' | null>(null);
+/** 是否已绑定机器人 QQ 群成员 */
+const isGroupBound = ref(false);
+/** 解绑群绑定中 */
+const unbindingGroup = ref(false);
 
 /** 加载用户详情 */
 const loadDetail = async () => {
   loading.value = true;
   try {
-    const { data } = await fetchGetMyInfo();
-    detail.value = data ?? null;
+    const [detailRes, groupBoundRes] = await Promise.all([
+      fetchGetMyInfo(),
+      fetchBotGroupMemberIsBound()
+    ]);
+    detail.value = detailRes.data ?? null;
+    isGroupBound.value = Boolean(groupBoundRes.data);
   } finally {
     loading.value = false;
   }
@@ -115,6 +123,27 @@ const handleBind = async (type: 'qq' | 'steam') => {
     await loadDetail();
   } finally {
     binding.value = null;
+  }
+};
+
+/** 解除机器人 QQ 群成员绑定 */
+const handleUnbindGroup = async () => {
+  if (unbindingGroup.value) return;
+  unbindingGroup.value = true;
+  try {
+    const { data, error } = await fetchBotGroupMemberUnbind();
+    if (error) {
+      window.$message?.error(error.message || $t('profile.unbindFailed'));
+      return;
+    }
+    if (data === true) {
+      window.$message?.success($t('profile.unbindSuccess'));
+    } else {
+      window.$message?.error($t('profile.unbindFailed'));
+    }
+    await loadDetail();
+  } finally {
+    unbindingGroup.value = false;
   }
 };
 </script>
@@ -204,6 +233,22 @@ const handleBind = async (type: 'qq' | 'steam') => {
             <NButton size="small" type="primary" dashed :disabled="isSteamBound || !!binding"
               :loading="binding === 'steam'" @click="handleBind('steam')">
               {{ isSteamBound ? $t('profile.bound') : $t('profile.bind') }}
+            </NButton>
+          </div>
+          <!-- QQ 群绑定 -->
+          <div class="profile-bind-item">
+            <div class="profile-bind-info">
+              <SvgIcon icon="mdi:account-group" class="profile-bind-icon group" />
+              <div class="profile-bind-text">
+                <span class="profile-bind-name">{{ $t('profile.group') }}</span>
+                <span class="profile-bind-status" :class="{ bound: isGroupBound }">
+                  {{ isGroupBound ? $t('profile.bound') : $t('profile.notBound') }}
+                </span>
+              </div>
+            </div>
+            <NButton size="small" type="error" tertiary :disabled="!isGroupBound || unbindingGroup"
+              :loading="unbindingGroup" @click="handleUnbindGroup">
+              {{ $t('profile.unbind') }}
             </NButton>
           </div>
         </div>
@@ -399,6 +444,10 @@ const handleBind = async (type: 'qq' | 'steam') => {
 
         &.steam {
           color: #66c0f4;
+        }
+
+        &.group {
+          color: #667eea;
         }
       }
 

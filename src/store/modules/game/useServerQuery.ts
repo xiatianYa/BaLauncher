@@ -1,8 +1,6 @@
 import { unref } from 'vue'
 import type { Ref } from 'vue'
-import { fetchGetCommunityList } from '@/service/api'
-import { fetchGetServerList } from '@/service/api'
-import { fetchGetMapList } from '@/service/api'
+import { fetchGetCommunityList, fetchGetMapList, fetchGetServerList } from '@/service/api'
 
 type MaybeRef<T> = T | Ref<T>
 
@@ -114,11 +112,15 @@ export function useServerQuery(deps: ServerQueryDeps) {
       return
     }
 
-    const targetServers = unref(serverDataList).filter(server => server.connectStr && server.communityId === unref(selectedCommunityId))
+    // 记录发起查询时的社区，异步返回期间用户可能已切换社区
+    const queryCommunityId = unref(selectedCommunityId)
+    const targetServers = unref(serverDataList).filter(server => server.connectStr && server.communityId === queryCommunityId)
     const serverAddresses = targetServers.map(server => server.connectStr)
 
     try {
       const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses)
+      // 查询期间用户已切换社区：丢弃本次过期结果，避免上一次搜索回来的数据覆盖当前社区列表
+      if (queryCommunityId !== unref(selectedCommunityId)) return
       if (success) {
         infoResponseList.forEach((item: any) => {
           // 本地查询失败（如服务器离线）时不覆盖任何已有数据，保留源服务器名称/地图等信息
@@ -158,20 +160,18 @@ export function useServerQuery(deps: ServerQueryDeps) {
     }
   }
 
-  /** 查询服务器列表信息（WebSocket） */
-  async function queryWsServerInfosResponse() {
+  /** 查询服务器列表信息（WebSocket）：用 WS 实时数据组装当前社区列表，缺失的服务器置为离线 */
+  async function queryWsServerInfosResponse(): Promise<void> {
     queryServerInfosPingResponse()
 
     const targetServers = unref(serverDataList).filter(server => server.connectStr && server.communityId === unref(selectedCommunityId))
 
     const allServers: Api.Game.SeverVo[] = targetServers.map(server => {
-    const wsServer = unref(currentServerWsList).find(item => item.connectStr === server.connectStr)
-
-    if (wsServer) {
+      const wsServer = unref(currentServerWsList).find(item => item.connectStr === server.connectStr)
+      if (wsServer) {
         wsServer.isOnline = true
         return wsServer
       }
-
       return createOfflineServer(server)
     })
 
@@ -183,12 +183,16 @@ export function useServerQuery(deps: ServerQueryDeps) {
   async function queryServerInfosPingResponse(): Promise<void> {
     if (unref(serverDataList).length === 0) return
 
+    // 记录发起查询时的社区，异步返回期间用户可能已切换社区
+    const queryCommunityId = unref(selectedCommunityId)
     const serverAddresses = unref(serverDataList)
-      .filter(server => server.connectStr && server.communityId === unref(selectedCommunityId))
+      .filter(server => server.connectStr && server.communityId === queryCommunityId)
       .map(server => server.connectStr)
 
     const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses)
     if (!success) return
+    // 查询期间用户已切换社区：丢弃过期 ping 结果，避免污染新社区数据
+    if (queryCommunityId !== unref(selectedCommunityId)) return
 
     infoResponseList.forEach((item: any) => {
       // 查询失败（如服务器离线）时不覆盖 ping，保留原值
