@@ -35,7 +35,7 @@ const list = ref<Api.Game.Community[]>([]);
 const pagination = reactive({
   communityName: '',
   current: 1,
-  size: 8,
+  size: 9,
   total: 0
 });
 

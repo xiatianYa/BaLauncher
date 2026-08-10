@@ -22,7 +22,8 @@ const {
 
 <template>
   <NModal v-model:show="state.show" preset="card" class="update-modal w-480px rounded-16px" :bordered="false"
-    :closable="false" v-if="authStore.isLogin">
+    :closable="false" :mask-closable="!state.downloading && !state.downloaded"
+    :close-on-esc="!state.downloading && !state.downloaded" v-if="authStore.isLogin">
     <template #header>
       <div class="update-modal-header">
         <div class="update-modal-icon-wrap">

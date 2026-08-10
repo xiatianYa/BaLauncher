@@ -518,7 +518,7 @@ export default {
     copy: '复制地址',
     autoJoin: '自动挤服',
     copySuccess: '复制成功!',
-    joinBusy: '正在挤服中，不能打开其他挤服窗口',
+    joinBusy: '正在挤服中，不能进行连接其他服务器的操作',
     directConnect: '游戏已启动，直接连接服务器',
     serverName: '服务器名称',
     playerCountColumn: '人数',

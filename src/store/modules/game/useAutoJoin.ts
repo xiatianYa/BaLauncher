@@ -72,12 +72,13 @@ export function useAutoJoin(deps: AutoJoinDeps) {
             connectionCheckTimer = null
           }
 
+          // 发起连接后 10s 内未收到连接成功消息（GSI 地图匹配会清掉此定时器），则重新开始挤服
           connectionCheckTimer = setTimeout(() => {
             if (unref(isAutomaticRetry) && unref(isAutomatic)) {
-              safeLog('⏰ 连接超时，重新尝试连接...')
+              safeLog('⏰ 10 秒内未连接成功，重新挤服...')
               startAutomaticJoinServer()
             }
-          }, 60000)
+          }, 10000)
         } else {
           isAutomatic.value = false
           isAutomaticRetry.value = false

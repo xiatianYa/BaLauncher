@@ -518,7 +518,7 @@ export default {
     copy: 'Copy Address',
     autoJoin: 'Auto Join',
     copySuccess: 'Copied successfully!',
-    joinBusy: 'Auto join is running, cannot open another window',
+    joinBusy: 'Auto join is running, cannot join another server',
     directConnect: 'Game is running, connecting directly',
     serverName: 'Server Name',
     playerCountColumn: 'Players',

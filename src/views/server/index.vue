@@ -118,13 +118,18 @@ const queryServerInfos = async (showAnimationFlag: boolean = true, isCache: bool
 
 // 加入服务器
 const joinServer = async (server: Api.Game.SeverVo) => {
-  gameStore.joinServerInfo = server;
+  // 如果正在挤服 则不能加入
+  if (gameStore.isJoinServerTrayVisible) {
+    window.$message?.error($t('server.joinBusy'));
+    return;
+  }
   if (!gameStore.isGameRunning) {
     showOpenGameConfirm.value = true;
   } else {
     // 连接服务器
     gameStore.connectServerUsingSteamUrl();
   }
+  gameStore.joinServerInfo = server;
 }
 
 // 打开自动连接服务器窗口

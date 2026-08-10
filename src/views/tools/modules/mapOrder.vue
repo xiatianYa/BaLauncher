@@ -209,9 +209,7 @@ const handlePageChange = (page: number) => {
 
 const handleSystemSubscribe = async () => {
     if (!currentSubscribeMap.value) return;
-    // 添加订阅前需先绑定QQ群成员，未绑定则弹出绑定模态框
-    const bound = await ensureBound();
-    if (!bound) return;
+    // 系统订阅无需绑定QQ群，直接添加
     const { error } = await fetchAddMapSubscribe(currentSubscribeMap.value.id, '1', null);
     if (error) {
         console.error('[mapOrder] 系统订阅失败:', error);
@@ -238,9 +236,7 @@ const handleQQSubscribe = async () => {
 };
 
 const handleSystemSubscribeDirect = async (map: Api.Game.MapVo) => {
-    // 添加订阅前需先绑定QQ群成员，未绑定则弹出绑定模态框
-    const bound = await ensureBound();
-    if (!bound) return;
+    // 系统订阅无需绑定QQ群，直接添加
     const { error } = await fetchAddMapSubscribe(map.id, '1', null);
     if (error) {
         console.error('[mapOrder] 系统订阅失败:', error);
