@@ -57,7 +57,17 @@ const selectCommunity = async (id: number) => {
   // 过期查询的结果会在写入前按社区一致性校验丢弃（见 useServerQuery），不会覆盖新社区数据
   if (appStore.selectedCommunityId === id) return;
   appStore.setSelectedCommunityId(id);
-  await queryServerInfos(true, true);
+  // 递增查询序号，使旧查询（如 10 秒自动搜索）收尾时不再重复重启倒计时，避免 SVG 圆环动画抖动
+  querySeq++;
+  // 切换社区优先用 WS 实时数据即时回显并重启倒计时：
+  // 避免 10 秒自动搜索（慢速 HTTP 查询）进行中切换时被旧查询拖住/走慢速接口
+  if (!serverLoading.value) {
+    await gameStore.queryWsServerInfosResponse();
+    startCountdown(true);
+  } else {
+    // 加载中（如手动刷新进行中）时走常规查询，由查询收尾统一关闭加载态
+    await queryServerInfos(true, true);
+  }
 };
 
 // 恢复挤服窗口
@@ -90,10 +100,14 @@ const startCountdown = (reset: boolean = true) => {
 };
 
 // 查询服务器列表 源服务器
-// 进行中的查询计数：搜索/刷新进行中允许再次发起查询（如切换社区），
-// 全部查询结束后才关闭加载态并重启倒计时，避免较早发起的查询提前收尾导致加载态卡死
+// 进行中的查询计数 + 最新查询序号：
+// 1) 搜索/刷新进行中允许再次发起查询（如切换社区），queryCount 防止较早查询提前收尾导致加载态卡死；
+// 2) 仅最新一次查询负责收尾（关闭加载态/重启倒计时）：切社区等更新操作会递增 querySeq，
+//    使旧查询（如 10 秒自动搜索）收尾失效，避免倒计时被连续重启两次导致 SVG 圆环动画抖动
 let queryCount = 0;
+let querySeq = 0;
 const queryServerInfos = async (showAnimationFlag: boolean = true, isCache: boolean = false) => {
+  const seq = ++querySeq;
   queryCount++;
   isRefreshing.value = true;
   if (showAnimationFlag) {
@@ -109,8 +123,9 @@ const queryServerInfos = async (showAnimationFlag: boolean = true, isCache: bool
     }
   } finally {
     queryCount--;
-    if (queryCount <= 0) {
-      queryCount = 0;
+    if (queryCount <= 0) queryCount = 0;
+    // 仅最新一次查询负责收尾：旧查询（如切社区前发起的搜索）收尾时不再重启倒计时，避免动画抖动
+    if (seq === querySeq) {
       serverLoading.value = false;
       isRefreshing.value = false;
 
