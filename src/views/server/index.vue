@@ -306,7 +306,7 @@ onUnmounted(() => {
                   stroke-linecap="round" />
               </g>
             </svg>
-            <div class="countdown-text"></div>
+            <div class="countdown-text" :key="countdownTick"></div>
 
           </div>
           <div class="countdown-container cursor-pointer" v-else>
