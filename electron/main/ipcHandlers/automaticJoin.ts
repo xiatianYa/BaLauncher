@@ -34,7 +34,6 @@ function stopJoinSession(result: Record<string, unknown> = { success: true, foun
 export function setupAutomaticJoinIpc() {
   ipcMain.handle('start-automatic-join', async (_, options) => {
     const { serverAddr, maxPlayers, threadCount, joinDelay } = options
-    console.log(joinDelay)
 
     if (!isMainThread) {
       return { success: false, error: 'Must be run in main thread' }
@@ -42,7 +41,6 @@ export function setupAutomaticJoinIpc() {
 
     // 防并发：已有挤服循环在跑时，先终止旧循环并 resolve 旧 Promise，再启动新循环
     if (joinSession) {
-      console.log('[automaticJoin] 已有挤服循环在运行，先终止旧循环')
       stopJoinSession()
     }
 
@@ -79,8 +77,8 @@ export function setupAutomaticJoinIpc() {
 
       session.workers.forEach(worker => {
         worker.on('message', (msg) => onResult(msg, worker))
-        worker.on('error', (err) => {
-          console.error('Worker error:', err)
+        worker.on('error', () => {
+          // worker 异常后延迟重试，保证挤服循环不中断
           setTimeout(() => {
             if (joinSession === session && !session.resolved && session.workers.includes(worker)) {
               worker.postMessage({ serverAddr, maxPlayers })
@@ -94,7 +92,6 @@ export function setupAutomaticJoinIpc() {
   })
 
   ipcMain.handle('stop-automatic-join', async () => {
-    console.log('Stop automatic join')
     stopJoinSession()
     return { success: true }
   })

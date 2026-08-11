@@ -167,8 +167,8 @@ async function getCurrentLocation(): Promise<{ latitude: number; longitude: numb
         return applyCache(data)
       }
     }
-  } catch (error) {
-    console.warn('[WEATHER] IPv4 定位失败，回退到普通 IP 定位:', error)
+  } catch {
+    // IPv4 定位失败，回退到普通 IP 定位
   }
 
   // 2) 普通 IP 定位（可能走 IPv6 出口，结果可能不准，仅作保底）
@@ -177,8 +177,8 @@ async function getCurrentLocation(): Promise<{ latitude: number; longitude: numb
     if (data.success && typeof data.latitude === 'number' && typeof data.longitude === 'number') {
       return applyCache(data)
     }
-  } catch (error) {
-    console.warn('[WEATHER] IP 定位失败，回退默认坐标:', error)
+  } catch {
+    // 定位失败，回退默认坐标
   }
 
   return { latitude: FALLBACK_LAT, longitude: FALLBACK_LON, city: 'Beijing' }
@@ -230,33 +230,23 @@ async function fetchCurrentWeather(token: string, latitude: number, longitude: n
 /** 注册 IPC：渲染进程通过 window.ipcRenderer.fetchCurrentWeather() 调用 */
 export function setupWeatherIpc() {
   ipcMain.handle('fetch-current-weather', async () => {
+    // 1. 生成 JWT
+    const token = await generateJwtToken()
+
+    // 2. 获取当前定位
+    const { latitude, longitude, city: ipCity } = await getCurrentLocation()
+
+    // 3. 通过 Geo API 反查城市名称（国家 - 城市 格式），失败时回退到 IP 定位城市
+    let cityName = ''
     try {
-      // 1. 生成 JWT
-      const token = await generateJwtToken()
-      console.log('[WEATHER] JWT token:', token)
-
-      // 2. 获取当前定位
-      const { latitude, longitude, city: ipCity } = await getCurrentLocation()
-      console.log(`[WEATHER] 当前定位: ${ipCity} (${latitude}, ${longitude})`)
-
-      // 2.5 通过 Geo API 反查城市名称（国家 - 城市 格式）
-      let cityName = ''
-      try {
-        cityName = await fetchCityByGeo(token, latitude, longitude)
-        console.log(`[WEATHER] Geo 城市查询结果: ${cityName}`)
-      } catch (err) {
-        console.warn('[WEATHER] Geo 城市查询失败，回退到 IP 定位城市:', err)
-        cityName = ipCity
-      }
-
-      // 3. 携带 Bearer token 请求天气
-      const weather = await fetchCurrentWeather(token, latitude, longitude)
-      console.log('[WEATHER] response:', weather)
-
-      return { token, latitude, longitude, city: cityName, weather }
-    } catch (error) {
-      console.error('[WEATHER] 获取天气失败:', error)
-      throw error
+      cityName = await fetchCityByGeo(token, latitude, longitude)
+    } catch {
+      cityName = ipCity
     }
+
+    // 4. 携带 Bearer token 请求天气
+    const weather = await fetchCurrentWeather(token, latitude, longitude)
+
+    return { token, latitude, longitude, city: cityName, weather }
   })
 }

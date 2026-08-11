@@ -13,8 +13,8 @@ async function getSteamPathFromRegistry(): Promise<string | null> {
     if (match && match[1]) {
       return match[1].trim()
     }
-  } catch (error) {
-    console.log('Failed to get Steam path from HKCU registry:', error)
+  } catch {
+    // 未读到注册表项，继续尝试下一路径
   }
 
   try {
@@ -23,8 +23,8 @@ async function getSteamPathFromRegistry(): Promise<string | null> {
     if (match && match[1]) {
       return match[1].trim()
     }
-  } catch (error) {
-    console.log('Failed to get Steam path from HKLM registry:', error)
+  } catch {
+    // 未读到注册表项，继续尝试下一路径
   }
 
   try {
@@ -33,8 +33,8 @@ async function getSteamPathFromRegistry(): Promise<string | null> {
     if (match && match[1]) {
       return match[1].trim()
     }
-  } catch (error) {
-    console.log('Failed to get Steam path from Wow6432Node registry:', error)
+  } catch {
+    // 未读到注册表项，继续尝试下一路径
   }
 
   const defaultPaths = [
@@ -90,8 +90,8 @@ async function getCSGO2Path(steamPath: string): Promise<string | null> {
         }
       }
     }
-  } catch (error) {
-    console.log('Failed to parse libraryfolders.vdf:', error)
+  } catch {
+    // 解析 libraryfolders.vdf 失败时返回 null
   }
 
   return null

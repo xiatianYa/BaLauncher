@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow } from 'electron'
+import { ipcMain, BrowserWindow, shell } from 'electron'
 import path from 'node:path'
 import { getMainWindow } from '../windowManager'
 
@@ -42,6 +42,13 @@ export function setupAgreementIpc() {
     })
 
     const win = agreementWindow
+
+    // 协议页内的外链走系统浏览器，window.open/target=_blank 一律阻止，
+    // 避免 Chromium 创建无 parent 的独立窗口混入任务栏/ALT+TAB
+    win.webContents.setWindowOpenHandler(({ url }) => {
+      if (/^https?:\/\//i.test(url)) shell.openExternal(url)
+      return { action: 'deny' }
+    })
 
     win.once('ready-to-show', () => {
       // 窗口可能在加载过程中被关闭，需确认未被销毁

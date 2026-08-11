@@ -33,9 +33,6 @@ async function readConsoleLog(csgo2Path: string) {
   try {
     if (!fs.existsSync(logPath)) {
       retryCount++
-      if (retryCount <= MAX_RETRIES) {
-        console.log(`等待日志文件创建... (${retryCount}/${MAX_RETRIES})`)
-      }
       return
     }
 
@@ -61,15 +58,15 @@ async function readConsoleLog(csgo2Path: string) {
           if (newLogContent) {
             sendLogDataToRenderer(newLogContent)
           }
-        } catch (readError) {
-          console.log('文件被占用，跳过本次读取')
+        } catch {
+          // 文件被 CS2 占用（写入中），跳过本次读取
         }
       }
     }
-    
+
     retryCount = 0
-  } catch (error) {
-    console.error('读取console.log失败:', error.message)
+  } catch {
+    // 读取失败，静默重试
     retryCount++
   } finally {
     isReading = false
@@ -86,14 +83,12 @@ export function startLogReader(csgo2Path: string, delayMs: number = 0) {
   isReading = false
   
   const startReading = () => {
-    console.log('开始读取CS2控制台日志')
     logReaderInterval = setInterval(() => {
       readConsoleLog(csgo2Path)
     }, 1000)
   }
-  
+
   if (delayMs > 0) {
-    console.log(`延迟 ${delayMs}ms 后开始读取日志`)
     setTimeout(startReading, delayMs)
   } else {
     startReading()
@@ -107,7 +102,6 @@ export function stopLogReader() {
     logFilePosition = 0
     retryCount = 0
     isReading = false
-    console.log('停止读取CS2控制台日志')
   }
 }
 

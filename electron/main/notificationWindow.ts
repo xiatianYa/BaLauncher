@@ -1,4 +1,5 @@
 import { BrowserWindow, screen } from 'electron'
+import { getMainWindow } from './windowManager'
 
 interface NotificationData {
   title: string
@@ -59,6 +60,8 @@ export function createNotificationWindow(data: NotificationData): void {
     transparent: true,
     backgroundColor: '#00000000',
     roundedCorners: true,
+    // 依附主窗口：即使 focusable/skipTaskbar 未生效也不会作为独立应用出现在 ALT+TAB
+    parent: getMainWindow() || undefined,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,

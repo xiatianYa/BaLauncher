@@ -1,3 +1,4 @@
+import { app } from 'electron'
 import { initializeApp } from './config'
 import { setupWindowEvents } from './windowManager'
 import { checkForUpdates, setupAutoUpdaterIpc } from './autoUpdater'

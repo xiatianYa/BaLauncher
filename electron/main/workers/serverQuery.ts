@@ -6,14 +6,17 @@ if (parentPort) {
     try {
       const { serverAddr, maxPlayers } = message
       const serverInfo = await queryGameServerInfo(serverAddr, 1, 1000)
-      serverInfo.addr = serverAddr
       const found = serverInfo.players <= maxPlayers
-      parentPort?.postMessage({ success: true, found, serverInfo })
+      parentPort?.postMessage({
+        success: true,
+        found,
+        serverInfo: { ...serverInfo, addr: serverAddr }
+      })
     } catch (error) {
-      parentPort?.postMessage({ 
-        success: false, 
-        found: false, 
-        error: error && (error as Error).message ? (error as Error).message : String(error) 
+      parentPort?.postMessage({
+        success: false,
+        found: false,
+        error: error instanceof Error ? error.message : String(error)
       })
     }
   })

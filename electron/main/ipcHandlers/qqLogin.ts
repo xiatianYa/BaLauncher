@@ -1,284 +1,81 @@
-import { ipcMain, BrowserWindow } from 'electron'
-import path from 'node:path'
+import { ipcMain } from 'electron'
 import axios from 'axios'
 import querystring from 'node:querystring'
-import { getMainWindow } from '../windowManager'
+import { buildLoginHeaderScript, createLoginWindow, LoginWindowRef } from './loginWindow'
 
-let qqLoginWindow: BrowserWindow | null = null
+let qqLoginWindow: LoginWindowRef = { window: null }
 
-const INJECT_HEADER_SCRIPT = `
-(function() {
-  if (document.getElementById('ba-launcher-login-header')) return;
-  
-  const style = document.createElement('style');
-  style.textContent = \`
-    #ba-launcher-login-header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 36px;
-      background: rgba(22, 26, 38, 0.98);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      z-index: 2147483647;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      -webkit-app-region: drag;
-      font-family: system-ui, -apple-system, sans-serif;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-    #ba-launcher-login-title {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-      margin-left: 12px;
-      font-size: 12.5px;
-      color: rgba(255,255,255,0.85);
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      pointer-events: none;
-      user-select: none;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    #ba-launcher-login-title .title-badge {
-      width: 24px;
-      height: 24px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      background: rgba(18, 183, 245, 0.15);
-    }
-    #ba-launcher-login-title .title-badge svg {
-      width: 14px;
-      height: 14px;
-      fill: #12b7f5;
-    }
-    #ba-launcher-login-close {
-      width: 44px;
-      height: 36px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      cursor: pointer;
-      -webkit-app-region: no-drag;
-      transition: background 0.2s;
-    }
-    #ba-launcher-login-close:hover {
-      background: rgba(232, 17, 35, 0.85);
-    }
-    #ba-launcher-login-close svg {
-      width: 9px;
-      height: 9px;
-      fill: rgba(255,255,255,0.7);
-      transition: fill 0.2s;
-    }
-    #ba-launcher-login-close:hover svg {
-      fill: #fff;
-    }
-    #ba-launcher-header-placeholder {
-      width: 100%;
-      height: 36px;
-      display: block;
-      visibility: hidden;
-      flex-shrink: 0;
-    }
-    html, body {
-      width: 100% !important;
-      height: 100% !important;
-      overflow: hidden !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      display: flex !important;
-      flex-direction: column !important;
-    }
-    /* 隐藏可能存在的滚动条 */
-    ::-webkit-scrollbar {
-      display: none;
-    }
-  \`;
-  document.head.appendChild(style);
+/** QQ 企鹅徽标 */
+const QQ_ICON_SVG = '<svg viewBox="0 0 448 512"><path d="M433.754 420.445c-11.526 1.393-44.86-52.741-44.86-52.741 0 31.345-16.136 72.246-37.051 86.64 26.029 17.34 4.963 28.231-6.937 27.376-28.433-2.035-64.542-16.308-68.567-19.211-4.027 2.903-40.135 17.176-68.567 19.211-11.9.855-30.966-10.036-6.937-27.376-20.915-14.394-37.051-55.295-37.051-86.64 0 0-33.334 54.134-44.86 52.741-5.37-.65-12.424-8.402-7.636-22.017 3.64-10.29 12.631-28.865 23.472-47.227-2.31 0-4.607-6.222-2.733-10.491 1.522-3.482 6.205-5.68 9.973-4.283 24.943 9.36 52.31-15.943 70.636-40.313 1.943-2.583 4.865-2.817 6.591-.536 10.221 13.473 25.42 19.078 40.314 19.078 14.905 0 30.125-5.622 40.345-19.078 1.726-2.281 4.648-2.047 6.591.536 18.326 24.37 45.693 49.673 70.636 40.313 3.768-1.397 8.451.801 9.973 4.283 1.874 4.269-.423 10.491-2.733 10.491 10.841 18.362 19.832 36.937 23.472 47.227 4.788 13.615-2.266 21.367-7.636 22.017zM24.127 203.5c2.346 30.416 16.694 58.997 40.11 76.261 1.723 1.27 2.393 3.466 2.17 5.582-.409 3.879-1.905 10.23-2.359 12.202-1.645 7.157 4.064 9.501 9.604 7.543 3.658-1.294 9.954-2.464 12.369-2.464 7.625 0 20.532 6.632 29.415 7.891 2.831.401 4.685 3.036 4.668 5.874-.026 3.874-1.508 11.319-1.508 14.78 0 8.286-6.377 14.156-13.806 16.75-4.085 1.427-8.313 5.232-6.876 9.553 1.06 3.19 4.757 4.354 7.656 4.032 12.436-1.383 29.409-4.393 38.196-8.05 2.209-.918 4.497 1.169 4.197 3.468-.791 6.053-2.745 17.078-3.307 21.892-.351 2.996 1.1 5.953 4.165 6.352 21.188 2.758 44.284 2.758 65.472 0 3.065-.399 4.516-3.356 4.165-6.352-.562-4.814-2.516-15.839-3.307-21.892-.3-2.299 1.988-4.386 4.197-3.468 8.787 3.657 25.76 6.667 38.196 8.05 2.899.322 6.596-.842 7.656-4.032 1.437-4.321-2.791-8.126-6.876-9.553-7.429-2.594-13.806-8.464-13.806-16.75 0-3.461-1.482-10.906-1.508-14.78-.017-2.838 1.837-5.473 4.668-5.874 8.883-1.259 21.79-7.891 29.415-7.891 2.415 0 8.711 1.17 12.369 2.464 5.54 1.958 11.249-.386 9.604-7.543-.454-1.972-1.95-8.323-2.359-12.202-.223-2.116.447-4.312 2.17-5.582 23.416-17.264 37.764-45.845 40.11-76.261-1.196-.587-1.219-3.482-1.219-6.291 0-2.642 2.22-4.784 4.958-4.784 1.319 0 2.567.509 3.527 1.421 4.015-7.385 5.283-16.633 3.055-23.015-3.156-9.024-14.587-12.148-24.639-13.531-1.596-.219-2.819-1.554-2.819-3.134 0-1.345.857-2.517 2.083-2.919 1.29-.423 3.857-.998 4.257-2.058.751-1.978-3.873-5.768-5.502-8.444-1.119-1.835 4.417-4.842 1.746-6.362-8.874-5.045-20.467-6.886-28.987-5.831-5.646.7-12.604-2.557-13.802-8.278-4.195-20.162-13.576-38.736-29.94-51.235-8.609-6.571-18.158-10.66-28.813-11.968-4.587-.563-7.28 3.673-5.87 7.938 3.111 9.413 3.828 22.5 1.095 31.795-.696 2.367-3.828 2.843-5.427 1.011-5.405-6.197-11.015-11.843-18.42-15.192-2.509-1.134-3.583-4.127-2.228-6.491 3.193-5.57 3.415-12.916 1.609-19.9-.668-2.583-3.302-4.117-5.83-3.753-9.66 1.39-19.039 4.634-26.663 9.04-4.74 2.74-9.078 6.039-13.052 9.654-2.493 2.268-6.298 1.297-7.301-1.978-3.827-12.535-14.015-22.153-27.219-24.503-2.838-.506-4.734-3.297-4.296-6.157.934-6.117 6.692-13.587 4.504-20.026-1.045-3.078-4.098-4.687-7.167-4.267-14.019 1.922-26.945 8.916-35.44 19.379-4.546 5.604-7.631 12.276-9.505 19.429-1.932 7.381-1.413 15.613 1.204 22.679.978 2.64.182 5.582-2.167 7.177-4.03 2.737-8.474 4.964-13.192 6.578-6.387 2.183-13.163 3.476-19.945 4.249-9.406 1.072-18.386.953-27.392-.592-4.048-.695-6.557-5.33-5.385-9.262 3.524-11.837 5.411-25.075 4.977-37.636-.008-.215.086-.426.264-.575 3.648-3.045 6.14-7.742 6.807-12.919.759-5.912-1.911-11.282-4.775-15.975-3.037-4.975-7.551-9.524-12.304-13.238-2.722-2.126-6.555-.744-7.706 2.591-3.67 10.618-5.782 22.421-6.511 33.588-.042 2.484-1.304 4.778-3.347 6.081-2.654 1.693-5.457 3.176-8.213 4.745-15.195 8.662-32.874 21.95-40.807 38.924-4.647 9.93-5.532 21.358-1.754 31.445.921 2.454 2.915 3.859 5.23 3.85.606-.002 1.216-.102 1.839-.31 3.718-1.237 7.642-2.505 11.271-4.177 2.446-1.126 4.748 1.239 3.903 3.875-2.078 6.482-3.137 13.748-2.933 20.678.018 1.034-.348 2.046-.997 2.857-3.02 3.774-4.979 8.76-5.228 13.961-.122 2.555-1.843 4.761-4.295 5.492-5.65 1.685-11.658 3.495-16.142 7.238-5.61 4.682-9.115 11.774-10.138 19.172-1.023 7.396.511 15.053 3.861 21.836 3.177 6.434 8.54 11.879 14.842 15.177z"/></svg>'
 
-  const header = document.createElement('div');
-  header.id = 'ba-launcher-login-header';
-  header.innerHTML = \`
-    <div id="ba-launcher-login-title">
-      <div class="title-badge">
-        <svg viewBox="0 0 448 512"><path d="M433.754 420.445c-11.526 1.393-44.86-52.741-44.86-52.741 0 31.345-16.136 72.246-37.051 86.64 26.029 17.34 4.963 28.231-6.937 27.376-28.433-2.035-64.542-16.308-68.567-19.211-4.027 2.903-40.135 17.176-68.567 19.211-11.9.855-30.966-10.036-6.937-27.376-20.915-14.394-37.051-55.295-37.051-86.64 0 0-33.334 54.134-44.86 52.741-5.37-.65-12.424-8.402-7.636-22.017 3.64-10.29 12.631-28.865 23.472-47.227-2.31 0-4.607-6.222-2.733-10.491 1.522-3.482 6.205-5.68 9.973-4.283 24.943 9.36 52.31-15.943 70.636-40.313 1.943-2.583 4.865-2.817 6.591-.536 10.221 13.473 25.42 19.078 40.314 19.078 14.905 0 30.125-5.622 40.345-19.078 1.726-2.281 4.648-2.047 6.591.536 18.326 24.37 45.693 49.673 70.636 40.313 3.768-1.397 8.451.801 9.973 4.283 1.874 4.269-.423 10.491-2.733 10.491 10.841 18.362 19.832 36.937 23.472 47.227 4.788 13.615-2.266 21.367-7.636 22.017zM24.127 203.5c2.346 30.416 16.694 58.997 40.11 76.261 1.723 1.27 2.393 3.466 2.17 5.582-.409 3.879-1.905 10.23-2.359 12.202-1.645 7.157 4.064 9.501 9.604 7.543 3.658-1.294 9.954-2.464 12.369-2.464 7.625 0 20.532 6.632 29.415 7.891 2.831.401 4.685 3.036 4.668 5.874-.026 3.874-1.508 11.319-1.508 14.78 0 8.286-6.377 14.156-13.806 16.75-4.085 1.427-8.313 5.232-6.876 9.553 1.06 3.19 4.757 4.354 7.656 4.032 12.436-1.383 29.409-4.393 38.196-8.05 2.209-.918 4.497 1.169 4.197 3.468-.791 6.053-2.745 17.078-3.307 21.892-.351 2.996 1.1 5.953 4.165 6.352 21.188 2.758 44.284 2.758 65.472 0 3.065-.399 4.516-3.356 4.165-6.352-.562-4.814-2.516-15.839-3.307-21.892-.3-2.299 1.988-4.386 4.197-3.468 8.787 3.657 25.76 6.667 38.196 8.05 2.899.322 6.596-.842 7.656-4.032 1.437-4.321-2.791-8.126-6.876-9.553-7.429-2.594-13.806-8.464-13.806-16.75 0-3.461-1.482-10.906-1.508-14.78-.017-2.838 1.837-5.473 4.668-5.874 8.883-1.259 21.79-7.891 29.415-7.891 2.415 0 8.711 1.17 12.369 2.464 5.54 1.958 11.249-.386 9.604-7.543-.454-1.972-1.95-8.323-2.359-12.202-.223-2.116.447-4.312 2.17-5.582 23.416-17.264 37.764-45.845 40.11-76.261-1.196-.587-1.219-3.482-1.219-6.291 0-2.642 2.22-4.784 4.958-4.784 1.319 0 2.567.509 3.527 1.421 4.015-7.385 5.283-16.633 3.055-23.015-3.156-9.024-14.587-12.148-24.639-13.531-1.596-.219-2.819-1.554-2.819-3.134 0-1.345.857-2.517 2.083-2.919 1.29-.423 3.857-.998 4.257-2.058.751-1.978-3.873-5.768-5.502-8.444-1.119-1.835 4.417-4.842 1.746-6.362-8.874-5.045-20.467-6.886-28.987-5.831-5.646.7-12.604-2.557-13.802-8.278-4.195-20.162-13.576-38.736-29.94-51.235-8.609-6.571-18.158-10.66-28.813-11.968-4.587-.563-7.28 3.673-5.87 7.938 3.111 9.413 3.828 22.5 1.095 31.795-.696 2.367-3.828 2.843-5.427 1.011-5.405-6.197-11.015-11.843-18.42-15.192-2.509-1.134-3.583-4.127-2.228-6.491 3.193-5.57 3.415-12.916 1.609-19.9-.668-2.583-3.302-4.117-5.83-3.753-9.66 1.39-19.039 4.634-26.663 9.04-4.74 2.74-9.078 6.039-13.052 9.654-2.493 2.268-6.298 1.297-7.301-1.978-3.827-12.535-14.015-22.153-27.219-24.503-2.838-.506-4.734-3.297-4.296-6.157.934-6.117 6.692-13.587 4.504-20.026-1.045-3.078-4.098-4.687-7.167-4.267-14.019 1.922-26.945 8.916-35.44 19.379-4.546 5.604-7.631 12.276-9.505 19.429-1.932 7.381-1.413 15.613 1.204 22.679.978 2.64.182 5.582-2.167 7.177-4.03 2.737-8.474 4.964-13.192 6.578-6.387 2.183-13.163 3.476-19.945 4.249-9.406 1.072-18.386.953-27.392-.592-4.048-.695-6.557-5.33-5.385-9.262 3.524-11.837 5.411-25.075 4.977-37.636-.008-.215.086-.426.264-.575 3.648-3.045 6.14-7.742 6.807-12.919.759-5.912-1.911-11.282-4.775-15.975-3.037-4.975-7.551-9.524-12.304-13.238-2.722-2.126-6.555-.744-7.706 2.591-3.67 10.618-5.782 22.421-6.511 33.588-.042 2.484-1.304 4.778-3.347 6.081-2.654 1.693-5.457 3.176-8.213 4.745-15.195 8.662-32.874 21.95-40.807 38.924-4.647 9.93-5.532 21.358-1.754 31.445.921 2.454 2.915 3.859 5.23 3.85.606-.002 1.216-.102 1.839-.31 3.718-1.237 7.642-2.505 11.271-4.177 2.446-1.126 4.748 1.239 3.903 3.875-2.078 6.482-3.137 13.748-2.933 20.678.018 1.034-.348 2.046-.997 2.857-3.02 3.774-4.979 8.76-5.228 13.961-.122 2.555-1.843 4.761-4.295 5.492-5.65 1.685-11.658 3.495-16.142 7.238-5.61 4.682-9.115 11.774-10.138 19.172-1.023 7.396.511 15.053 3.861 21.836 3.177 6.434 8.54 11.879 14.842 15.177z"/></svg>
-      </div>
-      <span>蔚蓝档案登录器 - QQ登录</span>
-    </div>
-    <div id="ba-launcher-login-close" title="关闭">
-      <svg viewBox="0 0 10.2 10.2"><path d="M10.2,0.7L9.5,0L5.1,4.4L0.7,0L0,0.7l4.4,4.4L0,9.5l0.7,0.7l4.4-4.4l4.4,4.4l0.7-0.7L5.8,5.1L10.2,0.7z"/></svg>
-    </div>
-  \`;
-  
-  const placeholder = document.createElement('div');
-  placeholder.id = 'ba-launcher-header-placeholder';
-  
-  document.body.prepend(placeholder);
-  document.body.prepend(header);
-  
-  document.getElementById('ba-launcher-login-close').addEventListener('click', () => {
-    window.location.href = 'ba-launcher://close';
-  });
-})();
-`
+const INJECT_HEADER_SCRIPT = buildLoginHeaderScript({
+  title: '蔚蓝档案登录器 - QQ登录',
+  iconSvg: QQ_ICON_SVG,
+  accentColor: '#12b7f5'
+})
 
 export function setupQqLoginIpc() {
-  ipcMain.handle('open-qq-login-window', async (_, url) => {
-    // 已有登录窗口则聚焦复用，避免重复创建导致窗口泄漏（孤儿窗口会出现在 ALT+TAB 中）
-    if (qqLoginWindow && !qqLoginWindow.isDestroyed()) {
-      if (qqLoginWindow.isMinimized()) {
-        qqLoginWindow.restore()
+  ipcMain.handle('open-qq-login-window', (_, url) => {
+    return createLoginWindow({
+      ref: qqLoginWindow,
+      title: '蔚蓝档案登录器 - QQ登录',
+      width: 500,
+      height: 600,
+      url,
+      injectScript: INJECT_HEADER_SCRIPT,
+      async handleRedirect(redirectUrl) {
+        const urlParams = new URLSearchParams(new URL(redirectUrl).search)
+        const code = urlParams.get('code')
+        const error = urlParams.get('error')
+
+        if (code) {
+          // 用授权码换取 access_token
+          const tokenRes = await axios.get('https://graph.qq.com/oauth2.0/token', {
+            params: {
+              grant_type: 'authorization_code',
+              client_id: '102129326',
+              client_secret: 'GVYMwHNGuRFrEMFt',
+              code,
+              redirect_uri: 'https://www.bluearchive.top/main'
+            }
+          })
+          const tokenData = querystring.parse(tokenRes.data)
+
+          if (tokenData.error) {
+            throw new Error(`获取token失败: ${tokenData.error_description}`)
+          }
+
+          // 用 access_token 换取 openid（返回 JSONP 格式，需剥离 callback 包裹）
+          const openIdRes = await axios.get('https://graph.qq.com/oauth2.0/me', {
+            params: {
+              access_token: tokenData.access_token
+            }
+          })
+          const openIdJson = openIdRes.data
+            .replace(/^callback\(/, '')
+            .replace(/\);$/, '')
+          const openIdData = JSON.parse(openIdJson)
+
+          if (openIdData.error) {
+            throw new Error(`获取openid失败: ${openIdData.error_description}`)
+          }
+
+          return {
+            code,
+            accessToken: tokenData.access_token,
+            expiresIn: tokenData.expires_in,
+            refreshToken: tokenData.refresh_token,
+            openid: openIdData.openid
+          }
+        }
+
+        if (error) {
+          throw new Error(`登录失败: ${urlParams.get('error_description') || error}`)
+        }
+
+        // 未识别出有效参数，保持窗口打开
+        return undefined
       }
-      qqLoginWindow.focus()
-      return
-    }
-    qqLoginWindow = null
-
-    return new Promise((resolve, reject) => {
-      // 用局部引用捕获窗口对象，避免后续 closed 事件误清理新窗口
-      const win = new BrowserWindow({
-        title: '蔚蓝档案登录器 - QQ登录',
-        icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
-        width: 500,
-        height: 600,
-        minWidth: 500,
-        minHeight: 600,
-        maxWidth: 500,
-        maxHeight: 600,
-        resizable: false,
-        show: false,
-        backgroundColor: '#161a26',
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true,
-          sandbox: true
-        },
-        autoHideMenuBar: true,
-        frame: false,
-        // 依附主窗口：不出现在 ALT+TAB/任务栏，避免多个应用条目残留；主窗口关闭时随之销毁
-        parent: getMainWindow() || undefined,
-        skipTaskbar: true
-      })
-      qqLoginWindow = win
-
-      win.once('ready-to-show', () => {
-        // 等待注入脚本执行完毕后再显示窗口
-        win.webContents.executeJavaScript(INJECT_HEADER_SCRIPT).then(() => {
-          if (!win.isDestroyed()) {
-            win.show()
-          }
-        })
-      })
-
-      // 阻止 Chromium 在 will-navigate 被 preventDefault 后自动
-      // 创建默认窗口（无 skipTaskbar/parent），导致 ALT+TAB 幽灵条目
-      win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
-
-      win.webContents.on('will-navigate', (event, url) => {
-        if (url === 'ba-launcher://close') {
-          event.preventDefault()
-          // hide() 先通知 Windows shell 从 ALT+TAB 列表移除窗口，
-          // 再 destroy() 释放 Electron 资源，避免 shell 缓存残留
-          if (!win.isDestroyed()) {
-            win.hide()
-            win.destroy()
-          }
-        }
-      })
-
-      win.webContents.on('did-start-loading', () => {
-        if (!win.isDestroyed()) {
-          win.webContents.executeJavaScript(INJECT_HEADER_SCRIPT)
-        }
-      })
-
-      win.loadURL(url)
-
-      win.webContents.on('will-redirect', async (event, redirectUrl) => {
-        if (redirectUrl.startsWith('https://www.bluearchive.top/main')) {
-          event.preventDefault()
-          const urlParams = new URLSearchParams(new URL(redirectUrl).search)
-
-          const code = urlParams.get('code')
-          const error = urlParams.get('error')
-
-          if (code) {
-            try {
-              const tokenRes = await axios.get('https://graph.qq.com/oauth2.0/token', {
-                params: {
-                  grant_type: 'authorization_code',
-                  client_id: '102129326',
-                  client_secret: 'GVYMwHNGuRFrEMFt',
-                  code: code,
-                  redirect_uri: 'https://www.bluearchive.top/main'
-                }
-              })
-              const tokenData = querystring.parse(tokenRes.data)
-
-              if (tokenData.error) {
-                throw new Error(`获取token失败: ${tokenData.error_description}`)
-              }
-
-              const openIdRes = await axios.get('https://graph.qq.com/oauth2.0/me', {
-                params: {
-                  access_token: tokenData.access_token
-                }
-              })
-
-              const openIdJson = openIdRes.data
-                .replace(/^callback\(/, '')
-                .replace(/\);$/, '')
-              const openIdData = JSON.parse(openIdJson)
-
-              if (openIdData.error) {
-                throw new Error(`获取openid失败: ${openIdData.error_description}`)
-              }
-
-              resolve({
-                code,
-                accessToken: tokenData.access_token,
-                expiresIn: tokenData.expires_in,
-                refreshToken: tokenData.refresh_token,
-                openid: openIdData.openid
-              })
-            } catch (err) {
-              reject(err)
-            } finally {
-              // 登录完成（成功或失败）后先 hide 再 destroy，确保 Windows shell 立即清理 ALT+TAB 条目
-              if (!win.isDestroyed()) {
-                win.hide()
-                win.destroy()
-              }
-            }
-          } else if (error) {
-            reject(new Error(`登录失败: ${urlParams.get('error_description') || error}`))
-            if (!win.isDestroyed()) {
-              win.hide()
-              win.destroy()
-            }
-          }
-        }
-      })
-
-      // 使用 closed 事件（窗口完全销毁后）清理引用，避免
-      // close 事件（窗口开始关闭时）过早置空，导致：
-      // 1. 旧窗口 native 资源未释放时创建新窗口 → ALT+TAB 幽灵条目
-      // 2. 旧窗口的 closed 延迟触发，误清新窗口引用
-      win.once('closed', () => {
-        // 仅当仍指向当前窗口时才置空，防止误清理后续新窗口
-        if (qqLoginWindow === win) {
-          qqLoginWindow = null
-        }
-        reject(new Error('用户取消登录'))
-      })
     })
   })
 }

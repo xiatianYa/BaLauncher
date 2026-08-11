@@ -1,4 +1,4 @@
-import { ipcMain, BrowserWindow, dialog, app } from 'electron'
+import { ipcMain, BrowserWindow, dialog, app, shell } from 'electron'
 import path from 'node:path'
 import { getMainWindow } from '../windowManager'
 import { preload, indexHtml, VITE_DEV_SERVER_URL } from '../config'
@@ -6,16 +6,15 @@ import { preload, indexHtml, VITE_DEV_SERVER_URL } from '../config'
 export function setupWindowControlIpc() {
   ipcMain.handle('electron:get-app-version', async () => {
     try {
-      return app.getVersion();
-    } catch (err) {
-      console.error('获取版本号失败：', err);
-      return 'unknown'; // 兜底值 
+      return app.getVersion()
+    } catch {
+      return 'unknown' // 版本获取失败时的兜底值
     }
-  });
+  })
 
   ipcMain.handle('open-win', (_, arg) => {
     const win = getMainWindow()
-    if (!win) return
+    if (!win || win.isDestroyed()) return
 
     const childWindow = new BrowserWindow({
       // 依附主窗口：不出现在 ALT+TAB/任务栏，避免多个应用条目残留
@@ -37,6 +36,13 @@ export function setupWindowControlIpc() {
 
   ipcMain.handle('open-external-window', (_, url: string) => {
     if (!url) return
+    const mainWindow = getMainWindow()
+    // 主窗口不存在/已销毁（如应用正在退出）时改用系统浏览器打开，
+    // 避免创建无 parent 的独立窗口，成为任务栏/ALT+TAB 中的多余应用条目
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      shell.openExternal(url)
+      return
+    }
     const childWindow = new BrowserWindow({
       title: '',
       icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
@@ -47,7 +53,7 @@ export function setupWindowControlIpc() {
       autoHideMenuBar: true,
       backgroundColor: '#161a26',
       // 依附主窗口：不出现在 ALT+TAB/任务栏，避免多个应用条目残留
-      parent: getMainWindow() || undefined,
+      parent: mainWindow,
       skipTaskbar: true,
       webPreferences: {
         nodeIntegration: false,

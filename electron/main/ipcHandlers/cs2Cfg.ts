@@ -35,7 +35,6 @@ export function setupCs2CfgIpc() {
 
       return { success: true, path: autoexecPath }
     } catch (error) {
-      console.error('Failed to write autoexec.cfg:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
@@ -55,7 +54,6 @@ export function setupCs2CfgIpc() {
       const content = fs.readFileSync(autoexecPath, 'utf-8')
       return { success: true, content }
     } catch (error) {
-      console.error('Failed to read autoexec.cfg:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })
@@ -96,7 +94,6 @@ export function setupCs2CfgIpc() {
 
       return { success: true }
     } catch (error) {
-      console.error('Failed to remove autoexec.cfg content:', error)
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
     }
   })

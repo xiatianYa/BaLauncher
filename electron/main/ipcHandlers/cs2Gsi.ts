@@ -5,538 +5,343 @@ import path from 'node:path'
 import fs from 'node:fs'
 import { startLogReader } from './logReader'
 
-// ========== 全局变量 ==========
-let mainWindow: BrowserWindow | null = null // 主窗口实例，用于发送数据到渲染进程
-let GsiService: any = null // CS2 GSI服务实例
-let GSIConfigWriter: any = null // GSI配置文件写入器
-let EVENTS: any = null // CS2 GSI服务事件常量
-let gsiService: any = null // GSI服务实例，用于与CS2游戏进行通信
-let isGsiConnected = false // 是否已连接到CS2游戏的GSI服务
-
 const execPromise = promisify(exec)
 
-// ========== 基础工具函数 ==========
+/** 主窗口实例，用于向渲染进程推送 GSI 数据 */
+let mainWindow: BrowserWindow | null = null
+/** cs2-gsi-z 模块（懒加载） */
+let GsiService: any = null
+let GSIConfigWriter: any = null
+let EVENTS: any = null
+/** GSI 服务实例 */
+let gsiService: any = null
+/** 是否已连接 CS2 的 GSI 服务 */
+let isGsiConnected = false
+
 export function setMainWindowForCs2Gsi(window: BrowserWindow) {
-    mainWindow = window
+  mainWindow = window
 }
 
-// ========== 发送GSI数据到渲染进程 ==========
+/** 发送 GSI 数据到渲染进程 */
 function sendGsiDataToRenderer(eventName: string, data: any) {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('cs2-gsi-data', { eventName, data })
-    }
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('cs2-gsi-data', { eventName, data })
+  }
 }
 
-// ========== 加载CS2 GSI服务 ==========
+/** 懒加载 cs2-gsi-z 模块 */
 async function loadCs2Gsi() {
-    if (!GsiService) {
-        const module = await import('cs2-gsi-z')
-        GsiService = module.GsiService
-        GSIConfigWriter = module.GSIConfigWriter
-        EVENTS = module.EVENTS
-    }
+  if (!GsiService) {
+    const module = await import('cs2-gsi-z')
+    GsiService = module.GsiService
+    GSIConfigWriter = module.GSIConfigWriter
+    EVENTS = module.EVENTS
+  }
 }
 
-// ========== 进程检测相关 ==========
+/** 检测 CS2 进程是否在运行（cs2.exe，老版本回退 csgo.exe） */
 async function checkCsgo2Running(): Promise<boolean> {
+  try {
+    const { stdout } = await execPromise('tasklist /FI "IMAGENAME eq cs2.exe" /FO CSV')
+    return stdout.toLowerCase().includes('cs2.exe')
+  } catch {
     try {
-        const { stdout } = await execPromise('tasklist /FI "IMAGENAME eq cs2.exe" /FO CSV')
-        return stdout.toLowerCase().includes('cs2.exe')
-    } catch (error) {
-        try {
-            const { stdout } = await execPromise('tasklist /FI "IMAGENAME eq csgo.exe" /FO CSV')
-            return stdout.toLowerCase().includes('csgo.exe')
-        } catch (error2) {
-            console.log('Failed to check CSGO2 process:', error2)
-            return false
-        }
+      const { stdout } = await execPromise('tasklist /FI "IMAGENAME eq csgo.exe" /FO CSV')
+      return stdout.toLowerCase().includes('csgo.exe')
+    } catch {
+      return false
     }
+  }
 }
 
-// ========== GSI 配置相关 ==========
+/** 检查 GSI 配置文件是否已存在 */
 function checkGsiConfigExists(csgo2Path: string): boolean {
-    if (!csgo2Path) return false
-
-    // 检查 balauncher.cfg 配置文件是否存在
-    const possiblePaths = [
-        path.join(csgo2Path, 'game', 'csgo', 'cfg', 'gamestate_integration_balauncher.cfg'),
-        path.join(csgo2Path, 'csgo', 'cfg', 'gamestate_integration_balauncher.cfg')
-    ]
-
-    for (const cfgPath of possiblePaths) {
-        if (fs.existsSync(cfgPath)) {
-            return true
-        }
-    }
-
-    return false
+  if (!csgo2Path) return false
+  const possiblePaths = [
+    path.join(csgo2Path, 'game', 'csgo', 'cfg', 'gamestate_integration_balauncher.cfg'),
+    path.join(csgo2Path, 'csgo', 'cfg', 'gamestate_integration_balauncher.cfg')
+  ]
+  return possiblePaths.some(cfgPath => fs.existsSync(cfgPath))
 }
 
-// ========== 创建GSI配置文件 ==========
+/** 创建 GSI 配置文件（已存在则不重复创建） */
 async function createGsiConfig(csgo2Path: string): Promise<boolean> {
-    if (!csgo2Path) return false
+  if (!csgo2Path) return false
+  await loadCs2Gsi()
+  if (!GSIConfigWriter) return false
 
-    // 确保 GSI 模块已加载
-    await loadCs2Gsi()
-    if (!GSIConfigWriter) return false
+  const possiblePaths = [
+    path.join(csgo2Path, 'game', 'csgo', 'cfg'),
+    path.join(csgo2Path, 'csgo', 'cfg')
+  ]
 
-    const possiblePaths = [
-        path.join(csgo2Path, 'game', 'csgo', 'cfg'),
-        path.join(csgo2Path, 'csgo', 'cfg')
+  for (const cfgDir of possiblePaths) {
+    if (!fs.existsSync(cfgDir)) continue
+    const targetPath = path.join(cfgDir, 'gamestate_integration_balauncher.cfg')
+    if (fs.existsSync(targetPath)) return true
+    try {
+      // GSIConfigWriter.generate 返回配置内容字符串，由我们写入目标文件
+      const configContent = GSIConfigWriter.generate({
+        name: 'balauncher',
+        uri: 'http://localhost:3345'
+      })
+      if (configContent) {
+        fs.writeFileSync(targetPath, configContent, 'utf-8')
+        return true
+      }
+    } catch {
+      // 写入失败，尝试下一个候选目录
+    }
+  }
+  return false
+}
+
+/** 控制台日志路径 */
+function getLogFilePath(csgo2Path: string): string | null {
+  if (!csgo2Path) return null
+  return path.join(csgo2Path, 'game', 'csgo', 'console.log')
+}
+
+/** 通过日志内容判断游戏是否已加载到主菜单 */
+function isGameFullyLoaded(csgo2Path: string): boolean {
+  const logPath = getLogFilePath(csgo2Path)
+  if (!logPath || !fs.existsSync(logPath)) return false
+  try {
+    const content = fs.readFileSync(logPath, 'utf-8')
+    const regexMainMenu = /MasterServerHostThread|Loading level .* got steam|Connected to Steam accounts|Significant network event|Signon number/
+    return regexMainMenu.test(content)
+  } catch {
+    return false
+  }
+}
+
+/** 启动 CS2：steamurl 走 steam:// 协议，steamexe 直接拉起 steam.exe */
+async function launchCs2(
+  csgo2Path: string,
+  serverMode: 'perfectworld' | 'worldwide' = 'worldwide',
+  startType: 'steamurl' | 'steamexe' = 'steamurl',
+  steamPath?: string,
+  startItems?: string[]
+) {
+  if (!csgo2Path) return { success: false, error: 'CS2 path not provided' }
+
+  try {
+    const params = [
+      serverMode === 'perfectworld' ? '-perfectworld' : '-worldwide',
+      '-vac',
+      '-condebug',
+      ...(startItems || [])
     ]
 
-    for (const cfgDir of possiblePaths) {
-        if (fs.existsSync(cfgDir)) {
-            const targetPath = path.join(cfgDir, 'gamestate_integration_balauncher.cfg')
-            // 如果文件已存在，则不重复创建
-            if (fs.existsSync(targetPath)) {
-                return true
-            }
-
-            try {
-                // GSIConfigWriter.generate 返回配置文件的内容字符串，而不是文件路径
-                const configContent = GSIConfigWriter.generate({
-                    name: 'balauncher', // 这里的 name 可能只是用于注释或内部标识，实际文件名由我们写入决定
-                    uri: 'http://localhost:3345',
-                })
-
-                if (configContent) {
-                    // 直接将内容写入目标文件
-                    fs.writeFileSync(targetPath, configContent, 'utf-8')
-                    return true
-                }
-            } catch (error) {
-                console.log('创建 GSI 配置文件失败:', error)
-            }
-        }
+    if (startType === 'steamurl') {
+      const baseCommand = 'steam://rungameid/730'
+      const command = params.length > 0 ? `${baseCommand}//${params.join(' ')}` : baseCommand
+      shell.openExternal(command)
+    } else {
+      if (!steamPath) {
+        return { success: false, error: 'Steam path not provided for steamexe mode' }
+      }
+      const steamExePath = path.join(steamPath, 'steam.exe')
+      if (!fs.existsSync(steamExePath)) {
+        return { success: false, error: `Steam.exe not found at ${steamExePath}` }
+      }
+      spawn(steamExePath, ['-applaunch', '730', ...params], { detached: true, stdio: 'ignore' }).unref()
     }
-    return false
+
+    startLogReader(csgo2Path)
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: String(error) }
+  }
 }
 
-// ========== 游戏启动相关 ==========
-function getLogFilePath(csgo2Path: string): string | null {
-    if (!csgo2Path) return null
-    const logPath = path.join(csgo2Path, 'game', 'csgo', 'console.log')
-    return logPath
-}
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
 
-function isGameFullyLoaded(csgo2Path: string): boolean {
-    const logPath = getLogFilePath(csgo2Path)
-    if (!logPath) return false
-
-    if (!fs.existsSync(logPath)) return false
-
-    try {
-        const content = fs.readFileSync(logPath, 'utf-8')
-        const regexMainMenu = /MasterServerHostThread|Loading level .* got steam|Connected to Steam accounts|Significant network event|Signon number/
-        return regexMainMenu.test(content)
-    } catch (e) {
-        console.log('检查游戏加载日志失败:', e)
-        return false
-    }
-}
-
-// ========== 启动CS2游戏 ==========
-async function launchCs2(
-    csgo2Path: string,
-    serverMode: 'perfectworld' | 'worldwide' = 'worldwide',
-    startType: 'steamurl' | 'steamexe' = 'steamurl',
-    steamPath?: string,
-    startItems?: string[]
-) {
-    if (!csgo2Path) return { success: false, error: 'CS2 path not provided' }
-
-    try {
-        const params: string[] = []
-
-        if (serverMode === 'perfectworld') {
-            params.push('-perfectworld')
-        } else {
-            params.push('-worldwide')
-        }
-
-        params.push('-vac')
-        params.push('-condebug')
-
-        // 添加用户选择的启动项
-        console.log('startItems:', startItems)
-        if (startItems && startItems.length > 0) {
-            params.push(...startItems)
-        }
-
-        if (startType === 'steamurl') {
-            const steamId = '730'
-            const baseCommand = 'steam://rungameid/'
-            let command = `${baseCommand}${steamId}`
-
-            if (params.length > 0) {
-                command = `${baseCommand}${steamId}//${params.join(' ')}`
-            }
-            shell.openExternal(command)
-        } else {
-            if (!steamPath) {
-                return { success: false, error: 'Steam path not provided for steamexe mode' }
-            }
-
-            const steamExePath = path.join(steamPath, 'steam.exe')
-            if (!fs.existsSync(steamExePath)) {
-                return { success: false, error: `Steam.exe not found at ${steamExePath}` }
-            }
-
-            const args = ['-applaunch', '730', ...params]
-            console.log('Start Command:', args.join(' '))
-            spawn(steamExePath, args, { detached: true, stdio: 'ignore' }).unref()
-        }
-
-        startLogReader(csgo2Path)
-
-        return { success: true }
-    } catch (error) {
-        console.error('CS2启动失败:', error)
-        return { success: false, error: String(error) }
-    }
-}
-
-// ========== 等待CS2游戏启动完成 ==========
+/** 等待 CS2 启动完成（进程稳定运行且日志出现主菜单标记） */
 async function waitForCs2Launch(csgo2Path?: string, maxWaitMs: number = 60000) {
-    const endTime = Date.now() + maxWaitMs
+  const endTime = Date.now() + maxWaitMs
 
-    while (Date.now() < endTime) {
-        await new Promise(resolve => setTimeout(resolve, 1000))
+  while (Date.now() < endTime) {
+    await sleep(1000)
 
-        const isRunning = await checkCsgo2Running()
-        if (isRunning) {
-            await new Promise(resolve => setTimeout(resolve, 3000))
-            const stillRunning = await checkCsgo2Running()
-            if (stillRunning) {
-                await new Promise(resolve => setTimeout(resolve, 2000))
-                if (csgo2Path) {
-                    const loadCheckStart = Date.now()
-                    const loadCheckEnd = loadCheckStart + 10000
-                    while (Date.now() < loadCheckEnd) {
-                        if (isGameFullyLoaded(csgo2Path)) {
-                            return { success: true }
-                        }
-                    }
-                }
+    // 进程需持续存在（启动 3s 后再确认），避免启动即崩溃的假阳性
+    if (!(await checkCsgo2Running())) continue
+    await sleep(3000)
+    if (!(await checkCsgo2Running())) continue
 
-                return { success: true }
-            } else {
-                console.log('CS2进程启动后崩溃，继续等待...')
-            }
-        }
-    }
-
-    return { success: false, error: '游戏启动超时，未加载到主菜单' }
-}
-
-// ========== GSI 服务相关 ==========
-async function startGsiService() {
-    if (gsiService) {
-        return { success: true, alreadyRunning: true }
-    }
-
-    try {
-        await loadCs2Gsi()
-
-        gsiService = new GsiService({
-            httpPort: 3345
-        })
-
-        gsiService.start()
-        isGsiConnected = true
-        console.log('✅ GSI 服务已启动，监听端口 3345')
-
-        // ========== Provider 事件 ==========
-        gsiService.on(EVENTS.provider.nameChanged, (payload: any) => {
-            sendGsiDataToRenderer("provider:nameChanged", payload)
-        })
-        gsiService.on(EVENTS.provider.timestampChanged, (payload: any) => {
-            sendGsiDataToRenderer("provider:timestampChanged", payload)
-        })
-
-        // ========== Map 事件 ==========
-        gsiService.on(EVENTS.map.nameChanged, (payload: any) => {
-            sendGsiDataToRenderer("map:nameChanged", payload)
-        })
-        gsiService.on(EVENTS.map.phaseChanged, (payload: any) => {
-            sendGsiDataToRenderer("map:phaseChanged", payload)
-        })
-        gsiService.on(EVENTS.map.roundChanged, (payload: any) => {
-            sendGsiDataToRenderer("map:roundChanged", payload)
-        })
-        gsiService.on(EVENTS.map.teamCTScoreChanged, (payload: any) => {
-            sendGsiDataToRenderer("map:teamCTScoreChanged", payload)
-        })
-        gsiService.on(EVENTS.map.teamTScoreChanged, (payload: any) => {
-            sendGsiDataToRenderer("map:teamTScoreChanged", payload)
-        })
-        gsiService.on(EVENTS.map.currentSpectatorsChanged, (payload: any) => {
-            sendGsiDataToRenderer("map:currentSpectatorsChanged", payload)
-        })
-        gsiService.on(EVENTS.map.souvenirsTotalChanged, (payload: any) => {
-            sendGsiDataToRenderer("map:souvenirsTotalChanged", payload)
-        })
-        gsiService.on(EVENTS.map.roundWinsChanged, (payload: any) => {
-            sendGsiDataToRenderer("map:roundWinsChanged", payload)
-        })
-
-        // ========== Round 事件 ==========
-        gsiService.on(EVENTS.round.phaseChanged, (payload: any) => {
-            sendGsiDataToRenderer("round:phaseChanged", payload)
-        })
-        gsiService.on(EVENTS.round.started, (payload: any) => {
-            sendGsiDataToRenderer("round:started", payload)
-        })
-        gsiService.on(EVENTS.round.ended, (payload: any) => {
-            sendGsiDataToRenderer("round:ended", payload)
-        })
-        gsiService.on(EVENTS.round.won, (payload: any) => {
-            sendGsiDataToRenderer("round:won", payload)
-        })
-
-        // ========== Player 事件 ==========
-        gsiService.on(EVENTS.player.nameChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:nameChanged", payload)
-        })
-        gsiService.on(EVENTS.player.clanChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:clanChanged", payload)
-        })
-        gsiService.on(EVENTS.player.xpOverloadLevelChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:xpOverloadLevelChanged", payload)
-        })
-        gsiService.on(EVENTS.player.steamidChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:steamidChanged", payload)
-        })
-        gsiService.on(EVENTS.player.teamChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:teamChanged", payload)
-        })
-        gsiService.on(EVENTS.player.activityChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:activityChanged", payload)
-        })
-        gsiService.on(EVENTS.player.observerSlotChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:observerSlotChanged", payload)
-        })
-        gsiService.on(EVENTS.player.specTargetChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:specTargetChanged", payload)
-        })
-        gsiService.on(EVENTS.player.positionChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:positionChanged", payload)
-        })
-        gsiService.on(EVENTS.player.forwardDirectionChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:forwardDirectionChanged", payload)
-        })
-        gsiService.on(EVENTS.player.hpChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:hpChanged", payload)
-        })
-        gsiService.on(EVENTS.player.armorChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:armorChanged", payload)
-        })
-        gsiService.on(EVENTS.player.helmetChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:helmetChanged", payload)
-        })
-        gsiService.on(EVENTS.player.flashedChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:flashedChanged", payload)
-        })
-        gsiService.on(EVENTS.player.smokedChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:smokedChanged", payload)
-        })
-        gsiService.on(EVENTS.player.burningChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:burningChanged", payload)
-        })
-        gsiService.on(EVENTS.player.moneyChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:moneyChanged", payload)
-        })
-        gsiService.on(EVENTS.player.equipmentValueChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:equipmentValueChanged", payload)
-        })
-        gsiService.on(EVENTS.player.weaponChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:weaponChanged", payload)
-        })
-        gsiService.on(EVENTS.player.ammoClipChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:ammoClipChanged", payload)
-        })
-        gsiService.on(EVENTS.player.ammoReserveChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:ammoReserveChanged", payload)
-        })
-        gsiService.on(EVENTS.player.killsChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:killsChanged", payload)
-        })
-        gsiService.on(EVENTS.player.deathsChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:deathsChanged", payload)
-        })
-        gsiService.on(EVENTS.player.assistsChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:assistsChanged", payload)
-        })
-        gsiService.on(EVENTS.player.scoreChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:scoreChanged", payload)
-        })
-        gsiService.on(EVENTS.player.mvpsChanged, (payload: any) => {
-            sendGsiDataToRenderer("player:mvpsChanged", payload)
-        })
-
-        // ========== PhaseCountdowns 事件 ==========
-        gsiService.on(EVENTS.phaseCountdowns.phaseChanged, (payload: any) => {
-            sendGsiDataToRenderer("phaseCountdowns:phaseChanged", payload)
-        })
-        gsiService.on(EVENTS.phaseCountdowns.phaseEndsInChanged, (payload: any) => {
-            sendGsiDataToRenderer("phaseCountdowns:phaseEndsInChanged", payload)
-        })
-
-        // ========== AllPlayers 事件 ==========
-        gsiService.on(EVENTS.allPlayers.joined, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:joined", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.left, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:left", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.teamChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:teamChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.observerSlotChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:observerSlotChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.positionChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:positionChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.forwardDirectionChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:forwardDirectionChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.hpChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:hpChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.armorChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:armorChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.helmetChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:helmetChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.flashedChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:flashedChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.smokedChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:smokedChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.burningChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:burningChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.moneyChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:moneyChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.equipmentValueChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:equipmentValueChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.weaponChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:weaponChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.ammoClipChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:ammoClipChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.ammoReserveChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:ammoReserveChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.killsChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:killsChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.deathsChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:deathsChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.assistsChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:assistsChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.scoreChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:scoreChanged", payload)
-        })
-        gsiService.on(EVENTS.allPlayers.mvpsChanged, (payload: any) => {
-            sendGsiDataToRenderer("allPlayers:mvpsChanged", payload)
-        })
-
-        // ========== Bomb 事件 ==========
-        gsiService.on(EVENTS.bomb.stateChanged, (payload: any) => {
-            sendGsiDataToRenderer("bomb:stateChanged", payload)
-        })
-        gsiService.on(EVENTS.bomb.positionChanged, (payload: any) => {
-            sendGsiDataToRenderer("bomb:positionChanged", payload)
-        })
-        gsiService.on(EVENTS.bomb.playerChanged, (payload: any) => {
-            sendGsiDataToRenderer("bomb:playerChanged", payload)
-        })
-
-        // ========== Grenades 事件 ==========
-        gsiService.on(EVENTS.grenades.existenceChanged, (payload: any) => {
-            sendGsiDataToRenderer("grenades:existenceChanged", payload)
-        })
-        gsiService.on(EVENTS.grenades.positionChanged, (payload: any) => {
-            sendGsiDataToRenderer("grenades:positionChanged", payload)
-        })
-        gsiService.on(EVENTS.grenades.velocityChanged, (payload: any) => {
-            sendGsiDataToRenderer("grenades:velocityChanged", payload)
-        })
-        gsiService.on(EVENTS.grenades.lifetimeChanged, (payload: any) => {
-            sendGsiDataToRenderer("grenades:lifetimeChanged", payload)
-        })
-        gsiService.on(EVENTS.grenades.effectTimeChanged, (payload: any) => {
-            sendGsiDataToRenderer("grenades:effectTimeChanged", payload)
-        })
-        gsiService.on(EVENTS.grenades.flamesChanged, (payload: any) => {
-            sendGsiDataToRenderer("grenades:flamesChanged", payload)
-        })
+    await sleep(2000)
+    // 等待日志出现主菜单标记（最多 10s，逐秒轮询避免忙等）
+    const loadCheckEnd = Date.now() + 10000
+    while (Date.now() < loadCheckEnd) {
+      if (csgo2Path && isGameFullyLoaded(csgo2Path)) {
         return { success: true }
-    } catch (error) {
-        isGsiConnected = false
-        return { success: false, error: String(error) }
+      }
+      await sleep(1000)
     }
+    return { success: true }
+  }
+
+  return { success: false, error: '游戏启动超时，未加载到主菜单' }
 }
 
-// ========== 停止GSI服务服务 ==========
+/**
+ * 构建 GSI 事件 -> 渲染进程通道名 映射（表驱动注册，避免大量重复的 on 回调）
+ * 注意：EVENTS 为懒加载模块，需在 loadCs2Gsi() 之后调用
+ */
+function getGsiEventMap(): Array<[string, string]> {
+  return [
+  // provider
+  [EVENTS.provider.nameChanged, 'provider:nameChanged'],
+  [EVENTS.provider.timestampChanged, 'provider:timestampChanged'],
+  // map
+  [EVENTS.map.nameChanged, 'map:nameChanged'],
+  [EVENTS.map.phaseChanged, 'map:phaseChanged'],
+  [EVENTS.map.roundChanged, 'map:roundChanged'],
+  [EVENTS.map.teamCTScoreChanged, 'map:teamCTScoreChanged'],
+  [EVENTS.map.teamTScoreChanged, 'map:teamTScoreChanged'],
+  [EVENTS.map.currentSpectatorsChanged, 'map:currentSpectatorsChanged'],
+  [EVENTS.map.souvenirsTotalChanged, 'map:souvenirsTotalChanged'],
+  [EVENTS.map.roundWinsChanged, 'map:roundWinsChanged'],
+  // round
+  [EVENTS.round.phaseChanged, 'round:phaseChanged'],
+  [EVENTS.round.started, 'round:started'],
+  [EVENTS.round.ended, 'round:ended'],
+  [EVENTS.round.won, 'round:won'],
+  // player
+  [EVENTS.player.nameChanged, 'player:nameChanged'],
+  [EVENTS.player.clanChanged, 'player:clanChanged'],
+  [EVENTS.player.xpOverloadLevelChanged, 'player:xpOverloadLevelChanged'],
+  [EVENTS.player.steamidChanged, 'player:steamidChanged'],
+  [EVENTS.player.teamChanged, 'player:teamChanged'],
+  [EVENTS.player.activityChanged, 'player:activityChanged'],
+  [EVENTS.player.observerSlotChanged, 'player:observerSlotChanged'],
+  [EVENTS.player.specTargetChanged, 'player:specTargetChanged'],
+  [EVENTS.player.positionChanged, 'player:positionChanged'],
+  [EVENTS.player.forwardDirectionChanged, 'player:forwardDirectionChanged'],
+  [EVENTS.player.hpChanged, 'player:hpChanged'],
+  [EVENTS.player.armorChanged, 'player:armorChanged'],
+  [EVENTS.player.helmetChanged, 'player:helmetChanged'],
+  [EVENTS.player.flashedChanged, 'player:flashedChanged'],
+  [EVENTS.player.smokedChanged, 'player:smokedChanged'],
+  [EVENTS.player.burningChanged, 'player:burningChanged'],
+  [EVENTS.player.moneyChanged, 'player:moneyChanged'],
+  [EVENTS.player.equipmentValueChanged, 'player:equipmentValueChanged'],
+  [EVENTS.player.weaponChanged, 'player:weaponChanged'],
+  [EVENTS.player.ammoClipChanged, 'player:ammoClipChanged'],
+  [EVENTS.player.ammoReserveChanged, 'player:ammoReserveChanged'],
+  [EVENTS.player.killsChanged, 'player:killsChanged'],
+  [EVENTS.player.deathsChanged, 'player:deathsChanged'],
+  [EVENTS.player.assistsChanged, 'player:assistsChanged'],
+  [EVENTS.player.scoreChanged, 'player:scoreChanged'],
+  [EVENTS.player.mvpsChanged, 'player:mvpsChanged'],
+  // phaseCountdowns
+  [EVENTS.phaseCountdowns.phaseChanged, 'phaseCountdowns:phaseChanged'],
+  [EVENTS.phaseCountdowns.phaseEndsInChanged, 'phaseCountdowns:phaseEndsInChanged'],
+  // allPlayers
+  [EVENTS.allPlayers.joined, 'allPlayers:joined'],
+  [EVENTS.allPlayers.left, 'allPlayers:left'],
+  [EVENTS.allPlayers.teamChanged, 'allPlayers:teamChanged'],
+  [EVENTS.allPlayers.observerSlotChanged, 'allPlayers:observerSlotChanged'],
+  [EVENTS.allPlayers.positionChanged, 'allPlayers:positionChanged'],
+  [EVENTS.allPlayers.forwardDirectionChanged, 'allPlayers:forwardDirectionChanged'],
+  [EVENTS.allPlayers.hpChanged, 'allPlayers:hpChanged'],
+  [EVENTS.allPlayers.armorChanged, 'allPlayers:armorChanged'],
+  [EVENTS.allPlayers.helmetChanged, 'allPlayers:helmetChanged'],
+  [EVENTS.allPlayers.flashedChanged, 'allPlayers:flashedChanged'],
+  [EVENTS.allPlayers.smokedChanged, 'allPlayers:smokedChanged'],
+  [EVENTS.allPlayers.burningChanged, 'allPlayers:burningChanged'],
+  [EVENTS.allPlayers.moneyChanged, 'allPlayers:moneyChanged'],
+  [EVENTS.allPlayers.equipmentValueChanged, 'allPlayers:equipmentValueChanged'],
+  [EVENTS.allPlayers.weaponChanged, 'allPlayers:weaponChanged'],
+  [EVENTS.allPlayers.ammoClipChanged, 'allPlayers:ammoClipChanged'],
+  [EVENTS.allPlayers.ammoReserveChanged, 'allPlayers:ammoReserveChanged'],
+  [EVENTS.allPlayers.killsChanged, 'allPlayers:killsChanged'],
+  [EVENTS.allPlayers.deathsChanged, 'allPlayers:deathsChanged'],
+  [EVENTS.allPlayers.assistsChanged, 'allPlayers:assistsChanged'],
+  [EVENTS.allPlayers.scoreChanged, 'allPlayers:scoreChanged'],
+  [EVENTS.allPlayers.mvpsChanged, 'allPlayers:mvpsChanged'],
+  // bomb
+  [EVENTS.bomb.stateChanged, 'bomb:stateChanged'],
+  [EVENTS.bomb.positionChanged, 'bomb:positionChanged'],
+  [EVENTS.bomb.playerChanged, 'bomb:playerChanged'],
+  // grenades
+  [EVENTS.grenades.existenceChanged, 'grenades:existenceChanged'],
+  [EVENTS.grenades.positionChanged, 'grenades:positionChanged'],
+  [EVENTS.grenades.velocityChanged, 'grenades:velocityChanged'],
+  [EVENTS.grenades.lifetimeChanged, 'grenades:lifetimeChanged'],
+  [EVENTS.grenades.effectTimeChanged, 'grenades:effectTimeChanged'],
+  [EVENTS.grenades.flamesChanged, 'grenades:flamesChanged']
+  ]
+}
+
+/** 启动 GSI 服务并注册全部事件转发 */
+async function startGsiService() {
+  if (gsiService) {
+    return { success: true, alreadyRunning: true }
+  }
+
+  try {
+    await loadCs2Gsi()
+
+    gsiService = new GsiService({ httpPort: 3345 })
+    gsiService.start()
+    isGsiConnected = true
+
+    for (const [event, channel] of getGsiEventMap()) {
+      gsiService.on(event, (payload: any) => sendGsiDataToRenderer(channel, payload))
+    }
+
+    return { success: true }
+  } catch (error) {
+    isGsiConnected = false
+    return { success: false, error: String(error) }
+  }
+}
+
+/** 停止 GSI 服务 */
 async function stopGsiService() {
-    if (gsiService) {
-        try {
-            gsiService.stop()
-        } catch (error) {
-            console.log('Error stopping GSI service:', error)
-        }
-        gsiService = null
-        isGsiConnected = false
+  if (gsiService) {
+    try {
+      gsiService.stop()
+    } catch {
+      // 停止失败忽略，直接释放引用
     }
-    return isGsiConnected
+    gsiService = null
+    isGsiConnected = false
+  }
+  return isGsiConnected
 }
 
-// ========== IPC 处理函数 ==========
 export function setupCs2GsiIpc() {
-    ipcMain.handle('check-csgo2-running', async () => {
-        const isRunning = await checkCsgo2Running()
-        return { isRunning }
-    })
+  ipcMain.handle('check-csgo2-running', async () => {
+    return { isRunning: await checkCsgo2Running() }
+  })
 
-    ipcMain.handle('check-gsi-config', async (_event, csgo2Path: string) => {
-        const exists = checkGsiConfigExists(csgo2Path)
-        return { exists }
-    })
+  ipcMain.handle('check-gsi-config', async (_event, csgo2Path: string) => {
+    return { exists: checkGsiConfigExists(csgo2Path) }
+  })
 
-    ipcMain.handle('create-gsi-config', async (_event, csgo2Path: string) => {
-        const success = await createGsiConfig(csgo2Path)
-        return { success }
-    })
+  ipcMain.handle('create-gsi-config', async (_event, csgo2Path: string) => {
+    return { success: await createGsiConfig(csgo2Path) }
+  })
 
-    ipcMain.handle('start-gsi-service', async () => {
-        return await startGsiService()
-    })
+  ipcMain.handle('start-gsi-service', async () => {
+    return await startGsiService()
+  })
 
-    ipcMain.handle('stop-gsi-service', async () => {
-        return await stopGsiService()
-    })
+  ipcMain.handle('stop-gsi-service', async () => {
+    return await stopGsiService()
+  })
 
-    ipcMain.handle('check-gsi-connected', async () => {
-        return { isConnected: isGsiConnected }
-    })
+  ipcMain.handle('check-gsi-connected', async () => {
+    return { isConnected: isGsiConnected }
+  })
 
-    ipcMain.handle('launch-cs2', async (_event, csgo2Path: string, serverMode: 'perfectworld' | 'worldwide' = 'worldwide', startType: 'steamurl' | 'steamexe' = 'steamurl', steamPath?: string, startItems: string[] = []) => {
-        return await launchCs2(csgo2Path, serverMode, startType, steamPath, startItems)
-    })
+  ipcMain.handle('launch-cs2', async (_event, csgo2Path: string, serverMode: 'perfectworld' | 'worldwide' = 'worldwide', startType: 'steamurl' | 'steamexe' = 'steamurl', steamPath?: string, startItems: string[] = []) => {
+    return await launchCs2(csgo2Path, serverMode, startType, steamPath, startItems)
+  })
 
-    ipcMain.handle('wait-for-cs2-launch', async (_event, csgo2Path?: string, maxWaitMs: number = 90000) => {
-        return await waitForCs2Launch(csgo2Path, maxWaitMs)
-    })
+  ipcMain.handle('wait-for-cs2-launch', async (_event, csgo2Path?: string, maxWaitMs: number = 90000) => {
+    return await waitForCs2Launch(csgo2Path, maxWaitMs)
+  })
 }
-

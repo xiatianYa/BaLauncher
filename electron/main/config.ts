@@ -19,11 +19,12 @@ export const preload = path.join(__dirname, '../preload/index.mjs')
 export const indexHtml = path.join(RENDERER_DIST, 'index.html')
 
 export function initializeApp() {
-  if (os.release().startsWith('6.1') || os.release().startsWith('10.0.2')) app.disableHardwareAcceleration()
-  
+  // 仅 Win7 (6.1) 禁用硬件加速；Win11 保持硬件加速（软件合成 + 透明窗口在反复 ALT+TAB 时会产生 DWM 幻影窗口条目）
+  if (os.release().startsWith('6.1')) app.disableHardwareAcceleration()
+
   // 与 electron-builder 的 appId 保持一致，确保任务栏分组与右键菜单图标正确关联
   if (process.platform === 'win32') app.setAppUserModelId('com.bluearchive.balauncher')
-  
+
   if (!app.requestSingleInstanceLock()) {
     app.quit()
     process.exit(0)

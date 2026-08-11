@@ -15,8 +15,8 @@ function safeSendToWindow(win: BrowserWindow | null, channel: string, ...args: a
   if (isWindowAvailable(win)) {
     try {
       win.webContents.send(channel, ...args)
-    } catch (err) {
-      console.error(`发送消息到窗口失败 (${channel}):`, err)
+    } catch {
+      // 渲染进程已销毁等场景下发送失败，忽略即可
     }
   }
 }
@@ -36,22 +36,15 @@ function initAutoUpdater(win: BrowserWindow) {
     url: 'https://www.bluearchive.top/statics/soft/',
   })
 
-  autoUpdater.on('checking-for-update', () => {
-    console.log('检查更新中...')
-  })
-
   autoUpdater.on('update-available', (info) => {
-    console.log('发现更新:', info)
     safeSendToWindow(mainWindow, 'update-available', info)
   })
 
   autoUpdater.on('update-not-available', (info) => {
-    console.log('没有可用更新:', info)
     safeSendToWindow(mainWindow, 'update-not-available', info)
   })
 
   autoUpdater.on('error', (err) => {
-    console.error('更新错误:', err)
     safeSendToWindow(mainWindow, 'update-error', err.message)
   })
 
@@ -71,24 +64,13 @@ function initAutoUpdater(win: BrowserWindow) {
 
 // 检查更新
 export function checkForUpdates(win: BrowserWindow, delay: number = 2000) {
-  console.log('[autoUpdater] checkForUpdates 被调用, isPackaged:', app.isPackaged);
-  if (app.isPackaged && isWindowAvailable(win)) {
-    console.log('[autoUpdater] 初始化并将在', delay, 'ms 后检查更新');
-    initAutoUpdater(win)
-    setTimeout(() => {
-      // 再次检查窗口是否可用
-      if (isWindowAvailable(win)) {
-        console.log('[autoUpdater] 开始调用 autoUpdater.checkForUpdates()');
-        autoUpdater.checkForUpdates().catch((err) => {
-          console.error('[autoUpdater] 检查更新失败:', err)
-        })
-      } else {
-        console.warn('[autoUpdater] 窗口不可用，跳过检查更新');
-      }
-    }, delay)
-  } else {
-    console.log('[autoUpdater] 跳过检查更新: isPackaged=', app.isPackaged, ', windowAvailable=', isWindowAvailable(win));
-  }
+  if (!app.isPackaged || !isWindowAvailable(win)) return
+  initAutoUpdater(win)
+  setTimeout(() => {
+    if (isWindowAvailable(win)) {
+      autoUpdater.checkForUpdates().catch(() => {})
+    }
+  }, delay)
 }
 
 // 设置自动更新IPC事件
