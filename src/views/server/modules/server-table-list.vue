@@ -9,7 +9,7 @@ import { useDict } from '@/hooks/business/dict';
 type SortOrder = 'none' | 'asc' | 'desc';
 type SortField = 'players' | 'ping' | null;
 
-const { dictType } = useDict();
+const { dictType, dictLabel } = useDict();
 
 const props = defineProps<{
   servers: Api.Game.SeverVo[];
@@ -31,6 +31,9 @@ const getPingType = (ping?: number) => {
   const level = ping === undefined || ping === null ? 'unknown' : ping < 70 ? 'normal' : ping < 100 ? 'warning' : 'error';
   return dictType('ping_level', level);
 };
+
+// 服务器比赛阶段文案（来自字典 game_map_phase，与卡片视图一致）
+const getMapPhaseText = (phase: string) => dictLabel('game_map_phase', phase) || phase;
 
 // 根据在线人数获取颜色
 const getPlayerColor = (players: number) => {
@@ -220,7 +223,7 @@ const getSortOrder = (field: SortField) => {
           <div class="td td-score">
             <div v-if="server.mapPhase" class="stat-chip">
               <span class="team team-ct">{{ server.CTScore || 0 }}</span>
-              <span class="score-phase">{{ server.mapPhase }}</span>
+              <span class="score-phase">{{ getMapPhaseText(server.mapPhase || '') }}</span>
               <span class="team team-t">{{ server.TScore || 0 }}</span>
             </div>
             <span v-else class="empty-score" :style="{ color: 'rgba(var(--app-rgb), 0.6)' }">-</span>

@@ -130,7 +130,6 @@ npm run commit
 
 ### 已实现功能
 - <span style="color: green;">[✓]</span> 游戏服务器实时查询与管理
-- <span style="color: green;">[✓]</span> 多社区服务器列表展示
 - <span style="color: green;">[✓]</span> 一键加入游戏服务器
 - <span style="color: green;">[✓]</span> 自动连接服务器功能
 - <span style="color: green;">[✓]</span> 服务器地址快捷复制
@@ -145,15 +144,21 @@ npm run commit
 - <span style="color: green;">[✓]</span> 首页数据展示
 - <span style="color: green;">[✓]</span> 地图订阅
 - <span style="color: green;">[✓]</span> 服务器列表显示模式切换
+- <span style="color: green;">[✓]</span> QQ机器人群管理
 - <span style="color: green;">[✓]</span> QQ机器人通知
+- <span style="color: green;">[✓]</span> 地图库
+- <span style="color: green;">[✓]</span> 社区导航
 
 ### 计划添加功能
 - [ ] 游戏状态托盘
-- [ ] 一键换肤
+- [ ] 模型替换
 - [ ] 地图库
-- [ ] 聊天室
 - [ ] 游戏直播
 - [ ] 直播OBS
+- [ ] 大厅功能
+- [ ] 创意工坊管理
+- [ ] 问题反馈
+- [ ] 游戏日志
 
 ### 迁移计划
 - 移植到 Tauri 的可能性

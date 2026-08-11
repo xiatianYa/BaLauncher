@@ -131,6 +131,9 @@ export function useServerQuery(deps: ServerQueryDeps) {
             listServer.numPlayers = item.players
             listServer.mapName = item.map
             listServer.maxPlayers = item.maxPlayers
+            // A2S 查询成功：回填 Ping 值并标记在线（与 queryServerInfosPingResponse 保持一致）
+            listServer.ping = item.ping
+            listServer.isOnline = true
             // A2S 查询（query-game-servers）返回的数据没有 mapId，只有原始地图名 item.map，
             // 原先按 mapId 匹配 mapList 永远匹配不上，导致换图后 mapUrl/mapLabel 等地图信息不更新。
             // 改为按地图名匹配（与 open-game-join / mapOrder 中 mapName 匹配逻辑一致）
