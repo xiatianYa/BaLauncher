@@ -855,12 +855,12 @@ onMounted(() => {
               }}</span>
           </div>
         </div>
-        <div v-if="isEditMode" class="form-item">
+        <div v-if="isEditMode && isAdmin" class="form-item">
           <label class="form-label">{{ $t('botGroup.effectiveTime') }}</label>
           <NDatePicker v-model:value="editForm.startTime" type="datetime" clearable
             :placeholder="$t('botGroup.modal.startTimePlaceholder')" class="w-full" />
         </div>
-        <div v-if="isEditMode" class="form-item">
+        <div v-if="isEditMode && isAdmin" class="form-item">
           <label class="form-label">{{ $t('botGroup.expireTime') }}</label>
           <NDatePicker v-model:value="editForm.expireTime" type="datetime" clearable
             :placeholder="$t('botGroup.modal.expireTimePlaceholder')" class="w-full" />

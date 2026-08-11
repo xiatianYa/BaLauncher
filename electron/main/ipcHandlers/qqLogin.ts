@@ -132,12 +132,15 @@ const INJECT_HEADER_SCRIPT = `
 
 export function setupQqLoginIpc() {
   ipcMain.handle('open-qq-login-window', async (_, url) => {
-    if (qqLoginWindow) {
+    // 已有登录窗口则聚焦复用，避免重复创建导致窗口泄漏（孤儿窗口会出现在 ALT+TAB 中）
+    if (qqLoginWindow && !qqLoginWindow.isDestroyed()) {
       if (qqLoginWindow.isMinimized()) {
         qqLoginWindow.restore()
       }
       qqLoginWindow.focus()
+      return
     }
+    qqLoginWindow = null
 
     return new Promise((resolve, reject) => {
       qqLoginWindow = new BrowserWindow({

@@ -130,12 +130,15 @@ const INJECT_HEADER_SCRIPT = `
 
 export function setupSteamLoginIpc() {
   ipcMain.handle('open-steam-login-window', async (_, url) => {
-    if (steamLoginWindow) {
+    // 已有登录窗口则聚焦复用，避免重复创建导致窗口泄漏（孤儿窗口会出现在 ALT+TAB 中）
+    if (steamLoginWindow && !steamLoginWindow.isDestroyed()) {
       if (steamLoginWindow.isMinimized()) {
         steamLoginWindow.restore()
       }
       steamLoginWindow.focus()
+      return
     }
+    steamLoginWindow = null
 
     return new Promise((resolve, reject) => {
       steamLoginWindow = new BrowserWindow({
