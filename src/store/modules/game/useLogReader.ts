@@ -104,6 +104,9 @@ export function useLogReader(deps: LogReaderDeps) {
     // 每次启动日志读取都重置快照跳过标志（主进程从文件头重新读取）
     skipSnapshotEvent = true
 
+    // 防止重复注册：已存在监听时先移除旧的处理器，避免 ipcRenderer.on 叠加导致事件被重复处理
+    removeConsoleLogListener()
+
     consoleLogHandler = (_event, logData: string) => {
       const lines = logData.split('\n')
 
@@ -185,6 +188,8 @@ export function useLogReader(deps: LogReaderDeps) {
   /** 开始读取游戏日志 */
   async function startLogReading(delayMs = 5000): Promise<void> {
     if (!unref(csgo2Path)) {
+      // 首次使用未配置游戏路径时给出明确提示，避免服务"似乎未运行"却无任何反馈
+      safeLog('未配置 CS2 路径，无法开始读取日志（请在设置中配置游戏路径）')
       console.error('未配置 CS2 路径，无法开始读取日志')
       return
     }

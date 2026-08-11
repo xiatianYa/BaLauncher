@@ -59,6 +59,9 @@ export function useGsiListener(deps: GsiListenerDeps) {
 
   /** 监听GSI数据 */
   function listenToGsiData(): void {
+    // 防止重复注册：已存在监听时先移除旧的处理器，避免 ipcRenderer.on 叠加导致事件被重复处理
+    removeGsiDataListener()
+
     safeLog('开始监听 GSI 数据')
     isGsiRunning.value = true
 

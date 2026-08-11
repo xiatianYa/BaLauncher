@@ -3,6 +3,7 @@ import { exec, spawn } from 'node:child_process'
 import { promisify } from 'node:util'
 import path from 'node:path'
 import fs from 'node:fs'
+import net from 'node:net'
 import { startLogReader } from './logReader'
 
 const execPromise = promisify(exec)
@@ -276,8 +277,18 @@ function getGsiEventMap(): Array<[string, string]> {
 
 /** 启动 GSI 服务并注册全部事件转发 */
 async function startGsiService() {
-  if (gsiService) {
+  if (gsiService && isGsiConnected) {
     return { success: true, alreadyRunning: true }
+  }
+
+  // 上次启动残留的实例（如 start() 抛错后）先释放，避免误判"已运行"导致服务永远无法真正启动
+  if (gsiService) {
+    try {
+      gsiService.stop()
+    } catch {
+      // 停止失败忽略，直接释放引用
+    }
+    gsiService = null
   }
 
   try {
@@ -293,6 +304,7 @@ async function startGsiService() {
 
     return { success: true }
   } catch (error) {
+    gsiService = null
     isGsiConnected = false
     return { success: false, error: String(error) }
   }
@@ -310,6 +322,27 @@ async function stopGsiService() {
     isGsiConnected = false
   }
   return isGsiConnected
+}
+
+/** 探测 GSI 服务端口是否真实可连接（防止服务异常退出但标志仍为 true） */
+function isGsiServiceAlive(): Promise<boolean> {
+  if (!gsiService) return Promise.resolve(false)
+  return new Promise((resolve) => {
+    const socket = net.connect(3345, '127.0.0.1')
+    socket.setTimeout(1500)
+    socket.once('connect', () => {
+      socket.destroy()
+      resolve(true)
+    })
+    socket.once('error', () => {
+      socket.destroy()
+      resolve(false)
+    })
+    socket.once('timeout', () => {
+      socket.destroy()
+      resolve(false)
+    })
+  })
 }
 
 export function setupCs2GsiIpc() {
@@ -334,7 +367,8 @@ export function setupCs2GsiIpc() {
   })
 
   ipcMain.handle('check-gsi-connected', async () => {
-    return { isConnected: isGsiConnected }
+    // 实例/标志与端口双重验证：服务异常退出后渲染端能发现并主动重启
+    return { isConnected: !!(gsiService && isGsiConnected) && (await isGsiServiceAlive()) }
   })
 
   ipcMain.handle('launch-cs2', async (_event, csgo2Path: string, serverMode: 'perfectworld' | 'worldwide' = 'worldwide', startType: 'steamurl' | 'steamexe' = 'steamurl', steamPath?: string, startItems: string[] = []) => {
