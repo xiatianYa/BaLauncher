@@ -88,7 +88,10 @@ export function setupWindowEvents(onDidFinishLoad?: (win: BrowserWindow) => void
     }
   })
 
+  // activate 事件是 macOS dock 专用，Windows 上 ALT+TAB / 任务栏点击也会触发
+  // 不加平台守卫可能导致 getAllWindows() 为 0 时误创建新主窗口，造成 ALT+TAB 条目增倍
   app.on('activate', () => {
+    if (process.platform !== 'darwin') return
     const allWindows = BrowserWindow.getAllWindows()
     if (allWindows.length) {
       allWindows[0].focus()

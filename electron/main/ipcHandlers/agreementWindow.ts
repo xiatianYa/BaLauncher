@@ -50,8 +50,9 @@ export function setupAgreementIpc() {
       }
     })
 
-    win.on('close', () => {
-      // 仅当当前窗口引用一致时才置空，避免覆盖新窗口
+    win.once('closed', () => {
+      // 使用 closed 事件（窗口完全销毁后）而非 close（开始关闭时），
+      // 防止用户快速关闭→重开时 native 资源未释放导致 ALT+TAB 幽灵条目
       if (agreementWindow === win) {
         agreementWindow = null
       }
@@ -63,9 +64,10 @@ export function setupAgreementIpc() {
         query: { type: type === 'privacy' ? 'privacy' : 'user' }
       })
     } catch (err) {
-      // 加载失败（如窗口在加载过程中被关闭）时安全清理
-      if (win && !win.isDestroyed()) {
-        win.close()
+      // 加载失败（如窗口在加载过程中被关闭）时先 hide 再 destroy
+      if (!win.isDestroyed()) {
+        win.hide()
+        win.destroy()
       }
       if (agreementWindow === win) {
         agreementWindow = null

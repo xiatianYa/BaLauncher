@@ -141,7 +141,8 @@ export function setupSteamLoginIpc() {
     steamLoginWindow = null
 
     return new Promise((resolve, reject) => {
-      steamLoginWindow = new BrowserWindow({
+      // 用局部引用捕获窗口对象，避免后续 closed 事件误清理新窗口
+      const win = new BrowserWindow({
         title: '蔚蓝档案登录器 - Steam登录',
         icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
         width: 1000,
@@ -164,28 +165,42 @@ export function setupSteamLoginIpc() {
         parent: getMainWindow() || undefined,
         skipTaskbar: true
       })
+      steamLoginWindow = win
 
-      steamLoginWindow.once('ready-to-show', () => {
+      win.once('ready-to-show', () => {
         // 等待注入脚本执行完毕后再显示窗口
-        steamLoginWindow?.webContents.executeJavaScript(INJECT_HEADER_SCRIPT).then(() => {
-          steamLoginWindow?.show()
+        win.webContents.executeJavaScript(INJECT_HEADER_SCRIPT).then(() => {
+          if (!win.isDestroyed()) {
+            win.show()
+          }
         })
       })
 
-      steamLoginWindow.webContents.on('will-navigate', (event, url) => {
+      // 阻止 Chromium 在 will-navigate 被 preventDefault 后自动
+      // 创建默认窗口（无 skipTaskbar/parent），导致 ALT+TAB 幽灵条目
+      win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+
+      win.webContents.on('will-navigate', (event, url) => {
         if (url === 'ba-launcher://close') {
           event.preventDefault()
-          steamLoginWindow?.close()
+          // hide() 先通知 Windows shell 从 ALT+TAB 列表移除窗口，
+          // 再 destroy() 释放 Electron 资源，避免 shell 缓存残留
+          if (!win.isDestroyed()) {
+            win.hide()
+            win.destroy()
+          }
         }
       })
 
-      steamLoginWindow.webContents.on('did-start-loading', () => {
-        steamLoginWindow?.webContents.executeJavaScript(INJECT_HEADER_SCRIPT)
+      win.webContents.on('did-start-loading', () => {
+        if (!win.isDestroyed()) {
+          win.webContents.executeJavaScript(INJECT_HEADER_SCRIPT)
+        }
       })
 
-      steamLoginWindow.loadURL(url)
+      win.loadURL(url)
 
-      steamLoginWindow.webContents.on('will-redirect', async (event, redirectUrl) => {
+      win.webContents.on('will-redirect', async (event, redirectUrl) => {
         if (redirectUrl.startsWith('https://www.bluearchive.top/main')) {
           event.preventDefault()
           
@@ -198,8 +213,10 @@ export function setupSteamLoginIpc() {
               if (steamIdMatch) {
                 const steamId = steamIdMatch[1]
                 resolve({ steamId })
-                steamLoginWindow?.close()
-                steamLoginWindow = null
+                if (!win.isDestroyed()) {
+                  win.hide()
+                  win.destroy()
+                }
                 return
               }
             }
@@ -208,14 +225,24 @@ export function setupSteamLoginIpc() {
           } catch (err) {
             reject(err)
           } finally {
-            steamLoginWindow?.close()
-            steamLoginWindow = null
+            // 登录完成（成功或失败）后先 hide 再 destroy，确保 Windows shell 立即清理 ALT+TAB 条目
+            if (!win.isDestroyed()) {
+              win.hide()
+              win.destroy()
+            }
           }
         }
       })
 
-      steamLoginWindow.on('close', () => {
-        steamLoginWindow = null
+      // 使用 closed 事件（窗口完全销毁后）清理引用，避免
+      // close 事件（窗口开始关闭时）过早置空，导致：
+      // 1. 旧窗口 native 资源未释放时创建新窗口 → ALT+TAB 幽灵条目
+      // 2. 旧窗口的 closed 延迟触发，误清新窗口引用
+      win.once('closed', () => {
+        // 仅当仍指向当前窗口时才置空，防止误清理后续新窗口
+        if (steamLoginWindow === win) {
+          steamLoginWindow = null
+        }
         reject(new Error('用户取消登录'))
       })
     })
