@@ -102,50 +102,50 @@ const themeOverrides = computed(() => {
       }
     };
   }
-  // 浅色模式：柔和的暖白，避免纯白刺眼
+  // 浅色模式：暖米白底 + 柔和灰蓝主色，长时间阅读不累
   return {
     common: {
       // 基础色
-      bodyColor: '#fbf1f1',
-      cardColor: '#faf7f2',
+      bodyColor: '#faf6f0',
+      cardColor: '#fffdf9',
       modalColor: '#ffffff',
       popoverColor: '#ffffff',
-      tableColor: '#faf7f2',
-      tableHeaderColor: '#f4eee7',
-      actionColor: '#f4eee7',
-      hoverColor: '#f4ece6',
-      // 主题色（项目主紫）
-      primaryColor: '#667eea',
-      primaryColorHover: '#7f93f0',
-      primaryColorPressed: '#5568d8',
-      primaryColorSuppl: '#667eea',
+      tableColor: '#fffdf9',
+      tableHeaderColor: '#f5f0e8',
+      actionColor: '#f5f0e8',
+      hoverColor: '#f0ebe0',
+      // 主题色（柔和灰蓝）
+      primaryColor: '#8b96b5',
+      primaryColorHover: '#a1aec9',
+      primaryColorPressed: '#7883a0',
+      primaryColorSuppl: '#8b96b5',
       // 文字
-      textColorBase: '#2e2b26',
-      textColor1: '#2e2b26',
-      textColor2: '#4b453b',
-      textColor3: '#6f6759',
-      textColorDisabled: '#a89f90',
-      placeholderColor: '#80786a',
+      textColorBase: '#2c2a26',
+      textColor1: '#2c2a26',
+      textColor2: '#4d4840',
+      textColor3: '#5e5850',
+      textColorDisabled: '#90887a',
+      placeholderColor: '#706960',
       // 边框/分隔线
-      borderColor: '#d9cdbe',
-      borderColorHover: '#c3b5a2',
-      dividerColor: '#e5dbcf',
+      borderColor: '#d5cec3',
+      borderColorHover: '#b8ae9e',
+      dividerColor: '#e0d9ce',
       // 输入框
-      inputColor: '#fffdfa',
-      inputColorDisabled: '#f7f0ea',
-      inputColorFocus: '#fffdfa',
+      inputColor: '#fffefc',
+      inputColorDisabled: '#f8f5f0',
+      inputColorFocus: '#fffefc',
       // 图标/关闭按钮
-      iconColor: '#786f60',
-      iconColorHover: '#2e2b26',
-      iconColorPressed: '#2e2b26',
-      closeColorHover: '#e5dbcf',
-      closeIconColorHover: '#2e2b26',
+      iconColor: '#7d7568',
+      iconColorHover: '#2c2a26',
+      iconColorPressed: '#2c2a26',
+      closeColorHover: '#e5ded3',
+      closeIconColorHover: '#2c2a26',
       // 滚动条
-      scrollbarColor: '#cfc2b3',
-      scrollbarColorHover: '#bcae9c',
+      scrollbarColor: '#d5cec3',
+      scrollbarColorHover: '#c0b8ab',
       // 开关/复选轨道与底色
-      trackColor: '#e2d8cb',
-      railColor: '#e2d8cb',
+      trackColor: '#e5ded3',
+      railColor: '#e5ded3',
       baseColor: '#ffffff',
       checkMarkColor: '#ffffff'
     }

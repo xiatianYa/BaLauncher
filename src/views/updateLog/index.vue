@@ -727,6 +727,11 @@ onMounted(() => {
   min-height: 0;
   overflow: auto;
   padding: 0 16px 16px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* 顶部添加栏（与通知视图位置保持一致：位于内容区顶部） */

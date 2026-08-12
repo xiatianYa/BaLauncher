@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue';
-import { NCard, NGrid, NGridItem, NInput, NPagination } from 'naive-ui';
+import { NCard, NGrid, NGridItem, NInput, NInfiniteScroll, NSpin } from 'naive-ui';
 import {
   fetchGetFeedbackPage,
-  fetchGetMyFeedbackList
+  fetchGetMyFeedbackList,
 } from '@/service/api';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
@@ -19,7 +19,7 @@ defineOptions({ name: 'Feedback' });
 
 const { isAdmin } = useAuth();
 
-/* ==================== 工具函数（搜索栏/卡片标签复用） ==================== */
+/* ==================== 工具函数 ==================== */
 
 const getTypeText = (type?: number) => {
   const map: Record<number, string> = { 0: 'type0', 1: 'type1', 2: 'type2', 3: 'type3' };
@@ -36,149 +36,137 @@ const getPriorityText = (priority?: number) => {
   return priority != null ? $t(`feedback.${map[priority] || 'priority0'}`) : '-';
 };
 
-/* ==================== 列表与分页 ==================== */
+/* ==================== 列表与滚动加载 ==================== */
 
 const loading = ref(false);
+const loadingMore = ref(false);
+const finished = ref(false);
+const limit = ref(9);
 const list = ref<Api.System.SysFeedbackVo[]>([]);
 const showMyFeedback = ref(false);
 
-const pagination = reactive({
+const filters = reactive({
   title: '',
   feedbackType: null as number | null,
   status: null as number | null,
   priority: null as number | null,
-  current: 1,
-  size: 9,
-  total: 0
 });
 
 const typeMenuOpen = ref(false);
 const statusMenuOpen = ref(false);
 const priorityMenuOpen = ref(false);
 
-/* ==================== Mock 假数据（开发预览） ==================== */
+/* ==================== Mock 假数据 ==================== */
 
 const isDevPreview = ref(true);
-const mockList: Api.System.SysFeedbackVo[] = [
-  {
-    id: 1, userId: 10001, userName: '阿洛娜', feedbackType: 0,
-    title: '启动器在 Win10 上频繁闪退',
-    content: '每次启动后大约 5 分钟左右就会自动闪退，已经尝试重新安装但问题依旧。系统版本是 Windows 10 22H2。',
-    images: '', status: 1, priority: 2, handlerUserId: 1,
-    handleTime: '2026-08-10 15:30:00',
-    handleRemark: '已定位到是显卡驱动兼容性问题，请将显卡驱动更新至最新版本后重试。',
-    createTime: '2026-08-08 10:25:00', updateTime: '2026-08-10 15:30:00'
-  },
-  {
-    id: 2, userId: 10002, userName: '希娜', feedbackType: 1,
-    title: '希望增加自动签到功能',
-    content: '建议在启动器中加入每日自动签到功能，这样就不用每天都手动打开游戏签到了。',
-    images: '', status: 0, priority: 1, handleRemark: '',
-    createTime: '2026-08-09 14:10:00', updateTime: '2026-08-09 14:10:00'
-  },
-  {
-    id: 3, userId: 10003, userName: '绫音', feedbackType: 2,
-    title: '服务器选择页面加载缓慢',
-    content: '在服务器选择页面，从进入页面到列表加载完成大概需要 8 秒左右，期间 UI 会卡死。',
-    images: '', status: 2, priority: 2, handlerUserId: 1,
-    handleTime: '2026-08-11 09:00:00',
-    handleRemark: '已优化服务器列表加载逻辑，下个版本会显著提升加载速度。',
-    createTime: '2026-08-07 16:45:00', updateTime: '2026-08-11 09:00:00'
-  },
-  {
-    id: 4, userId: 10004, userName: '星野', feedbackType: 0,
-    title: '暗色模式下部分文字看不清',
-    content: '在暗色主题下，设置页面中的部分提示文字颜色太暗，几乎看不清。希望能调整对比度。',
-    images: '', status: 3, priority: 0,
-    createTime: '2026-08-06 11:20:00', updateTime: '2026-08-06 11:20:00'
-  },
-  {
-    id: 5, userId: 10005, userName: '白子', feedbackType: 1,
-    title: '建议增加游戏启动时的过渡动画',
-    content: '目前点击启动按钮后直接进入加载黑屏，建议增加一个带 logo 的过渡动画。',
-    images: '', status: 2, priority: 1, handlerUserId: 1,
-    handleTime: '2026-08-10 11:30:00',
-    handleRemark: '已采纳该建议，将在 v2.1.0 中加入启动过渡动画。',
-    createTime: '2026-08-05 08:30:00', updateTime: '2026-08-10 11:30:00'
-  },
-  {
-    id: 6, userId: 10006, userName: '日奈', feedbackType: 2,
-    title: '点击"启动游戏"按钮无响应',
-    content: '在安装了最新更新后，点击启动游戏按钮完全没有反应，控制台也无报错信息。',
-    images: '', status: 1, priority: 3,
-    createTime: '2026-08-11 10:00:00', updateTime: '2026-08-11 10:00:00'
-  },
-  {
-    id: 7, userId: 10007, userName: '晴奈', feedbackType: 3,
-    title: '启动器中文翻译有一处错误',
-    content: '在"工具"页面中，按键绑定相关的提示文案存在一处中文翻译错误，原文"bind"被翻译成了"捆绑"而非"绑定"。',
-    images: '', status: 0, priority: 0,
-    createTime: '2026-08-04 19:55:00', updateTime: '2026-08-04 19:55:00'
-  }
-];
-
 /* ==================== 数据加载 ==================== */
 
+/** 从接口过滤后的数据中追加新条目（去重） */
+const appendUnique = (records: Api.System.SysFeedbackVo[]) => {
+  const existingIds = new Set(list.value.map(item => item.id));
+  const newItems = records.filter(item => !existingIds.has(item.id));
+  list.value = [...list.value, ...newItems];
+};
+
 const loadData = async () => {
-  if (isDevPreview.value) {
+  if (loadingMore.value) return;
+
+  if (list.value.length === 0) {
     loading.value = true;
-    await new Promise(resolve => setTimeout(resolve, 600));
-    if (showMyFeedback.value) {
-      list.value = mockList.filter(f => f.userId === 10001);
-      pagination.total = list.value.length;
-    } else {
-      const start = (pagination.current - 1) * pagination.size;
-      const end = start + pagination.size;
-      list.value = mockList.slice(start, end);
-      pagination.total = mockList.length;
-    }
-    loading.value = false;
-    return;
+  } else {
+    loadingMore.value = true;
   }
-  loading.value = true;
+
   try {
+    if (isDevPreview.value) {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const sourceData = showMyFeedback.value
+        ? mockList.filter(f => f.userId === 10001)
+        : mockList;
+      const sliced = sourceData.slice(0, limit.value);
+
+      if (list.value.length === 0) {
+        list.value = sliced;
+      } else {
+        appendUnique(sliced);
+      }
+
+      if (sliced.length < limit.value) {
+        finished.value = true;
+      }
+      return;
+    }
+
     if (showMyFeedback.value) {
       const { data, error } = await fetchGetMyFeedbackList();
       if (!error && data) {
         list.value = data || [];
-        pagination.total = data.length;
+        finished.value = true;
       }
-    } else {
-      const { data, error } = await fetchGetFeedbackPage({
-        title: pagination.title || null,
-        feedbackType: pagination.feedbackType,
-        status: pagination.status,
-        priority: pagination.priority,
-        current: pagination.current,
-        size: pagination.size
-      });
-      if (!error && data) {
+      return;
+    }
+
+    const { data, error } = await fetchGetFeedbackPage({
+      title: filters.title || null,
+      feedbackType: filters.feedbackType,
+      status: filters.status,
+      priority: filters.priority,
+      current: 1,
+      size: limit.value,
+    });
+
+    if (!error && data) {
+      if (list.value.length === 0) {
         list.value = data.records || [];
-        pagination.total = data.total || 0;
+      } else {
+        appendUnique(data.records || []);
+      }
+
+      if ((data.records || []).length < limit.value) {
+        finished.value = true;
       }
     }
   } finally {
     loading.value = false;
+    loadingMore.value = false;
   }
 };
 
-const handleSearch = () => { pagination.current = 1; loadData(); };
+/** 滚动加载更多（NInfiniteScroll 触发） */
+const loadMore = () => {
+  if (!finished.value && !loadingMore.value) {
+    limit.value += 9;
+    loadData();
+  }
+};
 
-const handleReset = () => {
-  pagination.title = '';
-  pagination.feedbackType = null;
-  pagination.status = null;
-  pagination.priority = null;
-  pagination.current = 1;
-  showMyFeedback.value = false;
+/** 搜索/筛选：重置列表并重新加载 */
+const handleSearch = () => {
+  list.value = [];
+  limit.value = 9;
+  finished.value = false;
   loadData();
 };
 
-const handlePageChange = (page: number) => { pagination.current = page; loadData(); };
+/** 重置所有筛选条件 */
+const handleReset = () => {
+  filters.title = '';
+  filters.feedbackType = null;
+  filters.status = null;
+  filters.priority = null;
+  showMyFeedback.value = false;
+  list.value = [];
+  limit.value = 9;
+  finished.value = false;
+  loadData();
+};
 
+/** 切换「全部反馈 / 我的反馈」 */
 const handleToggleView = (value: 'all' | 'my') => {
   showMyFeedback.value = value === 'my';
-  pagination.current = 1;
+  list.value = [];
+  limit.value = 9;
+  finished.value = false;
   loadData();
 };
 
@@ -196,10 +184,12 @@ const handleViewDetail = (row: Api.System.SysFeedbackVo) => { detailFeedback.val
 const handleOpenHandle = (row: Api.System.SysFeedbackVo) => { handleFeedback.value = row; showHandleModal.value = true; };
 const handleOpenDelete = (row: Api.System.SysFeedbackVo) => { deleteFeedback.value = row; showDeleteModal.value = true; };
 
-/** 子组件提交/删除后刷新列表 */
-const handleRefresh = () => { loadData(); };
-
-/* ==================== 生命周期 ==================== */
+const handleRefresh = () => {
+  list.value = [];
+  limit.value = 9;
+  finished.value = false;
+  loadData();
+};
 
 onMounted(() => { loadData(); });
 </script>
@@ -209,7 +199,6 @@ onMounted(() => { loadData(); });
     <NCard class="m-10px rounded-10px" content-style="padding:25px 0px 25px 0px;" :bordered="true"
       content-class="h-full flex flex-col flex-1 overflow-hidden" header-style="padding:10px 20px 10px 20px"
       :segmented="{ content: true, footer: 'soft' }">
-      <!-- 头部 -->
       <template #header>
         <FeedbackHeader :show-my-feedback="showMyFeedback" @toggle-view="handleToggleView" @create="showAddModal = true" />
       </template>
@@ -219,30 +208,30 @@ onMounted(() => { loadData(); });
         <div v-if="!showMyFeedback" class="search-bar">
           <div class="search-box">
             <SvgIcon icon="mdi:magnify" class="search-icon" />
-            <NInput v-model:value="pagination.title" :placeholder="$t('feedback.searchTitle')" clearable size="small"
+            <NInput v-model:value="filters.title" :placeholder="$t('feedback.searchTitle')" clearable size="small"
               @keyup.enter="handleSearch" />
           </div>
           <!-- 类型下拉 -->
           <div class="custom-select" :class="{ open: typeMenuOpen }">
             <div class="select-trigger" @click.stop="typeMenuOpen = !typeMenuOpen; statusMenuOpen = false; priorityMenuOpen = false">
               <SvgIcon icon="mdi:shape" class="select-prefix-icon" />
-              <span class="select-value" :class="{ placeholder: pagination.feedbackType == null }">
-                {{ pagination.feedbackType != null ? getTypeText(pagination.feedbackType) : $t('feedback.typeAll') }}
+              <span class="select-value" :class="{ placeholder: filters.feedbackType == null }">
+                {{ filters.feedbackType != null ? getTypeText(filters.feedbackType) : $t('feedback.typeAll') }}
               </span>
               <SvgIcon icon="mdi:chevron-down" class="select-arrow" />
             </div>
             <transition name="select-fade">
               <div v-if="typeMenuOpen" class="select-menu">
-                <div class="select-option" :class="{ active: pagination.feedbackType == null }"
-                  @click="pagination.feedbackType = null; typeMenuOpen = false">
+                <div class="select-option" :class="{ active: filters.feedbackType == null }"
+                  @click="filters.feedbackType = null; typeMenuOpen = false">
                   <span>{{ $t('feedback.typeAll') }}</span>
-                  <SvgIcon v-if="pagination.feedbackType == null" icon="mdi:check" class="option-check" />
+                  <SvgIcon v-if="filters.feedbackType == null" icon="mdi:check" class="option-check" />
                 </div>
                 <div v-for="t in [0, 1, 2, 3]" :key="t" class="select-option"
-                  :class="{ active: pagination.feedbackType === t }"
-                  @click="pagination.feedbackType = pagination.feedbackType === t ? null : t; typeMenuOpen = false">
+                  :class="{ active: filters.feedbackType === t }"
+                  @click="filters.feedbackType = filters.feedbackType === t ? null : t; typeMenuOpen = false">
                   <span>{{ getTypeText(t) }}</span>
-                  <SvgIcon v-if="pagination.feedbackType === t" icon="mdi:check" class="option-check" />
+                  <SvgIcon v-if="filters.feedbackType === t" icon="mdi:check" class="option-check" />
                 </div>
               </div>
             </transition>
@@ -251,23 +240,23 @@ onMounted(() => { loadData(); });
           <div class="custom-select" :class="{ open: statusMenuOpen }">
             <div class="select-trigger" @click.stop="statusMenuOpen = !statusMenuOpen; typeMenuOpen = false; priorityMenuOpen = false">
               <SvgIcon icon="mdi:flag" class="select-prefix-icon" />
-              <span class="select-value" :class="{ placeholder: pagination.status == null }">
-                {{ pagination.status != null ? getStatusText(pagination.status) : $t('feedback.statusAll') }}
+              <span class="select-value" :class="{ placeholder: filters.status == null }">
+                {{ filters.status != null ? getStatusText(filters.status) : $t('feedback.statusAll') }}
               </span>
               <SvgIcon icon="mdi:chevron-down" class="select-arrow" />
             </div>
             <transition name="select-fade">
               <div v-if="statusMenuOpen" class="select-menu">
-                <div class="select-option" :class="{ active: pagination.status == null }"
-                  @click="pagination.status = null; statusMenuOpen = false">
+                <div class="select-option" :class="{ active: filters.status == null }"
+                  @click="filters.status = null; statusMenuOpen = false">
                   <span>{{ $t('feedback.statusAll') }}</span>
-                  <SvgIcon v-if="pagination.status == null" icon="mdi:check" class="option-check" />
+                  <SvgIcon v-if="filters.status == null" icon="mdi:check" class="option-check" />
                 </div>
                 <div v-for="s in [0, 1, 2, 3, 4]" :key="s" class="select-option"
-                  :class="{ active: pagination.status === s }"
-                  @click="pagination.status = pagination.status === s ? null : s; statusMenuOpen = false">
+                  :class="{ active: filters.status === s }"
+                  @click="filters.status = filters.status === s ? null : s; statusMenuOpen = false">
                   <span>{{ getStatusText(s) }}</span>
-                  <SvgIcon v-if="pagination.status === s" icon="mdi:check" class="option-check" />
+                  <SvgIcon v-if="filters.status === s" icon="mdi:check" class="option-check" />
                 </div>
               </div>
             </transition>
@@ -276,23 +265,23 @@ onMounted(() => { loadData(); });
           <div class="custom-select" :class="{ open: priorityMenuOpen }">
             <div class="select-trigger" @click.stop="priorityMenuOpen = !priorityMenuOpen; typeMenuOpen = false; statusMenuOpen = false">
               <SvgIcon icon="mdi:alert-circle" class="select-prefix-icon" />
-              <span class="select-value" :class="{ placeholder: pagination.priority == null }">
-                {{ pagination.priority != null ? getPriorityText(pagination.priority) : $t('feedback.typeAll') }}
+              <span class="select-value" :class="{ placeholder: filters.priority == null }">
+                {{ filters.priority != null ? getPriorityText(filters.priority) : $t('feedback.typeAll') }}
               </span>
               <SvgIcon icon="mdi:chevron-down" class="select-arrow" />
             </div>
             <transition name="select-fade">
               <div v-if="priorityMenuOpen" class="select-menu">
-                <div class="select-option" :class="{ active: pagination.priority == null }"
-                  @click="pagination.priority = null; priorityMenuOpen = false">
+                <div class="select-option" :class="{ active: filters.priority == null }"
+                  @click="filters.priority = null; priorityMenuOpen = false">
                   <span>{{ $t('feedback.typeAll') }}</span>
-                  <SvgIcon v-if="pagination.priority == null" icon="mdi:check" class="option-check" />
+                  <SvgIcon v-if="filters.priority == null" icon="mdi:check" class="option-check" />
                 </div>
                 <div v-for="p in [0, 1, 2, 3]" :key="p" class="select-option"
-                  :class="{ active: pagination.priority === p }"
-                  @click="pagination.priority = pagination.priority === p ? null : p; priorityMenuOpen = false">
+                  :class="{ active: filters.priority === p }"
+                  @click="filters.priority = filters.priority === p ? null : p; priorityMenuOpen = false">
                   <span>{{ getPriorityText(p) }}</span>
-                  <SvgIcon v-if="pagination.priority === p" icon="mdi:check" class="option-check" />
+                  <SvgIcon v-if="filters.priority === p" icon="mdi:check" class="option-check" />
                 </div>
               </div>
             </transition>
@@ -306,20 +295,9 @@ onMounted(() => { loadData(); });
           </button>
         </div>
 
-        <!-- 卡片网格 -->
-        <NGrid :x-gap="16" :y-gap="16" :cols="3" responsive="screen" item-responsive>
-          <NGridItem v-for="(row, index) in list" :key="row.id" span="3 s:2 m:1 l:1">
-            <FeedbackCard
-              :row="row"
-              :index="index"
-              :is-admin="isAdmin"
-              @view="handleViewDetail(row)"
-              @handle="handleOpenHandle(row)"
-              @delete="handleOpenDelete(row)"
-            />
-          </NGridItem>
-          <!-- 骨架屏 -->
-          <NGridItem v-if="loading" v-for="i in 6" :key="`sk-${i}`" span="3 s:2 m:1 l:1">
+        <!-- 骨架屏：首次加载（与 updateLog 一致） -->
+        <NGrid v-if="loading && list.length === 0" :x-gap="16" :y-gap="16" :cols="3" responsive="screen" item-responsive>
+          <NGridItem v-for="i in 6" :key="`sk-${i}`" span="3 s:2 m:1 l:1">
             <div class="feedback-card skeleton">
               <div class="skeleton-title" />
               <div class="skeleton-line" />
@@ -328,31 +306,48 @@ onMounted(() => { loadData(); });
           </NGridItem>
         </NGrid>
 
-        <!-- 空状态 -->
-        <div v-if="!loading && list.length === 0" class="empty-state">
-          <SvgIcon icon="mdi:message-text-outline" class="empty-icon" />
-          <p>{{ $t('feedback.empty') }}</p>
-        </div>
+        <!-- 滚动加载列表（参考 updateLog NInfiniteScroll） -->
+        <NInfiniteScroll v-else @load="loadMore" :distance="100">
+          <NGrid :x-gap="16" :y-gap="16" :cols="3" responsive="screen" item-responsive>
+            <NGridItem v-for="(row, index) in list" :key="row.id" span="3 s:2 m:1 l:1">
+              <FeedbackCard
+                :row="row"
+                :index="index"
+                :is-admin="isAdmin"
+                @view="handleViewDetail(row)"
+                @handle="handleOpenHandle(row)"
+                @delete="handleOpenDelete(row)"
+              />
+            </NGridItem>
+            <!-- 加载更多骨架 -->
+            <NGridItem v-if="loadingMore" v-for="i in 3" :key="`lm-${i}`" span="3 s:2 m:1 l:1">
+              <div class="feedback-card skeleton">
+                <div class="skeleton-title" />
+                <div class="skeleton-line" />
+                <div class="skeleton-line short" />
+              </div>
+            </NGridItem>
+          </NGrid>
 
-        <!-- 分页 -->
-        <div v-if="!showMyFeedback && pagination.total > 0" class="pagination-bar">
-          <NPagination v-model:page="pagination.current" :item-count="pagination.total"
-            :page-size="pagination.size" @update-page="handlePageChange" />
-        </div>
+          <!-- 空状态 -->
+          <div v-if="!loadingMore && list.length === 0" class="empty-state">
+            <SvgIcon icon="mdi:message-text-outline" class="empty-icon" />
+            <p>{{ $t('feedback.empty') }}</p>
+          </div>
+
+          <!-- 底部加载完毕提示 -->
+          <div v-if="finished && list.length > 0 && !loadingMore" class="finished-indicator">
+            {{ $t('updateLog.allLoaded') }}
+          </div>
+        </NInfiniteScroll>
       </div>
     </NCard>
   </NCard>
 
-  <!-- 新增反馈弹窗 -->
+  <!-- 弹窗 -->
   <FeedbackAddModal v-model:show="showAddModal" @submitted="handleRefresh" />
-
-  <!-- 反馈详情弹窗 -->
   <FeedbackDetailModal v-model:show="showDetailModal" :feedback="detailFeedback" />
-
-  <!-- 管理员处理弹窗 -->
   <FeedbackHandleModal v-model:show="showHandleModal" :feedback="handleFeedback" @submitted="handleRefresh" />
-
-  <!-- 删除确认弹窗 -->
   <FeedbackDeleteModal v-model:show="showDeleteModal" :feedback="deleteFeedback" @deleted="handleRefresh" />
 </template>
 
@@ -375,6 +370,7 @@ onMounted(() => { loadData(); });
   gap: 10px;
   padding: 8px 0;
   flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .search-box {
@@ -411,9 +407,7 @@ onMounted(() => { loadData(); });
   min-width: 110px;
   z-index: 1;
 
-  &.open {
-    z-index: 2;
-  }
+  &.open { z-index: 2; }
 
   .select-trigger {
     display: flex;
@@ -427,9 +421,7 @@ onMounted(() => { loadData(); });
     user-select: none;
     transition: border-color 0.25s ease;
 
-    &:hover {
-      border-color: rgba(var(--app-rgb), 0.2);
-    }
+    &:hover { border-color: rgba(var(--app-rgb), 0.2); }
 
     .select-prefix-icon {
       font-size: 14px;
@@ -442,9 +434,7 @@ onMounted(() => { loadData(); });
       color: rgba(var(--app-rgb), 0.65);
       flex: 1;
 
-      &.placeholder {
-        color: rgba(var(--app-rgb), 0.4);
-      }
+      &.placeholder { color: rgba(var(--app-rgb), 0.4); }
     }
 
     .select-arrow {
@@ -454,9 +444,7 @@ onMounted(() => { loadData(); });
     }
   }
 
-  &.open .select-arrow {
-    transform: rotate(180deg);
-  }
+  &.open .select-arrow { transform: rotate(180deg); }
 
   .select-menu {
     position: absolute;
@@ -501,15 +489,9 @@ onMounted(() => { loadData(); });
 }
 
 .select-fade-enter-active,
-.select-fade-leave-active {
-  transition: all 0.2s ease;
-}
-
+.select-fade-leave-active { transition: all 0.2s ease; }
 .select-fade-enter-from,
-.select-fade-leave-to {
-  opacity: 0;
-  transform: translateY(-4px);
-}
+.select-fade-leave-to { opacity: 0; transform: translateY(-4px); }
 
 /* 搜索/重置图标按钮 */
 .icon-btn {
@@ -528,9 +510,7 @@ onMounted(() => { loadData(); });
     color: #667eea;
     background: rgba(102, 126, 234, 0.12);
 
-    &:hover {
-      background: rgba(102, 126, 234, 0.22);
-    }
+    &:hover { background: rgba(102, 126, 234, 0.22); }
   }
 
   &.reset-btn {
@@ -572,9 +552,7 @@ onMounted(() => { loadData(); });
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
 
-    &.short {
-      width: 40%;
-    }
+    &.short { width: 40%; }
   }
 }
 
@@ -599,17 +577,27 @@ onMounted(() => { loadData(); });
     opacity: 0.6;
   }
 
-  p {
-    margin: 0;
-    font-size: 14px;
-  }
+  p { margin: 0; font-size: 14px; }
 }
 
-/* ================================ 分页 ================================ */
+/* ================================ 底部加载完毕 ================================ */
 
-.pagination-bar {
+.finished-indicator {
   display: flex;
+  align-items: center;
   justify-content: center;
-  padding: 8px 0;
+  gap: 8px;
+  padding: 10px 0;
+  font-size: 12px;
+  color: rgba(var(--app-rgb), 0.35);
+
+  &::before,
+  &::after {
+    content: '';
+    width: 40px;
+    height: 1px;
+    background: currentColor;
+    opacity: 0.5;
+  }
 }
 </style>

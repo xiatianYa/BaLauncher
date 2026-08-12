@@ -131,10 +131,9 @@ onMounted(() => {
           <p>{{ $t('community.empty') }}</p>
         </div>
 
-        <!-- 加载更多 / 没有更多（参考 updateLog：加载完毕时带装饰分隔线） -->
-        <div v-if="list.length > 0" class="load-status" :class="{ finished }">
-          <span v-if="loading">{{ $t('community.loading') }}</span>
-          <span v-else-if="finished">{{ $t('community.noMore') }}</span>
+        <!-- 全部加载完毕（参考 updateLog：文字两侧装饰分隔线） -->
+        <div v-if="finished && list.length > 0" class="finished-indicator">
+          {{ $t('updateLog.allLoaded') }}
         </div>
       </div>
     </NCard>
@@ -345,8 +344,8 @@ onMounted(() => {
   }
 }
 
-/* 加载更多 / 没有更多提示（加载完毕时参考 updateLog finished-indicator：文字两侧装饰分隔线） */
-.load-status {
+/* 全部加载完毕提示（对齐 updateLog finished-indicator：文字两侧装饰分隔线） */
+.finished-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -355,8 +354,8 @@ onMounted(() => {
   font-size: 12px;
   color: rgba(var(--app-rgb), 0.35);
 
-  &.finished::before,
-  &.finished::after {
+  &::before,
+  &::after {
     content: '';
     width: 40px;
     height: 1px;
