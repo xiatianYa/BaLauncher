@@ -88,7 +88,6 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     return ipcRenderer.invoke('get-system-stats')
   },
   openPerfMiniWindow(cfg?: {
-    showFps?: boolean
     showCpu?: boolean
     showRam?: boolean
     showGpu?: boolean
@@ -100,7 +99,6 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     return ipcRenderer.invoke('perf-mini-close')
   },
   updatePerfMiniConfig(cfg?: {
-    showFps?: boolean
     showCpu?: boolean
     showRam?: boolean
     showGpu?: boolean
@@ -110,5 +108,13 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   },
   getPerfMiniData() {
     return ipcRenderer.invoke('perf-mini-data')
+  },
+  /** 设置浮窗窗口透明度（0-1，鼠标移入移出时调用，OS 级透明度） */
+  setPerfMiniOpacity(opacity: number) {
+    return ipcRenderer.invoke('perf-mini-set-opacity', opacity)
+  },
+  /** 调整浮窗窗口尺寸（小窗页面测量内容后调用，让窗口贴合内容） */
+  setPerfMiniSize(size: { width: number; height: number }) {
+    return ipcRenderer.invoke('perf-mini-set-size', size)
   },
 })

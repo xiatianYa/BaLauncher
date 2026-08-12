@@ -155,8 +155,6 @@ declare namespace PerfMonitor {
 
   /** 桌面浮窗配置 — 独立于页面面板，仅控制浮窗内显示内容 */
   interface PerfMiniConfig {
-    /** 是否显示 FPS 帧率 */
-    showFps: boolean
     /** 是否显示 CPU 使用率 */
     showCpu: boolean
     /** 是否显示内存使用率 */

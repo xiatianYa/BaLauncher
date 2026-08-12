@@ -91,28 +91,37 @@ export function setupWindowControlIpc() {
   .sep { width:1px; height:20px; background:rgba(255,255,255,.1); margin:0 2px; }
   .c0{color:#4ade80}.c1{color:#fbbf24}.c2{color:#f97316}.c3{color:#ef4444}
   .hidden { display:none; }
+  .ram-extra { font-size:10px; color:#777; font-weight:600; }
 </style>
 </head>
 <body>
 <div class="wrap" id="app">
-  <div class="item" id="item-fps"><span class="label">FPS</span><span class="val" id="fps">--</span></div>
-  <div class="sep" id="sep-fps"></div>
   <div class="item" id="item-cpu"><span class="label">CPU</span><span class="val" id="cpu">--</span><span class="label">%</span></div>
   <div class="bar" id="bar-cpu"><div class="bar-fill" id="cpu-bar"></div></div>
   <div class="sep" id="sep-cpu"></div>
-  <div class="item" id="item-ram"><span class="label">RAM</span><span class="val" id="ram">--</span><span class="label">%</span></div>
+  <div class="item" id="item-ram"><span class="label">RAM</span><span class="val" id="ram">--</span><span class="label">%</span><span class="ram-extra" id="ram-txt">--</span></div>
   <div class="bar" id="bar-ram"><div class="bar-fill" id="ram-bar"></div></div>
   <div class="sep" id="sep-ram"></div>
   <div class="item" id="item-gpu"><span class="label">GPU</span><span class="val" id="gpu">--</span><span class="label">%</span></div>
   <div class="bar" id="bar-gpu"><div class="bar-fill" id="gpu-bar"></div></div>
   <div class="sep" id="sep-gpu"></div>
-  <div class="sep" id="sep-temp"></div>
   <div class="item" id="item-cpu-t"><span class="label">CPU</span><span class="val" id="cpu-t">--</span><span class="label">°C</span></div>
   <div class="sep" id="sep-gpu-t"></div>
   <div class="item" id="item-gpu-t"><span class="label">GPU</span><span class="val" id="gpu-t">--</span><span class="label">°C</span></div>
 </div>
 <script>
   const uColor = p => p<40?'c0':p<70?'c1':p<90?'c2':'c3';
+  const fmtB = b => b >= 1073741824 ? (b/1073741824).toFixed(1)+'G' : b >= 1048576 ? (b/1048576).toFixed(0)+'M' : (b/1024).toFixed(0)+'K';
+  // 测量内容实际宽高并通知主进程缩放窗口（flex 布局下让窗口贴合内容，无右侧留白）
+  let lastW = 0;
+  function fitWidth() {
+    const w = document.documentElement.scrollWidth;
+    const h = document.documentElement.scrollHeight;
+    if (Math.abs(w - lastW) >= 4) {
+      lastW = w;
+      window.ipcRenderer.setPerfMiniSize({ width: w, height: h });
+    }
+  }
   async function poll() {
     try {
       const result = await window.ipcRenderer.getPerfMiniData();
@@ -120,27 +129,25 @@ export function setupWindowControlIpc() {
       const data = result.stats;
       const cfg = result.config || {};
       // 各模块独立显示/隐藏
-      const showFps = cfg.showFps !== false;
-      document.getElementById('item-fps').className = showFps ? 'item' : 'hidden';
-      document.getElementById('sep-fps').className = showFps ? 'sep' : 'hidden';
       const showCpu = cfg.showCpu !== false;
       document.getElementById('item-cpu').className = showCpu ? 'item' : 'hidden';
       document.getElementById('bar-cpu').className = showCpu ? 'bar' : 'hidden';
-      document.getElementById('sep-cpu').className = showCpu ? 'sep' : 'hidden';
       const showRam = cfg.showRam !== false;
       document.getElementById('item-ram').className = showRam ? 'item' : 'hidden';
       document.getElementById('bar-ram').className = showRam ? 'bar' : 'hidden';
-      document.getElementById('sep-ram').className = showRam ? 'sep' : 'hidden';
       const showGpu = cfg.showGpu !== false;
       document.getElementById('item-gpu').className = showGpu ? 'item' : 'hidden';
       document.getElementById('bar-gpu').className = showGpu ? 'bar' : 'hidden';
-      document.getElementById('sep-gpu').className = showGpu ? 'sep' : 'hidden';
-      // 温度区域（统一控制，前面的分隔线跟着一起）
+      // 温度区域（统一控制）
       const showTemp = cfg.showTemperature !== false;
-      document.getElementById('sep-temp').className = showTemp ? 'sep' : 'hidden';
       document.getElementById('item-cpu-t').className = showTemp ? 'item' : 'hidden';
       document.getElementById('sep-gpu-t').className = showTemp ? 'sep' : 'hidden';
       document.getElementById('item-gpu-t').className = showTemp ? 'item' : 'hidden';
+      // 分隔线：仅在相邻两个区块都可见时显示，避免连续分隔线或尾部多余留空
+      const anyMain = showCpu || showRam || showGpu;
+      document.getElementById('sep-cpu').className = (showCpu && showRam) ? 'sep' : 'hidden';
+      document.getElementById('sep-ram').className = (showRam && showGpu) ? 'sep' : 'hidden';
+      document.getElementById('sep-gpu').className = (anyMain && showTemp) ? 'sep' : 'hidden';
       const cpu = document.getElementById('cpu');
       const cpuBar = document.getElementById('cpu-bar');
       const ram = document.getElementById('ram');
@@ -156,6 +163,7 @@ export function setupWindowControlIpc() {
       ram.className = 'val '+uColor(ramPct);
       ramBar.style.width = ramPct+'%';
       ramBar.style.backgroundColor = ramPct<40?'#4ade80':ramPct<70?'#fbbf24':ramPct<90?'#f97316':'#ef4444';
+      document.getElementById('ram-txt').textContent = fmtB(data.memory.used) + '/' + fmtB(data.memory.total);
       const gpuPct = data.gpu.usagePercent ?? 0;
       gpu.textContent = gpuPct;
       gpu.className = 'val '+uColor(gpuPct);
@@ -165,30 +173,16 @@ export function setupWindowControlIpc() {
       document.getElementById('gpu-t').textContent = data.gpu.temperature ?? '--';
     } catch(e){}
   }
-  // FPS 追踪
-  let fpsFrames = 0, fpsLast = performance.now();
-  function fpsLoop() {
-    fpsFrames++;
-    const now = performance.now();
-    if (now - fpsLast >= 1000) {
-      document.getElementById('fps').textContent = Math.round(fpsFrames * 1000 / (now - fpsLast));
-      fpsFrames = 0;
-      fpsLast = now;
-    }
-    requestAnimationFrame(fpsLoop);
-  }
-  requestAnimationFrame(fpsLoop);
-  // 鼠标移入浮窗 → 透明，让出背后内容
-  document.body.addEventListener('mouseenter', () => { document.body.style.opacity = '0'; });
-  document.body.addEventListener('mouseleave', () => { document.body.style.opacity = '1'; });
+  // 鼠标移入浮窗 → 窗口全透明（OS 级），让出背后内容；移出 → 恢复显示
+  document.body.addEventListener('mouseenter', () => { window.ipcRenderer.setPerfMiniOpacity(0); });
+  document.body.addEventListener('mouseleave', () => { window.ipcRenderer.setPerfMiniOpacity(1); });
   setInterval(poll, 2000);
   poll();
 </script>
 </body>
 </html>`;
 
-  ipcMain.handle('perf-mini-open', (_, cfg?: {
-    showFps?: boolean
+  ipcMain.handle('perf-mini-open', async (_, cfg?: {
     showCpu?: boolean
     showRam?: boolean
     showGpu?: boolean
@@ -196,7 +190,6 @@ export function setupWindowControlIpc() {
   }) => {
     // 保存小窗配置，供 perf-mini-data 查询时返回
     setMiniConfig({
-      showFps: cfg?.showFps ?? true,
       showCpu: cfg?.showCpu ?? true,
       showRam: cfg?.showRam ?? true,
       showGpu: cfg?.showGpu ?? true,
@@ -210,7 +203,8 @@ export function setupWindowControlIpc() {
     // 计算桌面右上角位置（距右边距 16px，顶部 8px）
     const display = screen.getPrimaryDisplay();
     const { width: screenWidth, height: screenHeight } = display.workAreaSize;
-    const winWidth = 580;
+    // 初始宽度给个保守值，页面加载后由 fitWidth 自动贴合内容
+    const winWidth = 640;
     const winHeight = 42;
     const x = screenWidth - winWidth - 16;
     const y = 8;
@@ -233,19 +227,19 @@ export function setupWindowControlIpc() {
       }
     });
     perfMiniWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(MINI_WINDOW_HTML)}`);
-    perfMiniWindow.on('closed', () => { perfMiniWindow = null; });
+    perfMiniWindow.on('closed', () => {
+      perfMiniWindow = null;
+    });
   });
 
   // 运行时更新浮窗配置（无需重开浮窗，下次轮询即生效）
   ipcMain.handle('update-perf-mini-config', (_, cfg?: {
-    showFps?: boolean
     showCpu?: boolean
     showRam?: boolean
     showGpu?: boolean
     showTemperature?: boolean
   }) => {
     if (cfg) setMiniConfig({
-      showFps: cfg.showFps ?? true,
       showCpu: cfg.showCpu ?? true,
       showRam: cfg.showRam ?? true,
       showGpu: cfg.showGpu ?? true,
@@ -257,6 +251,24 @@ export function setupWindowControlIpc() {
     if (perfMiniWindow && !perfMiniWindow.isDestroyed()) {
       perfMiniWindow.close();
       perfMiniWindow = null;
+    }
+  });
+
+  // 浮窗 OS 级透明度（0 = 全透明，1 = 不透明），鼠标移入移出时由小窗页面调用
+  ipcMain.handle('perf-mini-set-opacity', (_e, opacity: number) => {
+    if (perfMiniWindow && !perfMiniWindow.isDestroyed()) {
+      const o = Math.min(1, Math.max(0, opacity));
+      perfMiniWindow.setOpacity(o);
+    }
+  });
+
+  // 浮窗自适应尺寸：小窗页面测量内容宽高后调用，让窗口贴合内容避免右侧留白
+  ipcMain.handle('perf-mini-set-size', (_e, size: { width: number; height: number }) => {
+    if (perfMiniWindow && !perfMiniWindow.isDestroyed()) {
+      const w = Math.max(60, Math.round(size.width));
+      const h = Math.max(24, Math.round(size.height));
+      const [cw, ch] = perfMiniWindow.getSize();
+      if (w !== cw || h !== ch) perfMiniWindow.setSize(w, h);
     }
   });
 }

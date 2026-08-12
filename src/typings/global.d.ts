@@ -44,7 +44,6 @@ declare global {
       fetchCurrentWeather: () => Promise<{ token: string; latitude: number; longitude: number; city: string; weather: string }>;
       getSystemStats: () => Promise<PerfMonitor.PerfSnapshot | null>;
       openPerfMiniWindow: (cfg?: {
-        showFps?: boolean
         showCpu?: boolean
         showRam?: boolean
         showGpu?: boolean
@@ -52,7 +51,6 @@ declare global {
       }) => Promise<void>;
       closePerfMiniWindow: () => Promise<void>;
       updatePerfMiniConfig: (cfg?: {
-        showFps?: boolean
         showCpu?: boolean
         showRam?: boolean
         showGpu?: boolean
@@ -62,6 +60,7 @@ declare global {
         stats: PerfMonitor.PerfSnapshot
         config: PerfMonitor.PerfMiniConfig
       } | null>;
+      setPerfMiniSize: (size: { width: number; height: number }) => Promise<void>;
     };
   }
 

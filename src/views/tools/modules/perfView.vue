@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 import { NCard, NGrid, NGridItem, NProgress, NSwitch } from 'naive-ui';
 import { storeToRefs } from 'pinia';
 import { $t } from '@/locales';
@@ -24,7 +24,6 @@ const {
   showProcessInfo,
   showSystemInfo,
   miniWindow,
-  miniShowFps,
   miniShowCpu,
   miniShowRam,
   miniShowGpu,
@@ -90,6 +89,13 @@ const tempColor = (celsius: number): string => {
   return '#ef4444';
 };
 
+/** 每核心平均频率（MHz） */
+const avgCoreFreq = computed(() => {
+  const freqs = stats.value.cpu.perCoreFreq;
+  if (!freqs.length) return 0;
+  return Math.round(freqs.reduce((a, b) => a + b, 0) / freqs.length);
+});
+
 /* ===== 生命周期 ===== */
 
 onMounted(() => {
@@ -141,6 +147,14 @@ onUnmounted(() => {
                 <div class="sk-line" style="width:65%" />
               </div>
             </div>
+            <!-- 第四行骨架：CPU 核心卡片 -->
+            <div class="skeleton-card skeleton-card--cores">
+              <div class="sk-title" />
+              <div class="sk-line" style="width:90%" />
+              <div class="sk-line" style="width:80%" />
+              <div class="sk-line" style="width:85%" />
+              <div class="sk-line" style="width:75%" />
+            </div>
           </div>
         </div>
         <!-- 右侧骨架占位 -->
@@ -173,7 +187,7 @@ onUnmounted(() => {
           <div class="card-body">
           <div class="card-header"><SvgIcon icon="heroicons:cpu-chip" class="card-icon cpu-color" /><span class="card-title">CPU</span></div>
           <div class="big-value" :style="{ color: usageColor(stats.cpu.usage) }">{{ stats.cpu.usage }}<span class="unit">%</span></div>
-          <NProgress :percentage="stats.cpu.usage" :color="usageColor(stats.cpu.usage)" :height="8" :border-radius="4" :show-indicator="false" class="progress-bar" />
+          <NProgress :percentage="stats.cpu.usage" :color="usageColor(stats.cpu.usage)" :height="6" :border-radius="3" :show-indicator="false" class="progress-bar" />
           <!-- 温度 -->
           <div class="temp-row" v-if="effectiveHasCpuTemp"><SvgIcon icon="mdi:thermometer" class="temp-icon" :style="{ color: tempColor(stats.cpu.temperature!) }" /><span class="temp-value" :style="{ color: tempColor(stats.cpu.temperature!) }">{{ stats.cpu.temperature }}°C</span></div>
           <div class="temp-row" v-else><SvgIcon icon="mdi:thermometer-off" class="temp-icon muted" /><span class="temp-na">{{ $t('perfView.tempUnavailable') }}</span></div>
@@ -183,7 +197,8 @@ onUnmounted(() => {
           <div class="detail-list">
             <div class="detail-row"><span>{{ $t('perfView.physCores') }}</span><b>{{ stats.cpu.physicalCores }}</b><span class="sep">|</span><span>{{ $t('perfView.logiCores') }}</span><b>{{ stats.cpu.logicalCores }}</b></div>
             <div class="detail-row"><span>{{ $t('perfView.baseClock') }}</span><b>{{ stats.cpu.baseClock }} MHz</b><span class="sep">|</span><span>{{ $t('perfView.curClock') }}</span><b>{{ stats.cpu.speed }} MHz</b></div>
-            <div class="detail-row" v-if="stats.cpu.l2Cache"><span>L2 Cache</span><b>{{ formatKb(stats.cpu.l2Cache) }}</b><span class="sep">|</span><span>L3 Cache</span><b>{{ formatKb(stats.cpu.l3Cache) }}</b></div>
+            <div class="detail-row"><span>{{ $t('perfView.avgClock') }}</span><b>{{ avgCoreFreq }} MHz</b><span class="sep">|</span><span>L2</span><b>{{ formatKb(stats.cpu.l2Cache) }}</b></div>
+            <div class="detail-row" v-if="stats.cpu.l3Cache"><span>L3 Cache</span><b>{{ formatKb(stats.cpu.l3Cache) }}</b></div>
           </div>
           </div>
         </NCard>
@@ -195,11 +210,11 @@ onUnmounted(() => {
           <div class="card-body">
           <div class="card-header"><SvgIcon icon="mdi:memory" class="card-icon ram-color" /><span class="card-title">{{ $t('perfView.memory') }}</span></div>
           <div class="big-value" :style="{ color: usageColor(stats.memory.usagePercent) }">{{ stats.memory.usagePercent }}<span class="unit">%</span></div>
-          <NProgress :percentage="stats.memory.usagePercent" :color="usageColor(stats.memory.usagePercent)" :height="8" :border-radius="4" :show-indicator="false" class="progress-bar" />
+          <NProgress :percentage="stats.memory.usagePercent" :color="usageColor(stats.memory.usagePercent)" :height="6" :border-radius="3" :show-indicator="false" class="progress-bar" />
           <div class="info-row">{{ formatBytes(stats.memory.used) }} / {{ formatBytes(stats.memory.total) }}</div>
           <div class="detail-list">
             <div class="detail-row"><span>{{ $t('perfView.available') }}</span><b>{{ formatBytesCompact(stats.memory.free) }}</b></div>
-            <div class="detail-row" v-if="stats.memory.swapTotal"><span>Swap</span><b>{{ stats.memory.swapUsagePercent }}%</b><span class="sep">|</span><span>{{ $t('perfView.swapSize') }}</span><b>{{ formatBytesCompact(stats.memory.swapTotal) }}</b></div>
+            <div class="detail-row" v-if="stats.memory.swapTotal"><span>Swap</span><b>{{ stats.memory.swapUsagePercent }}%</b><span class="sep">|</span><span>{{ $t('perfView.swapUsed') }}</span><b>{{ formatBytesCompact(stats.memory.swapUsed) }} / {{ formatBytesCompact(stats.memory.swapTotal) }}</b></div>
             <div class="detail-row" v-if="hasVirtualMemory"><span>{{ $t('perfView.virtualMem') }}</span><b>{{ formatBytesCompact(stats.memory.virtualTotal - stats.memory.virtualFree) }} / {{ formatBytesCompact(stats.memory.virtualTotal) }}</b></div>
           </div>
           <!-- 内存条 -->
@@ -222,7 +237,7 @@ onUnmounted(() => {
           <div class="card-header"><SvgIcon icon="mdi:expansion-card" class="card-icon gpu-color" /><span class="card-title">GPU</span></div>
           <template v-if="hasGpuUsage">
             <div class="big-value" :style="{ color: usageColor(stats.gpu.usagePercent!) }">{{ stats.gpu.usagePercent }}<span class="unit">%</span></div>
-            <NProgress :percentage="stats.gpu.usagePercent!" :color="usageColor(stats.gpu.usagePercent!)" :height="8" :border-radius="4" :show-indicator="false" class="progress-bar" />
+            <NProgress :percentage="stats.gpu.usagePercent!" :color="usageColor(stats.gpu.usagePercent!)" :height="6" :border-radius="3" :show-indicator="false" class="progress-bar" />
           </template>
           <template v-else>
             <div class="gpu-fallback-name">{{ stats.gpu.model || $t('perfView.noData') }}</div>
@@ -283,6 +298,24 @@ onUnmounted(() => {
         </NCard>
       </NGridItem>
     </NGrid>
+
+    <!-- 第四行：CPU 各核心使用率 -->
+    <NCard class="panel-card panel-card--cores" :bordered="true" size="small">
+      <div class="card-body">
+      <div class="card-header"><SvgIcon icon="heroicons:cpu-chip" class="card-icon cpu-color" /><span class="card-title">{{ $t('perfView.cores') }}</span></div>
+      <div class="percore-grid">
+        <div class="percore" v-for="(u, i) in stats.cpu.perCoreUsage" :key="i">
+          <div class="percore-head">
+            <span class="percore-idx">{{ $t('perfView.core') }} {{ i + 1 }}</span>
+            <span class="percore-val" :style="{ color: usageColor(u) }">{{ u }}%</span>
+          </div>
+          <div class="percore-track">
+            <div class="percore-fill" :style="{ width: u + '%', backgroundColor: usageColor(u) }" />
+          </div>
+        </div>
+      </div>
+      </div>
+    </NCard>
 
     </div>
     <!-- ===== /左侧 ===== -->
@@ -358,13 +391,6 @@ onUnmounted(() => {
               <span>{{ $t('perfView.enableMiniWindow') }}</span>
             </div>
             <NSwitch v-model:value="miniWindow" size="small" @update:value="store.toggleMiniWindow" />
-          </div>
-          <div class="config-item">
-            <div class="config-item-left">
-              <SvgIcon icon="mdi:speedometer" class="config-item-icon" />
-              <span>{{ $t('perfView.miniShowFps') }}</span>
-            </div>
-            <NSwitch v-model:value="miniShowFps" size="small" />
           </div>
           <div class="config-item">
             <div class="config-item-left">
@@ -496,16 +522,18 @@ onUnmounted(() => {
       padding: 0;
     }
 
-    // 概览卡片（CPU / 内存 / GPU）：固定 300px
-    &--overview { height: 300px; }
+    // 概览卡片（CPU / 内存 / GPU）：固定 216px
+    &--overview { height: 216px; }
     // 信息卡片（进程 / 系统）：固定 154px
     &--info { height: 154px; }
+    // 核心卡片（CPU 各核心）：固定 200px
+    &--cores { height: 200px; }
   }
 
   .card-body {
     height: 100%;
     overflow-y: auto;
-    padding: 14px 16px;
+    padding: 12px 14px;
 
     &::-webkit-scrollbar { width: 3px; }
     &::-webkit-scrollbar-thumb { background: rgba(var(--app-rgb), 0.12); border-radius: 2px; }
@@ -559,20 +587,20 @@ onUnmounted(() => {
   // === 大数值 ===
 
   .big-value {
-    font-size: 48px;
+    font-size: 24px;
     font-weight: 800;
-    line-height: 1;
-    letter-spacing: -2px;
+    line-height: 1.2;
+    letter-spacing: -1px;
 
     .unit {
-      font-size: 22px;
-      font-weight: 500;
+      font-size: 13px;
+      font-weight: 600;
       margin-left: 2px;
     }
   }
 
   .progress-bar {
-    margin: 8px 0 6px;
+    margin: 4px 0 6px;
   }
 
   .info-row {
@@ -616,7 +644,7 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     gap: 3px;
-    margin-top: 6px;
+    margin-top: 4px;
   }
 
   .detail-row {
@@ -640,10 +668,10 @@ onUnmounted(() => {
   // === GPU 专用 ===
 
   .gpu-fallback-name {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: rgba(var(--app-rgb), 0.85);
-    min-height: 32px;
+    min-height: 38px;
     display: flex;
     align-items: center;
   }
@@ -708,6 +736,44 @@ onUnmounted(() => {
     b {
       color: rgba(var(--app-rgb), 0.7);
       font-weight: 600;
+    }
+  }
+
+  // === CPU 各核心 ===
+
+  .percore-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 6px 12px;
+  }
+
+  .percore-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 3px;
+
+    .percore-idx {
+      font-size: 11px;
+      color: rgba(var(--app-rgb), 0.5);
+    }
+
+    .percore-val {
+      font-size: 12px;
+      font-weight: 700;
+    }
+  }
+
+  .percore-track {
+    height: 3px;
+    border-radius: 2px;
+    background: rgba(var(--app-rgb), 0.08);
+    overflow: hidden;
+
+    .percore-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.3s ease;
     }
   }
 
@@ -787,8 +853,9 @@ onUnmounted(() => {
     background: rgba(var(--app-rgb), 0.03);
     border: 1px solid rgba(var(--app-rgb), 0.06);
 
-    &--overview { height: 300px; }
+    &--overview { height: 216px; }
     &--info { height: 154px; }
+    &--cores { height: 200px; }
     &--config { height: 280px; }
   }
 

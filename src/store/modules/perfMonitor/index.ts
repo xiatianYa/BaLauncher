@@ -52,8 +52,6 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
 
   /* ===== 浮窗配置（独立于页面面板，新增/修改时需同步 PerfMonitor.PerfMiniConfig） ===== */
 
-  /** 是否在浮窗中显示 FPS 帧率 @see PerfMonitor.PerfMiniConfig.showFps */
-  const miniShowFps = ref(true)
   /** 是否在浮窗中显示 CPU 使用率 @see PerfMonitor.PerfMiniConfig.showCpu */
   const miniShowCpu = ref(true)
   /** 是否在浮窗中显示内存使用率 @see PerfMonitor.PerfMiniConfig.showRam */
@@ -137,7 +135,6 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
       if (val) {
         // 传递浮窗专用配置（与页面配置独立）
         await window.ipcRenderer.openPerfMiniWindow?.({
-          showFps: miniShowFps.value,
           showCpu: miniShowCpu.value,
           showRam: miniShowRam.value,
           showGpu: miniShowGpu.value,
@@ -156,7 +153,6 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
   async function syncMiniConfig() {
     try {
       await window.ipcRenderer.updatePerfMiniConfig?.({
-        showFps: miniShowFps.value,
         showCpu: miniShowCpu.value,
         showRam: miniShowRam.value,
         showGpu: miniShowGpu.value,
@@ -168,7 +164,7 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
   }
 
   // 浮窗配置变化时自动同步到主进程（仅浮窗已开启时）
-  watch([miniShowFps, miniShowCpu, miniShowRam, miniShowGpu, miniShowTemperature], () => {
+  watch([miniShowCpu, miniShowRam, miniShowGpu, miniShowTemperature], () => {
     if (miniWindow.value) syncMiniConfig()
   })
 
@@ -186,7 +182,6 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
     showSystemInfo,
     miniWindow,
     // 浮窗配置
-    miniShowFps,
     miniShowCpu,
     miniShowRam,
     miniShowGpu,
