@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import {  NEllipsis } from 'naive-ui';
+import { NEllipsis } from 'naive-ui';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import dayjs from 'dayjs';
-import { computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { $t } from '@/locales';
 import MapTimelineChart from './map-timeline-chart.vue';
 
 defineOptions({ name: 'TimelineItem' });
@@ -18,20 +16,15 @@ const props = defineProps<{
 
 const { locale } = useI18n();
 
-/** 星期文案（随语言切换） */
-const weekDay = computed(() => $t('home.weekDay') as unknown as string[]);
-
 /**
- * 将 ISO 时间字符串格式化为可读的完整时间（跟随当前语言）
- * @example zh: "2026年04月25日 14:30 周五" / en: "2026-04-25 14:30 Fri"
+ * 将 ISO 时间字符串格式化为年月日 时分（跟随当前语言）
+ * @example zh: "2026年04月25日 14:30" / en: "2026-04-25 14:30"
  */
 const formatFullTime = (timeStr: string): string => {
     if (!timeStr) return '';
     const d = dayjs(timeStr);
     const isZh = locale.value === 'zh-CN';
-    const datePart = isZh ? d.format('YYYY年MM月DD日 HH:mm') : d.format('YYYY-MM-DD HH:mm');
-    const weekPart = isZh ? `周${weekDay.value[d.day()]}` : weekDay.value[d.day()];
-    return `${datePart} ${weekPart}`;
+    return isZh ? d.format('YYYY年MM月DD日 HH:mm') : d.format('YYYY-MM-DD HH:mm');
 };
 </script>
 

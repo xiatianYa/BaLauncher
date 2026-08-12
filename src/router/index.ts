@@ -106,6 +106,15 @@ function createVueRoutes(): RouteRecordRaw[] {
                         requiresAuth: false
                     }
                 },
+                {
+                    path: 'feedback',
+                    name: 'feedback',
+                    component: () => import('@/views/feedback/index.vue'),
+                    meta: {
+                        title: '问题反馈',
+                        requiresAuth: false
+                    }
+                },
             ]
         }
     ];

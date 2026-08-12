@@ -1,134 +1,120 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
-import { NButton } from 'naive-ui'
-import { $t } from '@/locales'
+import { ref, watch } from 'vue';
+import { $t } from '@/locales';
 import {
   clearLocalCache,
   formatBytes,
   getLocalStorageSize,
   getScopeStorageSize,
   type CacheScope,
-} from '@/utils/cache'
+} from '@/utils/cache';
 
-const cacheSize = ref('0 KB')
-const cacheModalVisible = ref(false)
-const cacheUpdateTrigger = ref(0)
+const cacheSize = ref('0 KB');
+const cacheModalVisible = ref(false);
+const cacheUpdateTrigger = ref(0);
 
 type CacheType = {
   label: string
   value: string
   key: string
   icon: string
-  type: 'info' | 'primary' | 'warning' | 'success' | 'error'
+  color: string
 }
 
 const cacheTypes: CacheType[] = [
-  { label: $t('settings.cache.types.gameSettings'), value: 'gameSettings', key: 'gameSettings', icon: 'mdi:gamepad-variant', type: 'success' },
-  { label: $t('settings.cache.types.appSettings'), value: 'appSettings', key: 'appSettings', icon: 'mdi:cog', type: 'primary' },
-  { label: $t('settings.cache.types.authData'), value: 'authData', key: 'authData', icon: 'mdi:shield-account', type: 'warning' },
-  { label: $t('settings.cache.types.routeData'), value: 'routeData', key: 'routeData', icon: 'mdi:routes', type: 'info' },
-  { label: $t('settings.cache.types.imageCache'), value: 'imageCache', key: 'imageCache', icon: 'mdi:image-multiple', type: 'info' },
-]
+  { label: $t('settings.cache.types.gameSettings'), value: 'gameSettings', key: 'gameSettings', icon: 'mdi:gamepad-variant', color: '#10b981' },
+  { label: $t('settings.cache.types.appSettings'), value: 'appSettings', key: 'appSettings', icon: 'mdi:cog', color: '#667eea' },
+  { label: $t('settings.cache.types.authData'), value: 'authData', key: 'authData', icon: 'mdi:shield-account', color: '#f0a020' },
+  { label: $t('settings.cache.types.routeData'), value: 'routeData', key: 'routeData', icon: 'mdi:routes', color: '#3b82f6' },
+  { label: $t('settings.cache.types.imageCache'), value: 'imageCache', key: 'imageCache', icon: 'mdi:image-multiple', color: '#3b82f6' },
+];
 
-/** 缓存类型 -> 清除范围（对应全局缓存清理函数 clearLocalCache 的 scope） */
+/** 缓存类型 -> 清除范围 */
 const CACHE_TYPE_SCOPE: Record<string, CacheScope> = {
   gameSettings: 'game',
   appSettings: 'app',
   authData: 'auth',
   routeData: 'route',
   imageCache: 'image',
-}
+};
 
-/** 图片磁盘缓存大小（通过 IPC 查询） */
-const imageCacheSize = ref('0 KB')
+const imageCacheSize = ref('0 KB');
 
-/** 查询图片缓存大小 */
 const loadImageCacheSize = async () => {
   try {
-    const info = await window.ipcRenderer.getImageCacheInfo()
-    imageCacheSize.value = formatBytes(info.totalSize)
+    const info = await window.ipcRenderer.getImageCacheInfo();
+    imageCacheSize.value = formatBytes(info.totalSize);
   } catch {
-    imageCacheSize.value = '0 KB'
+    imageCacheSize.value = '0 KB';
   }
-}
+};
 
 const getCacheTypeSize = (type: string) => {
-  if (type === 'imageCache') return imageCacheSize.value
-  // 其余类型按 scope 统一从 cache.ts 统计（localStorage 占用）
-  const scope = CACHE_TYPE_SCOPE[type]
-  return scope ? formatBytes(getScopeStorageSize(scope as Exclude<CacheScope, 'image'>)) : '0 B'
-}
+  if (type === 'imageCache') return imageCacheSize.value;
+  const scope = CACHE_TYPE_SCOPE[type];
+  return scope ? formatBytes(getScopeStorageSize(scope as Exclude<CacheScope, 'image'>)) : '0 B';
+};
 
-const selectedCacheTypes = ref<string[]>([])
+const selectedCacheTypes = ref<string[]>([]);
 
 const toggleCacheType = (type: string) => {
-  const index = selectedCacheTypes.value.indexOf(type)
+  const index = selectedCacheTypes.value.indexOf(type);
   if (index === -1) {
-    selectedCacheTypes.value.push(type)
+    selectedCacheTypes.value.push(type);
   } else {
-    selectedCacheTypes.value.splice(index, 1)
+    selectedCacheTypes.value.splice(index, 1);
   }
-}
+};
 
 const calculateCacheSize = async () => {
-  // localStorage 占用统一从 cache.ts 统计
-  let size = getLocalStorageSize()
-
-  // 加上图片磁盘缓存大小
+  let size = getLocalStorageSize();
   try {
-    const info = await window.ipcRenderer.getImageCacheInfo()
-    size += info.totalSize
+    const info = await window.ipcRenderer.getImageCacheInfo();
+    size += info.totalSize;
   } catch {
-    // 忽略 IPC 调用失败
+    // ignore
   }
-
-  cacheSize.value = formatBytes(size)
-}
+  cacheSize.value = formatBytes(size);
+};
 
 const clearCache = () => {
-  selectedCacheTypes.value = []
-  cacheUpdateTrigger.value++
-  cacheModalVisible.value = true
-}
+  selectedCacheTypes.value = [];
+  cacheUpdateTrigger.value++;
+  cacheModalVisible.value = true;
+};
 
 const handleClearCache = async () => {
   if (selectedCacheTypes.value.length === 0) {
-    window.$message?.warning($t('settings.cache.selectType'))
-    return
+    window.$message?.warning($t('settings.cache.selectType'));
+    return;
   }
 
   try {
-    // 统一走全局缓存清理函数，按所选类型映射为对应 scope
-    const scopes = selectedCacheTypes.value.map((type) => CACHE_TYPE_SCOPE[type])
-    await clearLocalCache(scopes)
+    const scopes = selectedCacheTypes.value.map(type => CACHE_TYPE_SCOPE[type]);
+    await clearLocalCache(scopes);
+    cacheModalVisible.value = false;
+    window.$message?.success($t('settings.cache.success'));
 
-    cacheModalVisible.value = false
-    window.$message?.success($t('settings.cache.success'))
-
-    cacheUpdateTrigger.value++
-    calculateCacheSize()
-    loadImageCacheSize()
+    cacheUpdateTrigger.value++;
+    calculateCacheSize();
+    loadImageCacheSize();
 
     setTimeout(() => {
-      window.location.reload()
-    }, 1000)
-  } catch (error) {
-    window.$message?.error($t('settings.messages.cacheClearFailed'))
+      window.location.reload();
+    }, 1000);
+  } catch {
+    window.$message?.error($t('settings.messages.cacheClearFailed'));
   }
-}
+};
 
 watch(() => cacheUpdateTrigger.value, async () => {
-  await calculateCacheSize()
-  await loadImageCacheSize()
-})
+  await calculateCacheSize();
+  await loadImageCacheSize();
+});
 
-// 初始化时加载图片缓存大小
-loadImageCacheSize()
+loadImageCacheSize();
 
-defineExpose({
-  calculateCacheSize,
-  loadImageCacheSize,
-})
+defineExpose({ calculateCacheSize, loadImageCacheSize });
 </script>
 
 <template>
@@ -136,26 +122,25 @@ defineExpose({
     <div class="section-header">
       <div class="section-title">
         <SvgIcon icon="octicon:cache-24" class="section-icon" />
-        <NText>{{ $t('settings.cache.title') }}</NText>
+        <span class="section-text">{{ $t('settings.cache.title') }}</span>
       </div>
     </div>
 
     <div class="section-content">
-      <div class="cache-row">
+      <div class="setting-card">
         <div class="cache-info">
           <div class="cache-label">{{ $t('settings.cache.size') }}</div>
           <div class="cache-value">{{ cacheSize }}</div>
         </div>
-        <NButton type="error" ghost @click="clearCache">
-          <template #icon>
-            <SvgIcon icon="material-symbols:delete-outline" />
-          </template>
-          {{ $t('settings.cache.clear') }}
-        </NButton>
+        <button class="clear-btn" @click="clearCache">
+          <SvgIcon icon="material-symbols:delete-outline" class="btn-icon" />
+          <span>{{ $t('settings.cache.clear') }}</span>
+        </button>
       </div>
     </div>
   </section>
 
+  <!-- 清除缓存弹窗 -->
   <div v-if="cacheModalVisible" class="cache-modal-overlay" @click.self="cacheModalVisible = false">
     <div class="cache-modal">
       <div class="cache-modal-header">
@@ -163,16 +148,21 @@ defineExpose({
           <SvgIcon icon="mdi:broom" class="cache-modal-title-icon" />
           <span>{{ $t('settings.cache.clear') }}</span>
         </div>
-        <div class="cache-modal-close" @click="cacheModalVisible = false">
+        <button class="cache-modal-close" @click="cacheModalVisible = false">
           <SvgIcon icon="mdi:close" />
-        </div>
+        </button>
       </div>
 
       <div class="cache-modal-body">
         <div class="cache-type-grid">
-          <div v-for="type in cacheTypes" :key="type.value" class="cache-type-card"
-            :class="{ selected: selectedCacheTypes.includes(type.value), [type.type]: true }"
-            @click="toggleCacheType(type.value)">
+          <div
+            v-for="type in cacheTypes"
+            :key="type.value"
+            class="cache-type-card"
+            :class="{ selected: selectedCacheTypes.includes(type.value) }"
+            :style="{ '--type-color': type.color }"
+            @click="toggleCacheType(type.value)"
+          >
             <SvgIcon :icon="type.icon" class="cache-type-card-icon" />
             <span class="cache-type-card-label">{{ type.label }}</span>
             <span class="cache-type-card-size">{{ getCacheTypeSize(type.value) }}</span>
@@ -181,11 +171,11 @@ defineExpose({
       </div>
 
       <div class="cache-modal-footer">
-        <button class="cache-btn cache-btn-cancel" @click="cacheModalVisible = false">
+        <button class="cache-btn cancel" @click="cacheModalVisible = false">
           <SvgIcon icon="mdi:close" />
           <span>{{ $t('common.cancel') }}</span>
         </button>
-        <button class="cache-btn cache-btn-confirm" @click="handleClearCache">
+        <button class="cache-btn confirm" @click="handleClearCache">
           <SvgIcon icon="material-symbols:delete-outline" />
           <span>{{ $t('settings.cache.confirmClear') }}</span>
         </button>
@@ -208,25 +198,30 @@ defineExpose({
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--n-text-color);
 
     .section-icon {
       font-size: 20px;
-      color: var(--primary-color, #18a058);
+      color: #667eea;
+    }
+
+    .section-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--n-text-color);
     }
   }
 }
 
-.cache-row {
+/* ===== 主卡片 ===== */
+
+.setting-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 14px;
-  border-radius: 8px;
-  background-color: var(--n-color);
-  border: 1px solid var(--n-border-color);
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: rgba(var(--app-rgb), 0.025);
+  border: 1px solid rgba(var(--app-rgb), 0.07);
 
   .cache-info {
     display: flex;
@@ -241,10 +236,36 @@ defineExpose({
 
     .cache-value {
       font-size: 12px;
-      color: var(--n-text-color-3);
+      color: rgba(var(--app-rgb), 0.4);
     }
   }
 }
+
+.clear-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  .btn-icon {
+    font-size: 15px;
+  }
+
+  &:hover {
+    background: rgba(239, 68, 68, 0.2);
+  }
+}
+
+/* ===== 弹窗 ===== */
 
 .cache-modal-overlay {
   position: fixed;
@@ -253,16 +274,16 @@ defineExpose({
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(2px);
 }
 
 .cache-modal {
   width: 420px;
   max-width: 90vw;
-  background-color: var(--n-color);
-  border: 1px solid var(--n-border-color);
-  border-radius: 16px;
+  background: var(--n-color);
+  border: 1px solid rgba(var(--app-rgb), 0.1);
+  border-radius: 14px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.2);
   overflow: hidden;
 }
@@ -272,20 +293,20 @@ defineExpose({
   align-items: center;
   justify-content: space-between;
   padding: 16px 20px;
-  border-bottom: 1px solid var(--n-border-color);
+  border-bottom: 1px solid rgba(var(--app-rgb), 0.06);
 }
 
 .cache-modal-title {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--n-text-color);
 
   .cache-modal-title-icon {
     font-size: 20px;
-    color: var(--primary-color, #18a058);
+    color: #667eea;
   }
 }
 
@@ -295,26 +316,28 @@ defineExpose({
   justify-content: center;
   width: 28px;
   height: 28px;
+  padding: 0;
+  border: none;
   border-radius: 6px;
-  color: var(--n-text-color-3);
+  color: rgba(var(--app-rgb), 0.4);
+  background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
 
   &:hover {
-    color: var(--n-text-color);
-    background-color: var(--n-close-color-hover, rgba(128, 128, 128, 0.12));
+    color: rgba(var(--app-rgb), 0.8);
+    background: rgba(var(--app-rgb), 0.1);
   }
 }
 
 .cache-modal-body {
   padding: 20px;
-  color: var(--n-text-color);
 }
 
 .cache-type-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 10px;
 }
 
 .cache-type-card {
@@ -323,27 +346,23 @@ defineExpose({
   align-items: center;
   gap: 8px;
   padding: 16px 12px;
-  border: 1px dashed var(--n-border-color);
-  border-radius: 12px;
+  border: 1px solid rgba(var(--app-rgb), 0.1);
+  border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
 
-  &.info { --type-color: #2080f0; --type-rgb: 32, 128, 240; }
-  &.primary { --type-color: #18a058; --type-rgb: 24, 160, 88; }
-  &.warning { --type-color: #f0a020; --type-rgb: 240, 160, 32; }
-  &.success { --type-color: #18a058; --type-rgb: 24, 160, 88; }
-  &.error { --type-color: #d03050; --type-rgb: 208, 48, 80; }
-
   &:hover {
-    border-color: var(--type-color);
-    background-color: rgba(var(--type-rgb), 0.06);
+    background: rgba(var(--app-rgb), 0.03);
   }
 
   &.selected {
-    border-style: solid;
     border-color: var(--type-color);
-    background-color: rgba(var(--type-rgb), 0.12);
+    background: rgba(var(--type-color), 0.08);
+
+    .cache-type-card-label {
+      color: var(--type-color);
+    }
   }
 
   .cache-type-card-icon {
@@ -352,59 +371,55 @@ defineExpose({
   }
 
   .cache-type-card-label {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--n-text-color);
   }
 
   .cache-type-card-size {
     font-size: 12px;
-    color: var(--n-text-color-3);
+    color: rgba(var(--app-rgb), 0.4);
   }
 }
 
 .cache-modal-footer {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   padding: 0 20px 20px;
 }
 
 .cache-btn {
   flex: 1;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   height: 38px;
   padding: 0 16px;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
+  border-radius: 9px;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
 
-  span {
-    line-height: 1;
+  &.cancel {
+    color: rgba(var(--app-rgb), 0.55);
+    background: rgba(var(--app-rgb), 0.06);
+    border: 1px solid rgba(var(--app-rgb), 0.08);
+
+    &:hover {
+      background: rgba(var(--app-rgb), 0.12);
+    }
   }
-}
 
-.cache-btn-cancel {
-  color: var(--n-text-color);
-  background-color: transparent;
-  border: 1px solid var(--n-border-color);
+  &.confirm {
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
 
-  &:hover {
-    background-color: var(--n-close-color-hover, rgba(128, 128, 128, 0.12));
-  }
-}
-
-.cache-btn-confirm {
-  color: #fff;
-  background-color: #d03050;
-
-  &:hover {
-    background-color: #b92542;
+    &:hover {
+      background: rgba(239, 68, 68, 0.2);
+    }
   }
 }
 </style>

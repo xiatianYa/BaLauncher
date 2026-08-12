@@ -1,78 +1,65 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { NButton, NText } from 'naive-ui'
-import { $t } from '@/locales'
+import { ref } from 'vue';
+import { $t } from '@/locales';
 
-const isCheckingUpdate = ref(false)
-const appVersion = ref('1.0.0')
+const isCheckingUpdate = ref(false);
+const appVersion = ref('1.0.0');
 
-// 标记是否正在检查更新，防止重复点击
-let isUpdateChecking = false
+let isUpdateChecking = false;
 
 const updateNotAvailableHandler = () => {
-  if (!isUpdateChecking) return
-  window.$message?.success($t('settings.messages.alreadyLatest'))
-  isUpdateChecking = false
-  isCheckingUpdate.value = false
-  // 清理监听器
-  window.ipcRenderer.off('update-not-available', updateNotAvailableHandler)
-  window.ipcRenderer.off('update-error', updateErrorHandler)
-}
+  if (!isUpdateChecking) return;
+  window.$message?.success($t('settings.messages.alreadyLatest'));
+  isUpdateChecking = false;
+  isCheckingUpdate.value = false;
+  window.ipcRenderer.off('update-not-available', updateNotAvailableHandler);
+  window.ipcRenderer.off('update-error', updateErrorHandler);
+};
 
 const updateErrorHandler = (_event: any, errorMsg?: string) => {
-  if (!isUpdateChecking) return
+  if (!isUpdateChecking) return;
   if (errorMsg) {
-    window.$message?.error(errorMsg)
+    window.$message?.error(errorMsg);
   }
-  isUpdateChecking = false
-  isCheckingUpdate.value = false
-  // 清理监听器
-  window.ipcRenderer.off('update-not-available', updateNotAvailableHandler)
-  window.ipcRenderer.off('update-error', updateErrorHandler)
-}
+  isUpdateChecking = false;
+  isCheckingUpdate.value = false;
+  window.ipcRenderer.off('update-not-available', updateNotAvailableHandler);
+  window.ipcRenderer.off('update-error', updateErrorHandler);
+};
 
 const checkForUpdates = async () => {
-  // 防止重复点击
   if (isUpdateChecking || isCheckingUpdate.value) {
-    window.$message?.warning($t('settings.messages.checkingUpdateInProgress'))
-    return
+    window.$message?.warning($t('settings.messages.checkingUpdateInProgress'));
+    return;
   }
 
-  isUpdateChecking = true
-  isCheckingUpdate.value = true
+  isUpdateChecking = true;
+  isCheckingUpdate.value = true;
 
   try {
-    window.$message?.info($t('settings.messages.checkingUpdate'))
-
-    // 先注册监听器
-    window.ipcRenderer.on('update-not-available', updateNotAvailableHandler)
-    window.ipcRenderer.on('update-error', updateErrorHandler)
-
-    // 调用检查更新
-    await window.ipcRenderer.invoke('check-update')
-  } catch (error) {
-    console.error('检查更新失败:', error)
-    window.$message?.error($t('settings.messages.checkUpdateFailed'))
-    isUpdateChecking = false
-    isCheckingUpdate.value = false
-    // 清理监听器
-    window.ipcRenderer.off('update-not-available', updateNotAvailableHandler)
-    window.ipcRenderer.off('update-error', updateErrorHandler)
+    window.$message?.info($t('settings.messages.checkingUpdate'));
+    window.ipcRenderer.on('update-not-available', updateNotAvailableHandler);
+    window.ipcRenderer.on('update-error', updateErrorHandler);
+    await window.ipcRenderer.invoke('check-update');
+  } catch {
+    window.$message?.error($t('settings.messages.checkUpdateFailed'));
+    isUpdateChecking = false;
+    isCheckingUpdate.value = false;
+    window.ipcRenderer.off('update-not-available', updateNotAvailableHandler);
+    window.ipcRenderer.off('update-error', updateErrorHandler);
   }
-}
+};
 
 const getAppVersion = async () => {
   try {
-    const version = await window.ipcRenderer.getAppVersion()
-    appVersion.value = version
-  } catch (error) {
-    console.error($t('settings.messages.versionFetchFailed'), error)
+    const version = await window.ipcRenderer.getAppVersion();
+    appVersion.value = version;
+  } catch {
+    console.error($t('settings.messages.versionFetchFailed'));
   }
-}
+};
 
-defineExpose({
-  getAppVersion,
-})
+defineExpose({ getAppVersion });
 </script>
 
 <template>
@@ -80,7 +67,7 @@ defineExpose({
     <div class="section-header">
       <div class="section-title">
         <SvgIcon icon="solar:info-square-broken" class="section-icon" />
-        <NText>{{ $t('settings.about') }}</NText>
+        <span class="section-text">{{ $t('settings.about') }}</span>
       </div>
     </div>
 
@@ -103,12 +90,10 @@ defineExpose({
           <div class="info-label">{{ $t('settings.version') }}</div>
           <div class="info-value">{{ appVersion }}</div>
         </div>
-        <NButton type="primary" ghost :loading="isCheckingUpdate" @click="checkForUpdates">
-          <template #icon>
-            <SvgIcon icon="material-symbols:refresh" />
-          </template>
-          {{ isCheckingUpdate ? $t('settings.checking') : $t('settings.checkUpdate') }}
-        </NButton>
+        <button class="check-update-btn" :disabled="isCheckingUpdate" @click="checkForUpdates">
+          <SvgIcon :icon="isCheckingUpdate ? 'mdi:loading' : 'material-symbols:refresh'" class="btn-icon" :class="{ spin: isCheckingUpdate }" />
+          <span>{{ isCheckingUpdate ? $t('settings.checking') : $t('settings.checkUpdate') }}</span>
+        </button>
       </div>
 
       <div class="info-card">
@@ -138,13 +123,16 @@ defineExpose({
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--n-text-color);
 
     .section-icon {
       font-size: 20px;
-      color: var(--primary-color, #18a058);
+      color: #667eea;
+    }
+
+    .section-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--n-text-color);
     }
   }
 }
@@ -152,21 +140,21 @@ defineExpose({
 .section-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .info-card {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 14px;
-  border-radius: 8px;
-  background-color: var(--n-color);
-  border: 1px solid var(--n-border-color);
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: rgba(var(--app-rgb), 0.025);
+  border: 1px solid rgba(var(--app-rgb), 0.07);
   transition: border-color 0.2s ease;
 
   &:hover {
-    border-color: var(--primary-color, #18a058);
+    border-color: rgba(102, 126, 234, 0.2);
   }
 
   .info-icon {
@@ -175,22 +163,23 @@ defineExpose({
     justify-content: center;
     width: 38px;
     height: 38px;
-    border-radius: 8px;
+    border-radius: 9px;
     font-size: 20px;
-    color: var(--primary-color, #18a058);
-    background-color: var(--primary-color-suppl, rgba(24, 160, 88, 0.1));
+    color: #667eea;
+    background: rgba(102, 126, 234, 0.1);
+    flex-shrink: 0;
   }
 
   .info-text {
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
 
     .info-label {
       font-size: 12px;
       font-weight: 600;
-      color: var(--n-text-color-2);
+      color: rgba(var(--app-rgb), 0.5);
     }
 
     .info-value {
@@ -198,5 +187,44 @@ defineExpose({
       color: var(--n-text-color);
     }
   }
+}
+
+.check-update-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: 1px solid rgba(var(--app-rgb), 0.08);
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: rgba(var(--app-rgb), 0.55);
+  background: rgba(var(--app-rgb), 0.04);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  .btn-icon {
+    font-size: 15px;
+  }
+
+  &:hover:not(:disabled) {
+    color: rgba(var(--app-rgb), 0.7);
+    background: rgba(var(--app-rgb), 0.1);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.spin {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { NModal } from 'naive-ui';
+import { NModal, NInput } from 'naive-ui';
+import { useRouter } from 'vue-router';
 import { useI18n } from 'vue-i18n';
 import { useThemeStore } from '@/store/modules/theme';
 import { useAuthStore } from '@/store/modules/auth';
@@ -51,6 +52,10 @@ const langOptions = computed<DropdownOption[]>(() => [
 
 /** 退出登录确认弹窗显示状态 */
 const logoutVisible = ref(false);
+
+/* ===== 用户反馈 ===== */
+
+const router = useRouter();
 
 async function handleConfirmLogout() {
   logoutVisible.value = false;
@@ -140,6 +145,9 @@ onBeforeUnmount(() => {
     </div>
     <button class="footer-btn" @click="themeStore.toggleThemeScheme">
       <SvgIcon :icon="icon" class="footer-btn-icon" />
+    </button>
+    <button class="footer-btn" @click="router.push('/feedback')">
+      <SvgIcon icon="mdi:message-question-outline" class="footer-btn-icon" />
     </button>
   </div>
 
@@ -352,7 +360,25 @@ onBeforeUnmount(() => {
           background: rgba(245, 87, 108, 0.22);
         }
       }
+
+      &.primary {
+        color: #667eea;
+        background: rgba(102, 126, 234, 0.12);
+        border-color: rgba(102, 126, 234, 0.25);
+
+        &:hover {
+          background: rgba(102, 126, 234, 0.22);
+        }
+
+        &:disabled {
+          opacity: 0.4;
+          cursor: not-allowed;
+          transform: none;
+          filter: grayscale(0.5);
+        }
+      }
     }
   }
 }
+
 </style>

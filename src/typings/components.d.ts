@@ -15,6 +15,8 @@ declare module 'vue' {
     CollapseFooter: typeof import('./../layout/windows-layout/modules/windows-footer/modules/collapse-footer.vue')['default']
     CollapseHeader: typeof import('./../layout/windows-layout/modules/windows-header/modules/collapse-header.vue')['default']
     CollapseMenu: typeof import('./../layout/windows-layout/modules/windows-menu/modules/collapse-menu.vue')['default']
+    CommentNode: typeof import('./../components/common/comment-node.vue')['default']
+    CommentSection: typeof import('./../components/common/comment-section.vue')['default']
     CommonMdEditor: typeof import('./../components/common/common-md-editor.vue')['default']
     CommunityList: typeof import('./../components/tool/community-list.vue')['default']
     ExpendFooter: typeof import('./../layout/windows-layout/modules/windows-footer/modules/expend-footer.vue')['default']

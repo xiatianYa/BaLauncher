@@ -81,7 +81,7 @@ export function setupWindowControlIpc() {
 <meta charset="utf-8">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { background:#1a1a2e; color:#e0e0e0; font-family:'Segoe UI',sans-serif; overflow:hidden; user-select:none; }
+  body { background:#1a1a2e; color:#e0e0e0; font-family:'Segoe UI',sans-serif; overflow:hidden; user-select:none; transition:opacity 0.15s; }
   .wrap { display:flex; flex-direction:row; gap:8px; padding:6px 10px; height:100vh; align-items:center; }
   .item { display:flex; align-items:center; gap:4px; white-space:nowrap; }
   .label { font-size:10px; color:#888; }
@@ -178,6 +178,9 @@ export function setupWindowControlIpc() {
     requestAnimationFrame(fpsLoop);
   }
   requestAnimationFrame(fpsLoop);
+  // 鼠标移入浮窗 → 透明，让出背后内容
+  document.body.addEventListener('mouseenter', () => { document.body.style.opacity = '0'; });
+  document.body.addEventListener('mouseleave', () => { document.body.style.opacity = '1'; });
   setInterval(poll, 2000);
   poll();
 </script>
