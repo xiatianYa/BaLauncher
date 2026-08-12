@@ -224,10 +224,10 @@ const deleteLoading = ref(false);
 /** 当前待删除行 */
 const currentDeleteRow = ref<Api.Bot.BotGroupVo | null>(null);
 
-/** 申请入群（优先通过 Electron 新窗口打开入群链接，无链接则复制群号引导前往QQ搜索） */
+/** 申请入群（外部浏览器打开入群链接，无链接则复制群号引导前往QQ搜索） */
 const handleApplyJoin = (row: Api.Bot.BotGroupVo) => {
   if (row.joinGroupUrl) {
-    window.ipcRenderer.openExternalWindow(row.joinGroupUrl);
+    window.ipcRenderer.openInBrowser(row.joinGroupUrl);
     return;
   }
   navigator.clipboard.writeText(row.groupId);

@@ -64,13 +64,13 @@ const onLogoError = (e: Event) => {
   img.parentElement?.classList.add('logo-error');
 };
 
-/** 打开社区网站（新开窗口） */
+/** 打开社区网站（外部浏览器打开） */
 const openWebsite = (website?: string) => {
   if (!website) {
     window.$message?.warning($t('community.noWebsite'));
     return;
   }
-  window.ipcRenderer.openExternalWindow(website);
+  window.ipcRenderer.openInBrowser(website);
 };
 
 onMounted(() => {

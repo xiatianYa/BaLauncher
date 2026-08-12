@@ -4,5 +4,6 @@ export enum SetupStoreId {
   Route = 'route-store',
   App = 'app-store',
   Game = 'game-store',
-  Dict = 'dict-store'
+  Dict = 'dict-store',
+  PerfMonitor = 'perf-monitor-store'
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useAppStore } from '@/store/modules/app';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
@@ -69,6 +69,81 @@ const onlineItems = computed<OnlineUserItem[]>(() =>
 defineOptions({
   name: 'CreativityBanner'
 });
+
+/* ===== 逐行滚动（滚一次 → 切换一行玩家卡片） ===== */
+
+const listRef = ref<HTMLElement | null>(null);
+let pendingRow = 0;       // 当前目标行索引
+let rafId: number | null = null;  // requestAnimationFrame id，合并快速滚动
+
+/** 根据列表容器计算单行高度（卡片高度 + grid gap） */
+function getRowHeight(container: HTMLElement): number {
+  const item = container.querySelector('.online-item') as HTMLElement | null;
+  if (!item) return 0;
+  const style = getComputedStyle(container);
+  const gap = parseFloat(style.rowGap || style.gap || '0');
+  return item.offsetHeight + gap;
+}
+
+function handleWheel(e: WheelEvent) {
+  e.preventDefault();
+  const el = listRef.value;
+  if (!el || !e.deltaY) return;
+
+  const rowH = getRowHeight(el);
+  if (!rowH) return;
+
+  // 计算当前滚动位置对应的行（四舍五入，避免停在半行）
+  const currRow = Math.round(el.scrollTop / rowH);
+  const maxRow = Math.max(0, Math.ceil((el.scrollHeight - el.clientHeight) / rowH));
+
+  // 滚动方向 ±1 行，并 clamp 到有效范围
+  pendingRow = Math.max(0, Math.min(maxRow, (e.deltaY > 0 ? currRow : currRow) + (e.deltaY > 0 ? 1 : -1)));
+
+  applySnap();
+}
+
+/** 通过 rAF 批量应用滚动位置 — 多次滚轮事件合并为一次 scrollTo，确保精确停在整数行 */
+function applySnap() {
+  if (rafId !== null) return; // 已有 pending，合并即可
+  rafId = requestAnimationFrame(() => {
+    rafId = null;
+    const el = listRef.value;
+    if (!el) return;
+    const rowH = getRowHeight(el);
+    if (!rowH) return;
+    const maxRow = Math.max(0, Math.ceil((el.scrollHeight - el.clientHeight) / rowH));
+    pendingRow = Math.max(0, Math.min(maxRow, pendingRow));
+    el.scrollTo({ top: pendingRow * rowH, behavior: 'auto' });
+  });
+}
+
+// 滚动停止后根据实际位置校准 pendingRow
+let scrollEndTimer: ReturnType<typeof setTimeout> | null = null;
+function onScrollEnd() {
+  const el = listRef.value;
+  if (!el) return;
+  const rowH = getRowHeight(el);
+  if (!rowH) return;
+  pendingRow = Math.round(el.scrollTop / rowH);
+}
+
+function handleScroll() {
+  if (scrollEndTimer) clearTimeout(scrollEndTimer);
+  scrollEndTimer = setTimeout(onScrollEnd, 150);
+}
+
+onMounted(() => {
+  listRef.value?.addEventListener('wheel', handleWheel, { passive: false });
+  listRef.value?.addEventListener('scroll', handleScroll);
+});
+
+onUnmounted(() => {
+  listRef.value?.removeEventListener('wheel', handleWheel);
+  listRef.value?.removeEventListener('scroll', handleScroll);
+  if (rafId !== null) cancelAnimationFrame(rafId);
+  if (scrollEndTimer) clearTimeout(scrollEndTimer);
+});
 </script>
 
 <template>
@@ -86,7 +161,7 @@ defineOptions({
     </div>
 
     <!-- 在线玩家列表 -->
-    <div v-if="onlineCount > 0" class="online-list">
+    <div v-if="onlineCount > 0" ref="listRef" class="online-list">
       <div v-for="item in onlineItems" :key="item.user.id" class="online-item">
         <img v-lazy="item.user.avatar" class="online-avatar" />
         <div class="online-info">
@@ -261,8 +336,9 @@ defineOptions({
 
         .online-roles {
           display: flex;
-          flex-wrap: wrap;
+          flex-wrap: nowrap;
           gap: 3px;
+          overflow: hidden;
 
           .online-role-tag {
             display: inline-flex;

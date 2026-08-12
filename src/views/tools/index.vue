@@ -6,12 +6,14 @@ import KeyBind from './modules/keyBind.vue';
 import MapOrder from './modules/mapOrder.vue';
 import ServerMapRecord from './modules/serverMapRecord.vue';
 import BotGroup from './modules/botGroup.vue';
+import PerfView from './modules/perfView.vue';
 import { $t } from '@/locales';
 
 import KeyBindIcon from '@/assets/imgs/tool/keyBind.png';
 import MapOrderIcon from '@/assets/imgs/tool/mapOrder.png';
 import ServerMapRecordIcon from '@/assets/imgs/tool/serverMapRecord.png';
 import BotGroupIcon from '@/assets/imgs/tool/botGroup.png';
+import PerfViewIcon from '@/assets/imgs/tool/perfView.jpg';
 
 defineOptions({
   name: 'tools'
@@ -27,6 +29,7 @@ const moduleMap: Record<UnionKey.ToolModule, ToolModule> = {
   'mapOrder': { label: $t('tools.mapOrder'), component: MapOrder },
   'serverMapRecord': { label: $t('tools.serverMapRecord'), component: ServerMapRecord },
   'botGroup': { label: $t('tools.botGroup'), component: BotGroup },
+  'perfView': { label: $t('tools.perfView'), component: PerfView },
 };
 
 const activeModuleKey = ref<UnionKey.ToolModule | null>(null);
@@ -68,6 +71,13 @@ const tools = ref<ToolItem[]>([
     gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
     color: '#43e97b',
     delay: 0.3
+  },
+  {
+    id: 'perfView',
+    icon: PerfViewIcon,
+    gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    color: '#fa709a',
+    delay: 0.4
   }
 ]);
 
@@ -76,7 +86,8 @@ const getToolTitle = (id: UnionKey.ToolModule) => {
     'keyBind': 'tools.keyBindTitle',
     'mapOrder': 'tools.mapOrderTitle',
     'serverMapRecord': 'tools.serverMapRecordTitle',
-    'botGroup': 'tools.botGroupTitle'
+    'botGroup': 'tools.botGroupTitle',
+    'perfView': 'tools.perfViewTitle'
   };
   return $t(keyMap[id]);
 };
@@ -86,7 +97,8 @@ const getToolDescription = (id: UnionKey.ToolModule) => {
     'keyBind': 'tools.keyBindDesc',
     'mapOrder': 'tools.mapOrderDesc',
     'serverMapRecord': 'tools.serverMapRecordDesc',
-    'botGroup': 'tools.botGroupDesc'
+    'botGroup': 'tools.botGroupDesc',
+    'perfView': 'tools.perfViewDesc'
   };
   return $t(keyMap[id]);
 };

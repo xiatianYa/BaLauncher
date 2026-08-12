@@ -78,10 +78,37 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   clearImageCache() {
     return ipcRenderer.invoke('image-cache:clear')
   },
-  openExternalWindow(url: string) {
-    return ipcRenderer.invoke('open-external-window', url)
+  openInBrowser(url: string) {
+    return ipcRenderer.invoke('open-in-browser', url)
   },
   fetchCurrentWeather() {
     return ipcRenderer.invoke('fetch-current-weather')
+  },
+  getSystemStats() {
+    return ipcRenderer.invoke('get-system-stats')
+  },
+  openPerfMiniWindow(cfg?: {
+    showFps?: boolean
+    showCpu?: boolean
+    showRam?: boolean
+    showGpu?: boolean
+    showTemperature?: boolean
+  }) {
+    return ipcRenderer.invoke('perf-mini-open', cfg)
+  },
+  closePerfMiniWindow() {
+    return ipcRenderer.invoke('perf-mini-close')
+  },
+  updatePerfMiniConfig(cfg?: {
+    showFps?: boolean
+    showCpu?: boolean
+    showRam?: boolean
+    showGpu?: boolean
+    showTemperature?: boolean
+  }) {
+    return ipcRenderer.invoke('update-perf-mini-config', cfg)
+  },
+  getPerfMiniData() {
+    return ipcRenderer.invoke('perf-mini-data')
   },
 })

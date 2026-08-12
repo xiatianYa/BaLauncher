@@ -11,6 +11,7 @@ import { setupCs2CfgIpc } from './cs2Cfg'
 import { setupNotificationIpc } from '../notificationWindow'
 import { setupAgreementIpc } from './agreementWindow'
 import { setupWeatherIpc } from './weather'
+import { setupSystemMonitorIpc } from './systemMonitor'
 
 export function setupAllIpcHandlers() {
   setupWindowControlIpc()
@@ -25,4 +26,5 @@ export function setupAllIpcHandlers() {
   setupNotificationIpc(ipcMain)
   setupAgreementIpc()
   setupWeatherIpc()
+  setupSystemMonitorIpc()
 }

@@ -40,8 +40,28 @@ declare global {
       closeMapOrderNotification: () => Promise<void>;
       getImageCacheInfo: () => Promise<{ count: number; totalSize: number }>;
       clearImageCache: () => Promise<{ success: boolean }>;
-      openExternalWindow: (url: string) => Promise<void>;
+      openInBrowser: (url: string) => Promise<void>;
       fetchCurrentWeather: () => Promise<{ token: string; latitude: number; longitude: number; city: string; weather: string }>;
+      getSystemStats: () => Promise<PerfMonitor.PerfSnapshot | null>;
+      openPerfMiniWindow: (cfg?: {
+        showFps?: boolean
+        showCpu?: boolean
+        showRam?: boolean
+        showGpu?: boolean
+        showTemperature?: boolean
+      }) => Promise<void>;
+      closePerfMiniWindow: () => Promise<void>;
+      updatePerfMiniConfig: (cfg?: {
+        showFps?: boolean
+        showCpu?: boolean
+        showRam?: boolean
+        showGpu?: boolean
+        showTemperature?: boolean
+      }) => Promise<void>;
+      getPerfMiniData: () => Promise<{
+        stats: PerfMonitor.PerfSnapshot
+        config: PerfMonitor.PerfMiniConfig
+      } | null>;
     };
   }
 

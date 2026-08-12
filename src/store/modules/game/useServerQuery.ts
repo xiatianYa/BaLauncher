@@ -103,6 +103,7 @@ export function useServerQuery(deps: ServerQueryDeps) {
 
   /** 查询服务器列表信息（源服务器） */
   async function queryServerInfosResponse(): Promise<void> {
+    console.log('queryServerInfosResponse')
     if (unref(serverDataList).length === 0) {
       const { data: serverData } = await fetchGetServerList()
       if (serverData) {
@@ -164,6 +165,7 @@ export function useServerQuery(deps: ServerQueryDeps) {
 
   /** 查询服务器列表信息（WebSocket）：用 WS 实时数据组装当前社区列表，缺失的服务器置为离线 */
   async function queryWsServerInfosResponse(): Promise<void> {
+    // 先查询源服务器的 Ping 值并回填到 currentServerList，再组装列表，确保 UI 渲染时 Ping 已就绪
     queryServerInfosPingResponse()
 
     const targetServers = unref(serverDataList).filter(server => server.connectStr && server.communityId === unref(selectedCommunityId))
@@ -198,11 +200,10 @@ export function useServerQuery(deps: ServerQueryDeps) {
 
     infoResponseList.forEach((item: any) => {
       // 查询失败（如服务器离线）时不覆盖 ping，保留原值
-      if (item.success === false) return
-
-      const server = unref(currentServerList).find(s => s.connectStr === item.addr)
+      if (!item.success) return
+      const server = unref(currentServerList).find(s => s.connectStr === item.data.addr)
       if (server) {
-        server.ping = item.ping
+        server.ping = item.data.ping
       }
     })
   }
