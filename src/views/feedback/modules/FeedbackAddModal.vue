@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue';
+import { computed, reactive, ref } from 'vue';
 import { NModal, NInput, NUpload } from 'naive-ui';
 import type { UploadCustomRequestOptions } from 'naive-ui';
 import { fetchAddFeedback, fetchUploadFile } from '@/service/api';
 import { $t } from '@/locales';
+import { useDict } from '@/hooks/business/dict';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 
 defineOptions({ name: 'FeedbackAddModal' });
@@ -17,8 +18,11 @@ const emit = defineEmits<{
   (e: 'submitted'): void;
 }>();
 
+const { dictOptions } = useDict();
+
 const loading = ref(false);
 const imageUploadLoading = ref(false);
+/** 新增反馈表单数据 */
 const addForm = reactive({
   feedbackType: 0,
   title: '',
@@ -27,19 +31,23 @@ const addForm = reactive({
   images: ''
 });
 
-const types = [
-  { value: 0, icon: 'mdi:alert-circle', label: $t('feedback.type0') },
-  { value: 1, icon: 'mdi:lightbulb-on', label: $t('feedback.type1') },
-  { value: 2, icon: 'mdi:bug', label: $t('feedback.type2') },
-  { value: 3, icon: 'mdi:dots-horizontal', label: $t('feedback.type3') }
-];
+/** 反馈类型选项：字典渲染 + 图标映射 */
+const typeIcons = ['mdi:alert-circle', 'mdi:lightbulb-on', 'mdi:bug', 'mdi:dots-horizontal'];
+const types = computed(() =>
+  dictOptions('sys_feedback_type').map((item, index) => ({
+    value: Number(item.value),
+    icon: typeIcons[index] || 'mdi:dots-horizontal',
+    label: item.label
+  }))
+);
 
-const priorities = [
-  { value: 0, label: $t('feedback.priority0') },
-  { value: 1, label: $t('feedback.priority1') },
-  { value: 2, label: $t('feedback.priority2') },
-  { value: 3, label: $t('feedback.priority3') }
-];
+/** 优先级选项（字典渲染） */
+const priorities = computed(() =>
+  dictOptions('sys_feedback_priority').map(item => ({
+    value: Number(item.value),
+    label: item.label
+  }))
+);
 
 /** 重置表单 */
 const resetForm = () => {
@@ -62,6 +70,16 @@ const handleUploadImage = async ({ file, onFinish, onError }: UploadCustomReques
   } finally {
     imageUploadLoading.value = false;
   }
+};
+
+/** 已上传的截图列表 */
+const uploadedImages = computed(() => (addForm.images ? addForm.images.split(',').filter(Boolean) : []));
+
+/** 移除指定截图 */
+const removeImage = (index: number) => {
+  const list = uploadedImages.value.slice();
+  list.splice(index, 1);
+  addForm.images = list.join(',');
 };
 
 /** 提交 */
@@ -177,17 +195,25 @@ const handleAfterEnter = () => {
       <!-- 截图上传 -->
       <div class="form-item">
         <label class="form-label">{{ $t('feedback.form.imagesLabel') }}</label>
-        <NUpload
-          :custom-request="handleUploadImage"
-          :max="5"
-          :show-file-list="false"
-          accept="image/*"
-        >
-          <div class="image-upload-trigger">
-            <SvgIcon icon="mdi:image-plus" class="upload-icon" />
-            <span>{{ imageUploadLoading ? $t('common.uploading') : $t('feedback.form.imagesUpload') }}</span>
+        <div class="image-upload-wrapper">
+          <div v-for="(url, i) in uploadedImages" :key="url" class="image-upload-preview">
+            <img :src="url" class="image-upload-img" alt="screenshot" />
+            <button class="image-upload-remove" type="button" @click="removeImage(i)">
+              <SvgIcon icon="mdi:close" />
+            </button>
           </div>
-        </NUpload>
+          <NUpload
+            v-if="uploadedImages.length < 5"
+            :custom-request="handleUploadImage"
+            :show-file-list="false"
+            accept="image/*"
+          >
+            <div class="image-upload-trigger">
+              <SvgIcon icon="material-symbols:add-photo-alternate-outline" class="upload-icon" />
+              <span>{{ imageUploadLoading ? $t('feedback.form.imagesUploading') : $t('feedback.form.imagesUploadTip') }}</span>
+            </div>
+          </NUpload>
+        </div>
       </div>
 
       <!-- 操作按钮 -->
@@ -195,7 +221,7 @@ const handleAfterEnter = () => {
         <button class="action-btn cancel" @click="handleClose">{{ $t('common.cancel') }}</button>
         <button class="action-btn confirm" :disabled="loading" @click="handleSubmit">
           <SvgIcon icon="mdi:send" />
-          <span>{{ loading ? $t('feedback.form.submitting') : $t('feedback.form.submit') }}</span>
+          <span>{{ loading ? $t('feedback.form.saving') : $t('feedback.form.save') }}</span>
         </button>
       </div>
     </div>
@@ -301,26 +327,69 @@ const handleAfterEnter = () => {
     }
   }
 
-  .image-upload-trigger {
+  .image-upload-wrapper {
     display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 14px 20px;
-    border: 1px dashed rgba(var(--app-rgb), 0.15);
-    border-radius: 12px;
-    cursor: pointer;
-    font-size: 13px;
-    color: rgba(var(--app-rgb), 0.45);
-    transition: all 0.25s ease;
+    flex-wrap: wrap;
+    gap: 10px;
 
-    &:hover {
-      border-color: rgba(102, 126, 234, 0.4);
-      color: #667eea;
-      background: rgba(102, 126, 234, 0.04);
+    .image-upload-preview {
+      position: relative;
+      width: 88px;
+      height: 88px;
+      border-radius: 10px;
+      overflow: hidden;
+
+      .image-upload-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .image-upload-remove {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        cursor: pointer;
+
+        &:hover {
+          background: rgba(0, 0, 0, 0.8);
+        }
+      }
     }
 
-    .upload-icon {
-      font-size: 20px;
+    .image-upload-trigger {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 88px;
+      height: 88px;
+      border: 1px dashed rgba(102, 126, 234, 0.4);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 12px;
+      color: rgba(var(--app-rgb), 0.55);
+      background: rgba(102, 126, 234, 0.04);
+      transition: border-color 0.2s ease, background 0.2s ease;
+
+      &:hover {
+        border-color: rgba(102, 126, 234, 0.7);
+        background: rgba(102, 126, 234, 0.08);
+      }
+
+      .upload-icon {
+        font-size: 22px;
+      }
     }
   }
 }

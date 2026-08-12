@@ -18,8 +18,10 @@ const emit = defineEmits<{
   (e: 'deleted'): void;
 }>();
 
+/** 删除请求中 */
 const loading = ref(false);
 
+/** 确认删除：调用接口成功后关闭弹窗并通知父级刷新 */
 const handleConfirm = async () => {
   if (!props.feedback) return;
   loading.value = true;

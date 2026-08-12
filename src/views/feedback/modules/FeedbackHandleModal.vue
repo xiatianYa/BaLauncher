@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue';
-import { NModal, NInput } from 'naive-ui';
+import { computed, reactive, ref, watch } from 'vue';
+import { NModal } from 'naive-ui';
 import { fetchUpdateFeedback } from '@/service/api';
 import { $t } from '@/locales';
+import { useDict } from '@/hooks/business/dict';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 
 defineOptions({ name: 'FeedbackHandleModal' });
 
 const props = defineProps<{
   show: boolean;
-  /** 待处理的反馈行 */
+  /** 待处理的反馈 */
   feedback: Api.System.SysFeedbackVo | null;
 }>();
 
@@ -18,33 +19,55 @@ const emit = defineEmits<{
   (e: 'submitted'): void;
 }>();
 
-const loading = ref(false);
-const handleForm = reactive({ status: 0, handleRemark: '' });
+const { dictOptions, dictType } = useDict();
 
-const getStatusText = (status?: number) => {
-  const map: Record<number, string> = { 0: 'status0', 1: 'status1', 2: 'status2', 3: 'status3', 4: 'status4' };
-  return status != null ? $t(`feedback.${map[status] || 'status0'}`) : '-';
+const loading = ref(false);
+
+const handleForm = reactive({
+  status: 0
+});
+
+/** NaiveUI 主题色 → 选中态配色（文字色 + 淡背景） */
+const TONE_MAP: Record<NaiveUI.ThemeColor, { color: string; bg: string }> = {
+  default: { color: '#6b7280', bg: 'rgba(107, 114, 128, 0.12)' },
+  primary: { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.12)' },
+  info: { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.12)' },
+  success: { color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)' },
+  warning: { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)' },
+  error: { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.12)' }
 };
 
-/** 打开时根据传入反馈初始化表单 */
+/** 处理状态选项（字典渲染，选中配色取自字典 type 字段） */
+const statusOptions = computed(() =>
+  dictOptions('sys_feedback_status').map(item => ({
+    value: Number(item.value),
+    label: item.label,
+    tone: TONE_MAP[dictType('sys_feedback_status', item.value)] || TONE_MAP.default
+  }))
+);
+
+/** 弹窗打开时回填当前反馈状态 */
 watch(
   () => props.show,
   (val) => {
     if (val && props.feedback) {
       handleForm.status = props.feedback.status ?? 0;
-      handleForm.handleRemark = props.feedback.handleRemark || '';
     }
   }
 );
 
+const handleClose = () => {
+  emit('update:show', false);
+};
+
+/** 提交处理 */
 const handleSubmit = async () => {
-  if (!props.feedback) return;
+  if (!props.feedback?.id || loading.value) return;
   loading.value = true;
   try {
     const { error } = await fetchUpdateFeedback({
       id: props.feedback.id,
-      status: handleForm.status,
-      handleRemark: handleForm.handleRemark || undefined
+      status: handleForm.status
     });
     if (error) {
       window.$message?.error(error.message || $t('feedback.messages.updateFailed'));
@@ -63,45 +86,47 @@ const handleSubmit = async () => {
   <NModal
     :show="show"
     preset="card"
-    class="w-480px rounded-16px"
+    class="w-560px rounded-16px"
     :bordered="false"
-    size="small"
+    size="medium"
     :closable="true"
     @update:show="emit('update:show', $event)"
   >
     <template #header>
       <div class="modal-header">
-        <SvgIcon icon="mdi:pencil" class="modal-header-icon" />
+        <SvgIcon icon="mdi:clipboard-check-outline" class="modal-header-icon" />
         <span>{{ $t('feedback.handleTitle') }}</span>
       </div>
     </template>
 
     <div class="modal-form">
+      <!-- 反馈标题摘要 -->
+      <div class="feedback-summary">
+        <SvgIcon icon="mdi:message-text-outline" class="summary-icon" />
+        <span class="summary-text" :title="feedback?.title">{{ feedback?.title || '-' }}</span>
+      </div>
+
+      <!-- 处理状态 -->
       <div class="form-item">
         <label class="form-label">{{ $t('feedback.handleForm.statusLabel') }}</label>
-        <div class="status-btn-group">
+        <div class="status-radio-group">
           <button
-            v-for="s in [0, 1, 2, 3, 4]"
-            :key="s"
-            class="status-btn"
-            :class="{ active: handleForm.status === s }"
-            @click="handleForm.status = s"
+            v-for="s in statusOptions"
+            :key="s.value"
+            class="status-radio"
+            :class="{ active: handleForm.status === s.value }"
+            :style="{ '--st-color': s.tone.color, '--st-bg': s.tone.bg }"
+            @click="handleForm.status = s.value"
           >
-            {{ getStatusText(s) }}
+            <span>{{ s.label }}</span>
+            <SvgIcon v-if="handleForm.status === s.value" icon="mdi:check" class="radio-check" />
           </button>
         </div>
       </div>
-      <div class="form-item">
-        <label class="form-label">{{ $t('feedback.handleForm.remarkLabel') }}</label>
-        <NInput
-          type="textarea"
-          v-model:value="handleForm.handleRemark"
-          :placeholder="$t('feedback.handleForm.remarkPlaceholder')"
-          :autosize="{ minRows: 3, maxRows: 6 }"
-        />
-      </div>
+
+      <!-- 操作按钮 -->
       <div class="modal-actions">
-        <button class="action-btn cancel" @click="emit('update:show', false)">{{ $t('common.cancel') }}</button>
+        <button class="action-btn cancel" @click="handleClose">{{ $t('common.cancel') }}</button>
         <button class="action-btn confirm" :disabled="loading" @click="handleSubmit">
           <SvgIcon icon="mdi:check" />
           <span>{{ loading ? $t('feedback.handleForm.saving') : $t('feedback.handleForm.save') }}</span>
@@ -131,6 +156,32 @@ const handleSubmit = async () => {
   flex-direction: column;
   gap: 18px;
 
+  .feedback-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(var(--app-rgb), 0.04);
+    border: 1px solid rgba(var(--app-rgb), 0.07);
+    min-width: 0;
+
+    .summary-icon {
+      font-size: 16px;
+      color: rgba(var(--app-rgb), 0.4);
+      flex-shrink: 0;
+    }
+
+    .summary-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(var(--app-rgb), 0.75);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
   .form-item {
     display: flex;
     flex-direction: column;
@@ -143,30 +194,41 @@ const handleSubmit = async () => {
     }
   }
 
-  .status-btn-group {
+  .status-radio-group {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
 
-    .status-btn {
-      padding: 7px 14px;
-      border: 1px solid rgba(var(--app-rgb), 0.12);
+    .status-radio {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 14px;
+      border: 1px solid rgba(var(--app-rgb), 0.2);
       border-radius: 10px;
       cursor: pointer;
       font-size: 12.5px;
       font-weight: 500;
-      color: rgba(var(--app-rgb), 0.5);
+      color: rgba(var(--app-rgb), 0.6);
       background: rgba(var(--app-rgb), 0.03);
-      transition: all 0.25s ease;
+      transition: all 0.2s ease;
 
-      &:hover {
-        border-color: rgba(var(--app-rgb), 0.2);
+      .radio-check {
+        font-size: 14px;
       }
 
+      &:hover {
+        border-color: rgba(var(--app-rgb), 0.32);
+        color: rgba(var(--app-rgb), 0.8);
+        background: rgba(var(--app-rgb), 0.05);
+      }
+
+      /* 选中态配色由字典 type 字段驱动（--st-color/--st-bg 由 style 绑定注入） */
       &.active {
-        color: #667eea;
-        border-color: rgba(102, 126, 234, 0.35);
-        background: rgba(102, 126, 234, 0.1);
+        color: var(--st-color);
+        border-color: var(--st-color);
+        background: var(--st-bg);
+        font-weight: 600;
       }
     }
   }

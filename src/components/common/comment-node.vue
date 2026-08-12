@@ -1,337 +1,309 @@
 <script setup lang="ts">
-import { NEllipsis } from 'naive-ui';
-import SvgIcon from '@/components/custom/svg-icon.vue';
+import { computed, ref } from 'vue';
+import dayjs from 'dayjs';
 import { $t } from '@/locales';
+import SvgIcon from '@/components/custom/svg-icon.vue';
 
 defineOptions({ name: 'CommentNode' });
 
-const props = defineProps<{
-  /** 评论数据 */
-  comment: Api.System.SysCommentVo;
-  /** 嵌套层级 */
-  level: number;
-  /** 是否管理员 */
-  isAdmin: boolean;
-  /** 已展开子评论ID集合 */
-  expandedChildren: Set<number>;
-  /** 日期格式化函数 */
-  formatDate: (date?: string | null) => string;
-  /** 状态标签函数 */
-  getStatusLabel: (status?: number) => string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    /** 评论数据 */
+    comment: Api.System.SysCommentVo;
+    /** 是否为管理员（可删除任意评论） */
+    isAdmin?: boolean;
+    /** 当前登录用户ID（普通用户仅可删除自己的评论） */
+    currentUserId?: string;
+    /** 评论层级深度(0:顶级,>=1:回复)，超过一级不再缩进 */
+    depth?: number;
+  }>(),
+  {
+    depth: 0
+  }
+);
 
 const emit = defineEmits<{
-  (e: 'like', comment: Api.System.SysCommentVo): void;
-  (e: 'dislike', comment: Api.System.SysCommentVo): void;
-  (e: 'reply', comment: Api.System.SysCommentVo): void;
-  (e: 'delete', comment: Api.System.SysCommentVo): void;
-  (e: 'shield', comment: Api.System.SysCommentVo): void;
-  (e: 'toggleChildren', commentId: number): void;
+  (e: 'reply', payload: { parentId: number; content: string }): void;
+  (e: 'delete', id: number): void;
 }>();
 
-/** 是否已删除 */
-const isDeleted = props.comment.status === 0;
-/** 是否已屏蔽 */
-const isHidden = props.comment.status === 2;
-/** 是否有子评论 */
-const hasChildren = (props.comment.children?.length ?? 0) > 0;
-/** 子评论是否展开 */
-const isExpanded = props.expandedChildren.has(props.comment.id);
+/** 是否可删除：管理员可删任意评论，普通用户仅可删自己的评论 */
+const canDelete = computed(() => {
+  if (props.isAdmin) return true;
+  return Boolean(props.currentUserId) && props.comment.userId === Number(props.currentUserId);
+});
+
+const formatDate = (date: string) => dayjs(date).format('YYYY-MM-DD HH:mm');
+
+const replyOpen = ref(false);
+const replyContent = ref('');
+const replying = ref(false);
+
+const toggleReply = () => {
+  replyOpen.value = !replyOpen.value;
+  if (!replyOpen.value) replyContent.value = '';
+};
+
+const submitReply = () => {
+  const text = replyContent.value.trim();
+  if (!text || replying.value) return;
+  replying.value = true;
+  emit('reply', { parentId: props.comment.id, content: text });
+  replyContent.value = '';
+  replyOpen.value = false;
+  replying.value = false;
+};
 </script>
 
 <template>
   <div class="comment-node">
-    <!-- 已删除评论占位 -->
-    <div v-if="isDeleted" class="comment-deleted">
-      <SvgIcon icon="mdi:delete-outline" class="deleted-icon" />
-      <span>{{ $t('comment.statusDeleted') }}</span>
-    </div>
+    <div class="cn-main">
+      <!-- 头像 -->
+      <img v-if="comment.userAvatar" :src="comment.userAvatar" class="cn-avatar" alt="avatar" />
+      <span v-else class="cn-avatar fallback">
+        <SvgIcon icon="mdi:account" />
+      </span>
 
-    <!-- 正常/已屏蔽评论 -->
-    <template v-else>
-      <div class="comment-item" :class="{ 'is-hidden': isHidden }" :style="{ marginLeft: `${level * 28}px` }">
-        <!-- 头像 -->
-        <div class="comment-avatar">
-          <SvgIcon icon="mdi:account-circle" />
+      <div class="cn-body">
+        <!-- 元信息 -->
+        <div class="cn-meta">
+          <span class="cn-name">{{ comment.userName || '-' }}</span>
+          <span class="cn-time">{{ formatDate(comment.createTime) }}</span>
         </div>
 
-        <!-- 主体 -->
-        <div class="comment-body">
-          <!-- 用户名 + 时间 + 状态标签 -->
-          <div class="comment-author">
-            <span class="comment-name">{{ comment.userName || '-' }}</span>
-            <!-- 被回复标签 -->
-            <span v-if="comment.replyUserName" class="comment-reply-target">
-              <SvgIcon icon="mdi:reply" class="reply-icon" />
-              {{ comment.replyUserName }}
-            </span>
-            <!-- 状态标签 -->
-            <span v-if="getStatusLabel(comment.status)" class="comment-status-tag" :class="{ hidden: isHidden, pending: comment.status === 3 }">
-              {{ getStatusLabel(comment.status) }}
-            </span>
-            <span class="comment-time">{{ formatDate(comment.createTime) }}</span>
-          </div>
+        <!-- 内容 -->
+        <div class="cn-content">
+          <template v-if="comment.replyUserName">
+            <span class="cn-reply-name">@{{ comment.replyUserName }}</span>
+            <span class="cn-reply-colon">：</span>
+          </template>
+          {{ comment.content }}
+        </div>
 
-          <!-- 内容 -->
-          <p class="comment-content">
-            <NEllipsis :line-clamp="3" expand-trigger="click">
-              {{ comment.content }}
-            </NEllipsis>
-          </p>
+        <!-- 操作 -->
+        <div class="cn-actions">
+          <span class="cn-action" @click="toggleReply">{{ $t('comment.reply') }}</span>
+          <span v-if="canDelete" class="cn-action danger" @click="emit('delete', comment.id)">
+            {{ $t('comment.delete') }}
+          </span>
+        </div>
 
-          <!-- 图片 -->
-          <div v-if="comment.images" class="comment-images">
-            <img
-              v-for="(url, i) in comment.images.split(',')"
-              :key="i"
-              :src="url"
-              class="comment-image-item"
-              alt="comment image"
-            />
-          </div>
-
-          <!-- 操作按钮 -->
-          <div class="comment-actions">
-            <!-- 点赞 -->
-            <button class="comment-btn" :class="{ active: comment.isLiked }" @click="emit('like', comment)">
-              <SvgIcon :icon="comment.isLiked ? 'mdi:thumb-up' : 'mdi:thumb-up-outline'" />
-              <span v-if="comment.likeCount > 0">{{ comment.likeCount }}</span>
+        <!-- 回复输入框 -->
+        <div v-if="replyOpen" class="cn-reply-box">
+          <input
+            v-model="replyContent"
+            class="reply-input"
+            type="text"
+            :placeholder="$t('comment.replyPlaceholder', { name: comment.userName })"
+            @keydown.enter.exact.prevent="submitReply"
+          />
+          <div class="reply-actions">
+            <button class="reply-btn cancel" @click="toggleReply">{{ $t('common.cancel') }}</button>
+            <button class="reply-btn submit" :disabled="replying || !replyContent.trim()" @click="submitReply">
+              {{ $t('comment.submit') }}
             </button>
-
-            <!-- 点踩 -->
-            <button class="comment-btn" :class="{ active: comment.isDisliked }" @click="emit('dislike', comment)">
-              <SvgIcon :icon="comment.isDisliked ? 'mdi:thumb-down' : 'mdi:thumb-down-outline'" />
-            </button>
-
-            <!-- 回复 -->
-            <button class="comment-btn" @click="emit('reply', comment)">
-              <SvgIcon icon="mdi:reply" />
-              <span>{{ $t('comment.reply') }}</span>
-            </button>
-
-            <!-- 展开子评论 -->
-            <button v-if="hasChildren && !isExpanded" class="comment-btn expand" @click="emit('toggleChildren', comment.id)">
-              <SvgIcon icon="mdi:chevron-down" />
-              <span>{{ $t('comment.showReplies', { count: comment.replyCount }) }}</span>
-            </button>
-
-            <!-- 收起子评论 -->
-            <button v-if="hasChildren && isExpanded" class="comment-btn expand" @click="emit('toggleChildren', comment.id)">
-              <SvgIcon icon="mdi:chevron-up" />
-              <span>{{ $t('comment.hideReplies') }}</span>
-            </button>
-
-            <!-- 管理员操作 -->
-            <template v-if="isAdmin">
-              <button class="comment-btn warn" @click="emit('shield', comment)">
-                <SvgIcon :icon="isHidden ? 'mdi:eye' : 'mdi:eye-off'" />
-                <span>{{ isHidden ? $t('comment.unshield') : $t('comment.shield') }}</span>
-              </button>
-              <button class="comment-btn danger" @click="emit('delete', comment)">
-                <SvgIcon icon="mdi:delete" />
-              </button>
-            </template>
-          </div>
-
-          <!-- 子评论（展开时递归渲染） -->
-          <div v-if="hasChildren && isExpanded" class="comment-children">
-            <CommentNode
-              v-for="child in comment.children"
-              :key="child.id"
-              :comment="child"
-              :level="level + 1"
-              :is-admin="isAdmin"
-              :expanded-children="expandedChildren"
-              :format-date="formatDate"
-              :get-status-label="getStatusLabel"
-              @like="emit('like', $event)"
-              @dislike="emit('dislike', $event)"
-              @reply="emit('reply', $event)"
-              @delete="emit('delete', $event)"
-              @shield="emit('shield', $event)"
-              @toggle-children="emit('toggleChildren', $event)"
-            />
           </div>
         </div>
       </div>
-    </template>
+    </div>
+
+    <!-- 子评论（递归，最多缩进一级） -->
+    <div v-if="comment.children?.length" class="cn-children" :class="{ flat: depth >= 1 }">
+      <CommentNode
+        v-for="child in comment.children"
+        :key="child.id"
+        :comment="child"
+        :is-admin="isAdmin"
+        :current-user-id="currentUserId"
+        :depth="depth + 1"
+        @reply="emit('reply', $event)"
+        @delete="emit('delete', $event)"
+      />
+    </div>
   </div>
 </template>
 
 <style scoped lang="scss">
 .comment-node {
-  /* 已删除评论占位 */
-  .comment-deleted {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 10px 0;
-    font-size: 12.5px;
-    color: rgba(var(--app-rgb), 0.35);
-    border-bottom: 1px solid rgba(var(--app-rgb), 0.04);
-
-    .deleted-icon {
-      font-size: 14px;
-    }
-  }
-}
-
-.comment-item {
   display: flex;
+  flex-direction: column;
   gap: 10px;
-  padding: 12px 0;
-  border-bottom: 1px solid rgba(var(--app-rgb), 0.05);
-  transition: background 0.2s ease;
 
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &.is-hidden {
-    opacity: 0.55;
-  }
-
-  .comment-avatar {
+  .cn-main {
     display: flex;
-    align-items: flex-start;
-    padding-top: 2px;
-    font-size: 30px;
-    color: rgba(var(--app-rgb), 0.28);
-    flex-shrink: 0;
-  }
-
-  .comment-body {
-    flex: 1;
+    gap: 10px;
     min-width: 0;
-  }
 
-  .comment-author {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 5px;
-    flex-wrap: wrap;
-
-    .comment-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--n-text-color);
-    }
-
-    .comment-reply-target {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      font-size: 11.5px;
-      color: #667eea;
-      padding: 1px 6px;
-      border-radius: 4px;
-      background: rgba(102, 126, 234, 0.08);
-
-      .reply-icon {
-        font-size: 10px;
-      }
-    }
-
-    .comment-status-tag {
-      font-size: 10.5px;
-      padding: 1px 6px;
-      border-radius: 4px;
-
-      &.hidden {
-        color: #f59e0b;
-        background: rgba(245, 158, 11, 0.1);
-      }
-
-      &.pending {
-        color: #3b82f6;
-        background: rgba(59, 130, 246, 0.1);
-      }
-    }
-
-    .comment-time {
-      font-size: 11px;
-      color: rgba(var(--app-rgb), 0.4);
-    }
-  }
-
-  .comment-content {
-    margin: 0 0 6px;
-    font-size: 13px;
-    line-height: 1.6;
-    color: rgba(var(--app-rgb), 0.75);
-    word-break: break-word;
-  }
-
-  .comment-images {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: 8px;
-
-    .comment-image-item {
-      width: 70px;
-      height: 70px;
-      border-radius: 8px;
+    .cn-avatar {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      flex-shrink: 0;
       object-fit: cover;
       border: 1px solid rgba(var(--app-rgb), 0.08);
-      cursor: pointer;
-      transition: transform 0.2s ease;
 
-      &:hover {
-        transform: scale(1.08);
+      &.fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        color: #fff;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        border: none;
+      }
+    }
+
+    .cn-body {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+
+      .cn-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        .cn-name {
+          font-size: 12px;
+          font-weight: 600;
+          color: rgba(var(--app-rgb), 0.72);
+        }
+
+        .cn-time {
+          font-size: 11px;
+          color: rgba(var(--app-rgb), 0.38);
+        }
+      }
+
+      .cn-content {
+        font-size: 13px;
+        line-height: 1.65;
+        color: rgba(var(--app-rgb), 0.82);
+        word-break: break-word;
+
+        .cn-reply-name {
+          font-weight: 500;
+          color: #667eea;
+        }
+
+        .cn-reply-colon {
+          color: rgba(var(--app-rgb), 0.5);
+        }
+      }
+
+      .cn-actions {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+
+        .cn-action {
+          font-size: 11.5px;
+          color: rgba(var(--app-rgb), 0.45);
+          cursor: pointer;
+          transition: color 0.2s ease;
+
+          &:hover {
+            color: #667eea;
+          }
+
+          &.danger:hover {
+            color: #ef4444;
+          }
+        }
+      }
+
+      .cn-reply-box {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-top: 2px;
+        padding: 8px 10px;
+        border-radius: 9px;
+        background: rgba(var(--app-rgb), 0.03);
+        border: 1px solid rgba(var(--app-rgb), 0.06);
+
+        .reply-input {
+          width: 100%;
+          box-sizing: border-box;
+          padding: 6px 10px;
+          border: 1px solid rgba(var(--app-rgb), 0.12);
+          border-radius: 7px;
+          outline: none;
+          font-size: 12.5px;
+          font-family: inherit;
+          color: rgba(var(--app-rgb), 0.85);
+          background: transparent;
+          transition: border-color 0.2s ease;
+
+          &::placeholder {
+            color: rgba(var(--app-rgb), 0.35);
+          }
+
+          &:focus {
+            border-color: rgba(102, 126, 234, 0.5);
+          }
+        }
+
+        .reply-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 8px;
+
+          .reply-btn {
+            padding: 4px 14px;
+            border: none;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+
+            &.cancel {
+              color: rgba(var(--app-rgb), 0.5);
+              background: rgba(var(--app-rgb), 0.06);
+
+              &:hover {
+                background: rgba(var(--app-rgb), 0.1);
+              }
+            }
+
+            &.submit {
+              color: #667eea;
+              background: rgba(102, 126, 234, 0.12);
+              border: 1px solid rgba(102, 126, 234, 0.25);
+
+              &:hover:not(:disabled) {
+                background: rgba(102, 126, 234, 0.22);
+              }
+
+              &:disabled {
+                opacity: 0.45;
+                cursor: not-allowed;
+              }
+            }
+          }
+        }
       }
     }
   }
 
-  .comment-actions {
+  /* 子评论缩进 + 引导线（超过一级回复不再缩进） */
+  .cn-children {
+    margin-left: 40px;
+    padding-left: 14px;
+    border-left: 1px solid rgba(var(--app-rgb), 0.08);
     display: flex;
-    align-items: center;
-    gap: 2px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 12px;
 
-    .comment-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      padding: 3px 8px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      color: rgba(var(--app-rgb), 0.5);
-      background: transparent;
-      transition: all 0.2s ease;
-
-      &:hover {
-        background: rgba(var(--app-rgb), 0.06);
-      }
-
-      &.active {
-        color: #667eea;
-      }
-
-      &.expand {
-        color: #667eea;
-      }
-
-      &.warn:hover {
-        color: #f59e0b;
-        background: rgba(245, 158, 11, 0.1);
-      }
-
-      &.danger:hover {
-        color: #ef4444;
-        background: rgba(239, 68, 68, 0.1);
-      }
+    &.flat {
+      margin-left: 0;
+      padding-left: 0;
+      border-left: none;
     }
-  }
-
-  .comment-children {
-    margin-top: 6px;
-    padding-top: 4px;
-    border-left: 2px solid rgba(var(--app-rgb), 0.06);
-    padding-left: 0;
   }
 }
 </style>

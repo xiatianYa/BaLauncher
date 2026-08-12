@@ -8,33 +8,23 @@ import {
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { useAuth } from '@/hooks/business/auth';
-import FeedbackHeader from './modules/FeedbackHeader.vue';
+import { useDict } from '@/hooks/business/dict';
 import FeedbackCard from './modules/FeedbackCard.vue';
 import FeedbackAddModal from './modules/FeedbackAddModal.vue';
-import FeedbackDetailModal from './modules/FeedbackDetailModal.vue';
 import FeedbackHandleModal from './modules/FeedbackHandleModal.vue';
+import FeedbackDetail from './modules/FeedbackDetail.vue';
 import FeedbackDeleteModal from './modules/FeedbackDeleteModal.vue';
 
 defineOptions({ name: 'Feedback' });
 
 const { isAdmin } = useAuth();
 
-/* ==================== 工具函数 ==================== */
-
-const getTypeText = (type?: number) => {
-  const map: Record<number, string> = { 0: 'type0', 1: 'type1', 2: 'type2', 3: 'type3' };
-  return type != null ? $t(`feedback.${map[type] || 'type3'}`) : '-';
-};
-
-const getStatusText = (status?: number) => {
-  const map: Record<number, string> = { 0: 'status0', 1: 'status1', 2: 'status2', 3: 'status3', 4: 'status4' };
-  return status != null ? $t(`feedback.${map[status] || 'status0'}`) : '-';
-};
-
-const getPriorityText = (priority?: number) => {
-  const map: Record<number, string> = { 0: 'priority0', 1: 'priority1', 2: 'priority2', 3: 'priority3' };
-  return priority != null ? $t(`feedback.${map[priority] || 'priority0'}`) : '-';
-};
+/** 字典文案：反馈类型 / 状态 / 优先级（筛选下拉用） */
+const { dictLabel } = useDict();
+const getTypeText = (type?: number) => (type != null ? dictLabel('sys_feedback_type', String(type)) || '-' : '-');
+const getStatusText = (status?: number) => (status != null ? dictLabel('sys_feedback_status', String(status)) || '-' : '-');
+const getPriorityText = (priority?: number) =>
+  priority != null ? dictLabel('sys_feedback_priority', String(priority)) || '-' : '-';
 
 /* ==================== 列表与滚动加载 ==================== */
 
@@ -56,9 +46,6 @@ const typeMenuOpen = ref(false);
 const statusMenuOpen = ref(false);
 const priorityMenuOpen = ref(false);
 
-/* ==================== Mock 假数据 ==================== */
-
-const isDevPreview = ref(true);
 /* ==================== 数据加载 ==================== */
 
 /** 从接口过滤后的数据中追加新条目（去重） */
@@ -78,25 +65,6 @@ const loadData = async () => {
   }
 
   try {
-    if (isDevPreview.value) {
-      await new Promise(resolve => setTimeout(resolve, 400));
-      const sourceData = showMyFeedback.value
-        ? mockList.filter(f => f.userId === 10001)
-        : mockList;
-      const sliced = sourceData.slice(0, limit.value);
-
-      if (list.value.length === 0) {
-        list.value = sliced;
-      } else {
-        appendUnique(sliced);
-      }
-
-      if (sliced.length < limit.value) {
-        finished.value = true;
-      }
-      return;
-    }
-
     if (showMyFeedback.value) {
       const { data, error } = await fetchGetMyFeedbackList();
       if (!error && data) {
@@ -173,16 +141,17 @@ const handleToggleView = (value: 'all' | 'my') => {
 /* ==================== 弹窗状态 ==================== */
 
 const showAddModal = ref(false);
-const showDetailModal = ref(false);
-const showHandleModal = ref(false);
 const showDeleteModal = ref(false);
-const detailFeedback = ref<Api.System.SysFeedbackVo | null>(null);
-const handleFeedback = ref<Api.System.SysFeedbackVo | null>(null);
+const showHandleModal = ref(false);
+/** 详情页当前反馈（非空时切换到详情页） */
+const activeDetail = ref<Api.System.SysFeedbackVo | null>(null);
 const deleteFeedback = ref<Api.System.SysFeedbackVo | null>(null);
+/** 待处理的反馈 */
+const handleFeedback = ref<Api.System.SysFeedbackVo | null>(null);
 
-const handleViewDetail = (row: Api.System.SysFeedbackVo) => { detailFeedback.value = row; showDetailModal.value = true; };
-const handleOpenHandle = (row: Api.System.SysFeedbackVo) => { handleFeedback.value = row; showHandleModal.value = true; };
+const handleViewDetail = (row: Api.System.SysFeedbackVo) => { activeDetail.value = row; };
 const handleOpenDelete = (row: Api.System.SysFeedbackVo) => { deleteFeedback.value = row; showDeleteModal.value = true; };
+const handleOpenHandle = (row: Api.System.SysFeedbackVo) => { handleFeedback.value = row; showHandleModal.value = true; };
 
 const handleRefresh = () => {
   list.value = [];
@@ -198,9 +167,33 @@ onMounted(() => { loadData(); });
   <NCard class="w-full h-full" content-class="flex h-full" content-style="padding:0px;" :bordered="false">
     <NCard class="m-10px rounded-10px" content-style="padding:25px 0px 25px 0px;" :bordered="true"
       content-class="h-full flex flex-col flex-1 overflow-hidden" header-style="padding:10px 20px 10px 20px"
-      :segmented="{ content: true, footer: 'soft' }">
+      :segmented="{ content: true, footer: 'soft' }" v-if="!activeDetail">
       <template #header>
-        <FeedbackHeader :show-my-feedback="showMyFeedback" @toggle-view="handleToggleView" @create="showAddModal = true" />
+        <div class="header-section">
+          <div class="title-section">
+            <SvgIcon icon="mdi:message-question-outline" class="title-icon" />
+            <div class="title-group">
+              <h1 class="page-title">{{ $t('routes.feedback') }}</h1>
+              <span class="page-subtitle">{{ $t('feedback.listSubtitle') }}</span>
+            </div>
+          </div>
+          <div class="header-right">
+            <div class="view-switcher">
+              <button class="switch-btn" :class="{ active: !showMyFeedback }" @click="handleToggleView('all')">
+                <SvgIcon icon="mdi:view-grid" class="switch-icon" />
+                <span>{{ $t('feedback.allFeedback') }}</span>
+              </button>
+              <button class="switch-btn" :class="{ active: showMyFeedback }" @click="handleToggleView('my')">
+                <SvgIcon icon="mdi:account-circle" class="switch-icon" />
+                <span>{{ $t('feedback.myFeedback') }}</span>
+              </button>
+            </div>
+            <button class="header-btn primary" @click="showAddModal = true">
+              <SvgIcon icon="mdi:plus" />
+              <span>{{ $t('feedback.addFeedback') }}</span>
+            </button>
+          </div>
+        </div>
       </template>
 
       <div class="feedback-container">
@@ -342,16 +335,139 @@ onMounted(() => { loadData(); });
         </NInfiniteScroll>
       </div>
     </NCard>
+
+    <!-- 详情页（参考 tools 模块切换模式） -->
+    <NCard class="m-10px rounded-10px" content-style="padding:15px;" :bordered="false"
+      content-class="h-full flex flex-col flex-1 overflow-hidden" header-style="padding:10px 20px 10px 20px"
+      :segmented="{ content: true, footer: 'soft' }" v-else-if="activeDetail">
+      <FeedbackDetail :feedback="activeDetail" @back="activeDetail = null" />
+    </NCard>
   </NCard>
 
   <!-- 弹窗 -->
   <FeedbackAddModal v-model:show="showAddModal" @submitted="handleRefresh" />
-  <FeedbackDetailModal v-model:show="showDetailModal" :feedback="detailFeedback" />
   <FeedbackHandleModal v-model:show="showHandleModal" :feedback="handleFeedback" @submitted="handleRefresh" />
   <FeedbackDeleteModal v-model:show="showDeleteModal" :feedback="deleteFeedback" @deleted="handleRefresh" />
 </template>
 
 <style scoped lang="scss">
+/* ================================ 头部（参考 updateLog 内联写法） ================================ */
+
+.header-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  gap: 16px;
+
+  .title-section {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+
+    .title-icon {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      background: rgba(102, 126, 234, 0.12);
+      color: #667eea;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .title-group {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+
+      .page-title {
+        font-size: 18px;
+        font-weight: 600;
+        line-height: 1.3;
+        margin: 0;
+        color: rgba(var(--app-rgb), 0.92);
+      }
+
+      .page-subtitle {
+        font-size: 12px;
+        color: rgba(var(--app-rgb), 0.45);
+      }
+    }
+  }
+
+  /* 右侧：视图切换 + 提交按钮（参考 updateLog header-right） */
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+
+    .view-switcher {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px;
+      border-radius: 10px;
+      background: rgba(var(--app-rgb), 0.04);
+      border: 1px solid rgba(var(--app-rgb), 0.07);
+
+      .switch-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        padding: 6px 14px;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: rgba(var(--app-rgb), 0.55);
+        background: transparent;
+        transition: all 0.25s ease;
+        white-space: nowrap;
+
+        .switch-icon {
+          font-size: 15px;
+        }
+
+        &:hover {
+          color: rgba(var(--app-rgb), 0.85);
+        }
+
+        &.active {
+          color: #667eea;
+          background: rgba(102, 126, 234, 0.15);
+        }
+      }
+    }
+
+    .header-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 8px 16px;
+      border: 1px solid rgba(102, 126, 234, 0.25);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      color: #667eea;
+      background: rgba(102, 126, 234, 0.12);
+      transition: all 0.25s ease;
+      white-space: nowrap;
+
+      &:hover {
+        background: rgba(102, 126, 234, 0.22);
+      }
+    }
+  }
+}
+
 /* ================================ 容器 / 搜索栏 ================================ */
 
 .feedback-container {

@@ -80,28 +80,3 @@ export function fetchDeleteComment(id: number) {
     method: 'delete'
   });
 }
-
-/** 修改评论状态（管理员屏蔽/审核） */
-export function fetchUpdateCommentStatus(data: Api.System.SysCommentUpdateDTO) {
-  return request<boolean>({
-    url: '/sysComment/update',
-    method: 'put',
-    data
-  });
-}
-
-/** 点赞评论 */
-export function fetchLikeComment(id: number) {
-  return request<boolean>({
-    url: `/sysComment/like/${id}`,
-    method: 'post'
-  });
-}
-
-/** 点踩评论 */
-export function fetchDislikeComment(id: number) {
-  return request<boolean>({
-    url: `/sysComment/dislike/${id}`,
-    method: 'post'
-  });
-}

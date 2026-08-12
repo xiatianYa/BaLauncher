@@ -12,6 +12,8 @@ declare namespace Api {
       userId: number;
       /** 用户昵称 */
       userName: string;
+      /** 用户头像 */
+      userAvatar?: string;
       /** 反馈类型(0:问题反馈,1:功能建议,2:bug报告,3:其他) */
       feedbackType: number;
       /** 反馈标题 */
@@ -87,8 +89,6 @@ declare namespace Api {
       targetId: number;
       /** 评论内容 */
       content: string;
-      /** 评论图片，多个使用逗号分隔 */
-      images?: string;
       /** 父级评论ID(0:顶级评论,>0:子评论/回复) */
       parentId: number;
       /** 根评论ID(用于快速查询整个评论树) */
@@ -97,18 +97,6 @@ declare namespace Api {
       replyUserId?: number;
       /** 被回复的用户昵称(冗余字段) */
       replyUserName?: string;
-      /** 点赞数 */
-      likeCount: number;
-      /** 点踩数 */
-      dislikeCount: number;
-      /** 子评论数量(冗余字段) */
-      replyCount: number;
-      /** 状态(0:已删除,1:正常,2:已屏蔽,3:待审核) */
-      status: number;
-      /** 当前用户是否已点赞 */
-      isLiked?: boolean;
-      /** 当前用户是否已点踩 */
-      isDisliked?: boolean;
       /** 子评论列表 */
       children?: Api.System.SysCommentVo[];
     }>;
@@ -124,20 +112,12 @@ declare namespace Api {
       targetId: number;
       /** 评论内容 */
       content: string;
-      /** 评论图片，多个使用逗号分隔 */
-      images?: string;
       /** 父级评论ID(0:顶级评论,>0:子评论/回复) */
       parentId?: number;
-      /** 被回复的用户ID(仅子评论有效) */
+      /** 被回复的用户ID(顶级评论时为目标发布者ID，子评论时为父评论作者ID) */
       replyUserId?: number;
-    };
-
-    /** 评论更新 DTO（管理员屏蔽/审核） */
-    type SysCommentUpdateDTO = {
-      /** 评论ID */
-      id: number;
-      /** 评论状态(0:正常,1:已屏蔽) */
-      status: number;
+      /** 被回复的用户昵称(冗余字段) */
+      replyUserName?: string;
     };
   }
 }
