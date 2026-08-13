@@ -671,65 +671,31 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- 中间：弹回头像 + 动态 + 操作按钮（自动挤服时显示） -->
-      <div class="game-join-person" v-if="gameStore.isAutomatic">
-        <div class="game-join-person-adnimation" ref="animationRef">
-          <TransitionGroup name="bounce" tag="div" class="bounce-layer">
-            <div v-for="(user, index) in currentPlayingUserList" :key="getPlayerKey(user, index)" class="bounce-avatar"
-              :style="getAvatarStyle(user.loginUser?.id)">
-              <NAvatar round size="small" :src="user.loginUser?.avatar"
-                fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
-            </div>
-          </TransitionGroup>
+      <!-- 右侧：挤服日志（独立新列，仅挤服时显示） -->
+      <div class="join-status-panel" v-if="gameStore.isAutomatic">
+        <div class="join-status-header">
+          <SvgIcon icon="material-symbols:article-outline" class="join-status-head-icon" />
+          <span>{{ $t('serverJoin.logTitle') }}</span>
         </div>
-
-        <!-- 玩家动态列表（只显示挤服相关：开始挤服/暂停挤服/加入服务器） -->
-        <div class="game-join-person-dynamic">
-          <div class="dynamic-header">
-            <div class="dynamic-title">
-              <SvgIcon icon="material-symbols:bolt" class="dynamic-icon" />
-              <span>{{ $t('serverJoin.dynamicTitle') }}</span>
+        <div class="join-status-body">
+          <div v-if="displayedAutoJoinLogs.length" class="join-status-list">
+            <div v-for="(log, index) in displayedAutoJoinLogs" :key="getJoinLogKey(log, index)"
+              class="join-status-item">
+              <span class="join-status-dot"></span>
+              <span class="join-status-text">
+                <span class="join-status-time">[{{ formatLogTime(log.time) }}]</span>
+                <span class="join-status-content">{{ log.content }}</span>
+              </span>
             </div>
           </div>
-          <div class="dynamic-body">
-            <TransitionGroup name="dynamic" tag="div" class="dynamic-list">
-              <div v-for="(log, index) in currentActionLogs" :key="getActionLogKey(log, index)" class="dynamic-item">
-                <span class="dynamic-dot"></span>
-                <span class="dynamic-text">
-                  <template v-if="formatActionTime(log.actionTime)">
-                    <span class="dynamic-time">
-                      [{{ formatActionTime(log.actionTime) }}]
-                    </span>
-                  </template>
-                  <span class="dynamic-nickname">
-                    {{ log.loginUser?.nickName || $t('serverJoin.unknownPlayer') }}
-                  </span>
-                  <span class="dynamic-divider"> - </span>
-                  <span class="dynamic-content">{{ log.actionContent }}</span>
-                </span>
-              </div>
-            </TransitionGroup>
+          <div v-else class="join-status-empty">
+            <SvgIcon icon="mdi:radar" class="empty-icon" />
+            <span>{{ $t('serverJoin.statusPolling') }}</span>
           </div>
         </div>
-
-        <!-- 底部操作按钮（动画模式） -->
-        <NSpace justify="space-between">
-          <NButton v-if="gameStore.isGameRunning" type="success" ghost class="rounded-6px" :disabled="true">
-            <template #icon>
-              <SvgIcon icon="ix:success-filled" />
-            </template>
-            {{ $t('serverJoin.gameStarted') }}
-          </NButton>
-          <NButton type="warning" ghost strong class="rounded-md" @click="stopJoinServer">
-            <template #icon>
-              <SvgIcon icon="lets-icons:stop" />
-            </template>
-            {{ $t('serverJoin.pauseJoin') }}
-          </NButton>
-        </NSpace>
       </div>
 
-      <!-- 右侧：服务器卡片 + 玩家列表 -->
+      <!-- 中间：服务器卡片 + 玩家列表 -->
       <div class="game-join-info" v-if="gameStore.joinServerInfo">
         <div class="server-card overflow-hidden flex flex-col">
             <img v-if="gameStore.joinServerInfo.mapUrl" class="server-card-bg" :src="gameStore.joinServerInfo.mapUrl" />
@@ -875,28 +841,62 @@ onBeforeUnmount(() => {
         </div>
       </div>
 
-      <!-- 右侧：挤服日志（独立新列，仅挤服时显示） -->
-      <div class="join-status-panel" v-if="gameStore.isAutomatic">
-        <div class="join-status-header">
-          <SvgIcon icon="material-symbols:article-outline" class="join-status-head-icon" />
-          <span>{{ $t('serverJoin.logTitle') }}</span>
+      <!-- 中间：弹回头像 + 动态 + 操作按钮（自动挤服时显示） -->
+      <div class="game-join-person" v-if="gameStore.isAutomatic">
+        <div class="game-join-person-adnimation" ref="animationRef">
+          <TransitionGroup name="bounce" tag="div" class="bounce-layer">
+            <div v-for="(user, index) in currentPlayingUserList" :key="getPlayerKey(user, index)" class="bounce-avatar"
+              :style="getAvatarStyle(user.loginUser?.id)">
+              <NAvatar round size="small" :src="user.loginUser?.avatar"
+                fallback-src="https://07akioni.oss-cn-beijing.aliyuncs.com/07akioni.jpeg" />
+            </div>
+          </TransitionGroup>
         </div>
-        <div class="join-status-body">
-          <div v-if="displayedAutoJoinLogs.length" class="join-status-list">
-            <div v-for="(log, index) in displayedAutoJoinLogs" :key="getJoinLogKey(log, index)"
-              class="join-status-item">
-              <span class="join-status-dot"></span>
-              <span class="join-status-text">
-                <span class="join-status-time">[{{ formatLogTime(log.time) }}]</span>
-                <span class="join-status-content">{{ log.content }}</span>
-              </span>
+
+        <!-- 玩家动态列表（只显示挤服相关：开始挤服/暂停挤服/加入服务器） -->
+        <div class="game-join-person-dynamic">
+          <div class="dynamic-header">
+            <div class="dynamic-title">
+              <SvgIcon icon="material-symbols:bolt" class="dynamic-icon" />
+              <span>{{ $t('serverJoin.dynamicTitle') }}</span>
             </div>
           </div>
-          <div v-else class="join-status-empty">
-            <SvgIcon icon="mdi:radar" class="empty-icon" />
-            <span>{{ $t('serverJoin.statusPolling') }}</span>
+          <div class="dynamic-body">
+            <TransitionGroup name="dynamic" tag="div" class="dynamic-list">
+              <div v-for="(log, index) in currentActionLogs" :key="getActionLogKey(log, index)" class="dynamic-item">
+                <span class="dynamic-dot"></span>
+                <span class="dynamic-text">
+                  <template v-if="formatActionTime(log.actionTime)">
+                    <span class="dynamic-time">
+                      [{{ formatActionTime(log.actionTime) }}]
+                    </span>
+                  </template>
+                  <span class="dynamic-nickname">
+                    {{ log.loginUser?.nickName || $t('serverJoin.unknownPlayer') }}
+                  </span>
+                  <span class="dynamic-divider"> - </span>
+                  <span class="dynamic-content">{{ log.actionContent }}</span>
+                </span>
+              </div>
+            </TransitionGroup>
           </div>
         </div>
+
+        <!-- 底部操作按钮（动画模式） -->
+        <NSpace justify="space-between">
+          <NButton v-if="gameStore.isGameRunning" type="success" ghost class="rounded-6px" :disabled="true">
+            <template #icon>
+              <SvgIcon icon="ix:success-filled" />
+            </template>
+            {{ $t('serverJoin.gameStarted') }}
+          </NButton>
+          <NButton type="warning" ghost strong class="rounded-md" @click="stopJoinServer">
+            <template #icon>
+              <SvgIcon icon="lets-icons:stop" />
+            </template>
+            {{ $t('serverJoin.pauseJoin') }}
+          </NButton>
+        </NSpace>
       </div>
     </div>
   </NModal>

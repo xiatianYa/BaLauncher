@@ -28,7 +28,11 @@ const addForm = reactive({
   title: '',
   content: '',
   priority: 0,
-  images: ''
+  images: '',
+  /** Windows 系统版本（打开弹窗时自动获取） */
+  windowsVersion: '',
+  /** 客户端版本号（打开弹窗时自动获取） */
+  appVersion: ''
 });
 
 /** 反馈类型选项：字典渲染 + 图标映射 */
@@ -51,7 +55,7 @@ const priorities = computed(() =>
 
 /** 重置表单 */
 const resetForm = () => {
-  Object.assign(addForm, { feedbackType: 0, title: '', content: '', priority: 0, images: '' });
+  Object.assign(addForm, { feedbackType: 0, title: '', content: '', priority: 0, images: '', windowsVersion: '', appVersion: '' });
 };
 
 /** 上传截图 */
@@ -99,7 +103,9 @@ const handleSubmit = async () => {
       title: addForm.title.trim(),
       content: addForm.content.trim(),
       priority: addForm.priority,
-      images: addForm.images || undefined
+      images: addForm.images || undefined,
+      windowsVersion: addForm.windowsVersion || undefined,
+      appVersion: addForm.appVersion || undefined
     });
     if (error) {
       window.$message?.error(error.message || $t('feedback.messages.addFailed'));
@@ -117,9 +123,16 @@ const handleClose = () => {
   emit('update:show', false);
 };
 
-/** 弹窗打开时重置表单 */
-const handleAfterEnter = () => {
+/** 弹窗打开时重置表单并获取系统/客户端版本号 */
+const handleAfterEnter = async () => {
   resetForm();
+  // 并行获取客户端版本号与 Windows 系统版本，供提交时随反馈上报
+  const [appVersion, windowsVersion] = await Promise.all([
+    window.ipcRenderer.getAppVersion().catch(() => ''),
+    window.ipcRenderer.getSystemVersion().catch(() => '')
+  ]);
+  addForm.appVersion = appVersion || '';
+  addForm.windowsVersion = windowsVersion || '';
 };
 </script>
 

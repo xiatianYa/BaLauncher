@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
-import { NCard, NGrid, NGridItem, NInput, NInputNumber, NPagination, NModal, NSwitch, NUpload } from 'naive-ui';
+import { computed, onMounted, reactive, ref } from 'vue';
+import { NCard, NGrid, NGridItem, NInput, NInputNumber, NPagination, NModal, NSelect, NSwitch, NUpload } from 'naive-ui';
 import type { UploadCustomRequestOptions } from 'naive-ui';
 import dayjs from 'dayjs';
 import {
@@ -17,12 +17,14 @@ import {
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { useAuth } from '@/hooks/business/auth';
+import { useDict } from '@/hooks/business/dict';
 
 defineOptions({ name: 'CommunityManagePage' });
 
 /* ==================== 基础 ==================== */
 
 const { isAdmin } = useAuth(); // 社区管理仅管理员可见
+const { dictLabel, dictOptions } = useDict();
 
 /** 日期格式化 */
 const formatDate = (date?: string | null) => (date ? dayjs(date).format('YYYY-MM-DD HH:mm') : '-');
@@ -233,6 +235,15 @@ const loadServerData = async () => {
 const getYesNoText = (flag?: string) =>
   flag === '1' ? $t('communityManage.server.yes') : $t('communityManage.server.no');
 
+/** 服务器模式选项（来自字典 game_server_mode） */
+const serverModeOptions = computed(() =>
+  dictOptions('game_server_mode').map(item => ({ label: item.label, value: item.value }))
+);
+
+/** 服务器模式文案（字典 game_server_mode 渲染） */
+const getServerModeText = (mode?: number | string) =>
+  mode == null || mode === '' ? '-' : dictLabel('game_server_mode', String(mode)) || '-';
+
 /* ==================== 服务器新增 / 编辑 ==================== */
 
 const showServerEditModal = ref(false);
@@ -247,6 +258,7 @@ const serverEditForm = reactive({
   sort: 0,
   isStatistics: '1',
   isQuery: '1',
+  mode: null as string | null,
   connectStr: ''
 });
 
@@ -260,6 +272,7 @@ const resetServerEditForm = () => {
     sort: 0,
     isStatistics: '1',
     isQuery: '1',
+    mode: null,
     connectStr: ''
   });
 };
@@ -282,6 +295,7 @@ const handleServerEdit = (row: Api.Game.Server) => {
     sort: row.sort ?? 0,
     isStatistics: row.isStatistics === '1' ? '1' : '0',
     isQuery: row.isQuery === '1' ? '1' : '0',
+    mode: row.mode != null ? String(row.mode) : null,
     connectStr: row.connectStr || ''
   });
   showServerEditModal.value = true;
@@ -304,6 +318,7 @@ const handleServerEditSubmit = async () => {
     sort: serverEditForm.sort ?? 0,
     isStatistics: serverEditForm.isStatistics,
     isQuery: serverEditForm.isQuery,
+    mode: serverEditForm.mode != null ? Number(serverEditForm.mode) : undefined,
     connectStr: serverEditForm.connectStr.trim()
   };
   if (isServerEditMode.value) {
@@ -578,6 +593,7 @@ onMounted(() => {
               <span class="col-sort">{{ $t('communityManage.server.column.sort') }}</span>
               <span class="col-stat">{{ $t('communityManage.server.column.statistics') }}</span>
               <span class="col-query">{{ $t('communityManage.server.column.query') }}</span>
+              <span class="col-mode">{{ $t('communityManage.server.column.mode') }}</span>
               <span class="col-connect">{{ $t('communityManage.server.column.connect') }}</span>
               <span class="col-actions">{{ $t('communityManage.server.column.actions') }}</span>
             </div>
@@ -599,6 +615,7 @@ onMounted(() => {
                     {{ getYesNoText(server.isQuery) }}
                   </span>
                 </span>
+                <span class="col-mode cell-text">{{ getServerModeText(server.mode) }}</span>
                 <span class="col-connect cell-text" :title="server.connectStr">{{ server.connectStr || '-' }}</span>
                 <span class="col-actions">
                   <button class="server-action-btn edit" :title="$t('communityManage.server.editBtnTitle')"
@@ -615,7 +632,7 @@ onMounted(() => {
               <!-- 加载骨架 -->
               <template v-if="serverLoading">
                 <div v-for="i in 4" :key="`server-skeleton-${i}`" class="server-row skeleton-row">
-                  <span v-for="j in 8" :key="j" class="skeleton-cell" />
+                  <span v-for="j in 9" :key="j" class="skeleton-cell" />
                 </div>
               </template>
 
@@ -654,6 +671,11 @@ onMounted(() => {
           <div class="form-item">
             <label class="form-label">{{ $t('communityManage.server.form.sortLabel') }}</label>
             <NInputNumber v-model:value="serverEditForm.sort" min="0" class="w-full" />
+          </div>
+          <div class="form-item">
+            <label class="form-label">{{ $t('communityManage.server.form.modeLabel') }}</label>
+            <NSelect v-model:value="serverEditForm.mode" :options="serverModeOptions"
+              :placeholder="$t('communityManage.server.form.modePlaceholder')" clearable />
           </div>
           <div class="form-item">
             <label class="form-label">{{ $t('communityManage.server.form.connectLabel') }}</label>
@@ -1433,6 +1455,7 @@ onMounted(() => {
       .col-sort { flex: 0.5; }
       .col-stat { flex: 0.7; }
       .col-query { flex: 0.7; }
+      .col-mode { flex: 0.8; }
       .col-connect { flex: 1.2; }
       .col-actions { flex: 0.8; }
     }
@@ -1461,6 +1484,7 @@ onMounted(() => {
         .col-sort { flex: 0.5; }
         .col-stat { flex: 0.7; }
         .col-query { flex: 0.7; }
+        .col-mode { flex: 0.8; }
         .col-connect { flex: 1.2; }
         .col-actions { flex: 0.8; }
 

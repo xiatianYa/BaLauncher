@@ -26,7 +26,7 @@ const gameStore = useGameStore();
 const { isAdmin, hasRole } = useAuth();
 /** 群管理角色（R_GROUP）：可查看「群友管理 / 编辑群」按钮（删除仍仅管理员） */
 const isGroupManager = computed(() => isAdmin.value || hasRole('R_GROUP'));
-const { dictLabel } = useDict();
+const { dictLabel, dictOptions } = useDict();
 
 /* ===== 列表与分页 ===== */
 
@@ -130,9 +130,16 @@ const editForm = reactive({
   isNotifyImage: 0,
   isOrder: 0,
   joinGroupUrl: '',
+  subscribeMode: [] as string[],
+  subscribeNotifyCount: null as number | null,
   startTime: null as number | null,
   expireTime: null as number | null
 });
+
+/** 订阅模式选项（来自字典 game_server_mode） */
+const subscribeModeOptions = computed(() =>
+  dictOptions('game_server_mode').map(d => ({ label: d.label, value: d.value }))
+);
 
 /** 偏好社区选项（来自 communityList） */
 const communityOptions = computed(() =>
@@ -154,6 +161,8 @@ const handleCreate = () => {
     isNotifyImage: 0,
     isOrder: 0,
     joinGroupUrl: '',
+    subscribeMode: [],
+    subscribeNotifyCount: null,
     startTime: null,
     expireTime: null
   });
@@ -170,6 +179,8 @@ const handleEdit = (row: Api.Bot.BotGroupVo) => {
     isNotifyImage: row.isNotifyImage,
     isOrder: row.isOrder,
     joinGroupUrl: row.joinGroupUrl || '',
+    subscribeMode: row.subscribeMode ? row.subscribeMode.split(',').filter(Boolean) : [],
+    subscribeNotifyCount: row.subscribeNotifyCount ?? null,
     startTime: toTimestamp(row.startTime),
     expireTime: toTimestamp(row.expireTime)
   });
@@ -195,6 +206,8 @@ const handleEditSubmit = async () => {
     isNotifyImage: editForm.isNotifyImage,
     isOrder: editForm.isOrder,
     joinGroupUrl,
+    subscribeMode: editForm.subscribeMode.join(','),
+    subscribeNotifyCount: editForm.subscribeNotifyCount ?? 0,
     startTime: editForm.startTime ? formatDateTime(editForm.startTime) : '',
     expireTime: editForm.expireTime ? formatDateTime(editForm.expireTime) : ''
   };
@@ -798,7 +811,7 @@ onMounted(() => {
     </NModal>
 
     <!-- 编辑 / 新增弹窗 -->
-    <NModal v-model:show="showEditModal" preset="card" class="w-520px rounded-16px" :bordered="false" size="small"
+    <NModal v-model:show="showEditModal" preset="card" class="edit-modal w-520px h-600px rounded-16px" :bordered="false" size="small"
       :closable="true">
       <template #header>
         <div class="modal-header">
@@ -854,6 +867,16 @@ onMounted(() => {
             <span class="switch-text">{{ editForm.isOrder === 1 ? $t('botGroup.enabled') : $t('botGroup.disabled')
               }}</span>
           </div>
+        </div>
+        <div class="form-item">
+          <label class="form-label">{{ $t('botGroup.modal.subscribeModeLabel') }}</label>
+          <NSelect v-model:value="editForm.subscribeMode" :options="subscribeModeOptions" multiple clearable
+            :placeholder="$t('botGroup.modal.subscribeModePlaceholder')" />
+        </div>
+        <div class="form-item">
+          <label class="form-label">{{ $t('botGroup.modal.subscribeNotifyCountLabel') }}</label>
+          <NInputNumber v-model:value="editForm.subscribeNotifyCount" :min="0" :show-button="false" class="w-full"
+            :placeholder="$t('botGroup.modal.subscribeNotifyCountPlaceholder')" />
         </div>
         <div v-if="isEditMode && isAdmin" class="form-item">
           <label class="form-label">{{ $t('botGroup.effectiveTime') }}</label>
@@ -2389,6 +2412,45 @@ onMounted(() => {
 
   100% {
     background-position: -200% 0;
+  }
+}
+</style>
+
+<style lang="scss">
+/* ===== 编辑/新增弹窗固定高度 + 内容滚动 =====
+   NModal 默认 teleport 到 body，scoped 样式无法作用于 naive-ui 内部的 .n-card 结构，
+   故在全局样式中处理卡片布局与滚动。 */
+.edit-modal {
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+
+  .n-card-header {
+    flex-shrink: 0;
+  }
+
+  .n-card-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 3px;
+      background: color-mix(in srgb, var(--n-text-color) 18%, transparent);
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: color-mix(in srgb, var(--n-text-color) 30%, transparent);
+    }
   }
 }
 </style>

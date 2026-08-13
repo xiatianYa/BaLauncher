@@ -40,5 +40,15 @@ declare namespace Api {
       /** 绑定的系统用户ID */
       sysUserId?: string;
     }>;
+
+    /** 机器人群成员 订阅配置 DTO（查询与修改通用，对应后端 BotGroupMemberSubscribeDTO） */
+    type BotGroupMemberSubscribeDTO = {
+      /** 订阅的社区ID列表（多个用逗号分隔） */
+      subscribeCommunityIds?: string;
+      /** 订阅模式（字典 game_server_mode） */
+      subscribeMode?: string;
+      /** 订阅人数（满足该人数才触发通知） */
+      subscribeCount?: number;
+    };
   }
 }

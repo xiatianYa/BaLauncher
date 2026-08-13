@@ -1,4 +1,5 @@
 import { ipcMain, BrowserWindow, dialog, app, shell, screen } from 'electron'
+import os from 'node:os'
 import { getMainWindow } from '../windowManager'
 import { preload, indexHtml, VITE_DEV_SERVER_URL } from '../config'
 import { setMiniConfig } from './systemMonitor'
@@ -12,6 +13,17 @@ export function setupWindowControlIpc() {
       return app.getVersion()
     } catch {
       return 'unknown' // 版本获取失败时的兜底值
+    }
+  })
+
+  // 获取 Windows 系统版本（如 "Windows 10 Pro 10.0.22631"），供反馈上报使用
+  ipcMain.handle('electron:get-system-version', async () => {
+    try {
+      const version = os.version() // 系统友好名称，如 "Windows 10 Pro"，可能为空
+      const release = os.release() // 系统版本号，如 "10.0.22631"
+      return version ? `${version} ${release}` : `${os.type()} ${release}`
+    } catch {
+      return 'unknown' // 系统版本获取失败时的兜底值
     }
   })
 

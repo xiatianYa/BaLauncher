@@ -518,8 +518,12 @@ onUnmounted(() => {
   .panel-card {
     border-radius: 12px;
 
-    :deep(.n-card__content) {
+    :deep(.n-card-content) {
       padding: 0;
+      overflow-y: auto;
+
+      &::-webkit-scrollbar { width: 3px; }
+      &::-webkit-scrollbar-thumb { background: rgba(var(--app-rgb), 0.12); border-radius: 2px; }
     }
 
     // 概览卡片（CPU / 内存 / GPU）：固定 216px
@@ -531,12 +535,7 @@ onUnmounted(() => {
   }
 
   .card-body {
-    height: 100%;
-    overflow-y: auto;
     padding: 12px 14px;
-
-    &::-webkit-scrollbar { width: 3px; }
-    &::-webkit-scrollbar-thumb { background: rgba(var(--app-rgb), 0.12); border-radius: 2px; }
   }
 
   .card-header {
@@ -923,7 +922,7 @@ onUnmounted(() => {
     max-height: calc(100vh - 100px);
     overflow: hidden;
 
-    :deep(.n-card__content) {
+    :deep(.n-card-content) {
       padding: 16px;
       overflow-y: auto;
       max-height: calc(100vh - 100px);

@@ -4,12 +4,13 @@ import { $t } from '@/locales';
 import { NButton, NEllipsis, NTag, NTooltip } from 'naive-ui';
 import { computed, ref } from 'vue';
 import { useDict } from '@/hooks/business/dict';
+import dayjs from 'dayjs';
 
 // 排序状态：none 默认 / asc 正序 / desc 倒序
 type SortOrder = 'none' | 'asc' | 'desc';
 type SortField = 'players' | 'ping' | null;
 
-const { dictType, dictLabel } = useDict();
+const { dictType, dictLabel, dictOptions } = useDict();
 
 const props = defineProps<{
   servers: Api.Game.SeverVo[];
@@ -34,6 +35,16 @@ const getPingType = (ping?: number) => {
 
 // 服务器比赛阶段文案（来自字典 game_map_phase，与卡片视图一致）
 const getMapPhaseText = (phase: string) => dictLabel('game_map_phase', phase) || phase;
+
+// 地图运行时长：自换图时间(dateTimeOriginal)起，格式化为 Xh Ym / Xm，离线时无该字段显示 '-'
+const formatMapRuntime = (targetTime?: string) => {
+  if (!targetTime) return '-';
+  const minutes = Math.max(dayjs().diff(dayjs(targetTime), 'minute'), 0);
+  if (minutes < 60) return `${minutes}m`;
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+};
 
 // 根据在线人数获取颜色
 const getPlayerColor = (players: number) => {
@@ -111,6 +122,41 @@ const sortedServers = computed(() => {
   return [...online, ...offline];
 });
 
+// 获取服务器模式文案（字典 game_server_mode 渲染，未配置模式归入"未分组"）
+const getServerModeLabel = (mode?: number) => {
+  if (mode == null) return $t('server.unknownMode');
+  return dictLabel('game_server_mode', String(mode)) || $t('server.unknownMode');
+};
+
+// 按服务器模式分区展示（组内保持在线优先、离线置底与排序结果；分区按字典顺序，未知模式置底）
+const groupedServers = computed(() => {
+  const dictOrder = new Map(dictOptions('game_server_mode').map((d, i) => [d.value, i] as [string, number]));
+
+  const groups: { mode: number | undefined; label: string; servers: Api.Game.SeverVo[] }[] = [];
+  const indexMap = new Map<string, number>();
+
+  sortedServers.value.forEach(server => {
+    const mode = server.mode;
+    const key = mode == null ? '__none__' : String(mode);
+    let gi = indexMap.get(key);
+    if (gi === undefined) {
+      gi = groups.length;
+      indexMap.set(key, gi);
+      groups.push({ mode, label: getServerModeLabel(mode), servers: [] });
+    }
+    groups[gi].servers.push(server);
+  });
+
+  // 未知模式置底，其余按字典顺序排列
+  groups.sort((a, b) => {
+    const ai = a.mode == null ? Number.MAX_SAFE_INTEGER : (dictOrder.get(String(a.mode)) ?? Number.MAX_SAFE_INTEGER - 1);
+    const bi = b.mode == null ? Number.MAX_SAFE_INTEGER : (dictOrder.get(String(b.mode)) ?? Number.MAX_SAFE_INTEGER - 1);
+    return ai - bi;
+  });
+
+  return groups;
+});
+
 // 切换排序状态：none -> asc -> desc -> none
 const toggleSort = (field: SortField) => {
   if (sortField.value !== field) {
@@ -158,14 +204,23 @@ const getSortOrder = (field: SortField) => {
           </span>
         </div>
         <div class="th th-score">{{ $t('server.score') }}</div>
+        <div class="th th-runtime">{{ $t('server.mapRuntime') }}</div>
         <div class="th th-action">{{ $t('server.operate') }}</div>
       </div>
 
       <!-- 表体 -->
       <div class="custom-tbody">
-        <div v-for="(server, index) in sortedServers" :key="index" class="custom-row"
-          :class="{ 'offline-row': isServerOffline(server) }"
-          :style="{ '--delay': `${Math.min(index * 0.05, 0.4)}s` }">
+        <template v-for="group in groupedServers" :key="group.mode ?? 'none'">
+          <div class="mode-section-header">
+            <span class="mode-section-label">{{ group.label }}</span>
+            <NTag size="small" round :bordered="false"
+              :color="{ color: 'rgba(var(--app-rgb), 0.06)', textColor: 'rgba(var(--app-rgb), 0.5)' }">
+              {{ $t('server.serverCount', { count: group.servers.length }) }}
+            </NTag>
+          </div>
+          <div v-for="(server, index) in group.servers" :key="`${group.mode ?? 'none'}-${index}`" class="custom-row"
+            :class="{ 'offline-row': isServerOffline(server) }"
+            :style="{ '--delay': `${Math.min(index * 0.05, 0.4)}s` }">
           <!-- 服务器名 -->
           <div class="td td-name">
             <div class="flex items-center gap-8px">
@@ -229,6 +284,11 @@ const getSortOrder = (field: SortField) => {
             <span v-else class="empty-score" :style="{ color: 'rgba(var(--app-rgb), 0.6)' }">-</span>
           </div>
 
+          <!-- 地图运行时长 -->
+          <div class="td td-runtime">
+            <span class="runtime-text">{{ formatMapRuntime(server.dateTimeOriginal) }}</span>
+          </div>
+
           <!-- 操作 -->
           <div class="td td-action">
             <div class="action-cell">
@@ -255,6 +315,7 @@ const getSortOrder = (field: SortField) => {
             </div>
           </div>
         </div>
+        </template>
       </div>
     </div>
   </div>
@@ -276,9 +337,9 @@ const getSortOrder = (field: SortField) => {
 
 .custom-thead {
   display: grid;
-  // 固定列宽，避免容器变小时列被压缩导致内容截断
-  grid-template-columns: 2fr 1.5fr 1.2fr 80px 100px 100px;
-  gap: 16px;
+  // 其他字段按内容定宽，剩余空间留给服务器名称与地图
+  grid-template-columns: 2fr 1.5fr 100px 64px 100px 64px 80px;
+  gap: 12px;
   padding: 0 16px 8px;
   // 分隔线颜色随主题变化（--app-rgb 深色为白、浅色为暖黑）
   border-bottom: 1px solid rgba(var(--app-rgb), 0.08);
@@ -323,12 +384,38 @@ const getSortOrder = (field: SortField) => {
   gap: 10px;
 }
 
+/* 模式分区标题 */
+.mode-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 16px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(var(--app-rgb), 0.7);
+
+  .mode-section-label {
+    display: inline-flex;
+    align-items: center;
+
+    &::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: #667eea;
+      box-shadow: 0 0 6px rgba(102, 126, 234, 0.6);
+    }
+  }
+}
+
 .custom-row {
   position: relative;
   display: grid;
-  // 与表头保持一致的固定列宽比例
-  grid-template-columns: 2fr 1.5fr 1.2fr 80px 100px 100px;
-  gap: 16px;
+  // 与表头保持一致：其他字段按内容定宽，剩余空间留给服务器名称与地图
+  grid-template-columns: 2fr 1.5fr 100px 64px 100px 64px 80px;
+  gap: 12px;
   align-items: center;
   padding: 16px;
   border-radius: 12px;
@@ -522,6 +609,16 @@ const getSortOrder = (field: SortField) => {
 
   .empty-score {
     font-size: 12px;
+  }
+}
+
+// 地图运行时长
+.td-runtime {
+  .runtime-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(var(--app-rgb), 0.7);
+    white-space: nowrap;
   }
 }
 

@@ -4,7 +4,6 @@ import { $t } from '@/locales';
 import { fetchGetLogByVersion } from '@/service/api';
 import { useAuthStore } from '@/store/modules/auth';
 import { useDict } from '@/hooks/business/dict';
-import { clearLocalCache } from '@/utils/cache';
 
 /* ===== 类型定义 ===== */
 
@@ -64,11 +63,6 @@ export function useAppUpdate() {
     autoRestartCountdown.value = 0;
   };
 
-  /** 更新安装前清除缓存（保留登录态 auth 与地图资源 imageCache，其余全部清理） */
-  const clearCacheBeforeUpdate = async () => {
-    await clearLocalCache(['game', 'app', 'route']);
-  };
-
   // ========== 数据加载 ==========
 
   const loadUpdateLog = async () => {
@@ -125,7 +119,6 @@ export function useAppUpdate() {
 
   const handleInstallUpdate = async () => {
     clearCountdownTimer();
-    await clearCacheBeforeUpdate();
     await window.ipcRenderer.invoke('install-update');
   };
 

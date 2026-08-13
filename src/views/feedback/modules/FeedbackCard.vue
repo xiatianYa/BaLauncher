@@ -59,7 +59,7 @@ const formatDate = (date?: string | null) => (date ? dayjs(date).format('YYYY-MM
         <span class="footer-user">
           <img v-if="row.userAvatar" :src="row.userAvatar" class="footer-avatar" alt="avatar" />
           <SvgIcon v-else icon="mdi:account" class="footer-avatar fallback" />
-          {{ row.userName || '-' }}
+          <span class="footer-username">{{ row.userName || '-' }}</span>
         </span>
         <span class="footer-time">
           <SvgIcon icon="mdi:clock-outline" class="footer-icon" />
@@ -154,13 +154,30 @@ const formatDate = (date?: string | null) => (date ? dayjs(date).format('YYYY-MM
       gap: 14px;
       font-size: 12px;
       color: rgba(var(--app-rgb), 0.4);
+      min-width: 0;
     }
 
-    .footer-user,
+    .footer-user {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      overflow: hidden;
+
+      /* 昵称过长时省略显示，避免换行撑破卡片 */
+      .footer-username {
+        max-width: 130px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+    }
+
     .footer-time {
       display: flex;
       align-items: center;
       gap: 4px;
+      flex-shrink: 0;
     }
 
     .footer-icon {

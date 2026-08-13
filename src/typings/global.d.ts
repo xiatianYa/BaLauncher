@@ -36,6 +36,7 @@ declare global {
       stopLogReader: () => Promise<{ success: boolean }>;
       autoDetectPaths: () => Promise<{ steamPath: string | null; csgo2Path: string | null }>;
       getAppVersion: () => Promise<string>;
+      getSystemVersion: () => Promise<string>;
       showMapOrderNotification: (data: { title: string; message: string; serverName?: string; connectStr?: string; mapName?: string; mapChineseName?: string; mapImage?: string }) => Promise<void>;
       closeMapOrderNotification: () => Promise<void>;
       getImageCacheInfo: () => Promise<{ count: number; totalSize: number }>;

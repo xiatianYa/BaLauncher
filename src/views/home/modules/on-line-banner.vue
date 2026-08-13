@@ -260,10 +260,10 @@ onUnmounted(() => {
     min-height: 0;
     overflow-y: auto;
     scrollbar-gutter: stable;
-    /* 一行多个玩家：网格自动换行，卡片宽度不足时自动增减每行数量 */
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    align-content: start;
+    /* 一行多个玩家：弹性布局自动换行，卡片按内容自适应宽度，完整显示昵称与角色 */
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
     gap: 6px;
     padding: 2px 4px 2px 2px;
 
@@ -288,7 +288,8 @@ onUnmounted(() => {
       display: flex;
       align-items: center;
       gap: 6px;
-      min-width: 0;
+      flex: 0 0 auto;
+      max-width: 100%;
       padding: 4px 8px;
       border-radius: 8px;
       background: rgba(var(--app-rgb), 0.03);
@@ -319,8 +320,6 @@ onUnmounted(() => {
       }
 
       .online-info {
-        flex: 1;
-        min-width: 0;
         display: flex;
         flex-direction: column;
         gap: 1px;
@@ -329,8 +328,6 @@ onUnmounted(() => {
           font-size: 11.5px;
           font-weight: 500;
           color: var(--n-text-color);
-          overflow: hidden;
-          text-overflow: ellipsis;
           white-space: nowrap;
         }
 
@@ -338,7 +335,6 @@ onUnmounted(() => {
           display: flex;
           flex-wrap: nowrap;
           gap: 3px;
-          overflow: hidden;
 
           .online-role-tag {
             display: inline-flex;

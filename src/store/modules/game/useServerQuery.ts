@@ -41,6 +41,7 @@ export function useServerQuery(deps: ServerQueryDeps) {
   function createOfflineServer(server: Api.Game.Server): Api.Game.SeverVo {
     return {
       serverId: 0,
+      mode: server.mode,
       communityName: '',
       communityId: 0,
       mapId: 0,
@@ -103,7 +104,6 @@ export function useServerQuery(deps: ServerQueryDeps) {
 
   /** 查询服务器列表信息（源服务器） */
   async function queryServerInfosResponse(): Promise<void> {
-    console.log('queryServerInfosResponse')
     if (unref(serverDataList).length === 0) {
       const { data: serverData } = await fetchGetServerList()
       if (serverData) {
@@ -213,10 +213,45 @@ export function useServerQuery(deps: ServerQueryDeps) {
     const { success, data: infoResponse } = await window.ipcRenderer.invoke('query-game-server', server.connectStr)
 
     if (success) {
+      // A2S 查询返回的是原始字段（name/map/players/addr），与 SeverVo 字段（serverName/mapName/numPlayers/connectStr）不一致，
+      // 需逐字段映射，不能直接 Object.assign
+      const info = infoResponse as {
+        name?: string
+        map?: string
+        players?: number
+        maxPlayers?: number
+        ping?: number
+      }
+
       unref(currentServerList).forEach((item: Api.Game.SeverVo) => {
         if (item.connectStr === server.connectStr) {
           item.isOnline = true
-          Object.assign(item, infoResponse.data)
+          item.serverName = info.name || item.serverName
+          item.numPlayers = info.players ?? item.numPlayers
+          item.maxPlayers = info.maxPlayers ?? item.maxPlayers
+          item.ping = info.ping ?? item.ping
+
+          // 按地图名匹配地图列表，回填地图详情（与批量查询 queryServerInfosResponse 保持一致）
+          if (info.map) {
+            item.mapName = info.map
+            const map = unref(mapList).find(m => m.mapName === info.map)
+            if (map) {
+              item.mapId = map.id
+              item.mapLabel = map.mapLabel
+              item.mapUrl = map.mapUrl
+              item.type = map.type
+              item.tag = map.tag
+              item.artifact = map.artifact
+            } else {
+              // 地图不在维护的地图列表中（如自定义/工坊地图）时清空旧地图信息，避免残留上一张地图的图片与译名
+              item.mapId = 0
+              item.mapLabel = ''
+              item.mapUrl = ''
+              item.type = ''
+              item.tag = []
+              item.artifact = ''
+            }
+          }
         }
       })
     } else {

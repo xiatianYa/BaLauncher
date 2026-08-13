@@ -66,6 +66,9 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
   getAppVersion() {
     return ipcRenderer.invoke('electron:get-app-version')
   },
+  getSystemVersion() {
+    return ipcRenderer.invoke('electron:get-system-version')
+  },
   showMapOrderNotification(data: { title: string; message: string; serverName?: string; connectStr?: string; mapName?: string; mapChineseName?: string; mapImage?: string }) {
     return ipcRenderer.invoke('show-notification', { ...data, type: 'map-subscription' })
   },

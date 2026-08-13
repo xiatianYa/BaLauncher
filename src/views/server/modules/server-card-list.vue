@@ -9,8 +9,10 @@ import dayjs from 'dayjs';
 const ITEMS_PER_ROW = 2; // 每行 2 张卡片
 const CARD_HEIGHT = 155; // 卡片高度（px）
 const ROW_GAP = 12; // 行间距（px）
-const ROW_HEIGHT = CARD_HEIGHT + ROW_GAP; // 每行占用高度
-const BUFFER_ROWS = 3; // 上下缓冲行数
+const ROW_HEIGHT = CARD_HEIGHT + ROW_GAP; // 每行卡片占用高度
+const HEADER_HEIGHT = 32; // 分区标题高度（px）
+const HEADER_ROW_HEIGHT = HEADER_HEIGHT + ROW_GAP; // 分区标题 + 间距占用高度
+const BUFFER_PX = ROW_HEIGHT * 3; // 上下缓冲距离（px）
 
 const props = defineProps<{
   servers: Api.Game.SeverVo[];
@@ -33,6 +35,18 @@ const listRef = ref<HTMLElement | null>(null);
 const containerHeight = ref(0);
 const scrollTop = ref(0);
 
+// 获取源服务器信息（按连接地址匹配，用于在线/离线卡片判定时读取源服务器名称）
+const getSourceServerInfo = (server: Api.Game.SeverVo): Api.Game.Server | undefined => {
+  return props.sourceServerList.find(s => {
+    if (s.connectStr === server.connectStr) return true;
+    if (s.ip && s.port) {
+      const serverAddr = `${s.ip}:${s.port}`;
+      if (serverAddr === server.connectStr) return true;
+    }
+    return false;
+  });
+};
+
 /** 离线卡片判定（与模板渲染一致：离线或缺少源服务器信息） */
 const isOfflineCard = (server: Api.Game.SeverVo) => !(server.isOnline && getSourceServerInfo(server)?.serverName);
 
@@ -43,27 +57,96 @@ const displayServers = computed(() => {
   return [...online, ...offline];
 });
 
-const totalRows = computed(() => Math.ceil(displayServers.value.length / ITEMS_PER_ROW));
+// 获取服务器模式文案（字典 game_server_mode 渲染，未配置模式归入"未分组"）
+const getServerModeLabel = (mode?: number) => {
+  if (mode == null) return $t('server.unknownMode');
+  return dictLabel('game_server_mode', String(mode)) || $t('server.unknownMode');
+};
 
-const startRow = computed(() => {
-  const row = Math.floor(scrollTop.value / ROW_HEIGHT);
-  return Math.max(0, row - BUFFER_ROWS);
+// 虚拟列表块：分区标题（header）或一行卡片（cards）
+type CardBlock =
+  | { type: 'header'; key: string; label: string; count: number; height: number }
+  | { type: 'cards'; key: string; servers: Api.Game.SeverVo[]; height: number; delayBase: number };
+
+// 按服务器模式分区，并拍平成块列表供虚拟滚动使用（组内保持在线优先、离线置底，分区按字典顺序，未知模式置底）
+const blocks = computed<CardBlock[]>(() => {
+  const dictOrder = new Map(dictOptions('game_server_mode').map((d, i) => [d.value, i] as [string, number]));
+
+  const groups: { mode: number | undefined; servers: Api.Game.SeverVo[] }[] = [];
+  const indexMap = new Map<string, number>();
+
+  displayServers.value.forEach(server => {
+    const mode = server.mode;
+    const key = mode == null ? '__none__' : String(mode);
+    let gi = indexMap.get(key);
+    if (gi === undefined) {
+      gi = groups.length;
+      indexMap.set(key, gi);
+      groups.push({ mode, servers: [] });
+    }
+    groups[gi].servers.push(server);
+  });
+
+  // 未知模式置底，其余按字典顺序排列
+  groups.sort((a, b) => {
+    const ai = a.mode == null ? Number.MAX_SAFE_INTEGER : (dictOrder.get(String(a.mode)) ?? Number.MAX_SAFE_INTEGER - 1);
+    const bi = b.mode == null ? Number.MAX_SAFE_INTEGER : (dictOrder.get(String(b.mode)) ?? Number.MAX_SAFE_INTEGER - 1);
+    return ai - bi;
+  });
+
+  const result: CardBlock[] = [];
+  let cardIndex = 0;
+  groups.forEach(g => {
+    result.push({
+      type: 'header',
+      key: `header-${g.mode ?? 'none'}`,
+      label: getServerModeLabel(g.mode),
+      count: g.servers.length,
+      height: HEADER_ROW_HEIGHT,
+    });
+    for (let i = 0; i < g.servers.length; i += ITEMS_PER_ROW) {
+      const chunk = g.servers.slice(i, i + ITEMS_PER_ROW);
+      result.push({ type: 'cards', key: chunk[0].connectStr, servers: chunk, height: ROW_HEIGHT, delayBase: cardIndex });
+      cardIndex += chunk.length;
+    }
+  });
+
+  return result;
 });
 
-const endRow = computed(() => {
-  const visibleRows = Math.ceil(containerHeight.value / ROW_HEIGHT);
-  const row = Math.floor(scrollTop.value / ROW_HEIGHT);
-  return Math.min(totalRows.value, row + visibleRows + BUFFER_ROWS);
+// 各块起始偏移（前缀和），用于计算可视窗口
+const blockOffsets = computed(() => {
+  const offsets: number[] = [];
+  let acc = 0;
+  blocks.value.forEach(b => {
+    offsets.push(acc);
+    acc += b.height;
+  });
+  return offsets;
 });
 
-const visibleServers = computed(() => {
-  const startIndex = startRow.value * ITEMS_PER_ROW;
-  const endIndex = Math.min(displayServers.value.length, endRow.value * ITEMS_PER_ROW);
-  return displayServers.value.slice(startIndex, endIndex);
+const totalHeight = computed(() => blocks.value.reduce((sum, b) => sum + b.height, 0));
+
+const startIndex = computed(() => {
+  const top = scrollTop.value;
+  for (let i = 0; i < blocks.value.length; i++) {
+    if (blockOffsets.value[i] + blocks.value[i].height >= top - BUFFER_PX) return i;
+  }
+  return blocks.value.length;
 });
 
-const paddingTop = computed(() => startRow.value * ROW_HEIGHT);
-const paddingBottom = computed(() => (totalRows.value - endRow.value) * ROW_HEIGHT);
+const endIndex = computed(() => {
+  const bottom = scrollTop.value + containerHeight.value;
+  for (let i = startIndex.value; i < blocks.value.length; i++) {
+    if (blockOffsets.value[i] >= bottom + BUFFER_PX) return i;
+  }
+  return blocks.value.length;
+});
+
+const visibleBlocks = computed(() => blocks.value.slice(startIndex.value, endIndex.value));
+
+const paddingTop = computed(() => blockOffsets.value[startIndex.value] ?? 0);
+const paddingBottom = computed(() => totalHeight.value - (blockOffsets.value[endIndex.value] ?? totalHeight.value));
 
 /* ===== 滚动更新节流：rAF 合并到每帧只触发一次重渲染 ===== */
 let rafId = 0;
@@ -140,18 +223,6 @@ const getScoreLevel = (server: Api.Game.SeverVo) => {
   return 'score-level-draw';
 };
 
-// 获取源服务器信息
-const getSourceServerInfo = (server: Api.Game.SeverVo): Api.Game.Server | undefined => {
-  return props.sourceServerList.find(s => {
-    if (s.connectStr === server.connectStr) return true;
-    if (s.ip && s.port) {
-      const serverAddr = `${s.ip}:${s.port}`;
-      if (serverAddr === server.connectStr) return true;
-    }
-    return false;
-  });
-};
-
 const handleJoin = (server: Api.Game.SeverVo) => {
   emit('join', server);
 };
@@ -174,8 +245,17 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   <div ref="listRef" class="server-card-list h-full overflow-auto p-5px relative">
     <div class="virtual-scroll-spacer" :style="{ paddingTop: `${paddingTop}px`, paddingBottom: `${paddingBottom}px` }">
       <div class="card-grid">
-        <div v-for="(server, index) in visibleServers" :key="server.connectStr || index"
-          :style="{ '--delay': `${Math.min((startRow * ITEMS_PER_ROW + index) * 0.03, 0.4)}s` }">
+        <template v-for="block in visibleBlocks" :key="block.key">
+          <div v-if="block.type === 'header'" class="mode-section-header">
+            <span class="mode-section-label">{{ block.label }}</span>
+            <NTag size="small" round :bordered="false"
+              :color="{ color: 'rgba(var(--app-rgb), 0.06)', textColor: 'rgba(var(--app-rgb), 0.5)' }">
+              {{ $t('server.serverCount', { count: block.count }) }}
+            </NTag>
+          </div>
+          <template v-else>
+            <div v-for="(server, index) in block.servers" :key="server.connectStr || index"
+              :style="{ '--delay': `${Math.min((block.delayBase + index) * 0.03, 0.4)}s` }">
           <div class="sercer-card overflow-hidden flex flex-col"
             v-if="server.isOnline && getSourceServerInfo(server)?.serverName">
             <img v-if="server.mapUrl" class="server-card-bg" v-lazy="server.mapUrl" />
@@ -268,7 +348,9 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
               </div>
             </div>
           </div>
-        </div>
+            </div>
+          </template>
+        </template>
       </div>
     </div>
   </div>
@@ -292,6 +374,34 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   /* 允许子项收缩，避免长内容撑爆网格列导致徽标被挤出卡片 */
   > * {
     min-width: 0;
+  }
+}
+
+/* 模式分区标题（占满整行） */
+.mode-section-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(var(--app-rgb), 0.7);
+
+  .mode-section-label {
+    display: inline-flex;
+    align-items: center;
+
+    &::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: #667eea;
+      box-shadow: 0 0 6px rgba(102, 126, 234, 0.6);
+    }
   }
 }
 

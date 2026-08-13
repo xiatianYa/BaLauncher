@@ -70,6 +70,26 @@ const formatDate = (date?: string | null) => (date ? dayjs(date).format('YYYY-MM
           </span>
         </div>
 
+        <!-- 系统信息：Windows 版本 + 客户端版本（新增反馈时自动获取） -->
+        <div v-if="feedback.windowsVersion || feedback.appVersion" class="detail-block">
+          <div class="block-title">
+            <SvgIcon icon="mdi:desktop-classic" class="block-icon" />
+            <span>{{ $t('feedback.systemInfo') }}</span>
+          </div>
+          <div class="system-info">
+            <span v-if="feedback.windowsVersion" class="system-info-item">
+              <SvgIcon icon="mdi:microsoft-windows" class="sys-icon" />
+              <span class="sys-label">{{ $t('feedback.windowsVersion') }}</span>
+              <span class="sys-value">{{ feedback.windowsVersion }}</span>
+            </span>
+            <span v-if="feedback.appVersion" class="system-info-item">
+              <SvgIcon icon="mdi:package-variant" class="sys-icon" />
+              <span class="sys-label">{{ $t('feedback.appVersion') }}</span>
+              <span class="sys-value">{{ feedback.appVersion }}</span>
+            </span>
+          </div>
+        </div>
+
         <!-- 反馈内容 -->
         <div class="detail-block">
           <div class="block-title">
@@ -292,6 +312,41 @@ const formatDate = (date?: string | null) => (date ? dayjs(date).format('YYYY-MM
 
         .meta-icon {
           font-size: 13px;
+        }
+      }
+    }
+
+    /* 系统信息：Windows 版本 / 客户端版本（标签 + 值） */
+    .system-info {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+
+      .system-info-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-size: 12px;
+        background: rgba(var(--app-rgb), 0.05);
+        border: 1px solid rgba(var(--app-rgb), 0.08);
+
+        .sys-icon {
+          font-size: 14px;
+          color: rgba(102, 126, 234, 0.85);
+          flex-shrink: 0;
+        }
+
+        .sys-label {
+          color: rgba(var(--app-rgb), 0.45);
+          flex-shrink: 0;
+        }
+
+        .sys-value {
+          color: rgba(var(--app-rgb), 0.8);
+          font-weight: 500;
+          word-break: break-all;
         }
       }
     }

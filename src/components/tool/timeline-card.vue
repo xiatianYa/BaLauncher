@@ -33,6 +33,17 @@ const emit = defineEmits<{
 const mapList = ref<Api.Game.Map[]>([]);
 const selectedMapId = ref<number | null>(null);
 
+/** 每个地图最后一条有比分的记录（用于比分徽章展示） */
+const lastScoreMap = computed(() => {
+    const map = new Map<number, { ctScore: number; tscore: number }>();
+    props.timelineList.forEach(item => {
+        if (item.ctScore != null && item.tscore != null) {
+            map.set(item.mapId, { ctScore: item.ctScore, tscore: item.tscore });
+        }
+    });
+    return map;
+});
+
 const mapOptions = computed(() => {
     return mapList.value.map(map => ({
         label: map.mapLabel ? `${map.mapName}(${map.mapLabel})` : map.mapName,
@@ -107,7 +118,7 @@ onMounted(() => {
                     <NTimelineItem v-for="(item, index) in timelineList" :key="index"
                         :type="index === 0 ? 'success' : 'default'" :title="item.mapLabel || item.mapName">
                         <template #header>
-                            <TimelineItem :item="item" :index="index" />
+                            <TimelineItem :item="item" :index="index" :score="lastScoreMap.get(item.mapId)" />
                         </template>
                     </NTimelineItem>
                 </NTimeline>

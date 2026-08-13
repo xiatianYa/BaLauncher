@@ -26,3 +26,20 @@ export function fetchBotGroupMemberUnbind() {
     method: 'delete'
   });
 }
+
+/** 查询当前登录用户的订阅配置 */
+export function fetchGetBotGroupMemberSubscribe() {
+  return request<Api.Bot.BotGroupMemberSubscribeDTO>({
+    url: '/botGroupMember/getSubscribe',
+    method: 'get'
+  });
+}
+
+/** 当前登录用户修改自己的订阅配置 */
+export function fetchUpdateBotGroupMemberSubscribe(params: Api.Bot.BotGroupMemberSubscribeDTO) {
+  return request<boolean>({
+    url: '/botGroupMember/updateSubscribe',
+    method: 'put',
+    data: params
+  });
+}

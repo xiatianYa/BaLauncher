@@ -137,6 +137,10 @@ declare namespace Api {
       timeAxis?: Array<string>;
       /** ECharts Y轴人数数组 */
       playerCountAxis?: Array<number>;
+      /** CT方比分（取该地图最后一条有比分记录的比分） */
+      ctScore?: number | null;
+      /** T方比分（取该地图最后一条有比分记录的比分，后端字段为 tscore） */
+      tscore?: number | null;
     };
 
     /** 服务器地图时间线分页 */

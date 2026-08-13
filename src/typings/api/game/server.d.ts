@@ -26,6 +26,8 @@ declare namespace Api {
             serverName: string;
             /** 社区ID */
             communityId: string;
+            /** 服务器模式 */
+            mode?: number;
             /** 服务器IP */
             ip: string;
             /** 服务器端口 */
@@ -109,6 +111,8 @@ declare namespace Api {
         type SeverVo = {
             /** 服务器ID */
             serverId: number;
+            /** 服务器模式 */
+            mode?: number;
             /** 社区名称 */
             communityName: string;
             /** 社区ID */
@@ -316,6 +320,8 @@ declare namespace Api {
             isStatistics?: string;
             /** 是否查询 */
             isQuery?: string;
+            /** 服务器模式 */
+            mode?: number;
             /** 连接指令 */
             connectStr?: string;
             /** Ping */

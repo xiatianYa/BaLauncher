@@ -5,10 +5,19 @@
  * @design 概要头部（头像 + 昵称 + 角色标签）+ 账号信息网格 + 第三方账号绑定卡片，绑定流程参考登录弹窗的 OAuth 授权窗口
  -->
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { NAvatar, NButton, NModal, NSpin, NTag } from 'naive-ui';
+import { computed, reactive, ref, watch } from 'vue';
+import { NAvatar, NButton, NInputNumber, NModal, NSelect, NSpin, NTag } from 'naive-ui';
 import { useDict } from '@/hooks/business/dict';
-import { fetchBindQQ, fetchBindSteam, fetchBotGroupMemberIsBound, fetchBotGroupMemberUnbind, fetchGetMyInfo } from '@/service/api';
+import {
+  fetchBindQQ,
+  fetchBindSteam,
+  fetchBotGroupMemberIsBound,
+  fetchBotGroupMemberUnbind,
+  fetchGetBotGroupMemberSubscribe,
+  fetchGetCommunityList,
+  fetchGetMyInfo,
+  fetchUpdateBotGroupMemberSubscribe
+} from '@/service/api';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import dayjs from 'dayjs';
@@ -28,7 +37,7 @@ const showRef = computed({
   set: value => emit('update:show', value)
 });
 
-const { dictLabel, dictType } = useDict();
+const { dictLabel, dictOptions, dictType } = useDict();
 
 /** 用户详情 */
 const detail = ref<Api.System.SysUserVo | null>(null);
@@ -41,16 +50,61 @@ const isGroupBound = ref(false);
 /** 解绑群绑定中 */
 const unbindingGroup = ref(false);
 
+/** 订阅配置表单 */
+const subscribeForm = reactive({
+  subscribeCommunityIds: [] as string[],
+  subscribeMode: [] as string[],
+  subscribeCount: null as number | null
+});
+/** 社区列表（订阅社区下拉选项来源） */
+const communityList = ref<Api.Game.Community[]>([]);
+/** 已保存的订阅配置快照（用于判断是否有变化，避免重复保存） */
+let lastSavedSnapshot = '';
+/** 订阅配置自动保存防抖定时器 */
+let subscribeSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** 序列化当前订阅配置，用于变化比对 */
+const subscribeSnapshot = () =>
+  JSON.stringify({
+    communityIds: [...subscribeForm.subscribeCommunityIds].sort(),
+    mode: [...subscribeForm.subscribeMode].sort(),
+    count: subscribeForm.subscribeCount ?? 0
+  });
+
+/** 订阅社区下拉选项（value 使用字符串化的社区 ID） */
+const communitySelectOptions = computed(() =>
+  communityList.value.map(c => ({ label: c.communityName, value: String(c.id) }))
+);
+
+/** 订阅模式选项（来自字典 game_server_mode） */
+const subscribeModeOptions = computed(() =>
+  dictOptions('game_server_mode').map(d => ({ label: d.label, value: d.value }))
+);
+
 /** 加载用户详情 */
 const loadDetail = async () => {
   loading.value = true;
   try {
-    const [detailRes, groupBoundRes] = await Promise.all([
+    const [detailRes, groupBoundRes, subscribeRes, communityRes] = await Promise.all([
       fetchGetMyInfo(),
-      fetchBotGroupMemberIsBound()
+      fetchBotGroupMemberIsBound(),
+      fetchGetBotGroupMemberSubscribe(),
+      fetchGetCommunityList()
     ]);
     detail.value = detailRes.data ?? null;
     isGroupBound.value = Boolean(groupBoundRes.data);
+
+    const subscribe = subscribeRes.data;
+    subscribeForm.subscribeCommunityIds = subscribe?.subscribeCommunityIds
+      ? subscribe.subscribeCommunityIds.split(',').filter(Boolean)
+      : [];
+    subscribeForm.subscribeMode = subscribe?.subscribeMode
+      ? subscribe.subscribeMode.split(',').filter(Boolean)
+      : [];
+    subscribeForm.subscribeCount = subscribe?.subscribeCount ?? null;
+    lastSavedSnapshot = subscribeSnapshot();
+
+    communityList.value = communityRes.data ?? [];
   } finally {
     loading.value = false;
   }
@@ -146,10 +200,38 @@ const handleUnbindGroup = async () => {
     unbindingGroup.value = false;
   }
 };
+
+/** 保存订阅配置（自动保存调用，失败时提示） */
+const saveSubscribe = async () => {
+  const snapshot = subscribeSnapshot();
+  if (snapshot === lastSavedSnapshot) return; // 无变化，跳过
+  const params: Api.Bot.BotGroupMemberSubscribeDTO = {
+    subscribeCommunityIds: subscribeForm.subscribeCommunityIds.join(','),
+    subscribeMode: subscribeForm.subscribeMode.join(','),
+    subscribeCount: subscribeForm.subscribeCount ?? 0
+  };
+  const { error } = await fetchUpdateBotGroupMemberSubscribe(params);
+  if (error) {
+    window.$message?.error(error.message || $t('profile.subscribeSaveFailed'));
+    return;
+  }
+  lastSavedSnapshot = snapshot;
+};
+
+// 订阅配置参数变化时自动保存（防抖，避免输入过程中频繁请求）
+watch(
+  subscribeSnapshot,
+  () => {
+    if (subscribeSaveTimer) clearTimeout(subscribeSaveTimer);
+    subscribeSaveTimer = setTimeout(() => {
+      saveSubscribe();
+    }, 400);
+  }
+);
 </script>
 
 <template>
-  <NModal v-model:show="showRef" preset="card" class="profile-modal w-800px rounded-16px" :bordered="false">
+  <NModal v-model:show="showRef" preset="card" class="profile-modal w-800px h-600px rounded-16px" :bordered="false">
     <template #header>
       <div class="profile-header">
         <div class="profile-header-icon-wrap">
@@ -252,17 +334,46 @@ const handleUnbindGroup = async () => {
             </NButton>
           </div>
         </div>
+
+        <!-- 订阅配置 -->
+        <div class="profile-section-title">{{ $t('profile.subscribeSection') }}</div>
+        <p class="profile-bind-tip">{{ $t('profile.subscribeTip') }}</p>
+        <div class="profile-subscribe-note">
+          <SvgIcon icon="mdi:information-outline" class="profile-subscribe-note-icon" />
+          <span>{{ $t('profile.subscribeGroupTip') }}</span>
+        </div>
+        <div class="profile-subscribe-form">
+          <div class="profile-subscribe-field">
+            <span class="profile-subscribe-label">
+              <SvgIcon icon="mdi:office-building-outline" class="profile-subscribe-icon" />
+              {{ $t('profile.subscribeCommunity') }}
+            </span>
+            <NSelect v-model:value="subscribeForm.subscribeCommunityIds" multiple clearable filterable
+              :options="communitySelectOptions" :placeholder="$t('profile.subscribeCommunityPlaceholder')" />
+          </div>
+          <div class="profile-subscribe-field">
+            <span class="profile-subscribe-label">
+              <SvgIcon icon="mdi:server-outline" class="profile-subscribe-icon" />
+              {{ $t('profile.subscribeMode') }}
+            </span>
+            <NSelect v-model:value="subscribeForm.subscribeMode" multiple clearable
+              :options="subscribeModeOptions" :placeholder="$t('profile.subscribeModePlaceholder')" />
+          </div>
+          <div class="profile-subscribe-field">
+            <span class="profile-subscribe-label">
+              <SvgIcon icon="mdi:account-multiple-outline" class="profile-subscribe-icon" />
+              {{ $t('profile.subscribeCount') }}
+            </span>
+            <NInputNumber v-model:value="subscribeForm.subscribeCount" :min="0" :show-button="false"
+              :placeholder="$t('profile.subscribeCountPlaceholder')" />
+          </div>
+        </div>
       </template>
     </NSpin>
   </NModal>
 </template>
 
 <style scoped lang="scss">
-.profile-modal {
-  max-width: 90vw;
-  border-radius: 16px;
-}
-
 .profile-header {
   display: flex;
   align-items: center;
@@ -474,17 +585,102 @@ const handleUnbindGroup = async () => {
     }
   }
 }
+
+/* 订阅配置 */
+.profile-subscribe-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+
+  .profile-subscribe-note-icon {
+    font-size: 14px;
+    color: #667eea;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+}
+
+.profile-subscribe-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+
+  .profile-subscribe-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: rgba(102, 126, 234, 0.35);
+    }
+
+    .profile-subscribe-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+
+      .profile-subscribe-icon {
+        font-size: 15px;
+        color: #667eea;
+      }
+    }
+  }
+}
 </style>
 
 <style lang="scss">
 /* ===== 弹窗主题变量 =====
    NModal 默认 teleport 到 body，不继承应用根节点（.theme-dark/.theme-light）上的 --app-rgb。
    这里直接基于弹窗卡片上 naive-ui 保证提供的 --n-text-color（自动随明暗主题切换）
-   派生出文字/边框/背景变量，弹窗内所有颜色随主题自适应。 */
+   派生出文字/边框/背景变量，弹窗内所有颜色随主题自适应。
+   同时处理固定高度 + 内容区滚动（scoped 无法可靠作用到 teleport 的弹窗根节点，故放到全局样式）。 */
 .profile-modal {
+  max-width: 90vw;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+
   --text-main: var(--n-text-color);
   --text-secondary: color-mix(in srgb, var(--n-text-color) 55%, transparent);
   --input-bg: color-mix(in srgb, var(--n-text-color) 5%, transparent);
   --input-border: color-mix(in srgb, var(--n-text-color) 10%, transparent);
+
+  .n-card-header {
+    flex-shrink: 0;
+  }
+
+  .n-card-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      border-radius: 3px;
+      background: color-mix(in srgb, var(--n-text-color) 18%, transparent);
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+      background: color-mix(in srgb, var(--n-text-color) 30%, transparent);
+    }
+  }
 }
 </style>

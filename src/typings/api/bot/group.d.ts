@@ -20,6 +20,10 @@ declare namespace Api {
       communitys: string;
       /** 入群链接 */
       joinGroupUrl: string;
+      /** 订阅模式（字典 game_server_mode） */
+      subscribeMode?: string;
+      /** 订阅通知人数 */
+      subscribeNotifyCount?: number;
       /** 创建用户ID */
       createUserId: string;
       /** 创建时间 */
@@ -64,6 +68,10 @@ declare namespace Api {
       communitys: string;
       /** 入群链接 */
       joinGroupUrl?: string;
+      /** 订阅模式（字典 game_server_mode） */
+      subscribeMode?: string;
+      /** 订阅通知人数 */
+      subscribeNotifyCount?: number;
     };
   }
 }

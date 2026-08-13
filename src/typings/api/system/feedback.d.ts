@@ -12,6 +12,10 @@ declare namespace Api {
       userId: number;
       /** 用户昵称 */
       userName: string;
+      /** Windows 系统版本（如 "Windows 10 Pro 10.0.22631"） */
+      windowsVersion?: string;
+      /** 客户端版本号 */
+      appVersion?: string;
       /** 用户头像 */
       userAvatar?: string;
       /** 反馈类型(0:问题反馈,1:功能建议,2:bug报告,3:其他) */
@@ -59,6 +63,10 @@ declare namespace Api {
       content: string;
       /** 截图附件路径，多个使用逗号分隔 */
       images?: string;
+      /** Windows 系统版本（如 "Windows 10 Pro 10.0.22631"） */
+      windowsVersion?: string;
+      /** 客户端版本号 */
+      appVersion?: string;
       /** 优先级(0:低,1:中,2:高,3:紧急) */
       priority?: number;
     };
