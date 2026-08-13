@@ -5,6 +5,7 @@ import path from 'node:path'
 import fs from 'node:fs'
 import net from 'node:net'
 import { startLogReader } from './logReader'
+import { getCSGO2Path, getSteamPathFromRegistry } from './gamePath'
 
 const execPromise = promisify(exec)
 
@@ -28,8 +29,6 @@ const DEFAULT_GSI_PORT = 13455
 let gsiPort = DEFAULT_GSI_PORT
 /** 端口是否已解析（一次运行期间保持稳定，保证 cfg 与服务一致） */
 let gsiPortResolved = false
-/** 最近一次写入 cfg 的游戏路径（端口变化时用于同步 cfg） */
-let gsiConfigGamePath: string | null = null
 
 export function setMainWindowForCs2Gsi(window: BrowserWindow) {
   mainWindow = window
@@ -195,10 +194,12 @@ function getSteamUserdataCfgDirs(steamPath?: string): string[] {
 
 /** GSI 配置文件全量候选目录（游戏目录 + Steam 用户级目录） */
 function getGsiConfigTargets(csgo2Path: string, steamPath?: string): string[] {
-  const gameDirs = [
-    path.join(csgo2Path, 'game', 'csgo', 'cfg'),
-    path.join(csgo2Path, 'csgo', 'cfg')
-  ]
+  const gameDirs = csgo2Path
+    ? [
+        path.join(csgo2Path, 'game', 'csgo', 'cfg'),
+        path.join(csgo2Path, 'csgo', 'cfg')
+      ]
+    : []
   return [...gameDirs, ...getSteamUserdataCfgDirs(steamPath)]
 }
 
@@ -212,7 +213,10 @@ function checkGsiConfigExists(csgo2Path: string, steamPath?: string): boolean {
 
 /** 创建/同步 GSI 配置文件：同步所有已存在的目标目录，全部失败时强制写 Steam 用户级目录（系统级兜底） */
 async function createGsiConfig(csgo2Path: string, steamPath?: string): Promise<boolean> {
-  if (!csgo2Path) return false
+  // 路径未配置时自动探测（注册表 / steamapps 库目录），保证软件启动时也能创建配置
+  if (!steamPath) steamPath = (await getSteamPathFromRegistry()) || undefined
+  if (!csgo2Path && steamPath) csgo2Path = (await getCSGO2Path(steamPath)) || ''
+  if (!csgo2Path && !steamPath) return false
 
   // 端口先解析并缓存：cfg 与服务必须使用同一端口，否则游戏数据发不到服务
   const uri = `http://localhost:${await ensureGsiPort()}`
@@ -225,10 +229,7 @@ async function createGsiConfig(csgo2Path: string, steamPath?: string): Promise<b
     if (!fs.existsSync(cfgDir)) continue
     if (writeGsiConfigToDir(cfgDir, content)) wroteAny = true
   }
-  if (wroteAny) {
-    gsiConfigGamePath = csgo2Path
-    return true
-  }
+  if (wroteAny) return true
 
   // 第二轮：强制创建 Steam 用户级目录并写入（游戏目录缺失/不可写时的系统级兜底）
   for (const cfgDir of getSteamUserdataCfgDirs(steamPath)) {
@@ -237,10 +238,7 @@ async function createGsiConfig(csgo2Path: string, steamPath?: string): Promise<b
     } catch {
       continue
     }
-    if (writeGsiConfigToDir(cfgDir, content)) {
-      gsiConfigGamePath = csgo2Path
-      return true
-    }
+    if (writeGsiConfigToDir(cfgDir, content)) return true
   }
 
   return false
@@ -457,11 +455,6 @@ async function startGsiService() {
 
         for (const [event, channel] of getGsiEventMap()) {
           service.on(event, (payload: any) => sendGsiDataToRenderer(channel, payload))
-        }
-
-        // 端口与上次写入不同时同步 cfg（需游戏重启后生效）
-        if (gsiConfigGamePath) {
-          await createGsiConfig(gsiConfigGamePath)
         }
         return { success: true }
       }

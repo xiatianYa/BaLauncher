@@ -6,7 +6,7 @@ import fs from 'node:fs'
 
 const execPromise = promisify(exec)
 
-async function getSteamPathFromRegistry(): Promise<string | null> {
+export async function getSteamPathFromRegistry(): Promise<string | null> {
   try {
     const { stdout } = await execPromise('reg query "HKCU\\Software\\Valve\\Steam" /v SteamPath')
     const match = stdout.match(/SteamPath\s+REG_SZ\s+(.+)/)
@@ -53,7 +53,7 @@ async function getSteamPathFromRegistry(): Promise<string | null> {
   return null
 }
 
-async function getCSGO2Path(steamPath: string): Promise<string | null> {
+export async function getCSGO2Path(steamPath: string): Promise<string | null> {
   if (!steamPath) return null
 
   const libraryFoldersPath = path.join(steamPath, 'steamapps', 'libraryfolders.vdf')

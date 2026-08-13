@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { NConfigProvider, darkTheme, zhCN, dateZhCN, enUS, dateEnUS } from 'naive-ui';
-import { computed, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useThemeStore } from '@/store/modules/theme';
 import { useAppStore } from '@/store/modules/app';
 import { i18n } from '@/locales';
@@ -45,6 +45,12 @@ watch(
   },
   { immediate: true }
 );
+
+/** 软件启动即自动探测并保存 Steam/CS2 路径（未配置时，永久存储），随后创建 GSI 配置文件 */
+onMounted(async () => {
+  await appStore.autoDetectAndSaveGamePaths();
+  window.ipcRenderer.createGsiConfig(appStore.csgo2Path, appStore.steamPath);
+});
 
 /** 动画播放完毕后移除覆盖层 */
 function handleTransitionFinished() {

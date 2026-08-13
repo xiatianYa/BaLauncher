@@ -187,6 +187,14 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     setStg(GAME_STORAGE_KEYS.COMMUNITY_ORDER, communityList.map(c => c.id))
   }
 
+  /** 软件启动时自动探测并保存 Steam/CS2 路径（仅未配置时写入本地存储，不覆盖用户手动设置） */
+  async function autoDetectAndSaveGamePaths(): Promise<void> {
+    if (steamPath.value && csgo2Path.value) return
+    const { steamPath: detectedSteam, csgo2Path: detectedCs2 } = await window.ipcRenderer.autoDetectPaths()
+    if (!steamPath.value && detectedSteam) setSteamPath(detectedSteam)
+    if (!csgo2Path.value && detectedCs2) setCsgo2Path(detectedCs2)
+  }
+
   // ---- 设置 setter ----
 
   function setGamePlatform(platform: GamePlatform): void {
@@ -285,6 +293,7 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     // ---- 游戏存储读写 ----
     loadSettingsFromStorage,
     saveSettingsToStorage,
+    autoDetectAndSaveGamePaths,
     applyCommunityOrder,
     saveCommunityOrder,
     setGamePlatform,

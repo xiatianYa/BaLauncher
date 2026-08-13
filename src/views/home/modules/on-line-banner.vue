@@ -260,10 +260,10 @@ onUnmounted(() => {
     min-height: 0;
     overflow-y: auto;
     scrollbar-gutter: stable;
-    /* 一行多个玩家：弹性布局自动换行，卡片按内容自适应宽度，完整显示昵称与角色 */
-    display: flex;
-    flex-wrap: wrap;
-    align-content: flex-start;
+    /* 玩家卡片网格布局：列自动填充并拉伸填满整行（右侧不留空），默认从左往右延伸 */
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    align-content: start;
     gap: 6px;
     padding: 2px 4px 2px 2px;
 
@@ -288,8 +288,7 @@ onUnmounted(() => {
       display: flex;
       align-items: center;
       gap: 6px;
-      flex: 0 0 auto;
-      max-width: 100%;
+      min-width: 0;
       padding: 4px 8px;
       border-radius: 8px;
       background: rgba(var(--app-rgb), 0.03);

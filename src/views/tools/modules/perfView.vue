@@ -96,6 +96,9 @@ const avgCoreFreq = computed(() => {
   return Math.round(freqs.reduce((a, b) => a + b, 0) / freqs.length);
 });
 
+/** MHz → GHz（保留 1 位小数，如 3500 → 3.5） */
+const formatGhz = (mhz: number): string => (mhz / 1000).toFixed(1);
+
 /* ===== 生命周期 ===== */
 
 onMounted(() => {
@@ -196,8 +199,8 @@ onUnmounted(() => {
           <!-- 详情 -->
           <div class="detail-list">
             <div class="detail-row"><span>{{ $t('perfView.physCores') }}</span><b>{{ stats.cpu.physicalCores }}</b><span class="sep">|</span><span>{{ $t('perfView.logiCores') }}</span><b>{{ stats.cpu.logicalCores }}</b></div>
-            <div class="detail-row"><span>{{ $t('perfView.baseClock') }}</span><b>{{ stats.cpu.baseClock }} MHz</b><span class="sep">|</span><span>{{ $t('perfView.curClock') }}</span><b>{{ stats.cpu.speed }} MHz</b></div>
-            <div class="detail-row"><span>{{ $t('perfView.avgClock') }}</span><b>{{ avgCoreFreq }} MHz</b><span class="sep">|</span><span>L2</span><b>{{ formatKb(stats.cpu.l2Cache) }}</b></div>
+            <div class="detail-row"><span>{{ $t('perfView.baseClock') }}</span><b>{{ formatGhz(stats.cpu.baseClock) }} GHz</b><span class="sep">|</span><span>{{ $t('perfView.curClock') }}</span><b>{{ formatGhz(stats.cpu.speed) }} GHz</b></div>
+            <div class="detail-row"><span>{{ $t('perfView.avgClock') }}</span><b>{{ formatGhz(avgCoreFreq) }} GHz</b><span class="sep">|</span><span>L2</span><b>{{ formatKb(stats.cpu.l2Cache) }}</b></div>
             <div class="detail-row" v-if="stats.cpu.l3Cache"><span>L3 Cache</span><b>{{ formatKb(stats.cpu.l3Cache) }}</b></div>
           </div>
           </div>
@@ -254,8 +257,8 @@ onUnmounted(() => {
           </div>
           <!-- GPU 传感器 -->
           <div v-if="effectiveShowGpuSensors" class="gpu-sensors">
-            <div class="sensor" v-if="stats.gpu.coreClock !== null"><SvgIcon icon="mdi:sine-wave" class="sensor-icon" /><span>{{ $t('perfView.gpuCore') }}</span><b>{{ stats.gpu.coreClock }} MHz</b></div>
-            <div class="sensor" v-if="stats.gpu.memClock !== null"><SvgIcon icon="mdi:memory" class="sensor-icon" /><span>{{ $t('perfView.gpuMem') }}</span><b>{{ stats.gpu.memClock }} MHz</b></div>
+            <div class="sensor" v-if="stats.gpu.coreClock !== null"><SvgIcon icon="mdi:sine-wave" class="sensor-icon" /><span>{{ $t('perfView.gpuCore') }}</span><b>{{ formatGhz(stats.gpu.coreClock!) }} GHz</b></div>
+            <div class="sensor" v-if="stats.gpu.memClock !== null"><SvgIcon icon="mdi:memory" class="sensor-icon" /><span>{{ $t('perfView.gpuMem') }}</span><b>{{ formatGhz(stats.gpu.memClock!) }} GHz</b></div>
             <div class="sensor" v-if="stats.gpu.powerDraw !== null"><SvgIcon icon="mdi:flash" class="sensor-icon" /><span>{{ $t('perfView.gpuPower') }}</span><b :style="{ color: usageColor(stats.gpu.powerDraw) }">{{ stats.gpu.powerDraw }} W</b></div>
             <div class="sensor" v-if="stats.gpu.fanSpeed !== null"><SvgIcon icon="mdi:fan" class="sensor-icon" /><span>{{ $t('perfView.gpuFan') }}</span><b>{{ stats.gpu.fanSpeed }}%</b></div>
           </div>

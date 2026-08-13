@@ -55,7 +55,7 @@ export function useGameStatus(deps: GameStatusDeps) {
   /** 游戏状态检查定时器 */
   let gameCheckTimer: ReturnType<typeof setInterval> | null = null
 
-  /** 是否已弹窗提示过 GSI 异常（配置缺失/服务未启动；避免 10 秒轮询反复打扰；GSI 恢复正常后重置） */
+  /** 是否已弹窗提示过 GSI 服务未启动（避免 10 秒轮询反复打扰；服务启动成功后重置） */
   let gsiIssueNotified = false
 
   // ===== 游戏状态检查 =====
@@ -72,23 +72,6 @@ export function useGameStatus(deps: GameStatusDeps) {
       if (wasRunning && !isRunning) {
         safeLog('🛑 检测到游戏已关闭')
         reportPlayerQuit()
-      }
-
-      const csgo2PathValue = unref(csgo2Path)
-
-      // GSI 配置始终同步到当前服务端口（内容一致时内部跳过，端口变化自动重写）
-      const { success: configSynced } = await window.ipcRenderer.createGsiConfig(csgo2PathValue, unref(steamPath))
-      if (configSynced) {
-        // 同步成功，重置提示标记，后续再次异常仍可提示
-        gsiIssueNotified = false
-      } else if (!gsiIssueNotified) {
-        gsiIssueNotified = true
-        safeLog('GSI 配置文件缺失：已为你创建 GSI 服务，请使用登录器重启游戏')
-        window.$notification?.error({
-          title: 'GSI 配置文件缺失',
-          content: '已为你创建 GSI 服务，请使用登录器重启游戏',
-          duration: 5000,
-        })
       }
 
       // GSI 服务与应用生命周期解耦：应用可用后持续保活，游戏启动即可推送数据，
@@ -151,7 +134,7 @@ export function useGameStatus(deps: GameStatusDeps) {
 
   // ===== 游戏启动 =====
 
-  /** 检查游戏启动前的准备工作 */
+  /** 检查游戏启动前的准备工作（GSI 配置已在应用启动时同步，此处仅校验路径） */
   async function ensureGameStartReady(): Promise<boolean> {
     if (!unref(csgo2Path)) {
       console.error('未配置 CS2 路径，请在设置中配置')
@@ -163,13 +146,6 @@ export function useGameStatus(deps: GameStatusDeps) {
       console.error('未配置 Steam 路径，请在设置中配置')
       window.$message?.error('未配置 Steam 路径，请在设置中配置')
       return false
-    }
-
-    const csgo2PathValue = unref(csgo2Path)
-    // 始终同步 cfg 到当前端口（内容一致时内部跳过写入，幂等）
-    const { success } = await window.ipcRenderer.createGsiConfig(csgo2PathValue, unref(steamPath))
-    if (!success) {
-      window.$message?.error('GSI 配置文件创建失败，部分功能可能无法使用')
     }
 
     return true

@@ -97,26 +97,38 @@ function calcUsage(
   return Math.min(100, Math.max(0, Math.round(((td - id) / td) * 1000) / 10))
 }
 
-/** 解析 wmic /format:csv 输出为数据行二维数组（跳过表头） */
-function wmicRows(out: string): string[][] {
-  return out.trim()
-    .split(/\r?\n/)
-    .slice(1)
-    .map((l) => l.split(','))
-    .filter((r) => r.length > 1)
+/** 执行 PowerShell 查询，失败返回 null（Win11 已移除 wmic，统一走 CIM） */
+async function execPs(cmd: string): Promise<string | null> {
+  return execQuiet(`powershell -NoProfile -NonInteractive -Command "${cmd}"`)
+}
+
+/** 解析 PowerShell Format-List 输出（Key : Value 行，空行分隔对象）为记录数组 */
+function psRecords(out: string | null): Record<string, string>[] {
+  if (!out) return []
+  const records: Record<string, string>[] = []
+  for (const block of out.trim().split(/\r?\n\s*\r?\n/)) {
+    const record: Record<string, string> = {}
+    for (const line of block.split(/\r?\n/)) {
+      const m = line.match(/^\s*([^:]+?)\s*:\s*(.*)$/)
+      if (m && m[1]?.trim()) record[m[1].trim()] = m[2].trim()
+    }
+    if (Object.keys(record).length) records.push(record)
+  }
+  return records
 }
 
 // ===== CPU =====
 
 async function getCpuTemperature(): Promise<number | null> {
-  const out = await execQuiet(
-    'wmic /namespace:\\\\root\\wmi ' +
-      'path MSAcpi_ThermalZoneTemperature get CurrentTemperature /value'
+  const out = await execPs(
+    'Get-CimInstance -Namespace root/wmi -ClassName MSAcpi_ThermalZoneTemperature | Select-Object CurrentTemperature | Format-List'
   )
-  if (!out) return null
-  const m = out.match(/CurrentTemperature=(\d+)/i)
-  if (!m) return null
-  return Math.round(((parseInt(m[1], 10) / 10) - 273.15) * 10) / 10
+  const record = psRecords(out)[0]
+  if (!record) return null
+  const kelvin = safeInt(record.CurrentTemperature) / 10
+  // 无效读数（ACPI 不支持时返回 0，换算后为 -273.15°C），视为无温度
+  if (kelvin <= 100) return null
+  return Math.round((kelvin - 273.15) * 10) / 10
 }
 
 async function initCpuStatic() {
@@ -126,23 +138,23 @@ async function initCpuStatic() {
   let physicalCores = logicalCores
   let l2Cache = 0
   let l3Cache = 0
-  const out = await execQuiet(
-    'wmic cpu get L2CacheSize,L3CacheSize,MaxClockSpeed,' +
-      'NumberOfCores,NumberOfLogicalProcessors /format:csv'
+  const out = await execPs(
+    'Get-CimInstance Win32_Processor | ' +
+      'Select-Object NumberOfCores,NumberOfLogicalProcessors,L2CacheSize,L3CacheSize,MaxClockSpeed | Format-List'
   )
-  const row = out ? wmicRows(out).find((c) => c.length >= 6) : undefined
-  if (row) {
-    const nc = safeInt(row[4])
+  const record = psRecords(out)[0]
+  if (record) {
+    const nc = safeInt(record.NumberOfCores)
     physicalCores = nc > 0 ? nc : logicalCores
-    l2Cache = safeInt(row[2])
-    l3Cache = safeInt(row[3])
+    l2Cache = safeInt(record.L2CacheSize)
+    l3Cache = safeInt(record.L3CacheSize)
   }
   cpuStaticInfo = {
     physicalCores,
     logicalCores,
     l2Cache,
     l3Cache,
-    baseClock: safeInt(row?.[1]) || cpus[0]?.speed || 0
+    baseClock: safeInt(record?.MaxClockSpeed) || cpus[0]?.speed || 0
   }
 }
 
@@ -188,23 +200,20 @@ async function initMemoryStatic() {
     26: 'DDR4',
     34: 'DDR5'
   }
-  const out = await execQuiet(
-    'wmic memorychip get Speed,MemoryType,Manufacturer,Capacity,' +
-      'ConfiguredClockSpeed,SMBIOSMemoryType /format:csv'
+  const out = await execPs(
+    'Get-CimInstance Win32_PhysicalMemory | ' +
+      'Select-Object Capacity,Manufacturer,ConfiguredClockSpeed,SMBIOSMemoryType,Speed | Format-List'
   )
-  if (out) {
-    for (const cols of wmicRows(out)) {
-      if (cols.length < 7) continue
-      const cap = safeInt(cols[3])
-      if (cap <= 0) continue
-      const smbiosType = safeInt(cols[5])
-      sticks.push({
-        speed: safeInt(cols[4]) || safeInt(cols[1]),
-        type: typeMap[smbiosType] || `Type${smbiosType}`,
-        manufacturer: cols[2]?.trim() || '',
-        capacity: cap
-      })
-    }
+  for (const record of psRecords(out)) {
+    const cap = safeInt(record.Capacity)
+    if (cap <= 0) continue
+    const smbiosType = safeInt(record.SMBIOSMemoryType)
+    sticks.push({
+      speed: safeInt(record.Speed) || safeInt(record.ConfiguredClockSpeed),
+      type: typeMap[smbiosType] || `Type${smbiosType}`,
+      manufacturer: record.Manufacturer?.trim() || '',
+      capacity: cap
+    })
   }
   memoryStaticInfo = { sticks }
 }
@@ -239,17 +248,16 @@ async function initGpuStatic() {
   let model = ''
   let adapterRam = 0
   let driverVersion = ''
-  const out = await execQuiet(
-    'wmic path win32_VideoController get name,AdapterRAM,' +
-      'DriverVersion /format:csv'
+  const out = await execPs(
+    'Get-CimInstance win32_VideoController | ' +
+      'Select-Object Name,AdapterRAM,DriverVersion | Format-List'
   )
-  const row = out
-    ? wmicRows(out).find((c) => c.length >= 4 && c[3]?.trim())
-    : undefined
-  if (row) {
-    model = row[3].trim()
-    adapterRam = safeInt(row[2])
-    driverVersion = row[1]?.trim() || ''
+  // 优先取有显存容量的真实显卡（虚拟显示器 AdapterRAM 为空）
+  const record = psRecords(out).find(r => safeInt(r.AdapterRAM) > 0) ?? psRecords(out)[0]
+  if (record) {
+    model = record.Name?.trim() || ''
+    adapterRam = safeInt(record.AdapterRAM)
+    driverVersion = record.DriverVersion?.trim() || ''
   }
   gpuStaticInfo = { model, adapterRam, driverVersion }
 }
@@ -282,20 +290,26 @@ async function getGpuSensors(): Promise<GpuSensors> {
 // ===== Swap / 虚拟内存 =====
 
 async function getSwapInfo(): Promise<{ total: number; free: number }> {
-  const out = await execQuiet('wmic pagefile get AllocatedBaseSize,CurrentUsage /format:csv')
-  const row = out ? wmicRows(out).find((c) => c.length >= 3) : undefined
-  if (!row) return { total: 0, free: 0 }
-  const total = safeInt(row[2]) * 1024 * 1024
-  return { total, free: total - safeInt(row[1]) * 1024 * 1024 }
+  const out = await execPs(
+    'Get-CimInstance Win32_PageFileUsage | Select-Object AllocatedBaseSize,CurrentUsage | Format-List'
+  )
+  const record = psRecords(out)[0]
+  if (!record) return { total: 0, free: 0 }
+  const total = safeInt(record.AllocatedBaseSize) * 1024 * 1024
+  const used = safeInt(record.CurrentUsage) * 1024 * 1024
+  return { total, free: Math.max(0, total - used) }
 }
 
 async function getVirtualMemory(): Promise<{ total: number; free: number } | null> {
-  const out = await execQuiet('wmic OS get TotalVirtualMemorySize,FreeVirtualMemory /format:csv')
-  const row = out
-    ? wmicRows(out).find((c) => c.length >= 3 && safeInt(c[1]) > 0)
-    : undefined
-  if (!row) return null
-  return { total: safeInt(row[1]) * 1024, free: safeInt(row[2]) * 1024 }
+  const out = await execPs(
+    'Get-CimInstance Win32_OperatingSystem | Select-Object TotalVirtualMemorySize,FreeVirtualMemory | Format-List'
+  )
+  const record = psRecords(out)[0]
+  if (!record) return null
+  const total = safeInt(record.TotalVirtualMemorySize) * 1024
+  const free = safeInt(record.FreeVirtualMemory) * 1024
+  if (total <= 0) return null
+  return { total, free }
 }
 
 // ===== 主采集 =====
@@ -354,7 +368,8 @@ async function collectStats() {
     },
     gpu: {
       model: gpuStaticInfo?.model ?? '',
-      adapterRam: gpuStaticInfo?.adapterRam ?? 0,
+      // WMI AdapterRAM 有 4GB 上限，优先用 nvidia-smi 的真实显存总量
+      adapterRam: gpuSensors.memoryTotal ?? gpuStaticInfo?.adapterRam ?? 0,
       driverVersion: gpuStaticInfo?.driverVersion ?? '',
       ...gpuSensors
     },
