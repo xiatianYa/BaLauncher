@@ -313,16 +313,16 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
                 </span>
               </div>
             </div>
-            <div class="server-card-button mt-6px"> 
-              <div class="one-btn h-30px" @click="handleJoin(server)">
+            <div class="server-card-button mt-6px">
+              <button class="action-btn btn-join" @click="handleJoin(server)">
                 <SvgIcon icon="iconamoon:enter" class="text-22px" />
-              </div>
-              <div class="two-btn h-30px" @click="handleCopy(server)">
+              </button>
+              <button class="action-btn btn-copy" @click="handleCopy(server)">
                 <SvgIcon icon="solar:copy-outline" class="text-22px" />
-              </div>
-              <div class="three-btn h-30px" @click="handleAutoJoin(server)">
+              </button>
+              <button class="action-btn btn-auto" @click="handleAutoJoin(server)">
                 <SvgIcon icon="material-symbols:alarm-smart-wake-outline" class="text-22px" />
-              </div>
+              </button>
             </div>
           </div>
           <div v-else class="sercer-card overflow-hidden flex flex-col">
@@ -341,11 +341,11 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
               {{ $t('server.waiting') }}
             </div>
             <div class="server-card-button mt-6px">
-              <div class="three-btn h-30px" @click="handleRefresh(server)">
+              <button class="action-btn btn-refresh" @click="handleRefresh(server)">
                 <div :class="{ 'refresh-icon-spinning': refreshingAddrs.includes(server.connectStr) }">
                   <SvgIcon icon="material-symbols:refresh" class="text-22px" />
                 </div>
-              </div>
+              </button>
             </div>
           </div>
             </div>
@@ -522,95 +522,93 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   }
 
   .server-card-button {
+    /* 悬停才显示的操作栏：绝对定位卡片底部、固定高度，不占布局空间（无占位） */
+    position: absolute;
+    bottom: 5px; /* 与卡片底部保持距离 */
+    left: 0;
+    right: 0;
+    height: 30px;
     display: flex;
-    flex: 1;
-    justify-content: center;
-    align-items: end;
-    position: sticky;
+    justify-content: flex-start; /* 按钮从左到右排列 */
+    align-items: center;
+    gap: 8px;
+    padding-left: 8px;
     width: 100%;
     color: #ffffff;
     z-index: 2;
+    opacity: 0;
+    transform: translateY(100%);
+    /* !important：覆盖全局 .n-config-provider * 的过渡覆盖，否则 opacity/transform 过渡不生效导致瞬间出现 */
+    transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    pointer-events: none; /* 隐藏时不可点击 */
 
-    /* 改为列方向布局 */
-    .one-btn {
+    /* 操作按钮：独立 button、固定 30x30、不撑满整行（留出空隙，后续可继续追加按钮） */
+    .action-btn {
       display: flex;
       justify-content: center;
       align-items: center;
-      flex: 3;
-      background: rgba(0, 0, 0, 0.4);
+      width: 30px;
+      height: 30px;
+      padding: 0;
+      border: none;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.45);
       cursor: pointer;
-      color: rgba(34, 197, 94, 0.85);
-      transition: all 0.2s ease;
-
-      &:hover {
-        background: rgba(34, 197, 94, 0.25);
-        color: #22c55e;
-      }
+      color: #fff;
+      /* !important：同上，覆盖全局过渡，保证自身 hover/active 动画生效 */
+      transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease !important;
 
       &:active {
-        transform: scale(0.95);
-      }
-    }
-
-    .two-btn {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex-grow: 2;
-      background: rgba(0, 0, 0, 0.4);
-      cursor: pointer;
-      color: rgba(59, 130, 246, 0.85);
-      transition: all 0.2s ease;
-      border-left: 1px solid rgba(var(--app-rgb), 0.08);
-      border-right: 1px solid rgba(var(--app-rgb), 0.08);
-
-      &:hover {
-        background: rgba(59, 130, 246, 0.25);
-        color: #3b82f6;
+        transform: scale(0.92);
       }
 
-      &:active {
-        transform: scale(0.95);
-      }
-    }
+      &.btn-join {
+        color: rgba(34, 197, 94, 0.9);
 
-    .three-btn {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex: 3;
-      background: rgba(0, 0, 0, 0.4);
-      cursor: pointer;
-      color: rgba(249, 115, 22, 0.85);
-      transition: all 0.2s ease;
-
-      &:hover {
-        background: rgba(249, 115, 22, 0.25);
-        color: #f97316;
+        &:hover {
+          background: rgba(34, 197, 94, 0.25);
+          color: #22c55e;
+        }
       }
 
-      &:active {
-        transform: scale(0.95);
+      &.btn-copy {
+        color: rgba(59, 130, 246, 0.9);
+
+        &:hover {
+          background: rgba(59, 130, 246, 0.25);
+          color: #3b82f6;
+        }
       }
-    }
 
-    .four-btn {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      flex: 2;
-      background-color: rgba(0, 0, 0, 0.5);
-      cursor: pointer;
-      color: rgba(239, 68, 68, 0.7);
+      &.btn-auto {
+        color: rgba(249, 115, 22, 0.9);
 
-      &:hover {
-        background-color: rgba(var(--app-rgb), 0.1);
+        &:hover {
+          background: rgba(249, 115, 22, 0.25);
+          color: #f97316;
+        }
+      }
+
+      &.btn-refresh {
+        color: rgba(156, 163, 175, 0.9);
+
+        &:hover {
+          background: rgba(156, 163, 175, 0.25);
+          color: #9ca3af;
+        }
       }
     }
   }
 
   &:hover {
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* 鼠标移入卡片时操作栏从底部滑入显示 */
+  &:hover .server-card-button {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
   }
 
   &:hover .server-card-bg {

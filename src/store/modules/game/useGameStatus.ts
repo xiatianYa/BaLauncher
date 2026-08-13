@@ -1,6 +1,7 @@
 import { unref } from 'vue'
 import type { Ref } from 'vue'
 import type { GamePlatform } from '@/constants/app'
+import { reportPlayerQuit } from '@/utils/ws/server'
 
 /** 游戏状态检查间隔（毫秒） */
 const GAME_CHECK_INTERVAL = 10000
@@ -60,8 +61,16 @@ export function useGameStatus(deps: GameStatusDeps) {
   /** 检查游戏是否运行中 */
   async function checkGameRunning(): Promise<void> {
     try {
+      // 记录本轮检查前的运行状态，用于检测"运行中 → 已关闭"的跳变
+      const wasRunning = unref(isGameRunning)
       const { isRunning } = await window.ipcRenderer.checkCsgo2Running()
       isGameRunning.value = isRunning
+
+      // 用户关闭游戏（进程退出）时上报退出事件 type 113
+      if (wasRunning && !isRunning) {
+        safeLog('🛑 检测到游戏已关闭')
+        reportPlayerQuit()
+      }
 
       const csgo2PathValue = unref(csgo2Path)
 
