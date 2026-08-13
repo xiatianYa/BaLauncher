@@ -25,8 +25,8 @@ declare global {
       queryGameServer: (host: string, port?: number) => Promise<any>;
       queryGameServers: (gameServers: string[], attempts?: number, timeout?: number | number[]) => Promise<Api.Game.SeverVoListResult[]>;
       checkCsgo2Running: () => Promise<{ isRunning: boolean }>;
-      checkGsiConfig: (csgo2Path: string) => Promise<{ exists: boolean }>;
-      createGsiConfig: (csgo2Path: string) => Promise<{ success: boolean }>;
+      checkGsiConfig: (csgo2Path: string, steamPath?: string) => Promise<{ exists: boolean }>;
+      createGsiConfig: (csgo2Path: string, steamPath?: string) => Promise<{ success: boolean }>;
       startGsiService: () => Promise<{ success: boolean; alreadyRunning?: boolean; error?: string }>;
       stopGsiService: () => Promise<{ success: boolean }>;
       checkGsiConnected: () => Promise<{ isConnected: boolean }>;

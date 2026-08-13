@@ -58,6 +58,8 @@ export function useGameStatus(deps: GameStatusDeps) {
   /** 是否已弹窗提示过 GSI 异常（配置缺失/服务未启动；避免 10 秒轮询反复打扰；GSI 恢复正常后重置） */
   let gsiIssueNotified = false
 
+  // ===== 游戏状态检查 =====
+
   /** 检查游戏是否运行中 */
   async function checkGameRunning(): Promise<void> {
     try {
@@ -74,22 +76,19 @@ export function useGameStatus(deps: GameStatusDeps) {
 
       const csgo2PathValue = unref(csgo2Path)
 
-      // GSI 配置缺失时自动创建（首次使用、从未启动过游戏时也能补全）
-      const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2PathValue)
-      if (!exists) {
-        const created = await window.ipcRenderer.createGsiConfig(csgo2PathValue)
-        if (created) {
-          // 创建成功，重置提示标记，后续再次异常仍可提示
-          gsiIssueNotified = false
-        } else if (!gsiIssueNotified) {
-          gsiIssueNotified = true
-          safeLog('GSI 配置文件缺失：已为你创建 GSI 服务，请使用登录器重启游戏')
-          window.$notification?.error({
-            title: 'GSI 配置文件缺失',
-            content: '已为你创建 GSI 服务，请使用登录器重启游戏',
-            duration: 5000,
-          })
-        }
+      // GSI 配置始终同步到当前服务端口（内容一致时内部跳过，端口变化自动重写）
+      const { success: configSynced } = await window.ipcRenderer.createGsiConfig(csgo2PathValue, unref(steamPath))
+      if (configSynced) {
+        // 同步成功，重置提示标记，后续再次异常仍可提示
+        gsiIssueNotified = false
+      } else if (!gsiIssueNotified) {
+        gsiIssueNotified = true
+        safeLog('GSI 配置文件缺失：已为你创建 GSI 服务，请使用登录器重启游戏')
+        window.$notification?.error({
+          title: 'GSI 配置文件缺失',
+          content: '已为你创建 GSI 服务，请使用登录器重启游戏',
+          duration: 5000,
+        })
       }
 
       // GSI 服务与应用生命周期解耦：应用可用后持续保活，游戏启动即可推送数据，
@@ -150,6 +149,8 @@ export function useGameStatus(deps: GameStatusDeps) {
     gameCheckTimer = null
   }
 
+  // ===== 游戏启动 =====
+
   /** 检查游戏启动前的准备工作 */
   async function ensureGameStartReady(): Promise<boolean> {
     if (!unref(csgo2Path)) {
@@ -165,12 +166,10 @@ export function useGameStatus(deps: GameStatusDeps) {
     }
 
     const csgo2PathValue = unref(csgo2Path)
-    const { exists } = await window.ipcRenderer.checkGsiConfig(csgo2PathValue)
-    if (!exists) {
-      const { success } = await window.ipcRenderer.createGsiConfig(csgo2PathValue)
-      if (!success) {
-        window.$message?.error('GSI 配置文件创建失败，部分功能可能无法使用')
-      }
+    // 始终同步 cfg 到当前端口（内容一致时内部跳过写入，幂等）
+    const { success } = await window.ipcRenderer.createGsiConfig(csgo2PathValue, unref(steamPath))
+    if (!success) {
+      window.$message?.error('GSI 配置文件创建失败，部分功能可能无法使用')
     }
 
     return true
@@ -210,7 +209,9 @@ export function useGameStatus(deps: GameStatusDeps) {
     return true
   }
 
-  /** 使用Steam URL连接服务器 */
+  // ===== 连接服务器 =====
+
+  /** 使用 Steam URL 连接服务器 */
   async function connectServerUsingSteamUrl(): Promise<void> {
     const joinInfo = unref(joinServerInfo)
     if (!joinInfo) return
