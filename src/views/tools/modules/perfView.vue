@@ -31,7 +31,6 @@ const {
   hasGpuUsage,
   hasGpuMem,
   hasVirtualMemory,
-  effectiveHasCpuTemp,
   effectiveHasGpuTemp,
   effectiveShowSticks,
   effectiveShowGpuSensors,
@@ -191,9 +190,6 @@ onUnmounted(() => {
           <div class="card-header"><SvgIcon icon="heroicons:cpu-chip" class="card-icon cpu-color" /><span class="card-title">CPU</span></div>
           <div class="big-value" :style="{ color: usageColor(stats.cpu.usage) }">{{ stats.cpu.usage }}<span class="unit">%</span></div>
           <NProgress :percentage="stats.cpu.usage" :color="usageColor(stats.cpu.usage)" :height="6" :border-radius="3" :show-indicator="false" class="progress-bar" />
-          <!-- 温度 -->
-          <div class="temp-row" v-if="effectiveHasCpuTemp"><SvgIcon icon="mdi:thermometer" class="temp-icon" :style="{ color: tempColor(stats.cpu.temperature!) }" /><span class="temp-value" :style="{ color: tempColor(stats.cpu.temperature!) }">{{ stats.cpu.temperature }}°C</span></div>
-          <div class="temp-row" v-else><SvgIcon icon="mdi:thermometer-off" class="temp-icon muted" /><span class="temp-na">{{ $t('perfView.tempUnavailable') }}</span></div>
           <!-- 型号 -->
           <div class="info-row">{{ stats.cpu.model || '—' }}</div>
           <!-- 详情 -->

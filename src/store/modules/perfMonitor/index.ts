@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 
 /** 性能数据默认空值 */
 const EMPTY_SNAPSHOT: PerfMonitor.PerfSnapshot = {
-  cpu: { model: '', physicalCores: 0, logicalCores: 0, baseClock: 0, l2Cache: 0, l3Cache: 0, speed: 0, usage: 0, temperature: null, perCoreUsage: [], perCoreFreq: [] },
+  cpu: { model: '', physicalCores: 0, logicalCores: 0, baseClock: 0, l2Cache: 0, l3Cache: 0, speed: 0, usage: 0, perCoreUsage: [], perCoreFreq: [] },
   memory: { total: 0, used: 0, free: 0, usagePercent: 0, swapTotal: 0, swapUsed: 0, swapFree: 0, swapUsagePercent: 0, virtualTotal: 0, virtualFree: 0, sticks: [] },
   gpu: { model: '', adapterRam: 0, driverVersion: '', temperature: null, usagePercent: null, memoryUsed: null, memoryTotal: null, coreClock: null, memClock: null, powerDraw: null, fanSpeed: null },
   process: { memoryUsage: 0, heapUsed: 0, heapTotal: 0, cpuUsage: 0 },
@@ -37,7 +37,7 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
   /** 当前轮询间隔 @see PerfMonitor.PerfConfig.pollInterval */
   const pollInterval = ref(2000)
 
-  /** 是否显示温度 @see PerfMonitor.PerfConfig.showTemperature */
+  /** 是否显示 GPU 温度 @see PerfMonitor.PerfConfig.showTemperature */
   const showTemperature = ref(true)
   /** 是否显示内存条信息 @see PerfMonitor.PerfConfig.showMemSticks */
   const showMemSticks = ref(true)
@@ -58,13 +58,11 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
   const miniShowRam = ref(true)
   /** 是否在浮窗中显示 GPU 使用率 @see PerfMonitor.PerfMiniConfig.showGpu */
   const miniShowGpu = ref(true)
-  /** 是否在浮窗中显示温度 @see PerfMonitor.PerfMiniConfig.showTemperature */
+  /** 是否在浮窗中显示 GPU 温度 @see PerfMonitor.PerfMiniConfig.showTemperature */
   const miniShowTemperature = ref(true)
 
   /* ===== 计算属性（数据检测） ===== */
 
-  /** CPU 温度是否可用 */
-  const hasCpuTemp = computed(() => stats.value.cpu.temperature !== null)
   /** NVIDIA GPU 实时使用率是否可用 */
   const hasGpuUsage = computed(() => stats.value.gpu.usagePercent !== null)
   /** GPU 传感器数据是否可用 */
@@ -80,7 +78,6 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
 
   /* ===== 控制显示的计算属性（开关 × 数据可用性） ===== */
 
-  const effectiveHasCpuTemp = computed(() => showTemperature.value && hasCpuTemp.value)
   const effectiveHasGpuTemp = computed(() => showTemperature.value && stats.value.gpu.temperature !== null)
   const effectiveShowSticks = computed(() => showMemSticks.value && hasMemorySticks.value)
   const effectiveShowGpuSensors = computed(() => showGpuSensors.value && hasGpuSensors.value)
@@ -187,13 +184,11 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
     miniShowGpu,
     miniShowTemperature,
     // 计算属性
-    hasCpuTemp,
     hasGpuUsage,
     hasGpuSensors,
     hasGpuMem,
     hasMemorySticks,
     hasVirtualMemory,
-    effectiveHasCpuTemp,
     effectiveHasGpuTemp,
     effectiveShowSticks,
     effectiveShowGpuSensors,

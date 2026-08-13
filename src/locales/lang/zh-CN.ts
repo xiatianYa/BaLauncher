@@ -467,7 +467,6 @@ export default {
     procCpu: '进程 CPU',
     cores: 'CPU 核心',
     core: '核心',
-    tempUnavailable: '无传感器数据',
     vram: '显存占用',
     physCores: '物理核心',
     logiCores: '逻辑核心',

@@ -467,7 +467,6 @@ export default {
     procCpu: 'Process CPU',
     cores: 'CPU Cores',
     core: 'Core',
-    tempUnavailable: 'No sensor data',
     vram: 'VRAM Usage',
     physCores: 'Physical Cores',
     logiCores: 'Logical Cores',

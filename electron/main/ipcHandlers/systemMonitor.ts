@@ -119,18 +119,6 @@ function psRecords(out: string | null): Record<string, string>[] {
 
 // ===== CPU =====
 
-async function getCpuTemperature(): Promise<number | null> {
-  const out = await execPs(
-    'Get-CimInstance -Namespace root/wmi -ClassName MSAcpi_ThermalZoneTemperature | Select-Object CurrentTemperature | Format-List'
-  )
-  const record = psRecords(out)[0]
-  if (!record) return null
-  const kelvin = safeInt(record.CurrentTemperature) / 10
-  // 无效读数（ACPI 不支持时返回 0，换算后为 -273.15°C），视为无温度
-  if (kelvin <= 100) return null
-  return Math.round((kelvin - 273.15) * 10) / 10
-}
-
 async function initCpuStatic() {
   if (cpuStaticInfo) return
   const cpus = os.cpus()
@@ -321,9 +309,8 @@ async function collectStats() {
     isInitialized = true
   }
 
-  // 并发执行所有外部命令（CPU 温度 / GPU 传感器 / 虚拟内存 / Swap）
-  const [cpuTemp, gpuSensors, vm, swap] = await Promise.all([
-    getCpuTemperature(),
+  // 并发执行所有外部命令（GPU 传感器 / 虚拟内存 / Swap）
+  const [gpuSensors, vm, swap] = await Promise.all([
     getGpuSensors(),
     getVirtualMemory(),
     getSwapInfo()
@@ -347,7 +334,6 @@ async function collectStats() {
       l3Cache: cpuStaticInfo?.l3Cache ?? 0,
       speed: cpu.speed,
       usage: cpu.usage,
-      temperature: cpuTemp,
       perCoreUsage: cpu.perCoreUsage,
       perCoreFreq: cpu.perCoreFreq
     },

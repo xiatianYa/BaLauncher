@@ -94,13 +94,13 @@ export function setupWindowControlIpc() {
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { background:#1a1a2e; color:#e0e0e0; font-family:'Segoe UI',sans-serif; overflow:hidden; user-select:none; transition:opacity 0.15s; }
-  .wrap { display:flex; flex-direction:row; gap:8px; padding:6px 10px; height:100vh; align-items:center; }
-  .item { display:flex; align-items:center; gap:4px; white-space:nowrap; }
+  .wrap { display:flex; flex-direction:row; gap:6px; padding:6px 8px; height:100vh; align-items:center; }
+  .item { display:flex; align-items:center; gap:3px; white-space:nowrap; }
   .label { font-size:10px; color:#888; }
   .val { font-size:14px; font-weight:700; }
-  .bar { width:40px; height:3px; border-radius:2px; background:#333; overflow:hidden; }
+  .bar { width:30px; height:3px; border-radius:2px; background:#333; overflow:hidden; }
   .bar-fill { height:100%; border-radius:2px; transition:width 0.5s; }
-  .sep { width:1px; height:20px; background:rgba(255,255,255,.1); margin:0 2px; }
+  .sep { width:1px; height:20px; background:rgba(255,255,255,.1); margin:0 1px; }
   .c0{color:#4ade80}.c1{color:#fbbf24}.c2{color:#f97316}.c3{color:#ef4444}
   .hidden { display:none; }
   .ram-extra { font-size:10px; color:#777; font-weight:600; }
@@ -117,8 +117,6 @@ export function setupWindowControlIpc() {
   <div class="item" id="item-gpu"><span class="label">GPU</span><span class="val" id="gpu">--</span><span class="label">%</span></div>
   <div class="bar" id="bar-gpu"><div class="bar-fill" id="gpu-bar"></div></div>
   <div class="sep" id="sep-gpu"></div>
-  <div class="item" id="item-cpu-t"><span class="label">CPU</span><span class="val" id="cpu-t">--</span><span class="label">°C</span></div>
-  <div class="sep" id="sep-gpu-t"></div>
   <div class="item" id="item-gpu-t"><span class="label">GPU</span><span class="val" id="gpu-t">--</span><span class="label">°C</span></div>
 </div>
 <script>
@@ -150,10 +148,8 @@ export function setupWindowControlIpc() {
       const showGpu = cfg.showGpu !== false;
       document.getElementById('item-gpu').className = showGpu ? 'item' : 'hidden';
       document.getElementById('bar-gpu').className = showGpu ? 'bar' : 'hidden';
-      // 温度区域（统一控制）
+      // 温度区域（GPU）
       const showTemp = cfg.showTemperature !== false;
-      document.getElementById('item-cpu-t').className = showTemp ? 'item' : 'hidden';
-      document.getElementById('sep-gpu-t').className = showTemp ? 'sep' : 'hidden';
       document.getElementById('item-gpu-t').className = showTemp ? 'item' : 'hidden';
       // 分隔线：仅在相邻两个区块都可见时显示，避免连续分隔线或尾部多余留空
       const anyMain = showCpu || showRam || showGpu;
@@ -181,7 +177,6 @@ export function setupWindowControlIpc() {
       gpu.className = 'val '+uColor(gpuPct);
       gpuBar.style.width = gpuPct+'%';
       gpuBar.style.backgroundColor = gpuPct<40?'#4ade80':gpuPct<70?'#fbbf24':gpuPct<90?'#f97316':'#ef4444';
-      document.getElementById('cpu-t').textContent = data.cpu.temperature ?? '--';
       document.getElementById('gpu-t').textContent = data.gpu.temperature ?? '--';
     } catch(e){}
   }
@@ -216,7 +211,7 @@ export function setupWindowControlIpc() {
     const display = screen.getPrimaryDisplay();
     const { width: screenWidth, height: screenHeight } = display.workAreaSize;
     // 初始宽度给个保守值，页面加载后由 fitWidth 自动贴合内容
-    const winWidth = 640;
+    const winWidth = 480;
     const winHeight = 42;
     const x = screenWidth - winWidth - 16;
     const y = 8;

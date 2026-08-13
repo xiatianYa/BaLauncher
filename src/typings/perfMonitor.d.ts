@@ -20,8 +20,6 @@ declare namespace PerfMonitor {
     speed: number
     /** 整体使用率（%） */
     usage: number
-    /** 温度（°C），无传感器时为 null */
-    temperature: number | null
     /** 每核心使用率数组 */
     perCoreUsage: number[]
     /** 每核心实时频率数组 */
@@ -139,7 +137,7 @@ declare namespace PerfMonitor {
   interface PerfConfig {
     /** 轮询间隔（毫秒），默认 2000 */
     pollInterval: number
-    /** 是否显示 CPU / GPU 温度 */
+    /** 是否显示 GPU 温度 */
     showTemperature: boolean
     /** 是否显示物理内存条详情 */
     showMemSticks: boolean
@@ -161,7 +159,7 @@ declare namespace PerfMonitor {
     showRam: boolean
     /** 是否显示 GPU 使用率 */
     showGpu: boolean
-    /** 是否显示 CPU / GPU 温度 */
+    /** 是否显示 GPU 温度 */
     showTemperature: boolean
   }
 }
