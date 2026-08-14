@@ -1,44 +1,20 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 import { NSlider } from 'naive-ui';
-import { useAppStore } from '@/store/modules/app';
+import { useAppStore, type AudioEventType } from '@/store/modules/app';
 
 const appStore = useAppStore();
 
 const themes = computed(() => appStore.themes);
 const currentTheme = computed(() => appStore.currentTheme);
 
-const themeAudio = ref<HTMLAudioElement | null>(null);
-
 const selectTheme = (themeId: string) => {
   appStore.setTheme(themeId);
-  const audioSrc = appStore.audioMap[themeId] || appStore.audioMap['阿罗娜'];
-  if (!audioSrc) return;
-
-  if (!themeAudio.value) {
-    themeAudio.value = new Audio(audioSrc);
-  } else {
-    themeAudio.value.pause();
-    themeAudio.value.currentTime = 0;
-    themeAudio.value.src = audioSrc;
-  }
-  themeAudio.value.volume = appStore.volume;
-  themeAudio.value.play();
 };
 
-const previewAudio = () => {
-  const audioSrc = appStore.audioMap[currentTheme.value] || appStore.audioMap['阿罗娜'];
-  if (!audioSrc) return;
-
-  if (!themeAudio.value) {
-    themeAudio.value = new Audio(audioSrc);
-  } else {
-    themeAudio.value.pause();
-    themeAudio.value.currentTime = 0;
-    themeAudio.value.src = audioSrc;
-  }
-  themeAudio.value.volume = appStore.volume;
-  themeAudio.value.play();
+/** 试听指定类型的通知音频：未配置或音频丢失时自动回退「系统」音频 */
+const previewAudio = (type: AudioEventType) => {
+  appStore.playThemeAudio(currentTheme.value, type);
 };
 </script>
 
@@ -81,9 +57,13 @@ const previewAudio = () => {
             :marks="{ 0: '0', 0.5: '0.5', 1: '1' }"
             @update:value="appStore.setVolume"
           />
-          <button class="preview-btn" @click="previewAudio">
-            <SvgIcon icon="mdi:volume-high" class="btn-icon" />
-            <span>{{ $t('settings.preview') }}</span>
+          <button class="preview-btn" @click="previewAudio('subscribe')">
+            <SvgIcon icon="mdi:bell-ring-outline" class="btn-icon" />
+            <span>{{ $t('settings.subscribeServer') }}</span>
+          </button>
+          <button class="preview-btn" @click="previewAudio('connect')">
+            <SvgIcon icon="mdi:server-connect" class="btn-icon" />
+            <span>{{ $t('settings.connectServer') }}</span>
           </button>
         </div>
       </div>

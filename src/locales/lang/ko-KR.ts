@@ -461,6 +461,8 @@ export default {
     inputSteamPath: 'Steam 설치 디렉터리를 입력해 주세요',
     volumeControl: '볼륨 조절',
     preview: '미리 듣기',
+    subscribeServer: '서버 구독',
+    connectServer: '서버에 연결',
     langOptions: {
       zhCN: '简体中文',
       zhTW: '繁體中文',

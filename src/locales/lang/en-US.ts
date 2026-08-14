@@ -462,6 +462,8 @@ export default {
     inputSteamPath: 'Enter Steam Directory',
     volumeControl: 'Volume Control',
     preview: 'Preview',
+    subscribeServer: 'Subscribe Server',
+    connectServer: 'Connect to Server',
     langOptions: {
       zhCN: '简体中文',
       zhTW: '繁體中文',

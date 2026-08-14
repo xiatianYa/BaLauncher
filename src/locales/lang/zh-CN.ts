@@ -462,6 +462,8 @@ export default {
     inputSteamPath: '请输入Steam安装目录',
     volumeControl: '音量调节',
     preview: '试听',
+    subscribeServer: '订阅服务器',
+    connectServer: '连接至服务器',
     langOptions: {
       zhCN: '简体中文',
       zhTW: '繁體中文',

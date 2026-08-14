@@ -462,6 +462,8 @@ export default {
     inputSteamPath: '請輸入Steam安裝目錄',
     volumeControl: '音量調整',
     preview: '試聽',
+    subscribeServer: '訂閱伺服器',
+    connectServer: '連線至伺服器',
     langOptions: {
       zhCN: '简体中文',
       zhTW: '繁體中文',

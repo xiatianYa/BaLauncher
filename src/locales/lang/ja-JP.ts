@@ -462,6 +462,8 @@ export default {
     inputSteamPath: 'Steam インストールディレクトリを入力してください',
     volumeControl: '音量調整',
     preview: 'プレビュー',
+    subscribeServer: 'サーバー購読',
+    connectServer: 'サーバーに接続',
     langOptions: {
       zhCN: '简体中文',
       zhTW: '繁體中文',

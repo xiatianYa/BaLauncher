@@ -462,6 +462,8 @@ export default {
     inputSteamPath: 'Введите каталог Steam',
     volumeControl: 'Управление громкостью',
     preview: 'Предпросмотр',
+    subscribeServer: 'Подписка на сервер',
+    connectServer: 'Подключиться к серверу',
     langOptions: {
       zhCN: '简体中文',
       zhTW: '繁體中文',

@@ -5,22 +5,17 @@ import { localStg } from '@/utils/storage'
 import { APP_STORAGE_KEYS, GAME_STORAGE_KEYS } from '@/constants/cache'
 import type { GamePlatform } from '@/constants/app'
 
-// 音频资源
-import audioSystem from '@/assets/video/系统.mp3'
-import audioYuuka from '@/assets/video/优香.mp3'
-import audioHoshino from '@/assets/video/星野.mp3'
-import audioYuzu from '@/assets/video/柚子.mp3'
-import audioAris from '@/assets/video/爱丽丝.mp3'
-import audioShiroko from '@/assets/video/白子.mp3'
-import audioArona from '@/assets/video/阿罗纳.mp3'
+/** 通知音频事件类型：subscribe=地图订阅，connect=连接至服务器 */
+export type AudioEventType = 'subscribe' | 'connect'
+
+// 通知音频资源：每个主题按「地图订阅 / 连接至服务器」两种事件各一个
+import audioSystemSubscribe from '@/assets/video/系统/系统-订阅.mp3'
+import audioSystemConnect from '@/assets/video/系统/系统-连接服务器.mp3'
+import audioAronaSubscribe from '@/assets/video/阿罗娜/阿罗纳-订阅.mp3'
+import audioAronaConnect from '@/assets/video/阿罗娜/阿罗娜-连接服务器.mp3'
 
 // 主题图片
 import themeSystem from '@/assets/theme/系统.png'
-import themeYuuka from '@/assets/theme/优香.png'
-import themeHoshino from '@/assets/theme/星野.png'
-import themeYuzu from '@/assets/theme/柚子.png'
-import themeAris from '@/assets/theme/爱丽丝.png'
-import themeShiroko from '@/assets/theme/白子.png'
 import themeArona from '@/assets/theme/阿罗娜.png'
 
 /** 自动挤服默认配置（存储无数据时的兜底值） */
@@ -53,27 +48,23 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   const themeScheme = ref<UnionKey.ThemeScheme>(getStg<UnionKey.ThemeScheme>(APP_STORAGE_KEYS.THEME_SCHEME, 'dark'))
   const onlineUserList = ref<Api.System.OnLineUser[]>([])
 
-  // 音频映射（key：角色名）
-  const audioMap: Record<string, string> = {
-    '优香': audioYuuka,
-    '星野': audioHoshino,
-    '柚子': audioYuzu,
-    '爱丽丝': audioAris,
-    '系统': audioSystem,
-    '白子': audioShiroko,
-    '阿罗娜': audioArona
+  // 通知音频映射（key：主题名，value：该主题「订阅 / 连接服务器」两种提示音）
+  const audioMap: Record<string, Partial<Record<AudioEventType, string>>> = {
+    '阿罗娜': { subscribe: audioAronaSubscribe, connect: audioAronaConnect },
+    '系统': { subscribe: audioSystemSubscribe, connect: audioSystemConnect }
   }
 
   // 主题列表
   const themes = [
     { name: '阿罗娜', img: themeArona, id: '阿罗娜' },
-    { name: '优香', img: themeYuuka, id: '优香' },
-    { name: '星野', img: themeHoshino, id: '星野' },
-    { name: '柚子', img: themeYuzu, id: '柚子' },
-    { name: '爱丽丝', img: themeAris, id: '爱丽丝' },
-    { name: '白子', img: themeShiroko, id: '白子' },
     { name: '系统', img: themeSystem, id: '系统' }
   ]
+
+  // 兼容旧版本：本地存储残留的主题（如已删除的优香/星野等）不存在时，回退到默认主题「阿罗娜」
+  if (!themes.some(t => t.id === currentTheme.value)) {
+    currentTheme.value = themes[0].id
+    setStg(APP_STORAGE_KEYS.THEME, currentTheme.value)
+  }
 
   // ==================== 游戏持久化设置 ====================
 
@@ -117,6 +108,41 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   function setTheme(theme: string): void {
     currentTheme.value = theme
     setStg(APP_STORAGE_KEYS.THEME, theme)
+  }
+
+  /**
+   * 获取主题通知音频：优先使用当前主题对应的音频，未配置或文件丢失时回退到「系统」音频
+   *
+   * @param theme 主题ID
+   * @param type 通知事件类型（subscribe=地图订阅，connect=连接至服务器）
+   */
+  function getThemeAudio(theme: string, type: AudioEventType): string | undefined {
+    return audioMap[theme]?.[type] ?? audioMap['系统']?.[type]
+  }
+
+  /** 通知音频播放实例：全局复用，避免每次事件都新建 Audio 导致提示音重叠或泄漏 */
+  const playAudioEl = ref<HTMLAudioElement | null>(null)
+
+  /**
+   * 播放指定主题的通知音频：未配置或文件丢失时自动回退「系统」音频。
+   * 复用同一实例播放，可中断上一次未播完的提示音；捕获 play() 异常避免自动播放被拒时产生未处理异常
+   *
+   * @param theme 主题ID
+   * @param type 通知事件类型（subscribe=地图订阅，connect=连接至服务器）
+   */
+  function playThemeAudio(theme: string, type: AudioEventType): void {
+    const audioSrc = getThemeAudio(theme, type)
+    if (!audioSrc) return
+
+    if (!playAudioEl.value) {
+      playAudioEl.value = new Audio(audioSrc)
+    } else {
+      playAudioEl.value.pause()
+      playAudioEl.value.currentTime = 0
+      playAudioEl.value.src = audioSrc
+    }
+    playAudioEl.value.volume = volume.value
+    playAudioEl.value.play().catch(() => {})
   }
 
   /** 设置鼠标主题（app=应用主题自定义指针，system=系统默认指针） */
@@ -278,6 +304,8 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     setVolume,
     setMouseCursor,
     setThemeScheme,
+    getThemeAudio,
+    playThemeAudio,
 
     // ---- 游戏持久化设置 ----
     gamePlatform,

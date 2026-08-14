@@ -94,11 +94,8 @@ export function useGsiListener(deps: GsiListenerDeps) {
             stopAutomaticJoinServer()
 
             const appStore = useAppStore()
-            const currentTheme = appStore.currentTheme
-            const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜']
-            const audio = new Audio(audioSrc)
-            audio.volume = appStore.volume
-            audio.play()
+            // 播放连接至服务器提示音（未配置或音频丢失时自动回退「系统」音频）
+            appStore.playThemeAudio(appStore.currentTheme, 'connect')
             window.$message?.success('连接成功')
           }
           break

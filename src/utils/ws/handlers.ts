@@ -35,12 +35,8 @@ export function createMessageHandlers(): MessageHandlers {
     // 地图订阅通知
     '203': (data) => {
       if (data && window.ipcRenderer) {
-        // 播放连接成功音效
-        const currentTheme = appStore.currentTheme;
-        const audioSrc = appStore.audioMap[currentTheme] || appStore.audioMap['阿罗娜'];
-        const audio = new Audio(audioSrc);
-        audio.volume = appStore.volume;
-        audio.play();
+        // 播放地图订阅提示音（未配置或音频丢失时自动回退「系统」音频）
+        appStore.playThemeAudio(appStore.currentTheme, 'subscribe');
 
         window.ipcRenderer.showMapOrderNotification({
           title: '地图订阅提醒',
