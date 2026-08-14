@@ -564,7 +564,7 @@ export default {
     offline: 'サーバーオフライン',
     waiting: 'サーバーのオンラインを待機中...',
     serverCount: '{count}台のサーバー',
-    playerCount: '{count}人のプレイヤー',
+    playerCount: '{count}人',
     autoJoin: '自動入場',
     copySuccess: 'コピーしました!',
     joinBusy: '自動入場中です。他のサーバーへの接続はできません',

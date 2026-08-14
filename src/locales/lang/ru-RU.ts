@@ -564,7 +564,7 @@ export default {
     offline: 'Сервер офлайн',
     waiting: 'Ожидание сервера онлайн...',
     serverCount: 'Серверов: {count}',
-    playerCount: 'Игроков: {count}',
+    playerCount: '{count} онлайн',
     autoJoin: 'Автовход',
     copySuccess: 'Скопировано!',
     joinBusy: 'Автовход уже запущен, нельзя подключиться к другому серверу',

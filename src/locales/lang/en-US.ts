@@ -564,7 +564,7 @@ export default {
     offline: 'Server Offline',
     waiting: 'Waiting for server online...',
     serverCount: '{count} Servers',
-    playerCount: '{count} Players',
+    playerCount: '{count} online',
     autoJoin: 'Auto Join',
     copySuccess: 'Copied successfully!',
     joinBusy: 'Auto join is running, cannot join another server',

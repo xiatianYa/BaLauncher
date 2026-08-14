@@ -385,6 +385,10 @@ const openAgreement = (type: 'user' | 'privacy') => {
       right: 0;
       width: 100%;
       padding: 6px;
+      /* 选项纵向排列并留出间距，避免上下两个选项贴在一起 */
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
       border-radius: 12px;
       /* 背景色由 :style 绑定 langMenuBgColor（主题驱动） */
       border: 1px solid var(--n-border-color);

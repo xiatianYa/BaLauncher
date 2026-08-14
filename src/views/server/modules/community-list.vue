@@ -171,6 +171,10 @@ const handleSelect = (id: number) => {
   font-size: 10px;
   color: #666;
   font-weight: bold;
+  /* 文字过多时隐藏为省略号，避免挤压布局变形 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .community-online {

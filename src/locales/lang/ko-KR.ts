@@ -563,7 +563,7 @@ export default {
     offline: '서버 오프라인',
     waiting: '서버 온라인 대기 중...',
     serverCount: '서버 {count}개',
-    playerCount: '플레이어 {count}명',
+    playerCount: '{count}명',
     autoJoin: '자동 입장',
     copySuccess: '복사되었습니다!',
     joinBusy: '자동 입장이 실행 중입니다. 다른 서버에 연결할 수 없습니다',

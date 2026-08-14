@@ -564,7 +564,7 @@ export default {
     offline: '伺服器離線',
     waiting: '等待伺服器上線...',
     serverCount: '{count}個伺服器',
-    playerCount: '{count}個玩家',
+    playerCount: '{count}人',
     autoJoin: '自動擠服',
     copySuccess: '複製成功!',
     joinBusy: '正在擠服中，無法進行連線其他伺服器的操作',
