@@ -434,6 +434,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     updateCommunityList: serverQuery.updateCommunityList,
     /** 查询 WebSocket 服务器列表信息 */
     queryWsServerInfosResponse: serverQuery.queryWsServerInfosResponse,
+    /** 将 WS 最新推送的服务器列表合并到当前展示列表 */
+    applyWsServerList: serverQuery.applyWsServerList,
 
     // ---- 方法 - GSI ----
     /** 开始监听 GSI 数据 */

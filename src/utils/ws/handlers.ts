@@ -26,6 +26,9 @@ export function createMessageHandlers(): MessageHandlers {
     '202': (data) => {
       if (Array.isArray(data)) {
         gameStore.currentServerWsList.splice(0, gameStore.currentServerWsList.length, ...data);
+        // 同步最新 WS 数据到当前展示列表：按 connectStr 实时合并人数/在线状态/地图信息，
+        // 否则 WS 推送只更新 currentServerWsList，界面显示的人数一直不变化
+        gameStore.applyWsServerList(data);
       }
     },
 

@@ -125,20 +125,23 @@ export function useServerQuery(deps: ServerQueryDeps) {
       if (success) {
         infoResponseList.forEach((item: any) => {
           // 本地查询失败（如服务器离线）时不覆盖任何已有数据，保留源服务器名称/地图等信息
-          if (item.success === false) return
+          // 注意：成功项的字段在 item.data 内（{ success: true, data: { players, addr, ... } }），
+          // 只有失败项才是 { addr, success: false }，直接读 item.players 会取到 undefined 导致人数不更新
+          if (!item.success || !item.data) return
+          const info = item.data
 
-          const listServer = unref(currentServerList).find(s => s.connectStr === item.addr)
+          const listServer = unref(currentServerList).find(s => s.connectStr === info.addr)
           if (listServer) {
-            listServer.numPlayers = item.players
-            listServer.mapName = item.map
-            listServer.maxPlayers = item.maxPlayers
+            listServer.numPlayers = info.players
+            listServer.mapName = info.map
+            listServer.maxPlayers = info.maxPlayers
             // A2S 查询成功：回填 Ping 值并标记在线（与 queryServerInfosPingResponse 保持一致）
-            listServer.ping = item.ping
+            listServer.ping = info.ping
             listServer.isOnline = true
-            // A2S 查询（query-game-servers）返回的数据没有 mapId，只有原始地图名 item.map，
+            // A2S 查询（query-game-servers）返回的数据没有 mapId，只有原始地图名 info.map，
             // 原先按 mapId 匹配 mapList 永远匹配不上，导致换图后 mapUrl/mapLabel 等地图信息不更新。
             // 改为按地图名匹配（与 open-game-join / mapOrder 中 mapName 匹配逻辑一致）
-            const map = unref(mapList).find(m => m.mapName === item.map)
+            const map = unref(mapList).find(m => m.mapName === info.map)
             if (map) {
               listServer.mapId = map.id
               listServer.mapLabel = map.mapLabel
@@ -146,7 +149,7 @@ export function useServerQuery(deps: ServerQueryDeps) {
               listServer.type = map.type
               listServer.tag = map.tag
               listServer.artifact = map.artifact
-            } else if (item.map) {
+            } else if (info.map) {
               // 地图不在维护的地图列表中（如自定义/工坊地图）时清空旧地图信息，避免残留上一张地图的图片与译名
               listServer.mapId = 0
               listServer.mapLabel = ''
@@ -181,6 +184,26 @@ export function useServerQuery(deps: ServerQueryDeps) {
 
     unref(currentServerList).splice(0, unref(currentServerList).length, ...allServers)
     countServerServerNumber()
+  }
+
+  /** 将 WS 最新推送的服务器列表合并到当前展示列表（按 connectStr 实时更新在线状态/人数/地图信息） */
+  function applyWsServerList(wsList: Api.Game.SeverVo[]): void {
+    const list = unref(currentServerList)
+    const wsMap = new Map(wsList.map(s => [s.connectStr, s]))
+    list.forEach(server => {
+      const ws = wsMap.get(server.connectStr)
+      if (!ws) return
+      server.numPlayers = ws.numPlayers ?? server.numPlayers
+      server.maxPlayers = ws.maxPlayers ?? server.maxPlayers
+      server.isOnline = ws.isOnline !== false
+      if (ws.mapName) server.mapName = ws.mapName
+      if (ws.mapId) {
+        server.mapId = ws.mapId
+        server.mapLabel = ws.mapLabel ?? server.mapLabel
+        server.mapUrl = ws.mapUrl ?? server.mapUrl
+      }
+      if (ws.ping != null) server.ping = ws.ping
+    })
   }
 
   /** 查询服务器Ping值 */
@@ -269,5 +292,6 @@ export function useServerQuery(deps: ServerQueryDeps) {
     queryServerSeverVo,
     countServerServerNumber,
     createOfflineServer,
+    applyWsServerList,
   }
 }
