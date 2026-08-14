@@ -1,12 +1,6 @@
 export default {
   system: {
     title: '蔚蓝档案启动器',
-    updateTitle: '系统更新',
-    updateContent: '发现新版本，是否立即更新？',
-    updateNow: '立即更新',
-    installNow: '立即安装',
-    downloading: '正在下载...',
-    downloaded: '下载完成',
   },
   routes: {
     home: '首页',
@@ -15,71 +9,37 @@ export default {
     tools: '工具箱',
     setting: '设置',
     updateLog: '更新日志',
-    hall: '大厅',
     roleManage: '角色管理',
-    role: '角色管理',
     userManage: '用户管理',
     dictManage: '字典管理',
     communityManage: '社区管理',
     feedback: '问题反馈',
   },
   feedback: {
-    title: '问题反馈',
-    subtitle: '功能开发中，敬请期待！',
-    /* ===== 反馈列表页 ===== */
     listSubtitle: '提交问题反馈或功能建议，我们会尽快处理',
     addFeedback: '提交反馈',
     myFeedback: '我的反馈',
     allFeedback: '所有反馈',
     searchTitle: '搜索标题',
     search: '搜索',
-    reset: '重置',
-    noPermission: '请先登录后查看反馈',
-    /* 反馈类型 */
     typeAll: '全部类型',
-    type0: '问题反馈',
-    type1: '功能建议',
-    type2: 'Bug 报告',
-    type3: '其他',
-    /* 处理状态 */
     statusAll: '全部状态',
-    status0: '待处理',
-    status1: '处理中',
-    status2: '已解决',
-    status3: '已关闭',
-    status4: '已驳回',
-    /* 优先级 */
-    priority0: '低',
-    priority1: '中',
-    priority2: '高',
-    priority3: '紧急',
-    priority: '优先级',
-    /* 通用 */
-    handler: '处理人',
     handleTime: '处理时间',
     handleRemark: '处理备注',
     empty: '暂无反馈数据',
-    createTime: '提交时间：',
-    viewDetail: '查看详情',
     delete: '删除',
     contentLabel: '反馈内容',
     imagesLabel: '反馈截图',
-    /* 系统信息（新增反馈时自动获取） */
     systemInfo: '系统信息',
     windowsVersion: 'Windows 版本',
     appVersion: '客户端版本',
-    /* ===== 新增反馈弹窗 ===== */
-    addTitle: '提交反馈',
-    addSubtitle: '请详细描述您遇到的问题或建议',
     form: {
       typeLabel: '反馈类型',
-      typePlaceholder: '请选择反馈类型',
       titleLabel: '反馈标题',
       titlePlaceholder: '请简要描述您的问题或建议',
       contentLabel: '详细描述',
       contentPlaceholder: '请详细描述您遇到的问题或建议内容...',
       priorityLabel: '优先级',
-      priorityPlaceholder: '选择优先级',
       imagesLabel: '截图附件',
       imagesUploadTip: '点击上传截图',
       imagesUploading: '上传中...',
@@ -91,7 +51,6 @@ export default {
     messages: {
       titleRequired: '请输入反馈标题',
       contentRequired: '请输入反馈内容',
-      typeRequired: '请选择反馈类型',
       addSuccess: '感谢您的反馈！',
       addFailed: '提交失败',
       updateSuccess: '处理成功',
@@ -99,19 +58,14 @@ export default {
       deleteSuccess: '删除成功',
       deleteFailed: '删除失败',
     },
-    /* ===== 反馈详情页 ===== */
     detailTitle: '反馈详情',
-    detailSubtitle: '查看反馈详情与处理进度',
     back: '返回反馈列表',
-    /* ===== 管理员处理弹窗 ===== */
     handleTitle: '处理反馈',
     handleForm: {
       statusLabel: '处理状态',
-      statusPlaceholder: '选择处理状态',
       save: '保存处理',
       saving: '保存中...',
     },
-    /* ===== 删除确认弹窗 ===== */
     deleteModal: {
       title: '删除确认',
       confirmPrefix: '确定要删除反馈',
@@ -120,35 +74,11 @@ export default {
       delete: '删除',
       deleting: '删除中...',
     },
-    /* ===== 评论区 ===== */
-    comment: {
-      title: '评论',
-      count: '{count} 条评论',
-      empty: '暂无评论，来说点什么吧',
-      placeholder: '输入评论内容...',
-      replyPlaceholder: '回复 {name}...',
-      submit: '发表',
-      submitting: '发表中...',
-      reply: '回复',
-      like: '点赞',
-      liked: '已点赞',
-      delete: '删除',
-      deleteConfirm: '确定要删除该评论吗？',
-      addSuccess: '评论发表成功',
-      addFailed: '评论发表失败',
-      deleteSuccess: '评论删除成功',
-      deleteFailed: '评论删除失败',
-      likeSuccess: '点赞成功',
-      likeFailed: '点赞失败',
-      shield: '屏蔽',
-      unshield: '取消屏蔽',
-      loadFailed: '加载评论失败',
-    },
   },
   common: {
     loading: '正在加载...',
     cancel: '取消',
-    submit: '提交'
+    submit: '提交',
   },
   windowControls: {
     notifications: '通知',
@@ -158,8 +88,6 @@ export default {
   notice: {
     title: '通知中心',
     empty: '暂无通知',
-    markAllRead: '全部已读',
-    markAllReadSuccess: '已全部标记为已读',
     announce: '公告',
     personal: '个人消息',
     priorityNormal: '普通',
@@ -174,15 +102,12 @@ export default {
   },
   update: {
     title: '发现新版本',
-    downloading: '正在下载更新...',
-    downloaded: '更新已下载完成',
     desc: '检测到新版本 v{version}，是否立即更新？本次更新内容如下：',
     confirm: '检测到新版本 v{version}，是否立即更新？',
     loadingLog: '正在加载更新日志...',
     cancel: '取消',
     updateNow: '立即更新',
     installNow: '立即安装',
-    restartCountdown: '更新将在 {count} 秒后自动重启',
     error: '更新失败，请稍后重试',
   },
   login: {
@@ -201,19 +126,7 @@ export default {
       userAgreement: '《用户协议》',
       privacyPolicy: '《隐私政策》',
     },
-    form: {
-      userName: {
-        label: '用户名',
-        placeholder: '请输入用户名',
-      },
-      password: {
-        label: '密码',
-        placeholder: '请输入密码',
-      },
-    },
     actions: {
-      login: '登录',
-      register: '注册账号',
       otherMethods: '其他方式登录',
     },
     notify: {
@@ -226,7 +139,6 @@ export default {
     title: '个人资料',
     accountInfo: '账号信息',
     nickName: '昵称',
-    status: '账号状态',
     enabled: '已启用',
     disabled: '已禁用',
     lastLoginTime: '最后登录时间',
@@ -252,23 +164,12 @@ export default {
     subscribeModePlaceholder: '请选择服务器模式',
     subscribeCount: '订阅人数',
     subscribeCountPlaceholder: '达到该人数时通知',
-    subscribeSave: '保存订阅配置',
-    subscribeSaveSuccess: '订阅配置保存成功',
     subscribeSaveFailed: '订阅配置保存失败',
   },
   layout: {
     menuConfig: '菜单配置',
-    addNav: '添加导航',
-    removeNav: '移除导航',
     header: {
       login: '登录',
-      loginPrompt: '请登录',
-      roles: {
-        superAdmin: '超级管理员',
-        admin: '管理员',
-        user: 'LV 1',
-        guest: 'LV 0',
-      },
     },
     footer: {
       loginAction: '登录',
@@ -279,24 +180,13 @@ export default {
         confirm: '确认',
         cancel: '取消',
       },
-      feedback: {
-        title: '问题反馈',
-        placeholder: '请描述您遇到的问题或建议...',
-        submit: '提交反馈',
-        cancel: '取消',
-        success: '感谢您的反馈！',
-      },
     },
   },
   community: {
-    placeholderDesc: '社区导航功能建设中，敬请期待。',
     subtitle: '游戏社区导航',
     empty: '暂无社区数据',
-    loading: '加载中...',
-    noMore: '没有更多了',
     visit: '前往',
     noWebsite: '该社区暂未配置网站',
-    refresh: '刷新',
   },
   communityManage: {
     subtitle: '管理社区与服务器信息',
@@ -304,7 +194,7 @@ export default {
       name: '社区名称',
       btn: '搜索',
       reset: '重置',
-      add: '新增社区'
+      add: '新增社区',
     },
     empty: '暂无社区',
     unnamed: '未命名社区',
@@ -327,7 +217,7 @@ export default {
       websiteLabel: '社区网站',
       websitePlaceholder: '请输入社区网站地址',
       save: '保存',
-      saving: '保存中…'
+      saving: '保存中…',
     },
     messages: {
       nameRequired: '请输入社区名称',
@@ -336,7 +226,7 @@ export default {
       deleteSuccess: '删除成功',
       addFailed: '新增失败',
       saveFailed: '修改失败',
-      deleteFailed: '删除失败'
+      deleteFailed: '删除失败',
     },
     deleteModal: {
       title: '删除确认',
@@ -344,7 +234,7 @@ export default {
       confirmSuffix: '吗？',
       tip: '删除后将同时移除该社区下的所有服务器配置，请谨慎操作。',
       delete: '删除',
-      deleting: '删除中…'
+      deleting: '删除中…',
     },
     server: {
       manageTitle: '服务器管理 - {name}',
@@ -363,7 +253,7 @@ export default {
         query: '查询',
         mode: '模式',
         connect: '连接指令',
-        actions: '操作'
+        actions: '操作',
       },
       form: {
         addTitle: '新增服务器',
@@ -382,7 +272,7 @@ export default {
         statisticsLabel: '是否统计',
         queryLabel: '是否查询',
         save: '保存',
-        saving: '保存中…'
+        saving: '保存中…',
       },
       messages: {
         nameRequired: '请输入服务器名称',
@@ -392,7 +282,7 @@ export default {
         deleteSuccess: '删除成功',
         addFailed: '新增失败',
         saveFailed: '修改失败',
-        deleteFailed: '删除失败'
+        deleteFailed: '删除失败',
       },
       deleteModal: {
         title: '删除确认',
@@ -400,9 +290,9 @@ export default {
         confirmSuffix: '吗？',
         tip: '删除后无法恢复，请谨慎操作。',
         delete: '删除',
-        deleting: '删除中…'
-      }
-    }
+        deleting: '删除中…',
+      },
+    },
   },
   tools: {
     title: '工具箱',
@@ -444,19 +334,14 @@ export default {
       checking: '检测中...',
       copySuccess: '已复制到剪贴板',
       bindSuccess: '绑定成功',
-      notBoundYet: '还未检测到绑定，请先在QQ群内完成绑定'
+      notBoundYet: '还未检测到绑定，请先在QQ群内完成绑定',
     },
   },
   perfView: {
-    loading: '检测中...',
     memory: '内存',
     available: '可用',
     noData: '未检测到',
-    gpuInfo: '显卡信息 (Windows)',
     process: '应用进程',
-    processInfo: '启动器内存占用',
-    autoRefresh: '每 {interval} 秒自动刷新',
-    refreshInterval: '每{s}秒刷新',
     systemInfo: '系统信息',
     hostname: '主机名',
     os: '操作系统',
@@ -557,15 +442,11 @@ export default {
     general: '常规设置',
     subtitle: '应用参数与偏好设置',
     theme: '主题设置',
-    themeScheme: '明暗主题',
-    themeDark: '深色',
-    themeLight: '浅色',
     mouseTheme: '鼠标主题',
     mouseThemeApp: '应用主题',
     mouseThemeAppDesc: '使用自定义指针',
     mouseThemeSystem: '系统默认',
     mouseThemeSystemDesc: '使用系统默认指针',
-    language: '语言设置',
     about: '关于',
     version: '当前版本',
     checkUpdate: '检查更新',
@@ -579,12 +460,15 @@ export default {
     autoDetect: '自动检测',
     inputCsgoPath: '请输入CSGO2安装目录',
     inputSteamPath: '请输入Steam安装目录',
-    openTools: '打开工具箱',
     volumeControl: '音量调节',
     preview: '试听',
     langOptions: {
       zhCN: '简体中文',
+      zhTW: '繁體中文',
       enUS: 'English',
+      jaJP: '日本語',
+      koKR: '한국어',
+      ruRU: 'Русский',
     },
     aboutInfo: {
       developer: '开发者',
@@ -630,7 +514,6 @@ export default {
     inputCustomStartOption: '输入自定义启动选项',
     add: '添加',
     customStartOptionTip: '提示 : 可在上方输入框中自定义添加启动选项',
-    currentSelectedItems: '当前已选启动项',
   },
   home: {
     greeting: '今天又是充满活力的一天!',
@@ -638,7 +521,6 @@ export default {
     welcomeMorning: '早上好',
     welcomeAfternoon: '下午好',
     welcomeEvening: '晚上好',
-    weekDay: ['日', '一', '二', '三', '四', '五', '六'],
     onlineUser: '在线玩家',
     onlineUserTip: '登录后即可查看',
     communityHistoryOnline: '社区历史在线',
@@ -646,7 +528,6 @@ export default {
     serverCurrentOnline: '服务器当前在线',
     serverHistoryOnline: '服务器历史在线',
     serverCurrentOnlineTip: '当前接入的服务器实时在线情况',
-    serverHistoryOnlineTip: '近期的服务器在线人数趋势',
     timeRangeOneDay: '一天',
     timeRangeThreeDays: '三天',
     timeRangeOneWeek: '一周',
@@ -657,26 +538,18 @@ export default {
     noData: '暂无数据',
     underConstruction: '功能开发中，敬请期待',
     mapPlayStats: '地图游玩统计',
-    onlinePlayers: '在线玩家',
     people: '人',
     playCountWan: '{count}万次',
     playCountK: '{count}k次',
     playCount: '{count}次',
     weather: '实时天气',
     weatherRealtime: '实时',
-    weatherCondition: '当前天气',
-    weatherRefresh: '刷新',
     weatherFetchFailed: '天气获取失败',
     weatherFeelsLike: '体感温度',
     weatherHumidity: '相对湿度',
     weatherWind: '风',
     weatherWindLevel: '级',
-    weatherWindGust: '阵风',
-    weatherPrecipitation: '累计降水',
-    weatherPressure: '气压',
     weatherVisibility: '能见度',
-    weatherDewPoint: '露点温度',
-    weatherCloudCover: '云量',
     weatherUVIndex: '紫外线指数',
     weatherUvLow: '弱',
     weatherUvModerate: '中等',
@@ -685,43 +558,16 @@ export default {
   },
   server: {
     list: '服务器列表',
-    refresh: '刷新',
     communityList: '社区列表',
-    addCustomCategory: '添加自定义分类',
-    customCategoryDesc: '创建一个自定义分类来组织你的服务器',
-    categoryNamePlaceholder: '例如：收藏的服务器',
-    pleaseEnterCategoryName: '请输入分类名称',
-    categoryAdded: '分类添加成功',
-    addServer: '添加服务器',
-    serverAddress: '服务器地址',
-    serverAddressPlaceholder: '例如：127.0.0.1:27015',
-    serverRemark: '备注名称',
-    serverRemarkPlaceholder: '例如：我的本地服务器',
-    pleaseEnterServerAddress: '请输入服务器地址',
-    invalidServerAddressFormat: '服务器地址格式错误，请使用 IP:端口 格式',
-    invalidPort: '端口号必须在 1-65535 之间',
-    serverAdded: '服务器添加成功',
-    deleteServer: '删除服务器',
-    editCategoryTitle: '编辑自定义分类',
-    categoryEdited: '分类编辑成功',
-    categoryDeleted: '分类删除成功',
-    cancel: '取消',
-    add: '添加',
-    edit: '编辑',
-    players: '玩家',
     map: '地图',
     noTranslation: '暂无译名',
     offline: '服务器离线',
     waiting: '等待服务器上线...',
-    empty: '未查询到服务器信息...',
     serverCount: '{count}个服务器',
     playerCount: '{count}个玩家',
-    join: '加入',
-    copy: '复制地址',
     autoJoin: '自动挤服',
     copySuccess: '复制成功!',
     joinBusy: '正在挤服中，不能进行连接其他服务器的操作',
-    directConnect: '游戏已启动，直接连接服务器',
     serverName: '服务器名称',
     playerCountColumn: '人数',
     ping: '延迟',
@@ -747,15 +593,6 @@ export default {
       launching: '启动中...',
       gameStarted: '游戏已启动',
     },
-    mapPhase: {
-      warmup: '热身',
-      intermission: '中场休息',
-      gameover: '游戏结束',
-      live: '对局中',
-      over: '已结束',
-      freezetime: '暂停回合',
-      unknown: '未知',
-    },
     minutesAgo: '{count}分钟',
   },
   serverJoin: {
@@ -779,16 +616,11 @@ export default {
     dynamicTitle: '挤服动态',
     pauseJoin: '暂停挤服',
     unknownPlayer: '未知玩家',
-    dynamicJoining: '正在挤服中...',
-    dynamicPaused: '已暂停挤服...',
     trayRunning: '正在挤服中...',
     trayRestore: '点击恢复窗口',
     logTitle: '挤服日志',
     statusPolling: '正在轮询服务器空位...',
     team: {
-      ct: 'CT',
-      t: 'T',
-      spectator: '观察者',
       unknown: '加载中',
     },
     stats: {
@@ -801,35 +633,11 @@ export default {
     },
     weapon: {
       none: '无',
-      famas: '法玛斯',
-      galil: '加利尔 AR',
-      ssg08: '鸟狙',
-      glock: '格洛克',
-      deagle: '沙漠之鹰',
-      revolver: 'R8左轮',
-      bizon: '野牛',
-      nova: '新星',
-      sawedoff: '截短霰弹枪',
-      negev: '内格夫',
-      taser: '电击枪',
-      knife: '匕首',
-      shield: '防暴盾',
-      zeus: '宙斯',
-      molotov: '燃烧瓶',
-      incgrenade: '燃烧弹',
-      flashbang: '闪光弹',
-      hegrenade: '高爆手雷',
-      smokegrenade: '烟雾弹',
-      decoy: '诱饵弹',
-      tagrenade: '闪光震撼弹',
-      snowball: '雪球',
-      bumpmine: '冲击地雷',
     },
   },
   updateLog: {
     title: '更新日志',
     subtitle: '记录每次更新的详细信息',
-    addLog: '添加日志',
     addUpdateLog: '添加更新日志',
     editUpdateLog: '编辑更新日志',
     edit: '编辑',
@@ -843,30 +651,30 @@ export default {
       version: {
         label: '版本号',
         placeholder: '例如: 1.0.0',
-        required: '请输入版本号'
+        required: '请输入版本号',
       },
       updateType: {
         label: '更新类型',
         placeholder: '请选择更新类型',
-        required: '请选择更新类型'
+        required: '请选择更新类型',
       },
       title: {
         label: '标题',
         placeholder: '请输入更新标题',
-        required: '请输入标题'
+        required: '请输入标题',
       },
       content: {
         label: '内容',
-        required: '请输入内容'
+        required: '请输入内容',
       },
       pinned: {
         label: '置顶',
-        desc: '是否置顶显示'
+        desc: '是否置顶显示',
       },
       enabled: {
         label: '启用',
-        desc: '是否启用'
-      }
+        desc: '是否启用',
+      },
     },
     dateFormat: 'YYYY年MM月DD日',
     loadFailed: '加载更新日志失败',
@@ -881,7 +689,6 @@ export default {
     deleteConfirmSuffix: '吗？',
     deleteConfirmTip: '删除后数据将无法恢复，请谨慎操作。',
     deleting: '删除中...',
-    /* ===== 通知日志视图（参考 roleManage 双视图切换） ===== */
     noticeView: '通知日志',
     noticeSubtitle: '管理推送给用户的通知消息',
     noNotices: '暂无通知',
@@ -890,74 +697,71 @@ export default {
     noticeStatusDraft: '草稿',
     noticeStatusPublished: '已发布',
     noticeStatusOffline: '已下线',
-    noticeRead: '已读',
-    noticeUnread: '未读',
     noticeDeleteConfirmPrefix: '确定要删除通知',
     noticeDeleteConfirmSuffix: '吗？',
     noticeDeleteConfirmTip: '删除后用户将无法再查看该通知，请谨慎操作。',
-    /* ===== 通知新增/编辑弹窗 ===== */
     noticeAdd: '新增通知',
     noticeEdit: '编辑通知',
     noticeForm: {
       noticeType: {
         label: '通知类型',
         placeholder: '请选择通知类型',
-        required: '请选择通知类型'
+        required: '请选择通知类型',
       },
       title: {
         label: '通知标题',
         placeholder: '请输入通知标题',
-        required: '请输入通知标题'
+        required: '请输入通知标题',
       },
       content: {
         label: '通知内容',
         placeholder: '请输入通知内容',
-        required: '请输入通知内容'
+        required: '请输入通知内容',
       },
       priority: {
         label: '优先级',
         placeholder: '请选择优先级',
-        required: '请选择优先级'
+        required: '请选择优先级',
       },
       status: {
         label: '状态',
         placeholder: '请选择状态',
-        required: '请选择状态'
+        required: '请选择状态',
       },
       receiverType: {
         label: '接收类型',
         placeholder: '请选择接收类型',
-        required: '请选择接收类型'
+        required: '请选择接收类型',
       },
       receiverId: {
         label: '接收人',
         placeholder: '请选择接收人',
-        required: '请选择接收人'
+        required: '请选择接收人',
       },
       receiverRole: {
         label: '接收角色',
         placeholder: '请选择角色',
-        required: '请选择接收角色'
+        required: '请选择接收角色',
       },
       businessType: {
         label: '业务类型',
-        placeholder: '请输入业务类型（如订单/系统/活动）'
+        placeholder: '请输入业务类型（如订单/系统/活动）',
       },
       businessId: {
         label: '关联业务ID',
-        placeholder: '请输入关联业务ID'
+        placeholder: '请输入关联业务ID',
       },
       jumpType: {
         label: '跳转类型',
-        placeholder: '请输入跳转类型'
+        placeholder: '请输入跳转类型',
       },
       jumpParams: {
         label: '跳转参数',
-        placeholder: '请输入跳转参数（JSON格式）'
+        placeholder: '请输入跳转参数（JSON格式）',
       },
       expireTime: {
         label: '过期时间',
-        placeholder: '请选择过期时间'
+        placeholder: '请选择过期时间',
       },
     },
   },
@@ -965,20 +769,15 @@ export default {
     title: '地图订阅',
     back: '返回工具箱',
     searchPlaceholder: '搜索地图名称，译名，或标签',
-    subscribe: '订阅',
-    unsubscribe: '取消订阅',
     unsubscribeSystem: '取消系统订阅',
     unsubscribeQQ: '取消QQ订阅',
     notSubscribable: '不可订阅',
-    subscribeSuccess: '订阅成功',
     subscribeFailed: '订阅失败',
-    unsubscribeSuccess: '取消订阅成功',
     unsubscribeFailed: '取消订阅失败',
     subscribeList: '订阅列表',
     noSubscribeData: '暂无订阅地图',
     searchFailed: '搜索地图失败',
     fetchSubscribeListFailed: '获取订阅列表失败',
-    mapCD: '地图CD(EXG)',
     lastRun: '最后运行时间',
     cooldown: '冷却时间',
     deadline: '冷却截止',
@@ -992,12 +791,8 @@ export default {
     isOrderable: '是否可预定',
     yes: '是',
     no: '否',
-    edit: '编辑',
     editSubscribe: '编辑订阅',
     deleteSubscribe: '删除订阅',
-    confirmDeleteSubscribe: '确认删除该订阅？',
-    unsubscribeSystemSuccess: '已取消系统订阅',
-    unsubscribeQQSuccess: '已取消QQ订阅',
     editMap: '编辑地图',
     addMap: '添加地图',
     deleteMap: '删除地图',
@@ -1085,30 +880,16 @@ export default {
     reply: '回复',
     submit: '发布',
     submitting: '发布中...',
-    shield: '屏蔽',
-    unshield: '取消屏蔽',
     delete: '删除',
     deleteConfirm: '确定要删除该评论吗？',
-    showReplies: '展开 {count} 条回复',
-    hideReplies: '收起回复',
     placeholder: '输入评论内容...',
     replyPlaceholder: '回复 {name}...',
-    replyTo: '正在回复 {name}',
     empty: '暂无评论，来说点什么吧',
     addSuccess: '评论发表成功',
     addFailed: '评论发表失败',
     deleteSuccess: '评论删除成功',
     deleteFailed: '评论删除失败',
     loadFailed: '加载评论失败',
-    toast: {
-      postSuccess: '评论发表成功',
-      postFailed: '评论发表失败',
-      deleteSuccess: '评论删除成功',
-      deleteFailed: '评论删除失败',
-      likeFailed: '点赞失败',
-      dislikeFailed: '点踩失败',
-      shieldFailed: '操作失败',
-    },
   },
   dict: {
     subtitle: '管理系统数据字典与字典项',
@@ -1152,7 +933,9 @@ export default {
         label: '字典编码',
         placeholder: '请输入字典编码',
       },
-      type: { label: '字典类型' },
+      type: {
+        label: '字典类型',
+      },
       sort: {
         label: '排序值',
         placeholder: '请输入排序值',
@@ -1161,7 +944,9 @@ export default {
         label: '字典描述',
         placeholder: '请输入字典描述',
       },
-      enabled: { label: '是否启用' },
+      enabled: {
+        label: '是否启用',
+      },
       editTitle: '编辑字典',
       addTitle: '新增字典',
       save: '保存',
@@ -1221,7 +1006,9 @@ export default {
           label: '英文名称',
           placeholder: '请输入英文名称',
         },
-        type: { label: '渲染类型' },
+        type: {
+          label: '渲染类型',
+        },
         sort: {
           label: '排序值',
           placeholder: '请输入排序值',
@@ -1230,7 +1017,9 @@ export default {
           label: '描述',
           placeholder: '请输入描述',
         },
-        enabled: { label: '是否启用' },
+        enabled: {
+          label: '是否启用',
+        },
         save: '保存',
         saving: '保存中...',
       },
@@ -1363,8 +1152,6 @@ export default {
       notBoundAccount: '该群友未绑定系统账号',
       bindToViewTip: '绑定后即可查看其地图订阅',
       role: {
-        owner: '群主',
-        admin: '管理员',
         member: '成员',
       },
     },

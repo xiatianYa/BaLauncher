@@ -3,6 +3,10 @@ import { computed, onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/zh-cn';
+import 'dayjs/locale/zh-tw';
+import 'dayjs/locale/ja';
+import 'dayjs/locale/ko';
+import 'dayjs/locale/ru';
 import { useAppStore } from '@/store/modules/app';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
@@ -44,7 +48,15 @@ const dateText = computed(() => now.value.format('YYYY-MM-DD'));
 const timeText = computed(() => now.value.format('HH:mm:ss'));
 /** 星期几（dayjs 按当前语言格式化 dddd） */
 const weekText = computed(() => {
-  const localeName = locale.value === 'zh-CN' ? 'zh-cn' : 'en';
+  const dayjsLocaleMap: Record<string, string> = {
+    'zh-CN': 'zh-cn',
+    'zh-TW': 'zh-tw',
+    'en-US': 'en',
+    'ja-JP': 'ja',
+    'ko-KR': 'ko',
+    'ru-RU': 'ru'
+  };
+  const localeName = dayjsLocaleMap[locale.value] || 'en';
   return now.value.locale(localeName).format('dddd');
 });
 </script>

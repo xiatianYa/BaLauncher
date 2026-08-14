@@ -47,7 +47,11 @@ interface DropdownOption {
 /** 语言切换选项（computed 保证切换语言后文案实时更新） */
 const langOptions = computed<DropdownOption[]>(() => [
   { label: $t('settings.langOptions.zhCN'), key: 'zh-CN', icon: 'mdi:translate' },
-  { label: $t('settings.langOptions.enUS'), key: 'en-US', icon: 'mdi:translate' }
+  { label: $t('settings.langOptions.zhTW'), key: 'zh-TW', icon: 'mdi:translate' },
+  { label: $t('settings.langOptions.enUS'), key: 'en-US', icon: 'mdi:translate' },
+  { label: $t('settings.langOptions.jaJP'), key: 'ja-JP', icon: 'mdi:translate' },
+  { label: $t('settings.langOptions.koKR'), key: 'ko-KR', icon: 'mdi:translate' },
+  { label: $t('settings.langOptions.ruRU'), key: 'ru-RU', icon: 'mdi:translate' }
 ]);
 
 /** 退出登录确认弹窗显示状态 */
@@ -71,7 +75,7 @@ function handleDropdown(key: DropdownKey) {
     logoutVisible.value = true;
   } else if (key === 'login') {
     authStore.loginModalVisibel = true;
-  } else if (key === 'zh-CN' || key === 'en-US') {
+  } else if (langOptions.value.some(option => option.key === key)) {
     setLocale(key);
   }
 }

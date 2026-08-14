@@ -29,7 +29,7 @@ const hasScore = computed(() => props.score != null);
 const formatFullTime = (timeStr: string): string => {
     if (!timeStr) return '';
     const d = dayjs(timeStr);
-    const isZh = locale.value === 'zh-CN';
+    const isZh = locale.value === 'zh-CN' || locale.value === 'zh-TW';
     return isZh ? d.format('YYYY年MM月DD日 HH:mm') : d.format('YYYY-MM-DD HH:mm');
 };
 </script>

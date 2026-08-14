@@ -80,7 +80,7 @@ declare namespace App {
   namespace I18n {
     type I18nKey = GetI18nKey<Schema>;
 
-    type LangType = 'en-US' | 'zh-CN';
+    type LangType = 'en-US' | 'zh-CN' | 'zh-TW' | 'ja-JP' | 'ko-KR' | 'ru-RU';
 
     type LangOption = {
       label: string;

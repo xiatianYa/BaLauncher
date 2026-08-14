@@ -18,7 +18,11 @@ const langMenuBgColor = computed(() => (themeStore.darkMode ? '#242a3a' : '#ffff
 
 const langOptions = computed<{ label: string; key: App.I18n.LangType; icon: string }[]>(() => [
   { label: $t('settings.langOptions.zhCN'), key: 'zh-CN', icon: 'mdi:translate' },
-  { label: $t('settings.langOptions.enUS'), key: 'en-US', icon: 'mdi:translate' }
+  { label: $t('settings.langOptions.zhTW'), key: 'zh-TW', icon: 'mdi:translate' },
+  { label: $t('settings.langOptions.enUS'), key: 'en-US', icon: 'mdi:translate' },
+  { label: $t('settings.langOptions.jaJP'), key: 'ja-JP', icon: 'mdi:translate' },
+  { label: $t('settings.langOptions.koKR'), key: 'ko-KR', icon: 'mdi:translate' },
+  { label: $t('settings.langOptions.ruRU'), key: 'ru-RU', icon: 'mdi:translate' }
 ]);
 
 /** 当前语言显示文案 */

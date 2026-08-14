@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NConfigProvider, darkTheme, zhCN, dateZhCN, enUS, dateEnUS } from 'naive-ui';
+import { NConfigProvider, darkTheme, zhCN, dateZhCN, zhTW, dateZhTW, enUS, dateEnUS, jaJP, dateJaJP, koKR, dateKoKR, ruRU, dateRuRU } from 'naive-ui';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useThemeStore } from '@/store/modules/theme';
 import { useAppStore } from '@/store/modules/app';
@@ -17,8 +17,24 @@ const appStore = useAppStore();
 const naiveDarkTheme = computed(() => (themeStore.darkMode ? darkTheme : undefined));
 
 /** naive-ui 组件语言跟随应用 i18n */
-const naiveLocale = computed(() => (i18n.global.locale.value === 'zh-CN' ? zhCN : enUS));
-const naiveDateLocale = computed(() => (i18n.global.locale.value === 'zh-CN' ? dateZhCN : dateEnUS));
+const naiveLocaleMap: Record<App.I18n.LangType, typeof zhCN> = {
+  'zh-CN': zhCN,
+  'zh-TW': zhTW,
+  'en-US': enUS,
+  'ja-JP': jaJP,
+  'ko-KR': koKR,
+  'ru-RU': ruRU
+};
+const naiveDateLocaleMap: Record<App.I18n.LangType, typeof dateZhCN> = {
+  'zh-CN': dateZhCN,
+  'zh-TW': dateZhTW,
+  'en-US': dateEnUS,
+  'ja-JP': dateJaJP,
+  'ko-KR': dateKoKR,
+  'ru-RU': dateRuRU
+};
+const naiveLocale = computed(() => naiveLocaleMap[i18n.global.locale.value] ?? enUS);
+const naiveDateLocale = computed(() => naiveDateLocaleMap[i18n.global.locale.value] ?? dateEnUS);
 
 /** 主题切换遮罩状态：记录旧主题背景色，由 ThemeTransition 组件播放 X 光扫描过渡 */
 const themeTransition = ref<string | null>(null);

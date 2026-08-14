@@ -1,12 +1,6 @@
 export default {
   system: {
     title: 'BaLauncher',
-    updateTitle: 'System Update',
-    updateContent: 'New version found, update now?',
-    updateNow: 'Update Now',
-    installNow: 'Install Now',
-    downloading: 'Downloading...',
-    downloaded: 'Download Completed',
   },
   routes: {
     home: 'Home',
@@ -15,71 +9,37 @@ export default {
     tools: 'Tools',
     setting: 'Settings',
     updateLog: 'VerLog',
-    hall: 'Hall',
     roleManage: 'Role Management',
-    role: 'Role Management',
     userManage: 'User Management',
     dictManage: 'Dict Management',
     communityManage: 'Community Management',
     feedback: 'Feedback',
   },
   feedback: {
-    title: 'User Feedback',
-    subtitle: 'This feature is under development. Stay tuned!',
-    /* ===== Feedback List Page ===== */
     listSubtitle: 'Submit feedback or feature suggestions, we will handle them as soon as possible',
     addFeedback: 'Submit Feedback',
     myFeedback: 'My Feedback',
     allFeedback: 'All Feedback',
     searchTitle: 'Search Title',
     search: 'Search',
-    reset: 'Reset',
-    noPermission: 'Please login to view feedback',
-    /* Feedback Type */
     typeAll: 'All Types',
-    type0: 'Issue Report',
-    type1: 'Feature Suggestion',
-    type2: 'Bug Report',
-    type3: 'Other',
-    /* Processing Status */
     statusAll: 'All Status',
-    status0: 'Pending',
-    status1: 'In Progress',
-    status2: 'Resolved',
-    status3: 'Closed',
-    status4: 'Rejected',
-    /* Priority */
-    priority0: 'Low',
-    priority1: 'Medium',
-    priority2: 'High',
-    priority3: 'Urgent',
-    priority: 'Priority',
-    /* General */
-    handler: 'Handler',
     handleTime: 'Handle Time',
     handleRemark: 'Handle Remark',
     empty: 'No feedback data',
-    createTime: 'Submitted: ',
-    viewDetail: 'View Detail',
     delete: 'Delete',
     contentLabel: 'Content',
     imagesLabel: 'Screenshots',
-    /* System Info (auto-collected when submitting) */
     systemInfo: 'System Info',
     windowsVersion: 'Windows Version',
     appVersion: 'App Version',
-    /* ===== Add Feedback Modal ===== */
-    addTitle: 'Submit Feedback',
-    addSubtitle: 'Please describe your issue or suggestion in detail',
     form: {
       typeLabel: 'Feedback Type',
-      typePlaceholder: 'Select feedback type',
       titleLabel: 'Feedback Title',
       titlePlaceholder: 'Briefly describe your issue or suggestion',
       contentLabel: 'Detailed Description',
       contentPlaceholder: 'Please describe your issue or suggestion in detail...',
       priorityLabel: 'Priority',
-      priorityPlaceholder: 'Select priority',
       imagesLabel: 'Screenshots',
       imagesUploadTip: 'Click to upload screenshots',
       imagesUploading: 'Uploading...',
@@ -91,7 +51,6 @@ export default {
     messages: {
       titleRequired: 'Please enter feedback title',
       contentRequired: 'Please enter feedback content',
-      typeRequired: 'Please select feedback type',
       addSuccess: 'Thank you for your feedback!',
       addFailed: 'Submission failed',
       updateSuccess: 'Update successful',
@@ -99,19 +58,14 @@ export default {
       deleteSuccess: 'Deleted successfully',
       deleteFailed: 'Delete failed',
     },
-    /* ===== Feedback Detail Page ===== */
     detailTitle: 'Feedback Detail',
-    detailSubtitle: 'View feedback details and processing progress',
     back: 'Back to Feedback',
-    /* ===== Admin Handle Modal ===== */
     handleTitle: 'Handle Feedback',
     handleForm: {
       statusLabel: 'Processing Status',
-      statusPlaceholder: 'Select processing status',
       save: 'Save',
       saving: 'Saving...',
     },
-    /* ===== Delete Confirm Modal ===== */
     deleteModal: {
       title: 'Delete Confirm',
       confirmPrefix: 'Are you sure you want to delete feedback ',
@@ -120,35 +74,11 @@ export default {
       delete: 'Delete',
       deleting: 'Deleting...',
     },
-    /* ===== Comment Section ===== */
-    comment: {
-      title: 'Comments',
-      count: '{count} comments',
-      empty: 'No comments yet. Be the first to comment!',
-      placeholder: 'Enter comment...',
-      replyPlaceholder: 'Reply to {name}...',
-      submit: 'Post',
-      submitting: 'Posting...',
-      reply: 'Reply',
-      like: 'Like',
-      liked: 'Liked',
-      delete: 'Delete',
-      deleteConfirm: 'Are you sure you want to delete this comment?',
-      addSuccess: 'Comment posted successfully',
-      addFailed: 'Comment failed to post',
-      deleteSuccess: 'Comment deleted successfully',
-      deleteFailed: 'Comment failed to delete',
-      likeSuccess: 'Liked successfully',
-      likeFailed: 'Like failed',
-      shield: 'Shield',
-      unshield: 'Unshield',
-      loadFailed: 'Failed to load comments',
-    },
   },
   common: {
     loading: 'Loading...',
     cancel: 'Cancel',
-    submit: 'Submit'
+    submit: 'Submit',
   },
   windowControls: {
     notifications: 'Notifications',
@@ -158,8 +88,6 @@ export default {
   notice: {
     title: 'Notification Center',
     empty: 'No notifications',
-    markAllRead: 'Mark all as read',
-    markAllReadSuccess: 'All notifications marked as read',
     announce: 'Announcement',
     personal: 'Personal',
     priorityNormal: 'Normal',
@@ -174,15 +102,12 @@ export default {
   },
   update: {
     title: 'New version found (recommended to use an accelerator)',
-    downloading: 'Downloading update...',
-    downloaded: 'Update downloaded',
     desc: 'New version v{version} detected. Review the changes below and update now?',
     confirm: 'New version v{version} detected. Update now?',
     loadingLog: 'Loading update log...',
     cancel: 'Cancel',
     updateNow: 'Update Now',
     installNow: 'Install Now',
-    restartCountdown: 'Update will restart automatically in {count}s',
     error: 'Update failed, please try again later',
   },
   login: {
@@ -201,19 +126,7 @@ export default {
       userAgreement: 'User Agreement',
       privacyPolicy: 'Privacy Policy',
     },
-    form: {
-      userName: {
-        label: 'Username',
-        placeholder: 'Enter username',
-      },
-      password: {
-        label: 'Password',
-        placeholder: 'Enter password',
-      },
-    },
     actions: {
-      login: 'Login',
-      register: 'Register',
       otherMethods: 'Other login methods',
     },
     notify: {
@@ -226,7 +139,6 @@ export default {
     title: 'Profile',
     accountInfo: 'Account Info',
     nickName: 'Nickname',
-    status: 'Account Status',
     enabled: 'Enabled',
     disabled: 'Disabled',
     lastLoginTime: 'Last Login',
@@ -252,23 +164,12 @@ export default {
     subscribeModePlaceholder: 'Select server mode',
     subscribeCount: 'Player Count',
     subscribeCountPlaceholder: 'Notify when reaching this count',
-    subscribeSave: 'Save',
-    subscribeSaveSuccess: 'Subscription config saved',
     subscribeSaveFailed: 'Failed to save subscription config',
   },
   layout: {
     menuConfig: 'Menu Settings',
-    addNav: 'Add Navigation',
-    removeNav: 'Remove Navigation',
     header: {
       login: 'Login',
-      loginPrompt: 'Please login',
-      roles: {
-        superAdmin: 'Super Admin',
-        admin: 'Admin',
-        user: 'LV 1',
-        guest: 'LV 0',
-      },
     },
     footer: {
       loginAction: 'Login',
@@ -279,24 +180,13 @@ export default {
         confirm: 'Confirm',
         cancel: 'Cancel',
       },
-      feedback: {
-        title: 'Feedback',
-        placeholder: 'Describe your issue or suggestion...',
-        submit: 'Submit',
-        cancel: 'Cancel',
-        success: 'Thank you for your feedback!',
-      },
     },
   },
   community: {
-    placeholderDesc: 'Community navigation is under construction. Stay tuned!',
     subtitle: 'Game Community',
     empty: 'No communities yet',
-    loading: 'Loading...',
-    noMore: 'No more',
     visit: 'Visit',
     noWebsite: 'This community has no website yet',
-    refresh: 'Refresh',
   },
   communityManage: {
     subtitle: 'Manage communities and servers',
@@ -304,7 +194,7 @@ export default {
       name: 'Community name',
       btn: 'Search',
       reset: 'Reset',
-      add: 'Add community'
+      add: 'Add community',
     },
     empty: 'No communities yet',
     unnamed: 'Unnamed community',
@@ -327,7 +217,7 @@ export default {
       websiteLabel: 'Community website',
       websitePlaceholder: 'Enter community website URL',
       save: 'Save',
-      saving: 'Saving…'
+      saving: 'Saving…',
     },
     messages: {
       nameRequired: 'Please enter community name',
@@ -336,7 +226,7 @@ export default {
       deleteSuccess: 'Deleted successfully',
       addFailed: 'Failed to add',
       saveFailed: 'Failed to update',
-      deleteFailed: 'Failed to delete'
+      deleteFailed: 'Failed to delete',
     },
     deleteModal: {
       title: 'Confirm Delete',
@@ -344,7 +234,7 @@ export default {
       confirmSuffix: '?',
       tip: 'All servers under this community will also be removed. Please proceed with caution.',
       delete: 'Delete',
-      deleting: 'Deleting…'
+      deleting: 'Deleting…',
     },
     server: {
       manageTitle: 'Servers - {name}',
@@ -363,7 +253,7 @@ export default {
         query: 'Query',
         mode: 'Mode',
         connect: 'Connect string',
-        actions: 'Actions'
+        actions: 'Actions',
       },
       form: {
         addTitle: 'Add Server',
@@ -382,7 +272,7 @@ export default {
         statisticsLabel: 'Statistics',
         queryLabel: 'Query',
         save: 'Save',
-        saving: 'Saving…'
+        saving: 'Saving…',
       },
       messages: {
         nameRequired: 'Please enter server name',
@@ -392,7 +282,7 @@ export default {
         deleteSuccess: 'Deleted successfully',
         addFailed: 'Failed to add',
         saveFailed: 'Failed to update',
-        deleteFailed: 'Failed to delete'
+        deleteFailed: 'Failed to delete',
       },
       deleteModal: {
         title: 'Confirm Delete',
@@ -400,9 +290,9 @@ export default {
         confirmSuffix: '?',
         tip: 'This action cannot be undone. Please proceed with caution.',
         delete: 'Delete',
-        deleting: 'Deleting…'
-      }
-    }
+        deleting: 'Deleting…',
+      },
+    },
   },
   tools: {
     title: 'Tools',
@@ -444,19 +334,14 @@ export default {
       checking: 'Checking...',
       copySuccess: 'Copied to clipboard',
       bindSuccess: 'Bound successfully',
-      notBoundYet: 'Not bound yet. Please finish binding in the QQ group.'
+      notBoundYet: 'Not bound yet. Please finish binding in the QQ group.',
     },
   },
   perfView: {
-    loading: 'Detecting...',
     memory: 'Memory',
     available: 'Available',
     noData: 'Not detected',
-    gpuInfo: 'Graphics Card (Windows)',
     process: 'Process',
-    processInfo: 'Launcher memory usage',
-    autoRefresh: 'Auto-refresh every {interval}s',
-    refreshInterval: '{s}s Refresh',
     systemInfo: 'System Info',
     hostname: 'Hostname',
     os: 'OS',
@@ -557,15 +442,11 @@ export default {
     general: 'General',
     subtitle: 'App settings and preferences',
     theme: 'Theme',
-    themeScheme: 'Color Scheme',
-    themeDark: 'Dark',
-    themeLight: 'Light',
     mouseTheme: 'Mouse Theme',
     mouseThemeApp: 'App Theme',
     mouseThemeAppDesc: 'Custom pointer',
     mouseThemeSystem: 'System Default',
     mouseThemeSystemDesc: 'System default pointer',
-    language: 'Language',
     about: 'About',
     version: 'Version',
     checkUpdate: 'Check Update',
@@ -579,12 +460,15 @@ export default {
     autoDetect: 'Auto Detect',
     inputCsgoPath: 'Enter CSGO2 Directory',
     inputSteamPath: 'Enter Steam Directory',
-    openTools: 'Open Tools',
     volumeControl: 'Volume Control',
     preview: 'Preview',
     langOptions: {
       zhCN: '简体中文',
+      zhTW: '繁體中文',
       enUS: 'English',
+      jaJP: '日本語',
+      koKR: '한국어',
+      ruRU: 'Русский',
     },
     aboutInfo: {
       developer: 'Developer',
@@ -630,7 +514,6 @@ export default {
     inputCustomStartOption: 'Enter custom launch option',
     add: 'Add',
     customStartOptionTip: 'Tip: You can add custom launch options in the input box above',
-    currentSelectedItems: 'Current Selected Items',
   },
   home: {
     greeting: 'Today is another energetic day!',
@@ -638,7 +521,6 @@ export default {
     welcomeMorning: 'Good morning',
     welcomeAfternoon: 'Good afternoon',
     welcomeEvening: 'Good evening',
-    weekDay: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
     onlineUser: 'Online Users',
     onlineUserTip: 'Players will appear here when they come online',
     communityHistoryOnline: 'History',
@@ -646,7 +528,6 @@ export default {
     serverCurrentOnline: 'Servers Online Now',
     serverHistoryOnline: 'Server Online History',
     serverCurrentOnlineTip: 'Real-time status of connected servers',
-    serverHistoryOnlineTip: 'Recent online player trend',
     timeRangeOneDay: '1 day',
     timeRangeThreeDays: '3 days',
     timeRangeOneWeek: '1 week',
@@ -657,26 +538,18 @@ export default {
     noData: 'No data',
     underConstruction: 'Feature under development',
     mapPlayStats: 'Map Statistics',
-    onlinePlayers: 'Online Players',
     people: 'people',
     playCountWan: '{count}w plays',
     playCountK: '{count}k plays',
     playCount: '{count} plays',
     weather: 'Real-time Weather',
     weatherRealtime: 'Live',
-    weatherCondition: 'Now',
-    weatherRefresh: 'Refresh',
     weatherFetchFailed: 'Failed to fetch weather',
     weatherFeelsLike: 'Feels Like',
     weatherHumidity: 'Humidity',
     weatherWind: 'Wind',
     weatherWindLevel: ' Bft',
-    weatherWindGust: 'Wind Gust',
-    weatherPrecipitation: 'Precipitation',
-    weatherPressure: 'Pressure',
     weatherVisibility: 'Visibility',
-    weatherDewPoint: 'Dew Point',
-    weatherCloudCover: 'Cloud Cover',
     weatherUVIndex: 'UV Index',
     weatherUvLow: 'Low',
     weatherUvModerate: 'Moderate',
@@ -685,43 +558,16 @@ export default {
   },
   server: {
     list: 'Server List',
-    refresh: 'Refresh',
     communityList: 'Community List',
-    addCustomCategory: 'Add Custom Category',
-    customCategoryDesc: 'Create a custom category to organize your servers',
-    categoryNamePlaceholder: 'e.g. Favorite Servers',
-    pleaseEnterCategoryName: 'Please enter category name',
-    categoryAdded: 'Category added successfully',
-    addServer: 'Add Server',
-    serverAddress: 'Server Address',
-    serverAddressPlaceholder: 'e.g. 127.0.0.1:27015',
-    serverRemark: 'Remark Name',
-    serverRemarkPlaceholder: 'e.g. My Local Server',
-    pleaseEnterServerAddress: 'Please enter server address',
-    invalidServerAddressFormat: 'Invalid server address format, please use IP:Port format',
-    invalidPort: 'Port must be between 1-65535',
-    serverAdded: 'Server added successfully',
-    deleteServer: 'Delete Server',
-    editCategoryTitle: 'Edit Custom Category',
-    categoryEdited: 'Category edited successfully',
-    categoryDeleted: 'Category deleted successfully',
-    cancel: 'Cancel',
-    add: 'Add',
-    edit: 'Edit',
-    players: 'Players',
     map: 'Map',
     noTranslation: 'No Translation',
     offline: 'Server Offline',
     waiting: 'Waiting for server online...',
-    empty: 'No server information found...',
     serverCount: '{count} Servers',
     playerCount: '{count} Players',
-    join: 'Join',
-    copy: 'Copy Address',
     autoJoin: 'Auto Join',
     copySuccess: 'Copied successfully!',
     joinBusy: 'Auto join is running, cannot join another server',
-    directConnect: 'Game is running, connecting directly',
     serverName: 'Server Name',
     playerCountColumn: 'Players',
     ping: 'Ping',
@@ -747,15 +593,6 @@ export default {
       launching: 'Launching...',
       gameStarted: 'Game Launched',
     },
-    mapPhase: {
-      warmup: 'Warmup',
-      intermission: 'Halftime',
-      gameover: 'Game Over',
-      live: 'Live',
-      over: 'Over',
-      freezetime: 'Freeze Time',
-      unknown: 'Unknown',
-    },
     minutesAgo: '{count} min',
   },
   serverJoin: {
@@ -779,16 +616,11 @@ export default {
     dynamicTitle: 'Auto Join Activity',
     pauseJoin: 'Pause Auto Join',
     unknownPlayer: 'Unknown Player',
-    dynamicJoining: 'Auto joining...',
-    dynamicPaused: 'Auto join paused...',
     trayRunning: 'Auto joining...',
     trayRestore: 'Click to restore window',
     logTitle: 'Auto Join Log',
     statusPolling: 'Polling server for slots...',
     team: {
-      ct: 'CT',
-      t: 'T',
-      spectator: 'Spectator',
       unknown: 'Unknown',
     },
     stats: {
@@ -801,35 +633,11 @@ export default {
     },
     weapon: {
       none: 'None',
-      famas: 'Famas',
-      galil: 'Galil AR',
-      ssg08: 'SSG 08',
-      glock: 'Glock',
-      deagle: 'Desert Eagle',
-      revolver: 'R8 Revolver',
-      bizon: 'PP-Bizon',
-      nova: 'Nova',
-      sawedoff: 'Sawed-Off Shotgun',
-      negev: 'Negev',
-      taser: 'Zeus x27',
-      knife: 'Knife',
-      shield: 'Ballistic Shield',
-      zeus: 'Zeus',
-      molotov: 'Molotov',
-      incgrenade: 'Incendiary Grenade',
-      flashbang: 'Flashbang',
-      hegrenade: 'HE Grenade',
-      smokegrenade: 'Smoke Grenade',
-      decoy: 'Decoy Grenade',
-      tagrenade: 'TAG Grenade',
-      snowball: 'Snowball',
-      bumpmine: 'Bump Mine',
     },
   },
   updateLog: {
     title: 'Update Log',
     subtitle: 'Record details of each update',
-    addLog: 'Add Log',
     addUpdateLog: 'Add Update Log',
     editUpdateLog: 'Edit Update Log',
     edit: 'Edit',
@@ -843,30 +651,30 @@ export default {
       version: {
         label: 'Version',
         placeholder: 'e.g. 1.0.0',
-        required: 'Please enter version'
+        required: 'Please enter version',
       },
       updateType: {
         label: 'Update Type',
         placeholder: 'Please select update type',
-        required: 'Please select update type'
+        required: 'Please select update type',
       },
       title: {
         label: 'Title',
         placeholder: 'Please enter update title',
-        required: 'Please enter title'
+        required: 'Please enter title',
       },
       content: {
         label: 'Content',
-        required: 'Please enter content'
+        required: 'Please enter content',
       },
       pinned: {
         label: 'Pin',
-        desc: 'Whether to pin'
+        desc: 'Whether to pin',
       },
       enabled: {
         label: 'Enabled',
-        desc: 'Whether enabled'
-      }
+        desc: 'Whether enabled',
+      },
     },
     dateFormat: 'YYYY-MM-DD',
     loadFailed: 'Failed to load update logs',
@@ -881,7 +689,6 @@ export default {
     deleteConfirmSuffix: '?',
     deleteConfirmTip: 'This action cannot be undone. Please proceed with caution.',
     deleting: 'Deleting...',
-    /* ===== Notice Log view (dual-view switcher referencing roleManage) ===== */
     noticeView: 'Notice Log',
     noticeSubtitle: 'Manage notifications pushed to users',
     noNotices: 'No notices',
@@ -890,74 +697,71 @@ export default {
     noticeStatusDraft: 'Draft',
     noticeStatusPublished: 'Published',
     noticeStatusOffline: 'Offline',
-    noticeRead: 'Read',
-    noticeUnread: 'Unread',
     noticeDeleteConfirmPrefix: 'Are you sure you want to delete the notice',
     noticeDeleteConfirmSuffix: '?',
     noticeDeleteConfirmTip: 'Users will no longer see this notice after deletion. Please proceed with caution.',
-    /* ===== Notice add/edit modal ===== */
     noticeAdd: 'Add Notice',
     noticeEdit: 'Edit Notice',
     noticeForm: {
       noticeType: {
         label: 'Notice Type',
         placeholder: 'Select notice type',
-        required: 'Please select notice type'
+        required: 'Please select notice type',
       },
       title: {
         label: 'Notice Title',
         placeholder: 'Enter notice title',
-        required: 'Please enter notice title'
+        required: 'Please enter notice title',
       },
       content: {
         label: 'Notice Content',
         placeholder: 'Enter notice content',
-        required: 'Please enter notice content'
+        required: 'Please enter notice content',
       },
       priority: {
         label: 'Priority',
         placeholder: 'Select priority',
-        required: 'Please select priority'
+        required: 'Please select priority',
       },
       status: {
         label: 'Status',
         placeholder: 'Select status',
-        required: 'Please select status'
+        required: 'Please select status',
       },
       receiverType: {
         label: 'Receiver Type',
         placeholder: 'Select receiver type',
-        required: 'Please select receiver type'
+        required: 'Please select receiver type',
       },
       receiverId: {
         label: 'Receiver',
         placeholder: 'Select receiver',
-        required: 'Please select receiver'
+        required: 'Please select receiver',
       },
       receiverRole: {
         label: 'Receiver Role',
         placeholder: 'Select role',
-        required: 'Please select role'
+        required: 'Please select role',
       },
       businessType: {
         label: 'Business Type',
-        placeholder: 'Enter business type (e.g. order/system/activity)'
+        placeholder: 'Enter business type (e.g. order/system/activity)',
       },
       businessId: {
         label: 'Business ID',
-        placeholder: 'Enter business ID'
+        placeholder: 'Enter business ID',
       },
       jumpType: {
         label: 'Jump Type',
-        placeholder: 'Enter jump type'
+        placeholder: 'Enter jump type',
       },
       jumpParams: {
         label: 'Jump Params',
-        placeholder: 'Enter jump params (JSON format)'
+        placeholder: 'Enter jump params (JSON format)',
       },
       expireTime: {
         label: 'Expire Time',
-        placeholder: 'Select expire time'
+        placeholder: 'Select expire time',
       },
     },
   },
@@ -965,20 +769,15 @@ export default {
     title: 'Map Subscription',
     back: 'Back to Tools',
     searchPlaceholder: 'Search map name, translation, or tags',
-    subscribe: 'Subscribe',
-    unsubscribe: 'Unsubscribe',
     unsubscribeSystem: 'Unsubscribe System',
     unsubscribeQQ: 'Unsubscribe QQ',
     notSubscribable: 'Not Subscribable',
-    subscribeSuccess: 'Subscribed successfully',
     subscribeFailed: 'Subscription failed',
-    unsubscribeSuccess: 'Unsubscribed successfully',
     unsubscribeFailed: 'Unsubscription failed',
     subscribeList: 'Subscription List',
     noSubscribeData: 'No subscribed maps',
     searchFailed: 'Failed to search maps',
     fetchSubscribeListFailed: 'Failed to fetch subscription list',
-    mapCD: 'Map CD(EXG)',
     lastRun: 'Last Run',
     cooldown: 'Cooldown',
     deadline: 'Deadline',
@@ -992,12 +791,8 @@ export default {
     isOrderable: 'Orderable',
     yes: 'Yes',
     no: 'No',
-    edit: 'Edit',
     editSubscribe: 'Edit Subscription',
     deleteSubscribe: 'Delete Subscription',
-    confirmDeleteSubscribe: 'Confirm delete this subscription?',
-    unsubscribeSystemSuccess: 'System subscription canceled',
-    unsubscribeQQSuccess: 'QQ subscription canceled',
     editMap: 'Edit Map',
     addMap: 'Add Map',
     deleteMap: 'Delete Map',
@@ -1083,14 +878,9 @@ export default {
     title: 'Comments',
     reply: 'Reply',
     submit: 'Post',
-    shield: 'Shield',
-    unshield: 'Unshield',
     delete: 'Delete',
-    showReplies: 'Show {count} replies',
-    hideReplies: 'Hide replies',
     placeholder: 'Enter comment...',
     replyPlaceholder: 'Reply to {name}...',
-    replyTo: 'Replying to {name}',
     empty: 'No comments yet. Be the first to comment!',
     count: '{count} comments',
     submitting: 'Posting...',
@@ -1100,15 +890,6 @@ export default {
     deleteSuccess: 'Comment deleted',
     deleteFailed: 'Failed to delete comment',
     loadFailed: 'Failed to load comments',
-    toast: {
-      postSuccess: 'Comment posted',
-      postFailed: 'Failed to post comment',
-      deleteSuccess: 'Comment deleted',
-      deleteFailed: 'Failed to delete comment',
-      likeFailed: 'Like failed',
-      dislikeFailed: 'Dislike failed',
-      shieldFailed: 'Operation failed',
-    },
   },
   dict: {
     subtitle: 'Manage system dicts and dict items',
@@ -1152,7 +933,9 @@ export default {
         label: 'Dict Code',
         placeholder: 'Please enter dict code',
       },
-      type: { label: 'Dict Type' },
+      type: {
+        label: 'Dict Type',
+      },
       sort: {
         label: 'Sort Value',
         placeholder: 'Please enter sort value',
@@ -1161,7 +944,9 @@ export default {
         label: 'Dict Description',
         placeholder: 'Please enter dict description',
       },
-      enabled: { label: 'Enabled' },
+      enabled: {
+        label: 'Enabled',
+      },
       editTitle: 'Edit Dict',
       addTitle: 'Add Dict',
       save: 'Save',
@@ -1221,7 +1006,9 @@ export default {
           label: 'English Name',
           placeholder: 'Please enter English name',
         },
-        type: { label: 'Render Type' },
+        type: {
+          label: 'Render Type',
+        },
         sort: {
           label: 'Sort Value',
           placeholder: 'Please enter sort value',
@@ -1230,7 +1017,9 @@ export default {
           label: 'Description',
           placeholder: 'Please enter description',
         },
-        enabled: { label: 'Enabled' },
+        enabled: {
+          label: 'Enabled',
+        },
         save: 'Save',
         saving: 'Saving...',
       },
@@ -1363,8 +1152,6 @@ export default {
       notBoundAccount: 'This member is not bound to a system account',
       bindToViewTip: 'Bind to view their map subscriptions',
       role: {
-        owner: 'Owner',
-        admin: 'Admin',
         member: 'Member',
       },
     },
