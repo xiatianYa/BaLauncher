@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue';
-import { NCard, NGrid, NGridItem, NProgress, NSwitch } from 'naive-ui';
+import { NCard, NGrid, NGridItem, NSwitch } from 'naive-ui';
 import { storeToRefs } from 'pinia';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
@@ -189,7 +189,6 @@ onUnmounted(() => {
           <div class="card-body">
           <div class="card-header"><SvgIcon icon="heroicons:cpu-chip" class="card-icon cpu-color" /><span class="card-title">CPU</span></div>
           <div class="big-value" :style="{ color: usageColor(stats.cpu.usage) }">{{ stats.cpu.usage }}<span class="unit">%</span></div>
-          <NProgress :percentage="stats.cpu.usage" :color="usageColor(stats.cpu.usage)" :height="6" :border-radius="3" :show-indicator="false" class="progress-bar" />
           <!-- 型号 -->
           <div class="info-row">{{ stats.cpu.model || '—' }}</div>
           <!-- 详情 -->
@@ -209,7 +208,6 @@ onUnmounted(() => {
           <div class="card-body">
           <div class="card-header"><SvgIcon icon="mdi:memory" class="card-icon ram-color" /><span class="card-title">{{ $t('perfView.memory') }}</span></div>
           <div class="big-value" :style="{ color: usageColor(stats.memory.usagePercent) }">{{ stats.memory.usagePercent }}<span class="unit">%</span></div>
-          <NProgress :percentage="stats.memory.usagePercent" :color="usageColor(stats.memory.usagePercent)" :height="6" :border-radius="3" :show-indicator="false" class="progress-bar" />
           <div class="info-row">{{ formatBytes(stats.memory.used) }} / {{ formatBytes(stats.memory.total) }}</div>
           <div class="detail-list">
             <div class="detail-row"><span>{{ $t('perfView.available') }}</span><b>{{ formatBytesCompact(stats.memory.free) }}</b></div>
@@ -236,7 +234,6 @@ onUnmounted(() => {
           <div class="card-header"><SvgIcon icon="mdi:expansion-card" class="card-icon gpu-color" /><span class="card-title">GPU</span></div>
           <template v-if="hasGpuUsage">
             <div class="big-value" :style="{ color: usageColor(stats.gpu.usagePercent!) }">{{ stats.gpu.usagePercent }}<span class="unit">%</span></div>
-            <NProgress :percentage="stats.gpu.usagePercent!" :color="usageColor(stats.gpu.usagePercent!)" :height="6" :border-radius="3" :show-indicator="false" class="progress-bar" />
           </template>
           <template v-else>
             <div class="gpu-fallback-name">{{ stats.gpu.model || $t('perfView.noData') }}</div>
@@ -595,10 +592,6 @@ onUnmounted(() => {
       font-weight: 600;
       margin-left: 2px;
     }
-  }
-
-  .progress-bar {
-    margin: 4px 0 6px;
   }
 
   .info-row {

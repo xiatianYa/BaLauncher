@@ -259,30 +259,20 @@ onUnmounted(() => {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    scrollbar-gutter: stable;
+    /* 隐藏滚动条，但保留滚轮逐行滚动 */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge 旧版 */
+
+    &::-webkit-scrollbar {
+      display: none; /* Chrome / Safari */
+    }
+
     /* 玩家卡片网格布局：列自动填充并拉伸填满整行（右侧不留空），默认从左往右延伸 */
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     align-content: start;
     gap: 6px;
     padding: 2px 4px 2px 2px;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      border-radius: 3px;
-      background: rgba(var(--app-rgb), 0.18);
-    }
-
-    &::-webkit-scrollbar-thumb:hover {
-      background: rgba(var(--app-rgb), 0.3);
-    }
 
     .online-item {
       display: flex;
