@@ -3,7 +3,7 @@
   $schema: "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
   appId: "com.bluearchive.balauncher",
   asar: true,
-  productName: "蔚蓝档案登录器",
+  productName: "碧蓝档案登录器",
   directories: {
     output: "release/${version}",
   },

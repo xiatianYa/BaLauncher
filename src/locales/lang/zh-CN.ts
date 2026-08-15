@@ -1,6 +1,6 @@
 export default {
   system: {
-    title: '蔚蓝档案启动器',
+    title: '碧蓝档案启动器',
   },
   routes: {
     home: '首页',
@@ -519,7 +519,7 @@ export default {
   },
   home: {
     greeting: '今天又是充满活力的一天!',
-    welcome: '欢迎光临蔚蓝档案登录器！🌈',
+    welcome: '欢迎光临碧蓝档案登录器！🌈',
     welcomeMorning: '早上好',
     welcomeAfternoon: '下午好',
     welcomeEvening: '晚上好',

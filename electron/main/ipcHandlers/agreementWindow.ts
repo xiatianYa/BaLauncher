@@ -21,7 +21,7 @@ export function setupAgreementIpc() {
     agreementWindow = null
 
     agreementWindow = new BrowserWindow({
-      title: '蔚蓝档案登录器 - 协议',
+      title: '碧蓝档案登录器 - 协议',
       icon: path.join(process.env.VITE_PUBLIC, 'favicon.ico'),
       width: 820,
       height: 680,
