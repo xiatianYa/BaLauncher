@@ -12,6 +12,7 @@ import iconSetting from '@/assets/imgs/menu/menu-setting.png';
 import iconUpdateLog from '@/assets/imgs/menu/menu-update-log.png';
 import iconCommunity from '@/assets/imgs/menu/menu-community.png';
 import iconCommunityManager from '@/assets/imgs/menu/menu-community-manager.png';
+import iconLog from '@/assets/imgs/menu/menu-log.png';
 
 const visible = defineModel<boolean>('visible', {
     default: false
@@ -22,7 +23,7 @@ const authStore = useAuthStore();
 
 // 与路由 store 保持一致的权限规则：超管专属 / 管理员专属菜单
 const SUPER_ADMIN_ONLY_MENU_KEYS = ['roleManage', 'dictManage', 'userManage'];
-const ADMIN_ONLY_MENU_KEYS = ['communityManage'];
+const ADMIN_ONLY_MENU_KEYS = ['communityManage', 'logManage'];
 
 const isSuperAdmin = computed(() => authStore.userInfo.roles.includes('R_SUPER'));
 const isAdmin = computed(() =>
@@ -77,6 +78,13 @@ const SideNavRoutes: Api.Route.SideNavItem[] = reactive([
         key: "communityManage",
         icon: "mdi:account-supervisor-outline",
         img: iconCommunityManager,
+        isPersistent: true
+    },
+    {
+        name: "routes.logManage",
+        key: "logManage",
+        icon: "mdi:file-document-outline",
+        img: iconLog,
         isPersistent: true
     },
     {

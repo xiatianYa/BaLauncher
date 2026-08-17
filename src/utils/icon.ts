@@ -219,6 +219,8 @@ export const commonIcons = [
   'mdi:eye-outline',
   'mdi:snowflake',
   'mdi:help-circle-outline',
+  'mdi:pause',
+  'mdi:play',
   // iconamoon
   'iconamoon:arrow-down-2-bold',
   'iconamoon:arrow-up-2-bold',

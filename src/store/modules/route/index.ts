@@ -24,7 +24,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
   const SUPER_ADMIN_ONLY_MENU_KEYS = ['roleManage', 'dictManage','userManage'];
 
   // 需要管理员权限才能显示的菜单 key
-  const ADMIN_ONLY_MENU_KEYS = ['communityManage'];
+  const ADMIN_ONLY_MENU_KEYS = ['communityManage', 'logManage'];
 
   // 是否为超级管理员
   const isSuperAdmin = computed(() => authStore.userInfo.roles.includes('R_SUPER'));
@@ -47,6 +47,7 @@ export const useRouteStore = defineStore(SetupStoreId.Route, () => {
       '用户管理': 'routes.userManage',
       '字典管理': 'routes.dictManage',
       '社区管理': 'routes.communityManage',
+      '日志管理': 'routes.logManage',
       '设置': 'routes.setting',
     };
     return map[name] ?? name;

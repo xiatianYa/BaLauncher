@@ -107,6 +107,15 @@ function createVueRoutes(): RouteRecordRaw[] {
                     }
                 },
                 {
+                    path: 'logManage',
+                    name: 'logManage',
+                    component: () => import('@/views/logManage/index.vue'),
+                    meta: {
+                        title: '日志管理',
+                        requiresAuth: false
+                    }
+                },
+                {
                     path: 'feedback',
                     name: 'feedback',
                     component: () => import('@/views/feedback/index.vue'),
