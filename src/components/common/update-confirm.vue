@@ -332,10 +332,12 @@ const {
       .progress-bar {
         :deep(.n-progress-graph-line) {
           border-radius: 4px;
+          overflow: hidden;
         }
 
         :deep(.n-progress-graph-line-fill) {
           border-radius: 4px;
+          transition: width 0.3s ease;
         }
       }
 
