@@ -75,9 +75,9 @@ export function useGsiListener(deps: GsiListenerDeps) {
           // 这里不再上报退出（reportPlayerQuit）：GSI 无法区分「切服」与「真正退出」，
           // 若在切服瞬间误报退出，会让后端误删玩家的 GIS 数据
           // 真正的退出已由其他通道兜底上报：日志读取（disconnected）与游戏进程退出检测（useGameStatus）
-          // 记录玩家当前所在地图（unknown 表示已离开对局/服务器，置空后随服务器数据一并上报）
-          gameServerInfo.value.mapName = data.current.toLowerCase() === 'unknown' ? '' : data.current
-          sendServerData(gameServerInfo.value)
+          // 记录玩家当前所在地图（unknown 表示已离开对局/服务器，置空后随玩家数据一并上报）
+          gamePlayerInfo.value.mapName = data.current.toLowerCase() === 'unknown' ? '' : data.current
+          sendPlayerData(gamePlayerInfo.value)
           const targetMap = joinServerInfo.value?.mapName
           const currentMap = data.current
           if (targetMap && currentMap && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) && (isAutomatic.value || hasRecentConnectAttempt())) {

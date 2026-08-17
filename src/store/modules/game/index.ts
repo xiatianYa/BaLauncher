@@ -141,12 +141,12 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /** 当前游戏服务器信息 */
   const gameServerInfo = ref<Api.Game.ServerInfoData>({
-    id: 0, mapName: '', round: '', CTScore: '', TScore: '', mapStage: '', mapPhase: ''
+    id: 0, round: '', CTScore: '', TScore: '', mapStage: '', mapPhase: ''
   })
 
   /** 当前玩家游戏内信息 */
   const gamePlayerInfo = ref<Api.Game.CsgoPlayer>({
-    team: '', playStatus: '', health: 0, armor: 0, money: 0, equipValue: 0,
+    team: '', playStatus: '', mapName: '', health: 0, armor: 0, money: 0, equipValue: 0,
     weapon: '', clipAmmo: 0, reserveAmmo: 0, helmet: false, kills: 0, score: 0
   })
 
