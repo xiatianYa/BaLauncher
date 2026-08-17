@@ -187,6 +187,7 @@ export default {
     empty: 'No communities yet',
     visit: 'Visit',
     noWebsite: 'This community has no website yet',
+    allLoaded: 'All communities shown',
   },
   communityManage: {
     subtitle: 'Manage communities and servers',
@@ -597,6 +598,7 @@ export default {
       gameStarted: 'Game Launched',
     },
     minutesAgo: '{count} min',
+    hoursAgo: '{count} hr',
   },
   serverJoin: {
     title: 'Auto Join Settings',

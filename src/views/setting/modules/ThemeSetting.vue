@@ -62,7 +62,7 @@ const previewAudio = (type: AudioEventType) => {
             <span>{{ $t('settings.subscribeServer') }}</span>
           </button>
           <button class="preview-btn" @click="previewAudio('connect')">
-            <SvgIcon icon="mdi:server-connect" class="btn-icon" />
+            <SvgIcon icon="mdi:server-network" class="btn-icon" />
             <span>{{ $t('settings.connectServer') }}</span>
           </button>
         </div>

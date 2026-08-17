@@ -145,7 +145,7 @@ onMounted(() => {
 
         <!-- 全部加载完毕（参考 updateLog：文字两侧装饰分隔线） -->
         <div v-if="finished && list.length > 0" class="finished-indicator">
-          {{ $t('updateLog.allLoaded') }}
+          {{ $t('community.allLoaded') }}
         </div>
       </div>
     </NCard>

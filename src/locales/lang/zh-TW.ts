@@ -187,6 +187,7 @@ export default {
     empty: '暫無社群資料',
     visit: '前往',
     noWebsite: '該社群尚未設定網站',
+    allLoaded: '已顯示全部社群',
   },
   communityManage: {
     subtitle: '管理社群與伺服器資訊',
@@ -597,6 +598,7 @@ export default {
       gameStarted: '遊戲已啟動',
     },
     minutesAgo: '{count}分鐘',
+    hoursAgo: '{count}小時',
   },
   serverJoin: {
     title: '擠服設定',

@@ -201,7 +201,7 @@ onUnmounted(() => {
 
 <template>
   <NCard class="w-full h-full" content-class="flex h-full w-full" content-style="padding:0px;" :bordered="false">
-    <NCard :class="['rounded-10px', appStore.isFullscreen ? 'fixed inset-0 z-999 m-0px rounded-10px' : 'm-10px']"
+    <NCard :class="['rounded-10px flex-1 min-w-0', appStore.isFullscreen ? 'fixed inset-0 z-999 m-0px rounded-10px' : 'm-10px']"
       content-style="padding:10px;" content-class="h-full flex flex-col flex-1 overflow-hidden"
       header-style="padding:10px 20px 10px 20px" v-if="!serverLoading" :segmented="{
         content: true,
@@ -251,12 +251,14 @@ onUnmounted(() => {
             </template>
             {{ gameStore.isLogReading ? $t('server.logRunning') : $t('server.logStopped') }}
           </NTooltip>
-          <NTooltip placement="bottom">
+          <NTooltip placement="bottom" class="cursor-pointer">
             <template #trigger>
-              <NButton class="rounded-5px p-8px" type="default" strong dashed
+              <!-- primary secondary：确保边界清晰、hover/点击有明确反馈（default 类型在暗色主题下几乎不可见） -->
+              <NButton class="rounded-5px p-8px" type="primary" secondary strong dashed
                 @click="appStore.toggleServerViewModule()">
                 <template #icon>
-                  <SvgIcon icon="material-symbols:view-list" />
+                  <SvgIcon
+                    :icon="appStore.serverViewModule === 'tableModal' ? 'material-symbols:view-quilt' : 'material-symbols:view-list'" />
                 </template>
               </NButton>
             </template>
@@ -264,7 +266,8 @@ onUnmounted(() => {
           </NTooltip>
           <NTooltip placement="bottom">
             <template #trigger>
-              <NButton class="rounded-5px p-8px" type="default" strong dashed @click="appStore.toggleFullscreen()">
+              <NButton class="rounded-5px p-8px" type="primary" secondary strong dashed
+                @click="appStore.toggleFullscreen()">
                 <template #icon>
                   <SvgIcon :icon="appStore.isFullscreen ? 'iconamoon:screen-normal' : 'iconamoon:screen-full'" />
                 </template>
@@ -328,9 +331,10 @@ onUnmounted(() => {
       <component :is="activeModule.component" @back="appStore.serverViewModule = 'cardModel'"
         :servers="gameStore.currentServerList" :map-list="gameStore.mapList"
         :source-server-list="gameStore.serverDataList" :refreshing-addrs="gameStore.refreshingServerAddrs"
-        @join="joinServer" @copy="copyServerAddr" @auto-join="openAutoJoinServer" @refresh="refreshServerInfo" />
+        @join="joinServer" @copy="copyServerAddr" @auto-join="openAutoJoinServer" @refresh="refreshServerInfo"
+        @select-community="selectCommunity" />
     </NCard>
-    <NCard class="m-10px rounded-10px" content-style="padding:10px;" content-class="h-full flex flex-col flex-1" v-else>
+    <NCard class="m-10px rounded-10px flex-1 min-w-0" content-style="padding:10px;" content-class="h-full flex flex-col flex-1" v-else>
       <LoadingSpinner :loading="serverLoading" />
     </NCard>
     <CommunityList :selected-id="appStore.selectedCommunityId" @select="selectCommunity" />
@@ -342,6 +346,12 @@ onUnmounted(() => {
 </template>
 
 <style scoped lang="scss">
+// 全屏时主卡片头部会覆盖到窗口控制栏（-webkit-app-region: drag 拖拽区域）上方，
+// 必须显式标记 no-drag，否则 Electron 的拖拽区域会拦截头部按钮的悬停与点击（悬停无反馈、点击失效）
+:deep(.n-card-header) {
+  -webkit-app-region: no-drag;
+}
+
 .countdown-container {
   position: relative;
   display: flex;

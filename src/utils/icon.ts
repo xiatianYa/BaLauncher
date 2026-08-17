@@ -166,7 +166,6 @@ export const commonIcons = [
   'mdi:routes',
   'mdi:scoreboard-outline',
   'mdi:server',
-  'mdi:server-connect',
   'mdi:server-network',
   'mdi:server-off',
   'mdi:shape-outline',

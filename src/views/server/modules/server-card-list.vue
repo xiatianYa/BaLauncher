@@ -184,6 +184,19 @@ const calculatePastMinutes = (targetTime: string) => {
   return Math.max(minutesDiff, 0);
 };
 
+// 格式化运行时长：X小时 Y分钟 / X分钟（与表格视图一致）
+const formatRuntime = (targetTime: string) => {
+  const minutes = calculatePastMinutes(targetTime);
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours > 0) {
+    return mins > 0
+      ? `${$t('server.hoursAgo', { count: hours })} ${$t('server.minutesAgo', { count: mins })}`
+      : $t('server.hoursAgo', { count: hours });
+  }
+  return $t('server.minutesAgo', { count: minutes });
+};
+
 // 获取 Ping 值对应的颜色类型（来自字典 ping_level）
 const getPingType = (ping?: number) => {
   const level = ping === undefined || ping === null ? 'unknown' : ping < 70 ? 'normal' : ping < 100 ? 'warning' : 'error';
@@ -309,7 +322,7 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
               <div v-if="server.dateTimeOriginal" class="online-time-badge ml-auto mr-5px">
                 <SvgIcon icon="mdi:clock-outline" class="online-time-icon" />
                 <span class="online-time-num">
-                  {{ $t('server.minutesAgo', { count: calculatePastMinutes(server.dateTimeOriginal) }) }}
+                  {{ formatRuntime(server.dateTimeOriginal) }}
                 </span>
               </div>
             </div>

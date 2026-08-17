@@ -49,7 +49,7 @@ const handleSelect = (id: number) => {
 </script>
 
 <template>
-  <NCard class="m-10px w-380px rounded-10px max-w-[280px]" content-style="padding:10px;"
+  <NCard class="m-10px w-320px rounded-10px max-w-[240px]" content-style="padding:10px;"
     content-class="h-full flex flex-col overflow-hidden" header-style="padding:10px 10px 0px 10px;">
     <template #header>
       <h3 class="text-lg font-bold mb-10px">{{ $t('server.communityList') }}</h3>
@@ -85,7 +85,7 @@ const handleSelect = (id: number) => {
 .community-box {
   display: flex;
   align-items: center;
-  padding: 12px;
+  padding: 10px;
   background-color: rgba(133, 133, 133, 0.1);
   border-radius: 8px;
   border: 2px solid transparent;
@@ -100,9 +100,9 @@ const handleSelect = (id: number) => {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    margin-right: 8px;
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
     cursor: grab;
     opacity: 0.5;
     transition: opacity 0.2s ease;
@@ -117,7 +117,7 @@ const handleSelect = (id: number) => {
     }
 
     .drag-icon {
-      font-size: 20px;
+      font-size: 16px;
       color: #888;
     }
   }
@@ -146,10 +146,10 @@ const handleSelect = (id: number) => {
 
 .community-image {
   flex-shrink: 0;
-  margin-right: 12px;
+  margin-right: 10px;
 
   img {
-    width: 40px;
+    width: 32px;
     border-radius: 4px;
     object-fit: cover;
   }
@@ -180,7 +180,7 @@ const handleSelect = (id: number) => {
 .community-online {
   flex-shrink: 0;
   text-align: center;
-  margin-left: 12px;
+  margin-left: 10px;
 }
 
 @keyframes fadeInUp {

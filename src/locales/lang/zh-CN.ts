@@ -187,6 +187,7 @@ export default {
     empty: '暂无社区数据',
     visit: '前往',
     noWebsite: '该社区暂未配置网站',
+    allLoaded: '已展示全部社区',
   },
   communityManage: {
     subtitle: '管理社区与服务器信息',
@@ -597,6 +598,7 @@ export default {
       gameStarted: '游戏已启动',
     },
     minutesAgo: '{count}分钟',
+    hoursAgo: '{count}小时',
   },
   serverJoin: {
     title: '挤服设置',

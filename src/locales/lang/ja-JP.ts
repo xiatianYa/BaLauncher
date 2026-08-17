@@ -187,6 +187,7 @@ export default {
     empty: 'コミュニティデータがありません',
     visit: '移動',
     noWebsite: 'このコミュニティにはウェブサイトが設定されていません',
+    allLoaded: 'すべてのコミュニティを表示しました',
   },
   communityManage: {
     subtitle: 'コミュニティとサーバー情報の管理',
@@ -597,6 +598,7 @@ export default {
       gameStarted: 'ゲームが起動しました',
     },
     minutesAgo: '{count}分',
+    hoursAgo: '{count}時間',
   },
   serverJoin: {
     title: '自動入場設定',

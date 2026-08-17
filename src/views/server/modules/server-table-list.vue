@@ -33,17 +33,15 @@ const getPingType = (ping?: number) => {
   return dictType('ping_level', level);
 };
 
-// 服务器比赛阶段文案（来自字典 game_map_phase，与卡片视图一致）
-const getMapPhaseText = (phase: string) => dictLabel('game_map_phase', phase) || phase;
-
-// 地图运行时长：自换图时间(dateTimeOriginal)起，格式化为 Xh Ym / Xm，离线时无该字段显示 '-'
+// 地图运行时长：自换图时间(dateTimeOriginal)起，用 dayjs 计算并格式化为 X小时 Y分钟 / X分钟，离线时无该字段显示 '-'
 const formatMapRuntime = (targetTime?: string) => {
   if (!targetTime) return '-';
   const minutes = Math.max(dayjs().diff(dayjs(targetTime), 'minute'), 0);
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 60) return $t('server.minutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  const hoursText = $t('server.hoursAgo', { count: hours });
+  return mins > 0 ? `${hoursText} ${$t('server.minutesAgo', { count: mins })}` : hoursText;
 };
 
 // 根据在线人数获取颜色
@@ -274,19 +272,22 @@ const getSortOrder = (field: SortField) => {
             </NTag>
           </div>
 
-          <!-- 比分 -->
+          <!-- 比分（仅显示比分，不显示阶段等服务器状态） -->
           <div class="td td-score">
             <div v-if="server.mapPhase" class="stat-chip">
               <span class="team team-ct">{{ server.CTScore || 0 }}</span>
-              <span class="score-phase">{{ getMapPhaseText(server.mapPhase || '') }}</span>
+              <span class="score-sep">:</span>
               <span class="team team-t">{{ server.TScore || 0 }}</span>
             </div>
             <span v-else class="empty-score" :style="{ color: 'rgba(var(--app-rgb), 0.6)' }">-</span>
           </div>
 
-          <!-- 地图运行时长 -->
+          <!-- 地图运行时长（dayjs 计算 + Tag 样式） -->
           <div class="td td-runtime">
-            <span class="runtime-text">{{ formatMapRuntime(server.dateTimeOriginal) }}</span>
+            <NTag size="small" round class="runtime-tag" :bordered="false"
+              :color="{ color: 'rgba(var(--app-rgb), 0.06)', textColor: 'rgba(var(--app-rgb), 0.75)' }">
+              {{ formatMapRuntime(server.dateTimeOriginal) }}
+            </NTag>
           </div>
 
           <!-- 操作 -->
@@ -348,7 +349,7 @@ const getSortOrder = (field: SortField) => {
 .custom-thead {
   display: grid;
   // 其他字段按内容定宽，剩余空间留给服务器名称与地图（操作列容纳 3 个按钮）
-  grid-template-columns: 2fr 1.5fr 100px 64px 100px 64px 120px;
+  grid-template-columns: 2fr 1.5fr 100px 64px 70px 64px 148px;
   gap: 12px;
   padding: 0 16px 8px;
   // 分隔线颜色随主题变化（--app-rgb 深色为白、浅色为暖黑）
@@ -424,7 +425,7 @@ const getSortOrder = (field: SortField) => {
   position: relative;
   display: grid;
   // 与表头保持一致：其他字段按内容定宽，剩余空间留给服务器名称与地图（操作列容纳 3 个按钮）
-  grid-template-columns: 2fr 1.5fr 100px 64px 100px 64px 120px;
+  grid-template-columns: 2fr 1.5fr 100px 64px 70px 64px 148px;
   gap: 12px;
   align-items: center;
   padding: 16px;
@@ -607,14 +608,10 @@ const getSortOrder = (field: SortField) => {
     }
   }
 
-  .score-phase {
-    font-size: 10px;
-    opacity: 0.7;
-    font-weight: 500;
-    padding: 1px 6px;
-    background: rgba(var(--app-rgb), 0.08);
-    border-radius: 4px;
-    text-transform: capitalize;
+  .score-sep {
+    font-size: 12px;
+    opacity: 0.6;
+    font-weight: 600;
   }
 
   .empty-score {
@@ -624,11 +621,13 @@ const getSortOrder = (field: SortField) => {
 
 // 地图运行时长
 .td-runtime {
-  .runtime-text {
-    font-size: 12px;
+  :deep(.runtime-tag) {
     font-weight: 600;
-    color: rgba(var(--app-rgb), 0.7);
+    // 固定窄列下禁止换行，超出省略
     white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 
@@ -642,6 +641,7 @@ const getSortOrder = (field: SortField) => {
   }
 
   .action-btn {
+    min-width: 40px;
     transition: all 0.2s ease;
     border-radius: 8px;
 

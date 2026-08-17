@@ -187,6 +187,7 @@ export default {
     empty: '커뮤니티가 없습니다',
     visit: '방문',
     noWebsite: '이 커뮤니티에는 아직 웹사이트가 없습니다',
+    allLoaded: '모든 커뮤니티를 표시했습니다',
   },
   communityManage: {
     subtitle: '커뮤니티와 서버 정보 관리',
@@ -596,6 +597,7 @@ export default {
       gameStarted: '게임이 시작되었습니다',
     },
     minutesAgo: '{count}분',
+    hoursAgo: '{count}시간',
   },
   serverJoin: {
     title: '자동 입장 설정',

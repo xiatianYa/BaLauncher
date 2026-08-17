@@ -187,6 +187,7 @@ export default {
     empty: 'Сообществ пока нет',
     visit: 'Перейти',
     noWebsite: 'У этого сообщества пока нет сайта',
+    allLoaded: 'Все сообщества показаны',
   },
   communityManage: {
     subtitle: 'Управление сообществами и серверами',
@@ -597,6 +598,7 @@ export default {
       gameStarted: 'Игра запущена',
     },
     minutesAgo: '{count} мин',
+    hoursAgo: '{count} ч',
   },
   serverJoin: {
     title: 'Настройки автовхода',
