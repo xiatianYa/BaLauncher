@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 import { NCard, NGrid, NGridItem } from 'naive-ui';
 import { fetchGetCommunityPage } from '@/service/api';
 import { $t } from '@/locales';
@@ -17,6 +17,10 @@ const current = ref(1);
 const size = 9;
 /** 是否已加载全部 */
 const finished = ref(false);
+/** 滚动容器引用（用于判断内容是否不足一屏） */
+const listRef = ref<HTMLElement | null>(null);
+/** 最近一次请求是否成功（失败时不自动补页，避免接口异常时死循环重试） */
+let lastLoadSuccess = false;
 
 /** 骨架屏数量：首屏 9 个占满三行，滚动加载更多时追加 6 个 */
 const skeletonCount = computed(() => (list.value.length === 0 ? 9 : 6));
@@ -26,6 +30,7 @@ const loadCommunity = async () => {
   // 防重入：加载中或已加载完则忽略
   if (loading.value || finished.value) return;
   loading.value = true;
+  lastLoadSuccess = false;
   try {
     const params: Api.Game.CommunitySearchParams = {
       current: current.value,
@@ -33,6 +38,7 @@ const loadCommunity = async () => {
     };
     const { data, error } = await fetchGetCommunityPage(params);
     if (!error && data) {
+      lastLoadSuccess = true;
       const records = data.records || [];
       list.value.push(...records);
       // 本次返回不足一页 => 没有更多数据
@@ -40,11 +46,17 @@ const loadCommunity = async () => {
         finished.value = true;
       }
       current.value += 1;
-    } else {
-      finished.value = true;
     }
+    // 请求失败不标记 finished，允许后续滚动/补页再次触发重试
   } finally {
     loading.value = false;
+    // 内容不足一屏时容器没有滚动条，@scroll 事件永远不会触发：
+    // 等 DOM 更新后判断，自动补足加载下一页，直到内容撑满或已加载完
+    await nextTick();
+    const el = listRef.value;
+    if (lastLoadSuccess && !finished.value && el && el.scrollHeight <= el.clientHeight) {
+      loadCommunity();
+    }
   }
 };
 
@@ -97,7 +109,7 @@ onMounted(() => {
       </template>
 
       <!-- 社区卡片列表（滚动到底部继续分页） -->
-      <div class="community-list" @scroll="handleScroll">
+      <div class="community-list" ref="listRef" @scroll="handleScroll">
         <NGrid :x-gap="16" :y-gap="16" :cols="2" responsive="screen" item-responsive>
           <NGridItem v-for="(item, index) in list" :key="item.id" span="3 s:2 m:1 l:1">
             <div class="community-card" :style="{ '--delay': `${index * 0.04}s` }" @click="openWebsite(item.website)">

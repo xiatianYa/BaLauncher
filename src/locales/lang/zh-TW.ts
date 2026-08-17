@@ -569,6 +569,7 @@ export default {
     playerCount: '{count}人',
     autoJoin: '自動擠服',
     copySuccess: '複製成功!',
+    copyAddress: '複製伺服器位址',
     joinBusy: '正在擠服中，無法進行連線其他伺服器的操作',
     serverName: '伺服器名稱',
     playerCountColumn: '人數',

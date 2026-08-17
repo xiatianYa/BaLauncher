@@ -569,6 +569,7 @@ export default {
     playerCount: '{count} online',
     autoJoin: 'Auto Join',
     copySuccess: 'Copied successfully!',
+    copyAddress: 'Copy Server Address',
     joinBusy: 'Auto join is running, cannot join another server',
     serverName: 'Server Name',
     playerCountColumn: 'Players',

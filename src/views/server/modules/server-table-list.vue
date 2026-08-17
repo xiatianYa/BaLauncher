@@ -312,6 +312,16 @@ const getSortOrder = (field: SortField) => {
                 </template>
                 {{ $t('server.autoJoin') }}
               </NTooltip>
+              <NTooltip trigger="hover" placement="bottom">
+                <template #trigger>
+                  <NButton size="small" class="action-btn copy-btn" @click="emit('copy', server)">
+                    <template #icon>
+                      <SvgIcon icon="solar:copy-outline" />
+                    </template>
+                  </NButton>
+                </template>
+                {{ $t('server.copyAddress') }}
+              </NTooltip>
             </div>
           </div>
         </div>
@@ -337,8 +347,8 @@ const getSortOrder = (field: SortField) => {
 
 .custom-thead {
   display: grid;
-  // 其他字段按内容定宽，剩余空间留给服务器名称与地图
-  grid-template-columns: 2fr 1.5fr 100px 64px 100px 64px 80px;
+  // 其他字段按内容定宽，剩余空间留给服务器名称与地图（操作列容纳 3 个按钮）
+  grid-template-columns: 2fr 1.5fr 100px 64px 100px 64px 120px;
   gap: 12px;
   padding: 0 16px 8px;
   // 分隔线颜色随主题变化（--app-rgb 深色为白、浅色为暖黑）
@@ -413,8 +423,8 @@ const getSortOrder = (field: SortField) => {
 .custom-row {
   position: relative;
   display: grid;
-  // 与表头保持一致：其他字段按内容定宽，剩余空间留给服务器名称与地图
-  grid-template-columns: 2fr 1.5fr 100px 64px 100px 64px 80px;
+  // 与表头保持一致：其他字段按内容定宽，剩余空间留给服务器名称与地图（操作列容纳 3 个按钮）
+  grid-template-columns: 2fr 1.5fr 100px 64px 100px 64px 120px;
   gap: 12px;
   align-items: center;
   padding: 16px;
@@ -656,6 +666,18 @@ const getSortOrder = (field: SortField) => {
         background: rgba(249, 115, 22, 0.2);
         color: #f97316;
         border-color: rgba(249, 115, 22, 0.4);
+      }
+    }
+
+    &.copy-btn {
+      color: rgba(64, 158, 255, 0.85);
+      background: rgba(64, 158, 255, 0.08);
+      border: 1px solid rgba(64, 158, 255, 0.2);
+
+      &:hover {
+        background: rgba(64, 158, 255, 0.2);
+        color: #4096ff;
+        border-color: rgba(64, 158, 255, 0.4);
       }
     }
 

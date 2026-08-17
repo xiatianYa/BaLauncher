@@ -568,6 +568,7 @@ export default {
     playerCount: '{count}명',
     autoJoin: '자동 입장',
     copySuccess: '복사되었습니다!',
+    copyAddress: '서버 주소 복사',
     joinBusy: '자동 입장이 실행 중입니다. 다른 서버에 연결할 수 없습니다',
     serverName: '서버 이름',
     playerCountColumn: '인원',

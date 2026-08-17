@@ -569,6 +569,7 @@ export default {
     playerCount: '{count}人',
     autoJoin: '自動入場',
     copySuccess: 'コピーしました!',
+    copyAddress: 'サーバーアドレスをコピー',
     joinBusy: '自動入場中です。他のサーバーへの接続はできません',
     serverName: 'サーバー名',
     playerCountColumn: '人数',

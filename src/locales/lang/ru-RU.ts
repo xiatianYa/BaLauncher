@@ -569,6 +569,7 @@ export default {
     playerCount: '{count} онлайн',
     autoJoin: 'Автовход',
     copySuccess: 'Скопировано!',
+    copyAddress: 'Скопировать адрес',
     joinBusy: 'Автовход уже запущен, нельзя подключиться к другому серверу',
     serverName: 'Название сервера',
     playerCountColumn: 'Игроки',
