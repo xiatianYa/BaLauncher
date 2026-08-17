@@ -1,4 +1,3 @@
-import { unref } from 'vue'
 import type { Ref } from 'vue'
 import type { GamePlatform } from '@/constants/app'
 import { reportPlayerQuit } from '@/utils/ws/server'
@@ -64,7 +63,7 @@ export function useGameStatus(deps: GameStatusDeps) {
   async function checkGameRunning(): Promise<void> {
     try {
       // 记录本轮检查前的运行状态，用于检测"运行中 → 已关闭"的跳变
-      const wasRunning = unref(isGameRunning)
+      const wasRunning = isGameRunning.value
       const { isRunning } = await window.ipcRenderer.checkCsgo2Running()
       isGameRunning.value = isRunning
 
@@ -98,18 +97,18 @@ export function useGameStatus(deps: GameStatusDeps) {
         }
       }
       // 确保渲染端 GSI 监听已注册（幂等；热更新导致监听丢失后也能自动恢复）
-      if (!unref(isGsiRunning)) {
+      if (!isGsiRunning.value) {
         listenToGsiData()
       }
 
       // 日志读取依赖游戏控制台文件：仅游戏运行时保持，未启动则主动拉起
-      if (unref(isGameRunning)) {
-        if (!unref(isLogReading)) {
+      if (isGameRunning.value) {
+        if (!isLogReading.value) {
           await startLogReading()
         }
       } else {
         stopAutomaticJoinServer()
-        if (unref(isLogReading)) {
+        if (isLogReading.value) {
           await stopLogReading()
         }
       }
@@ -136,13 +135,13 @@ export function useGameStatus(deps: GameStatusDeps) {
 
   /** 检查游戏启动前的准备工作（GSI 配置已在应用启动时同步，此处仅校验路径） */
   async function ensureGameStartReady(): Promise<boolean> {
-    if (!unref(csgo2Path)) {
+    if (!csgo2Path.value) {
       console.error('未配置 CS2 路径，请在设置中配置')
       window.$message?.error('未配置 CS2 路径，请在设置中配置')
       return false
     }
 
-    if (!unref(steamPath)) {
+    if (!steamPath.value) {
       console.error('未配置 Steam 路径，请在设置中配置')
       window.$message?.error('未配置 Steam 路径，请在设置中配置')
       return false
@@ -157,15 +156,15 @@ export function useGameStatus(deps: GameStatusDeps) {
     if (!ready) return false
 
     isGameLaunching.value = true
-    const serverMode = unref(gamePlatform) === 'perfect' ? 'perfectworld' : 'worldwide'
-    const startType: 'steamurl' | 'steamexe' = unref(isGameRunning) ? 'steamurl' : 'steamexe'
+    const serverMode = gamePlatform.value === 'perfect' ? 'perfectworld' : 'worldwide'
+    const startType: 'steamurl' | 'steamexe' = isGameRunning.value ? 'steamurl' : 'steamexe'
 
     const launchResult = await window.ipcRenderer.launchCs2(
-      unref(csgo2Path),
+      csgo2Path.value,
       serverMode,
       startType,
-      unref(steamPath),
-      [...unref(selectedStartItems)],
+      steamPath.value,
+      [...selectedStartItems.value],
     )
 
     if (!launchResult.success) {
@@ -174,7 +173,7 @@ export function useGameStatus(deps: GameStatusDeps) {
       return false
     }
 
-    const waitResult = await window.ipcRenderer.waitForCs2Launch(unref(csgo2Path))
+    const waitResult = await window.ipcRenderer.waitForCs2Launch(csgo2Path.value)
     if (!waitResult.success) {
       window.$message?.error('等待游戏启动超时')
       isGameLaunching.value = false
@@ -189,7 +188,7 @@ export function useGameStatus(deps: GameStatusDeps) {
 
   /** 使用 Steam URL 连接服务器 */
   async function connectServerUsingSteamUrl(): Promise<void> {
-    const joinInfo = unref(joinServerInfo)
+    const joinInfo = joinServerInfo.value
     if (!joinInfo) return
     const ready = await ensureGameStartReady()
     if (!ready) return

@@ -162,6 +162,8 @@ declare namespace Api {
         type ServerInfoData = {
             /** 服务器ID */
             id: number;
+            /** 玩家当前所在地图 */
+            mapName: string;
             /** 回合 */
             round: string;
             /** CT分数 */

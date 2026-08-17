@@ -41,22 +41,22 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   // ==================== 列表数据 ====================
 
   /** 社区列表 */
-  const communityList = reactive<Api.Game.Community[]>([])
+  const communityList = ref<Api.Game.Community[]>([])
 
   /** 源服务器数据列表（后端配置的所有服务器） */
-  const serverDataList = reactive<Api.Game.Server[]>([])
+  const serverDataList = ref<Api.Game.Server[]>([])
 
   /** 地图列表 */
-  const mapList = reactive<Api.Game.Map[]>([])
+  const mapList = ref<Api.Game.Map[]>([])
 
   /** 当前展示的服务器列表（包含实时状态） */
-  const currentServerList = reactive<Api.Game.SeverVo[]>([])
+  const currentServerList = ref<Api.Game.SeverVo[]>([])
 
   /** WebSocket 推送的服务器列表 */
-  const currentServerWsList = reactive<Api.Game.SeverVo[]>([])
+  const currentServerWsList = ref<Api.Game.SeverVo[]>([])
 
   /** GSI 服务端返回的服务器信息列表 */
-  const currentGisServerList = reactive<Api.Game.ServerInfoData[]>([])
+  const currentGisServerList = ref<Api.Game.ServerInfoData[]>([])
 
   /** WebSocket 推送的服务器游戏实时数据（key：服务器ID字符串） */
   const serverGameDataMap = reactive<Api.Game.ServerGameDataVo>({
@@ -73,18 +73,13 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
   /** 当前选中的待加入服务器信息 */
   const joinServerInfo = ref<Api.Game.SeverVo>()
 
-  /** 最近一次发起加入服务器请求的时间戳，3 分钟内抑制退出上报（避免切服时误清 GIS 数据） */
+  /** 最近一次连接成功的时间戳（连接成功时由 markJoinRequested 记录） */
   const lastJoinRequestTime = ref(0)
   const QUIT_REPORT_SUPPRESS_WINDOW = 3 * 60 * 1000
 
   /** 标记已连接成功（仅连接器发起的连接成功后才调用） */
   function markJoinRequested(): void {
     lastJoinRequestTime.value = Date.now()
-  }
-
-  /** 是否处于退出上报抑制窗口（3 分钟内刚发起过加入服务器请求） */
-  function isQuitReportSuppressed(): boolean {
-    return Date.now() - lastJoinRequestTime.value < QUIT_REPORT_SUPPRESS_WINDOW
   }
 
   /** 最近一次发起连接（steam://rungame +connect）的时间戳，用于区分连接器发起的连接与玩家自行进入的服务器 */
@@ -146,7 +141,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /** 当前游戏服务器信息 */
   const gameServerInfo = ref<Api.Game.ServerInfoData>({
-    id: 0, round: '', CTScore: '', TScore: '', mapStage: '', mapPhase: ''
+    id: 0, mapName: '', round: '', CTScore: '', TScore: '', mapStage: '', mapPhase: ''
   })
 
   /** 当前玩家游戏内信息 */
@@ -292,7 +287,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     sendServerData,
     markJoinRequested,
     hasRecentConnectAttempt,
-    shouldSuppressQuitReport: isQuitReportSuppressed,
   })
 
   // 5. 游戏状态检查与启动

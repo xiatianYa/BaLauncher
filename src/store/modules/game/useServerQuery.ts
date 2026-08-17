@@ -1,18 +1,15 @@
-import { unref } from 'vue'
 import type { Ref } from 'vue'
 import { fetchGetCommunityList, fetchGetMapList, fetchGetServerList } from '@/service/api'
 
-type MaybeRef<T> = T | Ref<T>
-
 interface ServerQueryDeps {
-  communityList: MaybeRef<Api.Game.Community[]>
-  serverDataList: MaybeRef<Api.Game.Server[]>
-  mapList: MaybeRef<Api.Game.Map[]>
-  currentServerList: MaybeRef<Api.Game.SeverVo[]>
-  currentServerWsList: MaybeRef<Api.Game.SeverVo[]>
-  currentGisServerList: MaybeRef<Api.Game.ServerInfoData[]>
-  selectedCommunityId: MaybeRef<number | null>
-  joinServerInfo: MaybeRef<Api.Game.SeverVo | undefined>
+  communityList: Ref<Api.Game.Community[]>
+  serverDataList: Ref<Api.Game.Server[]>
+  mapList: Ref<Api.Game.Map[]>
+  currentServerList: Ref<Api.Game.SeverVo[]>
+  currentServerWsList: Ref<Api.Game.SeverVo[]>
+  currentGisServerList: Ref<Api.Game.ServerInfoData[]>
+  selectedCommunityId: Ref<number | null>
+  joinServerInfo: Ref<Api.Game.SeverVo | undefined>
   loadSettingsFromStorage: () => void
   applyCommunityOrder: (communities: Api.Game.Community[]) => Api.Game.Community[]
   saveCommunityOrder: (communityList: Api.Game.Community[]) => void
@@ -70,8 +67,8 @@ export function useServerQuery(deps: ServerQueryDeps) {
 
   /** 统计各社区的服务器数量 */
   function countServerServerNumber(): void {
-    const serverDataListValue = unref(serverDataList)
-    for (const community of unref(communityList)) {
+    const serverDataListValue = serverDataList.value
+    for (const community of communityList.value) {
       community.serverNumber = serverDataListValue.filter(server => server.communityId === community.id).length
     }
   }
@@ -83,14 +80,14 @@ export function useServerQuery(deps: ServerQueryDeps) {
     const { data: communityData } = await fetchGetCommunityList()
     if (communityData) {
       const sortedCommunities = applyCommunityOrder(communityData)
-      unref(communityList).splice(0, unref(communityList).length, ...sortedCommunities)
+      communityList.value.splice(0, communityList.value.length, ...sortedCommunities)
     }
     const { data: mapData } = await fetchGetMapList()
-    if (mapData) unref(mapList).push(...mapData)
+    if (mapData) mapList.value.push(...mapData)
 
     const { data: serverData } = await fetchGetServerList()
     if (serverData) {
-      unref(serverDataList).splice(0, unref(serverDataList).length, ...serverData)
+      serverDataList.value.splice(0, serverDataList.value.length, ...serverData)
     }
 
     countServerServerNumber()
@@ -98,30 +95,30 @@ export function useServerQuery(deps: ServerQueryDeps) {
 
   /** 更新社区列表排序 */
   function updateCommunityList(communities: Api.Game.Community[]): void {
-    unref(communityList).splice(0, unref(communityList).length, ...communities)
-    saveCommunityOrder(unref(communityList))
+    communityList.value.splice(0, communityList.value.length, ...communities)
+    saveCommunityOrder(communityList.value)
   }
 
   /** 查询服务器列表信息（源服务器） */
   async function queryServerInfosResponse(): Promise<void> {
-    if (unref(serverDataList).length === 0) {
+    if (serverDataList.value.length === 0) {
       const { data: serverData } = await fetchGetServerList()
       if (serverData) {
-        unref(serverDataList).splice(0, unref(serverDataList).length, ...serverData)
+        serverDataList.value.splice(0, serverDataList.value.length, ...serverData)
       }
       countServerServerNumber()
       return
     }
 
     // 记录发起查询时的社区，异步返回期间用户可能已切换社区
-    const queryCommunityId = unref(selectedCommunityId)
-    const targetServers = unref(serverDataList).filter(server => server.connectStr && server.communityId === queryCommunityId)
+    const queryCommunityId = selectedCommunityId.value
+    const targetServers = serverDataList.value.filter(server => server.connectStr && server.communityId === queryCommunityId)
     const serverAddresses = targetServers.map(server => server.connectStr)
 
     try {
       const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses)
       // 查询期间用户已切换社区：丢弃本次过期结果，避免上一次搜索回来的数据覆盖当前社区列表
-      if (queryCommunityId !== unref(selectedCommunityId)) return
+      if (queryCommunityId !== selectedCommunityId.value) return
       if (success) {
         infoResponseList.forEach((item: any) => {
           // 本地查询失败（如服务器离线）时不覆盖任何已有数据，保留源服务器名称/地图等信息
@@ -130,7 +127,7 @@ export function useServerQuery(deps: ServerQueryDeps) {
           if (!item.success || !item.data) return
           const info = item.data
 
-          const listServer = unref(currentServerList).find(s => s.connectStr === info.addr)
+          const listServer = currentServerList.value.find(s => s.connectStr === info.addr)
           if (listServer) {
             listServer.numPlayers = info.players
             listServer.mapName = info.map
@@ -141,7 +138,7 @@ export function useServerQuery(deps: ServerQueryDeps) {
             // A2S 查询（query-game-servers）返回的数据没有 mapId，只有原始地图名 info.map，
             // 原先按 mapId 匹配 mapList 永远匹配不上，导致换图后 mapUrl/mapLabel 等地图信息不更新。
             // 改为按地图名匹配（与 open-game-join / mapOrder 中 mapName 匹配逻辑一致）
-            const map = unref(mapList).find(m => m.mapName === info.map)
+            const map = mapList.value.find(m => m.mapName === info.map)
             if (map) {
               listServer.mapId = map.id
               listServer.mapLabel = map.mapLabel
@@ -171,10 +168,10 @@ export function useServerQuery(deps: ServerQueryDeps) {
     // 先查询源服务器的 Ping 值并回填到 currentServerList，再组装列表，确保 UI 渲染时 Ping 已就绪
     queryServerInfosPingResponse()
 
-    const targetServers = unref(serverDataList).filter(server => server.connectStr && server.communityId === unref(selectedCommunityId))
+    const targetServers = serverDataList.value.filter(server => server.connectStr && server.communityId === selectedCommunityId.value)
 
     const allServers: Api.Game.SeverVo[] = targetServers.map(server => {
-      const wsServer = unref(currentServerWsList).find(item => item.connectStr === server.connectStr)
+      const wsServer = currentServerWsList.value.find(item => item.connectStr === server.connectStr)
       if (wsServer) {
         wsServer.isOnline = true
         return wsServer
@@ -182,13 +179,13 @@ export function useServerQuery(deps: ServerQueryDeps) {
       return createOfflineServer(server)
     })
 
-    unref(currentServerList).splice(0, unref(currentServerList).length, ...allServers)
+    currentServerList.value.splice(0, currentServerList.value.length, ...allServers)
     countServerServerNumber()
   }
 
   /** 将 WS 最新推送的服务器列表合并到当前展示列表（按 connectStr 实时更新在线状态/人数/地图信息） */
   function applyWsServerList(wsList: Api.Game.SeverVo[]): void {
-    const list = unref(currentServerList)
+    const list = currentServerList.value
     const wsMap = new Map(wsList.map(s => [s.connectStr, s]))
     list.forEach(server => {
       const ws = wsMap.get(server.connectStr)
@@ -208,23 +205,23 @@ export function useServerQuery(deps: ServerQueryDeps) {
 
   /** 查询服务器Ping值 */
   async function queryServerInfosPingResponse(): Promise<void> {
-    if (unref(serverDataList).length === 0) return
+    if (serverDataList.value.length === 0) return
 
     // 记录发起查询时的社区，异步返回期间用户可能已切换社区
-    const queryCommunityId = unref(selectedCommunityId)
-    const serverAddresses = unref(serverDataList)
+    const queryCommunityId = selectedCommunityId.value
+    const serverAddresses = serverDataList.value
       .filter(server => server.connectStr && server.communityId === queryCommunityId)
       .map(server => server.connectStr)
 
     const { success, data: infoResponseList } = await window.ipcRenderer.invoke('query-game-servers', serverAddresses)
     if (!success) return
     // 查询期间用户已切换社区：丢弃过期 ping 结果，避免污染新社区数据
-    if (queryCommunityId !== unref(selectedCommunityId)) return
+    if (queryCommunityId !== selectedCommunityId.value) return
 
     infoResponseList.forEach((item: any) => {
       // 查询失败（如服务器离线）时不覆盖 ping，保留原值
       if (!item.success) return
-      const server = unref(currentServerList).find(s => s.connectStr === item.data.addr)
+      const server = currentServerList.value.find(s => s.connectStr === item.data.addr)
       if (server) {
         server.ping = item.data.ping
       }
@@ -246,7 +243,7 @@ export function useServerQuery(deps: ServerQueryDeps) {
         ping?: number
       }
 
-      unref(currentServerList).forEach((item: Api.Game.SeverVo) => {
+      currentServerList.value.forEach((item: Api.Game.SeverVo) => {
         if (item.connectStr === server.connectStr) {
           item.isOnline = true
           item.serverName = info.name || item.serverName
@@ -257,7 +254,7 @@ export function useServerQuery(deps: ServerQueryDeps) {
           // 按地图名匹配地图列表，回填地图详情（与批量查询 queryServerInfosResponse 保持一致）
           if (info.map) {
             item.mapName = info.map
-            const map = unref(mapList).find(m => m.mapName === info.map)
+            const map = mapList.value.find(m => m.mapName === info.map)
             if (map) {
               item.mapId = map.id
               item.mapLabel = map.mapLabel

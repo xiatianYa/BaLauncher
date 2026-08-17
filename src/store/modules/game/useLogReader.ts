@@ -1,4 +1,3 @@
-import { unref } from 'vue'
 import type { Ref } from 'vue'
 import { LOG_PATTERNS, UserConnectionStatus } from '@/constants/cs2'
 import { reportPlayerQuit } from '@/utils/ws/server'
@@ -15,7 +14,7 @@ interface LogReaderDeps {
   startAutomaticJoinServer: () => Promise<void>
   /** 停止自动挤服（进入游戏判定连接成功后调用） */
   stopAutomaticJoinServer: () => Promise<void>
-  /** 标记已连接成功（用于抑制 3 分钟内的退出上报，避免切服时 GIS 数据被误清） */
+  /** 标记已连接成功（仅连接器发起的连接成功后才调用） */
   markJoinRequested: () => void
   /** 是否在抑制窗口内发起过连接（用于判断 in_game 是否来自连接器发起的连接） */
   hasRecentConnectAttempt: () => boolean
@@ -135,7 +134,7 @@ export function useLogReader(deps: LogReaderDeps) {
             pushAutoJoinLog('连接成功，已进入游戏')
             // 仅当本次连接由连接器发起（正在自动挤服 或 近期发起过连接）时才标记加入请求，
             // 否则玩家自行进入其他服务器时也会触发，导致误抑制退出上报
-            if (unref(isAutomatic) || hasRecentConnectAttempt()) {
+            if (isAutomatic.value || hasRecentConnectAttempt()) {
               markJoinRequested()
             }
             hasRetriedForThisConnection = false
@@ -145,11 +144,11 @@ export function useLogReader(deps: LogReaderDeps) {
           case 'connection_failed':
             safeLog('❌ 服务器已满员，连接被拒绝')
             pushAutoJoinLog('服务器已满员，连接被拒绝')
-            if (unref(isAutomatic) && unref(automaticJoinConfig).joinServerAutoRetryValue && !hasRetriedForThisConnection) {
+            if (isAutomatic.value && automaticJoinConfig.value.joinServerAutoRetryValue && !hasRetriedForThisConnection) {
               hasRetriedForThisConnection = true
               // 人满被拒后等待 5s 冷却再重新挤服，避免高频重复 connect；期间若用户停止挤服则不再重启
               window.setTimeout(() => {
-                if (unref(isAutomatic)) {
+                if (isAutomatic.value) {
                   startAutomaticJoinServer()
                 }
               }, 5000)
@@ -187,7 +186,7 @@ export function useLogReader(deps: LogReaderDeps) {
 
   /** 开始读取游戏日志 */
   async function startLogReading(delayMs = 5000): Promise<void> {
-    if (!unref(csgo2Path)) {
+    if (!csgo2Path.value) {
       // 首次使用未配置游戏路径时给出明确提示，避免服务"似乎未运行"却无任何反馈
       safeLog('未配置 CS2 路径，无法开始读取日志（请在设置中配置游戏路径）')
       console.error('未配置 CS2 路径，无法开始读取日志')
@@ -195,7 +194,7 @@ export function useLogReader(deps: LogReaderDeps) {
     }
 
     try {
-      const result = await window.ipcRenderer.invoke('start-log-reader', unref(csgo2Path), delayMs)
+      const result = await window.ipcRenderer.invoke('start-log-reader', csgo2Path.value, delayMs)
       if (result.success) {
         isLogReading.value = true
         listenToConsoleLog()
@@ -208,7 +207,7 @@ export function useLogReader(deps: LogReaderDeps) {
 
   /** 停止读取游戏日志 */
   async function stopLogReading(): Promise<void> {
-    if (!unref(isLogReading)) return
+    if (!isLogReading.value) return
 
     try {
       await window.ipcRenderer.invoke('stop-log-reader')

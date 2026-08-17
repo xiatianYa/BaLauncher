@@ -1,4 +1,3 @@
-import { unref } from 'vue'
 import type { Ref } from 'vue'
 import type { UserConnectionStatus } from '@/constants/cs2'
 
@@ -49,7 +48,7 @@ export function useAutoJoin(deps: AutoJoinDeps) {
       connectionCheckTimer = null
     }
 
-    const joinInfo = unref(joinServerInfo)
+    const joinInfo = joinServerInfo.value
     if (!joinInfo) {
       window.$message?.error('请先选择要加入的服务器')
       return
@@ -63,7 +62,7 @@ export function useAutoJoin(deps: AutoJoinDeps) {
     pushAutoJoinLog('开始自动挤服')
 
     try {
-      const automaticJoinConfigValue = unref(automaticJoinConfig)
+      const automaticJoinConfigValue = automaticJoinConfig.value
       const result = await window.ipcRenderer.invoke('start-automatic-join', {
         serverAddr: joinInfo.connectStr,
         maxPlayers: automaticJoinConfigValue.joinServerPersonValue,
@@ -95,8 +94,8 @@ export function useAutoJoin(deps: AutoJoinDeps) {
           }
           connectionCheckTimer = setTimeout(() => {
             connectionCheckTimer = null
-            if (!unref(isAutomaticRetry) || !unref(isAutomatic)) return
-            if (unref(userConnectionStatus) === 'in_game') return
+            if (!isAutomaticRetry.value || !isAutomatic.value) return
+            if (userConnectionStatus.value === 'in_game') return
             pushAutoJoinLog('60 秒内未连接成功，重新挤服')
             safeLog('⏰ 60 秒内未连接成功，重新挤服...')
             startAutomaticJoinServer()
@@ -111,7 +110,7 @@ export function useAutoJoin(deps: AutoJoinDeps) {
       } else if (result.stopped) {
         // 仅当挤服循环确实已结束（用户手动/系统停止）时才提示；
         // 内部重启（60s 兜底、人满 3s 重试）会替换旧循环并让旧 invoke 返回 stopped，此时 isAutomaticRetry 仍为 true，不弹提示
-        if (!unref(isAutomaticRetry)) {
+        if (!isAutomaticRetry.value) {
           pushAutoJoinLog('已停止自动挤服')
           window.$message?.info('已停止自动挤服')
         }
@@ -145,7 +144,7 @@ export function useAutoJoin(deps: AutoJoinDeps) {
     }
 
     try {
-      if (unref(isAutomatic)) {
+      if (isAutomatic.value) {
         await window.ipcRenderer.invoke('stop-automatic-join')
         isAutomatic.value = false
       }
