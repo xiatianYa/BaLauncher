@@ -494,6 +494,8 @@ export default {
     perfViewDesc: 'Real-time CPU, Memory, GPU hardware performance data',
     mapTimeline: 'Map Timeline',
     noTimelineData: 'No timeline data',
+    loadMore: 'Load More',
+    loadMoreHint: 'View earlier records',
     selectServerTip: 'Select a server to view timeline',
     allLoaded: 'All records loaded',
     searchMap: 'Search map',

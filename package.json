@@ -66,6 +66,7 @@
   },
   "dependencies": {
     "@vitejs/plugin-vue-jsx": "^5.1.5",
+    "@vue-flow/core": "^1.48.2",
     "animate.css": "^4.1.1",
     "animejs": "^4.3.6",
     "cs2-gsi-z": "^2.0.0",

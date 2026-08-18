@@ -494,6 +494,8 @@ export default {
     perfViewDesc: '实时查看电脑 CPU、内存、GPU 等硬件性能数据',
     mapTimeline: '地图运行时间线',
     noTimelineData: '暂无时间线数据',
+    loadMore: '加载更多',
+    loadMoreHint: '继续查看更早记录',
     selectServerTip: '请选择服务器查看时间线',
     allLoaded: '已加载全部记录',
     searchMap: '搜索地图',

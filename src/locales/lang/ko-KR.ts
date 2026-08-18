@@ -494,6 +494,8 @@ export default {
     perfViewDesc: 'CPU, 메모리, GPU 등 하드웨어 성능 데이터 실시간 확인',
     mapTimeline: '맵 실행 타임라인',
     noTimelineData: '타임라인 데이터가 없습니다',
+    loadMore: '더 불러오기',
+    loadMoreHint: '더 오래된 기록 보기',
     selectServerTip: '타임라인을 보려면 서버를 선택해 주세요',
     allLoaded: '모든 기록을 불러왔습니다',
     searchMap: '맵 검색',

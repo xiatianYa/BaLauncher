@@ -491,6 +491,8 @@ export default {
     perfViewDesc: 'Данные о производительности CPU, памяти и GPU в реальном времени',
     mapTimeline: 'Хронология карт',
     noTimelineData: 'Нет данных хронологии',
+    loadMore: 'Загрузить ещё',
+    loadMoreHint: 'Смотреть более ранние записи',
     selectServerTip: 'Выберите сервер для просмотра хронологии',
     allLoaded: 'Все записи загружены',
     searchMap: 'Поиск карты',

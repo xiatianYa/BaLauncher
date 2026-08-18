@@ -252,6 +252,18 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
   emit('refresh', server);
 };
 
+/* ===== 地图运行记录流程弹窗 ===== */
+
+const showFlowModal = ref(false);
+/** 传给流程弹窗的服务器（取源服务器信息，未匹配到时为 null） */
+const flowServer = ref<Api.Game.Server | null>(null);
+
+/** 打开地图运行记录流程弹窗 */
+const handleShowFlow = (server: Api.Game.SeverVo) => {
+  flowServer.value = getSourceServerInfo(server) ?? null;
+  showFlowModal.value = true;
+};
+
 </script>
 
 <template>
@@ -336,6 +348,9 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
               <button class="action-btn btn-auto" @click="handleAutoJoin(server)">
                 <SvgIcon icon="material-symbols:alarm-smart-wake-outline" class="text-22px" />
               </button>
+              <button class="action-btn btn-flow" @click="handleShowFlow(server)">
+                <SvgIcon icon="mdi:file-tree" class="text-22px" />
+              </button>
             </div>
           </div>
           <div v-else class="sercer-card overflow-hidden flex flex-col">
@@ -366,6 +381,10 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
         </template>
       </div>
     </div>
+
+    <!-- 地图运行记录流程弹窗（全局自动注册组件；NModal 默认 teleport 到 body，不影响布局）
+         放在根节点内部以保持单根结构，父级事件监听可正常继承 -->
+    <ServerMapFlowModal v-model:show="showFlowModal" :server="flowServer" />
   </div>
 </template>
 
@@ -599,6 +618,16 @@ const handleRefresh = (server: Api.Game.SeverVo) => {
         &:hover {
           background: rgba(249, 115, 22, 0.25);
           color: #f97316;
+        }
+      }
+
+      /* 地图运行记录流程按钮：紫色，与 modal 头部图标主题一致 */
+      &.btn-flow {
+        color: rgba(167, 139, 250, 0.9);
+
+        &:hover {
+          background: rgba(167, 139, 250, 0.25);
+          color: #a78bfa;
         }
       }
 

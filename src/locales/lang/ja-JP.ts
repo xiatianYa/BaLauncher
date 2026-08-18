@@ -494,6 +494,8 @@ export default {
     perfViewDesc: 'PC の CPU・メモリ・GPU などのハードウェア性能をリアルタイムで確認',
     mapTimeline: 'マップ実行タイムライン',
     noTimelineData: 'タイムラインデータがありません',
+    loadMore: 'さらに読み込む',
+    loadMoreHint: 'さらに古い記録を見る',
     selectServerTip: 'タイムラインを見るにはサーバーを選択してください',
     allLoaded: 'すべての記録を読み込みました',
     searchMap: 'マップを検索',

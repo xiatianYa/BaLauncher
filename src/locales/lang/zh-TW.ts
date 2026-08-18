@@ -494,6 +494,8 @@ export default {
     perfViewDesc: '即時查看電腦 CPU、記憶體、GPU 等硬體效能資料',
     mapTimeline: '地圖運行時間軸',
     noTimelineData: '暫無時間軸資料',
+    loadMore: '載入更多',
+    loadMoreHint: '繼續查看更早記錄',
     selectServerTip: '請選擇伺服器查看時間軸',
     allLoaded: '已載入全部記錄',
     searchMap: '搜尋地圖',
