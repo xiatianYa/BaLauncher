@@ -1,8 +1,17 @@
 <script setup lang="ts">
+import ServerMapFlowModal from '@/components/tool/server-map-flow-modal.vue';
 import SvgIcon from '@/components/custom/svg-icon.vue';
 import { $t } from '@/locales';
-import { NButton, NEllipsis, NTag, NTooltip } from 'naive-ui';
-import { computed, ref } from 'vue';
+import {
+  NButton,
+  NDataTable,
+  NEllipsis,
+  NTag,
+  NTooltip,
+  type DataTableBaseColumn,
+  type DataTableColumns
+} from 'naive-ui';
+import { computed, h, ref } from 'vue';
 import { useDict } from '@/hooks/business/dict';
 import dayjs from 'dayjs';
 
@@ -33,24 +42,14 @@ const getPingType = (ping?: number) => {
   return dictType('ping_level', level);
 };
 
-// 地图运行时长：自换图时间(dateTimeOriginal)起，用 dayjs 计算并格式化为 X小时 Y分钟 / X分钟，离线时无该字段显示 '-'
+// 地图运行时长：自换图时间(dateTimeOriginal)起，用 dayjs 计算并格式化为 X时Y分 / X分，离线时无该字段显示 '-'
 const formatMapRuntime = (targetTime?: string) => {
   if (!targetTime) return '-';
   const minutes = Math.max(dayjs().diff(dayjs(targetTime), 'minute'), 0);
-  if (minutes < 60) return $t('server.minutesAgo', { count: minutes });
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  const hoursText = $t('server.hoursAgo', { count: hours });
-  return mins > 0 ? `${hoursText} ${$t('server.minutesAgo', { count: mins })}` : hoursText;
-};
-
-// 根据在线人数获取颜色
-const getPlayerColor = (players: number) => {
-  if (players <= 20) return '#52c41a';
-  if (players <= 40) return '#4096ff';
-  if (players <= 60) return '#faad14';
-  if (players <= 80) return '#ff7a45';
-  return '#ff4d4f';
+  if (hours > 0) return mins > 0 ? `${hours}时${mins}分` : `${hours}时`;
+  return `${minutes}分`;
 };
 
 // 获取源服务器信息
@@ -176,159 +175,290 @@ const toggleSort = (field: SortField) => {
 const getSortOrder = (field: SortField) => {
   return sortField.value === field ? sortOrder.value : 'none';
 };
+
+/* ==================== NDataTable 列定义 ==================== */
+
+/** 列宽拖拽结果（按列 key 记录；所有分组表格共用同一份 columns，改动即全局同步） */
+const resizedWidths = ref<Record<string, number>>({});
+
+/** NDataTable 列宽拖拽回调：记录调整后的宽度（受限后的宽度），驱动所有分组表格同步 */
+const handleColumnResize = (_resizedWidth: number, limitedWidth: number, column: DataTableBaseColumn) => {
+  const key = String(column.key);
+  if (key) resizedWidths.value[key] = limitedWidth;
+};
+
+/** 行 key：保证各分组表格行节点稳定复用 */
+const rowKey = (row: Api.Game.SeverVo) => row.connectStr || row.serverName || '';
+
+/** 行 props：离线行红渲 + 错落淡入动画延时（保持与旧样式一致的进入动画） */
+const rowProps = (row: Api.Game.SeverVo, index: number) => ({
+  class: isServerOffline(row) ? 'offline-row' : '',
+  style: { '--delay': `${Math.min(index * 0.05, 0.4)}s` }
+});
+
+/* ===== 单元格渲染（h() 生成，样式经 :deep 覆写，保证与旧表格视觉一致） ===== */
+
+/** 服务器名：状态点 + 名称（超出省略，悬停展示完整名称） */
+const renderNameCell = (row: Api.Game.SeverVo) =>
+  h('div', { class: 'td-name' }, [
+    h('span', { class: ['status-dot', isServerOffline(row) ? 'offline' : 'online'] }),
+    h(
+      NEllipsis,
+      { class: 'name-text', maxLine: 1, tooltip: { placement: 'top' }, style: 'max-width: 200px' },
+      { default: () => getServerName(row) }
+    )
+  ]);
+
+/** 地图：原名 + 译名副行（均悬停展示完整内容） */
+const renderMapCell = (row: Api.Game.SeverVo) =>
+  h('div', { class: 'map-box' }, [
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'top', disabled: !row.mapName },
+      {
+        trigger: () => h('span', { class: 'map-name' }, row.mapName || '-'),
+        default: () => row.mapName
+      }
+    ),
+    row.mapLabel
+      ? h(
+          NTooltip,
+          { trigger: 'hover', placement: 'top' },
+          {
+            trigger: () => h('span', { class: 'map-label', style: 'color: rgba(var(--app-rgb), 0.6)' }, row.mapLabel),
+            default: () => row.mapLabel
+          }
+        )
+      : null
+  ]);
+
+/** 玩家数：圆点（点亮数量按人数比例，颜色绿→红分级）+ 精确人数 */
+const PLAYER_DOT_COLORS = ['#52c41a', '#8fd62c', '#c6d435', '#e8b83d', '#f08a3e', '#ff4d4f'];
+
+const renderPlayersCell = (row: Api.Game.SeverVo) => {
+  const litCount = Math.round((getPlayerPercent(row) / 100) * PLAYER_DOT_COLORS.length);
+  return h('div', { class: 'player-dot-cell' }, [
+    h(
+      'div',
+      { class: 'player-dots' },
+      PLAYER_DOT_COLORS.map((color, i) =>
+        h('span', {
+          class: ['dot', i < litCount ? 'on' : ''],
+          style: i < litCount ? { backgroundColor: color, boxShadow: `0 0 6px ${color}` } : null
+        })
+      )
+    ),
+    h('span', { class: 'player-count-text', style: 'color: rgba(var(--app-rgb), 0.6)' }, [
+      `${row.numPlayers || 0}`,
+      h('span', { class: 'count-sep' }, '/'),
+      `${row.maxPlayers || 0}`
+    ])
+  ]);
+};
+
+/** Ping：字典色 Tag */
+const renderPingCell = (row: Api.Game.SeverVo) =>
+  h(NTag, { size: 'small', round: true, class: 'ping-tag', type: getPingType(row.ping) }, { default: () => (row.ping ? `${row.ping}ms` : '??') });
+
+/** 比分：CT:T 徽标（仅展示比分，不展示阶段等服务器状态） */
+const renderScoreCell = (row: Api.Game.SeverVo) =>
+  row.mapPhase
+    ? h('div', { class: 'stat-chip' }, [
+        h('span', { class: 'team team-ct' }, `${row.CTScore || 0}`),
+        h('span', { class: 'score-sep' }, ':'),
+        h('span', { class: 'team team-t' }, `${row.TScore || 0}`)
+      ])
+    : h('span', { class: 'empty-score', style: 'color: rgba(var(--app-rgb), 0.6)' }, '-');
+
+/** 地图运行时长：Tag 样式（窄列下省略） */
+const renderRuntimeCell = (row: Api.Game.SeverVo) =>
+  h(
+    NTag,
+    {
+      size: 'small',
+      round: true,
+      bordered: false,
+      class: 'runtime-tag',
+      color: { color: 'rgba(var(--app-rgb), 0.06)', textColor: 'rgba(var(--app-rgb), 0.75)' }
+    },
+    { default: () => formatMapRuntime(row.dateTimeOriginal) }
+  );
+
+/* ===== 地图运行时间线弹窗 ===== */
+
+const showFlowModal = ref(false);
+/** 传给流程弹窗的服务器（取源服务器信息，未匹配到时为 null） */
+const flowServer = ref<Api.Game.Server | null>(null);
+
+/** 打开地图运行记录流程弹窗 */
+const handleShowFlow = (server: Api.Game.SeverVo) => {
+  flowServer.value = getSourceServerInfo(server) ?? null;
+  showFlowModal.value = true;
+};
+
+/** 操作：加入 / 自动加入 / 复制 / 地图运行时间线 四个按钮 */
+const renderActionCell = (row: Api.Game.SeverVo) =>
+  h('div', { class: 'action-cell' }, [
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(
+            NButton,
+            { size: 'small', class: 'action-btn join-btn', onClick: () => emit('join', row) },
+            { icon: () => h(SvgIcon, { icon: 'iconamoon:player-play-bold' }) }
+          ),
+        default: () => $t('server.joinServer')
+      }
+    ),
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(
+            NButton,
+            { size: 'small', class: 'action-btn auto-btn', onClick: () => emit('autoJoin', row) },
+            { icon: () => h(SvgIcon, { icon: 'iconamoon:player-next-bold' }) }
+          ),
+        default: () => $t('server.autoJoin')
+      }
+    ),
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(
+            NButton,
+            { size: 'small', class: 'action-btn copy-btn', onClick: () => emit('copy', row) },
+            { icon: () => h(SvgIcon, { icon: 'solar:copy-outline' }) }
+          ),
+        default: () => $t('server.copyAddress')
+      }
+    ),
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(
+            NButton,
+            { size: 'small', class: 'action-btn flow-btn', onClick: () => handleShowFlow(row) },
+            { icon: () => h(SvgIcon, { icon: 'mdi:file-tree' }) }
+          ),
+        default: () => $t('tools.mapTimeline')
+      }
+    )
+  ]);
+
+/** 排序图标：按当前排序状态切换 升序/降序/未排序 图标 */
+const getSortIcon = (field: SortField) => {
+  const order = getSortOrder(field);
+  if (order === 'asc') return 'iconamoon:arrow-up-2-bold';
+  if (order === 'desc') return 'iconamoon:arrow-down-2-bold';
+  return 'ph:caret-up-down-bold';
+};
+
+/** 可排序表头：图标 + 文案，点击切换排序（不启用 NDataTable 内置 sorter，保证离线服务器始终置底） */
+const renderSortableTitle = (field: SortField, label: string) => () =>
+  h('div', { class: 'th-sortable', onClick: () => toggleSort(field) }, [
+    h('span', null, label),
+    h('span', { class: 'sort-icon' }, [h(SvgIcon, { icon: getSortIcon(field) })])
+  ]);
+
+/** 普通表头文案 */
+const renderPlainTitle = (label: string) => () => h('div', { class: 'th-title' }, label);
+
+/** NDataTable 列定义：所有分组表格共用同一数组，拖拽列宽后全局同步 */
+const columns = computed<DataTableColumns<Api.Game.SeverVo>>(() => [
+  {
+    key: 'name',
+    title: renderPlainTitle($t('server.serverName')),
+    minWidth: 120,
+    resizable: true,
+    width: resizedWidths.value['name'],
+    render: row => renderNameCell(row)
+  },
+  {
+    key: 'map',
+    title: renderPlainTitle($t('server.map')),
+    minWidth: 100,
+    resizable: true,
+    width: resizedWidths.value['map'],
+    render: row => renderMapCell(row)
+  },
+  {
+    key: 'players',
+    title: renderSortableTitle('players', $t('server.playerCountColumn')),
+    width: resizedWidths.value['players'] ?? 88,
+    minWidth: 80,
+    resizable: true,
+    render: row => renderPlayersCell(row)
+  },
+  {
+    key: 'ping',
+    title: renderSortableTitle('ping', $t('server.ping')),
+    width: resizedWidths.value['ping'] ?? 72,
+    minWidth: 64,
+    resizable: true,
+    render: row => renderPingCell(row)
+  },
+  {
+    key: 'score',
+    title: renderPlainTitle($t('server.score')),
+    width: resizedWidths.value['score'] ?? 84,
+    minWidth: 72,
+    resizable: true,
+    render: row => renderScoreCell(row)
+  },
+  {
+    key: 'runtime',
+    title: renderPlainTitle($t('server.mapRuntime')),
+    width: resizedWidths.value['runtime'] ?? 96,
+    minWidth: 80,
+    resizable: true,
+    render: row => renderRuntimeCell(row)
+  },
+  {
+    key: 'action',
+    title: renderPlainTitle($t('server.operate')),
+    width: resizedWidths.value['action'] ?? 210,
+    minWidth: 196,
+    resizable: true,
+    render: row => renderActionCell(row)
+  }
+]);
 </script>
 
 <template>
-  <div class="h-full custom-table-wrapper">
+  <div class="h-full custom-table-wrapper server-table-list">
     <div class="custom-table" v-show="servers.length > 0">
-      <!-- 表头 -->
-      <div class="custom-thead">
-        <div class="th th-name">{{ $t('server.serverName') }}</div>
-        <div class="th th-map">{{ $t('server.map') }}</div>
-        <div class="th th-players sortable" @click="toggleSort('players')">
-          <span>{{ $t('server.playerCountColumn') }}</span>
-          <span class="sort-icon">
-            <SvgIcon v-if="getSortOrder('players') === 'asc'" icon="iconamoon:arrow-up-2-bold" />
-            <SvgIcon v-else-if="getSortOrder('players') === 'desc'" icon="iconamoon:arrow-down-2-bold" />
-            <SvgIcon v-else icon="ph:caret-up-down-bold" />
-          </span>
+      <!-- 每个模式分区：分区标题 + 独立 NDataTable（共用同一列定义，列宽拖拽全局同步） -->
+      <template v-for="group in groupedServers" :key="group.mode ?? 'none'">
+        <div class="mode-section-header">
+          <span class="mode-section-label">{{ group.label }}</span>
+          <NTag size="small" round :bordered="false"
+            :color="{ color: 'rgba(var(--app-rgb), 0.06)', textColor: 'rgba(var(--app-rgb), 0.5)' }">
+            {{ $t('server.serverCount', { count: group.servers.length }) }}
+          </NTag>
         </div>
-        <div class="th th-ping sortable" @click="toggleSort('ping')">
-          <span>{{ $t('server.ping') }}</span>
-          <span class="sort-icon">
-            <SvgIcon v-if="getSortOrder('ping') === 'asc'" icon="iconamoon:arrow-up-2-bold" />
-            <SvgIcon v-else-if="getSortOrder('ping') === 'desc'" icon="iconamoon:arrow-down-2-bold" />
-            <SvgIcon v-else icon="ph:caret-up-down-bold" />
-          </span>
-        </div>
-        <div class="th th-score">{{ $t('server.score') }}</div>
-        <div class="th th-runtime">{{ $t('server.mapRuntime') }}</div>
-        <div class="th th-action">{{ $t('server.operate') }}</div>
-      </div>
-
-      <!-- 表体 -->
-      <div class="custom-tbody">
-        <template v-for="group in groupedServers" :key="group.mode ?? 'none'">
-          <div class="mode-section-header">
-            <span class="mode-section-label">{{ group.label }}</span>
-            <NTag size="small" round :bordered="false"
-              :color="{ color: 'rgba(var(--app-rgb), 0.06)', textColor: 'rgba(var(--app-rgb), 0.5)' }">
-              {{ $t('server.serverCount', { count: group.servers.length }) }}
-            </NTag>
-          </div>
-          <div v-for="(server, index) in group.servers" :key="`${group.mode ?? 'none'}-${index}`" class="custom-row"
-            :class="{ 'offline-row': isServerOffline(server) }"
-            :style="{ '--delay': `${Math.min(index * 0.05, 0.4)}s` }">
-          <!-- 服务器名 -->
-          <div class="td td-name">
-            <div class="flex items-center gap-8px">
-              <span class="status-dot" :class="isServerOffline(server) ? 'offline' : 'online'" />
-              <!-- 超出省略，鼠标移入展示完整名称 -->
-              <NEllipsis class="name-text" :max-line="1" :tooltip="{ placement: 'top' }" style="max-width: 200px;">
-                {{ getServerName(server) }}
-              </NEllipsis>
-            </div>
-          </div>
-          <!-- 地图 -->
-          <div class="td td-map">
-            <div class="map-box">
-              <NTooltip trigger="hover" placement="top" :disabled="!server.mapName">
-                <template #trigger>
-                  <span class="map-name">{{ server.mapName }}</span>
-                </template>
-                {{ server.mapName }}
-              </NTooltip>
-              <NTooltip v-if="server.mapLabel" trigger="hover" placement="top">
-                <template #trigger>
-                  <span class="map-label" :style="{ color: 'rgba(var(--app-rgb), 0.6)' }">
-                    {{ server.mapLabel }}
-                  </span>
-                </template>
-                {{ server.mapLabel }}
-              </NTooltip>
-            </div>
-          </div>
-
-          <!-- 玩家数 -->
-          <div class="td td-players">
-            <div class="player-count-cell">
-              <div class="progress-track" :style="{ backgroundColor: 'rgba(var(--app-rgb), 0.15)' }">
-                <div class="progress-fill" :style="{
-                  width: `${getPlayerPercent(server)}%`,
-                  backgroundColor: getPlayerColor(server.numPlayers),
-                  boxShadow: `0 0 8px ${getPlayerColor(server.numPlayers)}`
-                }" />
-              </div>
-              <span class="player-count-text" :style="{ color: 'rgba(var(--app-rgb), 0.6)' }">
-                {{ server.numPlayers || 0 }}<span class="count-sep">/</span>{{ server.maxPlayers || 0 }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Ping -->
-          <div class="td td-ping">
-            <NTag size="small" round class="ping-tag" :type="getPingType(server.ping)">
-              {{ server.ping ? `${server.ping}ms` : '??' }}
-            </NTag>
-          </div>
-
-          <!-- 比分（仅显示比分，不显示阶段等服务器状态） -->
-          <div class="td td-score">
-            <div v-if="server.mapPhase" class="stat-chip">
-              <span class="team team-ct">{{ server.CTScore || 0 }}</span>
-              <span class="score-sep">:</span>
-              <span class="team team-t">{{ server.TScore || 0 }}</span>
-            </div>
-            <span v-else class="empty-score" :style="{ color: 'rgba(var(--app-rgb), 0.6)' }">-</span>
-          </div>
-
-          <!-- 地图运行时长（dayjs 计算 + Tag 样式） -->
-          <div class="td td-runtime">
-            <NTag size="small" round class="runtime-tag" :bordered="false"
-              :color="{ color: 'rgba(var(--app-rgb), 0.06)', textColor: 'rgba(var(--app-rgb), 0.75)' }">
-              {{ formatMapRuntime(server.dateTimeOriginal) }}
-            </NTag>
-          </div>
-
-          <!-- 操作 -->
-          <div class="td td-action">
-            <div class="action-cell">
-              <NTooltip trigger="hover" placement="bottom">
-                <template #trigger>
-                  <NButton size="small" class="action-btn join-btn" @click="emit('join', server)">
-                    <template #icon>
-                      <SvgIcon icon="iconamoon:player-play-bold" />
-                    </template>
-                  </NButton>
-                </template>
-                {{ $t('server.joinServer') }}
-              </NTooltip>
-              <NTooltip trigger="hover" placement="bottom">
-                <template #trigger>
-                  <NButton size="small" class="action-btn auto-btn" @click="emit('autoJoin', server)">
-                    <template #icon>
-                      <SvgIcon icon="iconamoon:player-next-bold" />
-                    </template>
-                  </NButton>
-                </template>
-                {{ $t('server.autoJoin') }}
-              </NTooltip>
-              <NTooltip trigger="hover" placement="bottom">
-                <template #trigger>
-                  <NButton size="small" class="action-btn copy-btn" @click="emit('copy', server)">
-                    <template #icon>
-                      <SvgIcon icon="solar:copy-outline" />
-                    </template>
-                  </NButton>
-                </template>
-                {{ $t('server.copyAddress') }}
-              </NTooltip>
-            </div>
-          </div>
-        </div>
-        </template>
-      </div>
+        <NDataTable
+          class="group-table"
+          :columns="columns"
+          :data="group.servers"
+          :row-key="rowKey"
+          :row-props="rowProps"
+          :bordered="false"
+          :single-line="false"
+          table-layout="fixed"
+          @unstable-column-resize="handleColumnResize"
+        />
+      </template>
     </div>
+    <!-- 地图运行时间线弹窗 -->
+    <ServerMapFlowModal v-model:show="showFlowModal" :server="flowServer" />
   </div>
 </template>
 
@@ -344,55 +474,6 @@ const getSortOrder = (field: SortField) => {
   gap: 10px;
   // 关键：确保表格按完整列宽渲染，不随容器宽度收缩
   min-width: 760px;
-}
-
-.custom-thead {
-  display: grid;
-  // 其他字段按内容定宽，剩余空间留给服务器名称与地图（操作列容纳 3 个按钮）
-  grid-template-columns: 2fr 1.5fr 100px 64px 70px 64px 148px;
-  gap: 12px;
-  padding: 0 16px 8px;
-  // 分隔线颜色随主题变化（--app-rgb 深色为白、浅色为暖黑）
-  border-bottom: 1px solid rgba(var(--app-rgb), 0.08);
-
-  .th {
-    font-size: 13px;
-    font-weight: 600;
-    color: rgba(var(--app-rgb), 0.6);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-
-    &.sortable {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      user-select: none;
-      transition: color 0.2s ease;
-
-      &:hover {
-        // 排序表头悬停高亮颜色随主题变化
-        color: rgba(var(--app-rgb), 0.9);
-      }
-
-      .sort-icon {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 16px;
-        height: 16px;
-        font-size: 12px;
-        opacity: 0.7;
-      }
-    }
-  }
-}
-
-.custom-tbody {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 
 /* 模式分区标题 */
@@ -421,49 +502,112 @@ const getSortOrder = (field: SortField) => {
   }
 }
 
-.custom-row {
-  position: relative;
-  display: grid;
-  // 与表头保持一致：其他字段按内容定宽，剩余空间留给服务器名称与地图（操作列容纳 3 个按钮）
-  grid-template-columns: 2fr 1.5fr 100px 64px 70px 64px 148px;
-  gap: 12px;
-  align-items: center;
-  padding: 16px;
-  border-radius: 12px;
-  // 行背景色随主题变化，浅色主题下不再是一块淡白
-  background: rgba(var(--app-rgb), 0.03);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.05);
-  transition: all 0.25s ease;
-  overflow: hidden;
-  // 进入动画：错落淡入上浮（与更新日志卡片一致）
-  animation: fadeInUp 0.5s ease-out forwards;
-  animation-delay: var(--delay, 0s);
-  opacity: 0;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 3px 8px rgba(0, 0, 0, 0.06);
+/* ===== NDataTable 内部样式覆写（行卡片化，视觉与旧表格保持一致） ===== */
+.group-table {
+  /* 去掉默认底色 */
+  :deep(.n-data-table) {
+    background: transparent;
   }
 
-  &.offline-row {
-    background: rgba(255, 77, 79, 0.08);
-    box-shadow: 0 1px 3px rgba(255, 77, 79, 0.08), 0 1px 2px rgba(255, 77, 79, 0.05);
+  /* 行间距：表头与首行、行与行之间留出 10px（表头行与表体同表渲染时自动生效） */
+  :deep(.n-data-table-table) {
+    border-collapse: separate !important;
+    border-spacing: 0 10px;
+  }
+
+  /* ===== 表头 ===== */
+  :deep(.n-data-table-th) {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(var(--app-rgb), 0.08);
+    padding: 8px 12px;
+  }
+
+  :deep(.n-data-table-th__title-wrapper) {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(var(--app-rgb), 0.6);
+    white-space: nowrap;
+  }
+
+  /* 普通表头 / 排序表头（保持旧 .th 的样式） */
+  :deep(.th-title) {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(var(--app-rgb), 0.6);
+    white-space: nowrap;
+  }
+
+  :deep(.th-sortable) {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
 
     &:hover {
-      box-shadow: 0 8px 24px rgba(255, 77, 79, 0.14), 0 3px 8px rgba(255, 77, 79, 0.08);
+      color: rgba(var(--app-rgb), 0.9);
+    }
+
+    .sort-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      font-size: 12px;
+      opacity: 0.7;
     }
   }
 
-  .td {
-    min-width: 0;
+  /* ===== 表体（行卡片化：圆角 + 主题背景 + 离线红渲 + hover 加深） ===== */
+  :deep(.n-data-table-td) {
+    border: none;
+    padding: 14px 12px;
+    background: rgba(var(--app-rgb), 0.03);
+    overflow: hidden;
+    transition: background 0.25s ease;
+  }
+
+  /* 每行四角圆角：首列左圆角、末列右圆角（与旧 .custom-row 12px 圆角一致） */
+  :deep(.n-data-table-td:first-child) {
+    border-radius: 12px 0 0 12px;
+  }
+
+  :deep(.n-data-table-td:last-child) {
+    border-radius: 0 12px 12px 0;
+  }
+
+  /* 行进入动画：错落淡入上浮（与旧表格一致） */
+  :deep(.n-data-table-tr) {
+    animation: fadeInUp 0.5s ease-out forwards;
+    animation-delay: var(--delay, 0s);
+    opacity: 0;
+  }
+
+  :deep(.n-data-table-tr:hover .n-data-table-td) {
+    background: rgba(var(--app-rgb), 0.06);
+  }
+
+  /* 离线行红渲 */
+  :deep(.n-data-table-tr.offline-row .n-data-table-td) {
+    background: rgba(255, 77, 79, 0.08);
+  }
+
+  :deep(.n-data-table-tr.offline-row:hover .n-data-table-td) {
+    background: rgba(255, 77, 79, 0.13);
+  }
+
+  /* ===== 服务器名 ===== */
+  :deep(.td-name) {
     display: flex;
     align-items: center;
+    gap: 8px;
+    min-width: 0;
   }
-}
 
-// 服务器名
-.td-name {
-  .status-dot {
+  :deep(.status-dot) {
     width: 8px;
     height: 8px;
     border-radius: 50%;
@@ -481,87 +625,85 @@ const getSortOrder = (field: SortField) => {
     }
   }
 
-  .name-text {
+  :deep(.name-text) {
     font-size: 14px;
     font-weight: 700;
-    // 服务器名颜色随主题变化
     color: rgba(var(--app-rgb), 0.95);
   }
-}
 
-// 地图
-.td-map {
-  .map-box {
+  /* ===== 地图 ===== */
+  :deep(.map-box) {
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 0;
   }
 
-  .map-name {
+  :deep(.map-name) {
     font-size: 13px;
     font-weight: 600;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    // 地图名颜色随主题变化
     color: rgba(var(--app-rgb), 0.9);
   }
 
-  .map-label {
+  :deep(.map-label) {
     font-size: 12px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-}
 
-// 玩家数
-.td-players {
-  .player-count-cell {
+  /* ===== 玩家数（圆点 + 精确人数） ===== */
+  :deep(.player-dot-cell) {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     width: 100%;
+    min-width: 0;
   }
 
-  .progress-track {
-    flex: 1;
-    height: 7px;
-    border-radius: 3.5px;
-    overflow: hidden;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  :deep(.player-dots) {
+    display: flex;
+    align-items: center;
+    gap: 1.5px;
+    flex-shrink: 0;
   }
 
-  .progress-fill {
-    height: 100%;
-    border-radius: 3.5px;
-    transition: width 0.3s ease;
+  :deep(.player-dots .dot) {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    background: rgba(var(--app-rgb), 0.18);
+    transition: transform 0.2s ease;
   }
 
-  .player-count-text {
+  :deep(.player-dots .dot.on) {
+    /* 点亮圆点的颜色与光晕由行内 style 注入（绿→红渐变） */
+    animation: dotPop 0.3s ease-out;
+  }
+
+  :deep(.player-count-text) {
     font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
   }
 
-  .count-sep {
+  :deep(.count-sep) {
     margin: 0 2px;
     opacity: 0.45;
     font-weight: 400;
   }
-}
 
-// Ping
-.td-ping {
+  /* ===== Ping ===== */
   :deep(.ping-tag) {
     font-weight: 600;
   }
-}
 
-// 比分
-.td-score {
-  .stat-chip {
+  /* ===== 比分 ===== */
+  :deep(.stat-chip) {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -576,7 +718,7 @@ const getSortOrder = (field: SortField) => {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
-  .team {
+  :deep(.team) {
     display: flex;
     align-items: center;
     gap: 4px;
@@ -592,7 +734,7 @@ const getSortOrder = (field: SortField) => {
     }
   }
 
-  .team-ct {
+  :deep(.team-ct) {
     color: #60a5fa;
 
     &::before {
@@ -600,7 +742,7 @@ const getSortOrder = (field: SortField) => {
     }
   }
 
-  .team-t {
+  :deep(.team-t) {
     color: #fbbf24;
 
     &::before {
@@ -608,39 +750,40 @@ const getSortOrder = (field: SortField) => {
     }
   }
 
-  .score-sep {
+  :deep(.score-sep) {
     font-size: 12px;
     opacity: 0.6;
     font-weight: 600;
   }
 
-  .empty-score {
+  :deep(.empty-score) {
     font-size: 12px;
   }
-}
 
-// 地图运行时长
-.td-runtime {
+  /* ===== 地图运行时长 ===== */
   :deep(.runtime-tag) {
     font-weight: 600;
-    // 固定窄列下禁止换行，超出省略
     white-space: nowrap;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-}
 
-// 操作按钮
-.td-action {
-  .action-cell {
+  /* fixed 布局下列宽固定，时长文字过长时在标签内部省略 */
+  :deep(.runtime-tag .n-tag__content) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* ===== 操作按钮 ===== */
+  :deep(.action-cell) {
     display: flex;
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
   }
 
-  .action-btn {
+  :deep(.action-btn) {
     min-width: 40px;
     transition: all 0.2s ease;
     border-radius: 8px;
@@ -681,6 +824,19 @@ const getSortOrder = (field: SortField) => {
       }
     }
 
+    /* 地图运行时间线按钮：紫色，与时间线弹窗主题一致 */
+    &.flow-btn {
+      color: rgba(167, 139, 250, 0.9);
+      background: rgba(167, 139, 250, 0.08);
+      border: 1px solid rgba(167, 139, 250, 0.2);
+
+      &:hover {
+        background: rgba(167, 139, 250, 0.2);
+        color: #a78bfa;
+        border-color: rgba(167, 139, 250, 0.4);
+      }
+    }
+
     &:active {
       transform: scale(0.95);
     }
@@ -696,6 +852,20 @@ const getSortOrder = (field: SortField) => {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes dotPop {
+  0% {
+    transform: scale(0.4);
+  }
+
+  60% {
+    transform: scale(1.25);
+  }
+
+  100% {
+    transform: scale(1);
   }
 }
 </style>

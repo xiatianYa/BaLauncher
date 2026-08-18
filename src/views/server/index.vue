@@ -76,7 +76,7 @@ const restoreJoinServerWindow = () => {
   showJoinServerConfirm.value = true;
 };
 
-// 开始倒计时（仅保留 10 秒一次的数据刷新定时器，动画交给 CSS/SVG）
+// 开始倒计时（仅保留 15 秒一次的数据刷新定时器，动画交给 CSS/SVG）
 const startCountdown = (reset: boolean = true) => {
   isRefreshing.value = false;
 
@@ -91,19 +91,19 @@ const startCountdown = (reset: boolean = true) => {
     clearInterval(countdownInterval);
   }
 
-  // 每 10 秒触发一次服务器信息刷新，不再每秒更新 Vue 响应式状态
+  // 每 15 秒触发一次服务器信息刷新，不再每秒更新 Vue 响应式状态
   countdownInterval = window.setInterval(() => {
     if (!isRefreshing.value) {
       queryServerInfos(false, false);
     }
-  }, 10000);
+  }, 15000);
 };
 
 // 查询服务器列表 源服务器
 // 进行中的查询计数 + 最新查询序号：
 // 1) 搜索/刷新进行中允许再次发起查询（如切换社区），queryCount 防止较早查询提前收尾导致加载态卡死；
 // 2) 仅最新一次查询负责收尾（关闭加载态/重启倒计时）：切社区等更新操作会递增 querySeq，
-//    使旧查询（如 10 秒自动搜索）收尾失效，避免倒计时被连续重启两次导致 SVG 圆环动画抖动
+//    使旧查询（如 15 秒自动搜索）收尾失效，避免倒计时被连续重启两次导致 SVG 圆环动画抖动
 let queryCount = 0;
 let querySeq = 0;
 const queryServerInfos = async (showAnimationFlag: boolean = true, isCache: boolean = false) => {
@@ -375,8 +375,8 @@ onUnmounted(() => {
   stroke: url(#countdownGradient);
   stroke-linecap: round;
   transition: stroke 0.3s ease;
-  // 10 秒环形进度动画，由 CSS 驱动，不触发 Vue 重新渲染
-  animation: countdownProgress 10s linear infinite;
+  // 15 秒环形进度动画，由 CSS 驱动，不触发 Vue 重新渲染
+  animation: countdownProgress 15s linear infinite;
 }
 
 @keyframes countdownProgress {
@@ -410,49 +410,69 @@ onUnmounted(() => {
   z-index: 1;
 
   &::before {
-    content: '10';
-    animation: countdownNumber 10s steps(10) infinite;
+    content: '15';
+    animation: countdownNumber 15s steps(15) infinite;
   }
 }
 
 @keyframes countdownNumber {
   0% {
-    content: '10';
+    content: '15';
   }
 
-  10% {
-    content: '9';
+  6.67% {
+    content: '14';
+  }
+
+  13.33% {
+    content: '13';
   }
 
   20% {
-    content: '8';
+    content: '12';
   }
 
-  30% {
-    content: '7';
+  26.67% {
+    content: '11';
+  }
+
+  33.33% {
+    content: '10';
   }
 
   40% {
-    content: '6';
+    content: '9';
   }
 
-  50% {
-    content: '5';
+  46.67% {
+    content: '8';
+  }
+
+  53.33% {
+    content: '7';
   }
 
   60% {
+    content: '6';
+  }
+
+  66.67% {
+    content: '5';
+  }
+
+  73.33% {
     content: '4';
   }
 
-  70% {
+  80% {
     content: '3';
   }
 
-  80% {
+  86.67% {
     content: '2';
   }
 
-  90% {
+  93.33% {
     content: '1';
   }
 
