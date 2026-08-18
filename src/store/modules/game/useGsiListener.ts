@@ -17,8 +17,6 @@ interface GsiListenerDeps {
   sendServerData: (server: Api.Game.ServerInfoData) => void
   /** 标记已连接成功（仅连接器发起的连接成功后才调用） */
   markJoinRequested: () => void
-  /** 是否在抑制窗口内发起过连接（用于判断地图匹配是否来自连接器发起的连接） */
-  hasRecentConnectAttempt: () => boolean
 }
 
 /**
@@ -39,7 +37,6 @@ export function useGsiListener(deps: GsiListenerDeps) {
     sendPlayerData,
     sendServerData,
     markJoinRequested,
-    hasRecentConnectAttempt,
   } = deps
 
   /** GSI数据事件处理器 */
@@ -79,8 +76,12 @@ export function useGsiListener(deps: GsiListenerDeps) {
           gamePlayerInfo.value.mapName = data.current.toLowerCase() === 'unknown' ? '' : data.current
           sendPlayerData(gamePlayerInfo.value)
           const targetMap = joinServerInfo.value?.mapName
+          // 检查是否是目标地图：当前地图是否包含目标地图或目标地图包含当前地图
           const currentMap = data.current
-          if (targetMap && currentMap && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) && (isAutomatic.value || hasRecentConnectAttempt())) {
+          if (targetMap 
+            && currentMap 
+            && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) 
+            && isAutomatic.value) {
             // 防止连续 map:nameChanged 事件重复执行成功逻辑（重复播报音频/提示）
             if (joinSuccessHandled) break
             joinSuccessHandled = true

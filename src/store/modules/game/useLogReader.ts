@@ -16,8 +16,6 @@ interface LogReaderDeps {
   stopAutomaticJoinServer: () => Promise<void>
   /** 标记已连接成功（仅连接器发起的连接成功后才调用） */
   markJoinRequested: () => void
-  /** 是否在抑制窗口内发起过连接（用于判断 in_game 是否来自连接器发起的连接） */
-  hasRecentConnectAttempt: () => boolean
 }
 
 /**
@@ -36,7 +34,6 @@ export function useLogReader(deps: LogReaderDeps) {
     startAutomaticJoinServer,
     stopAutomaticJoinServer,
     markJoinRequested,
-    hasRecentConnectAttempt,
   } = deps
 
   /** 防止 connection_failed 重复触发重试的标志 */
@@ -132,9 +129,9 @@ export function useLogReader(deps: LogReaderDeps) {
           case 'in_game':
             safeLog('✅ 用户已成功进入游戏')
             pushAutoJoinLog('连接成功，已进入游戏')
-            // 仅当本次连接由连接器发起（正在自动挤服 或 近期发起过连接）时才标记加入请求，
+            // 仅当本次连接由连接器发起（正在自动挤服）时才标记加入请求，
             // 否则玩家自行进入其他服务器时也会触发，导致误抑制退出上报
-            if (isAutomatic.value || hasRecentConnectAttempt()) {
+            if (isAutomatic.value) {
               markJoinRequested()
             }
             hasRetriedForThisConnection = false

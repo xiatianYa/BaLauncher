@@ -75,24 +75,10 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /** 最近一次连接成功的时间戳（连接成功时由 markJoinRequested 记录） */
   const lastJoinRequestTime = ref(0)
-  const QUIT_REPORT_SUPPRESS_WINDOW = 3 * 60 * 1000
 
   /** 标记已连接成功（仅连接器发起的连接成功后才调用） */
   function markJoinRequested(): void {
     lastJoinRequestTime.value = Date.now()
-  }
-
-  /** 最近一次发起连接（steam://rungame +connect）的时间戳，用于区分连接器发起的连接与玩家自行进入的服务器 */
-  const lastConnectAttemptTime = ref(0)
-
-  /** 记录发起了一次连接（由 connectServerUsingSteamUrl 调用） */
-  function markConnectAttempt(): void {
-    lastConnectAttemptTime.value = Date.now()
-  }
-
-  /** 是否在抑制窗口内发起过连接（说明 in_game 很可能来自本次连接器发起的连接） */
-  function hasRecentConnectAttempt(): boolean {
-    return Date.now() - lastConnectAttemptTime.value < QUIT_REPORT_SUPPRESS_WINDOW
   }
 
   // ==================== 自动挤服状态 ====================
@@ -228,7 +214,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     startAutomaticJoinServer: () => fnGetters.startAutomaticJoinServer(),
     stopAutomaticJoinServer: () => fnGetters.stopAutomaticJoinServer(),
     markJoinRequested,
-    hasRecentConnectAttempt,
   })
 
   // 4. GSI 监听 - 通过 getter 延迟引用 autoJoin 的函数
@@ -286,7 +271,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     sendPlayerData,
     sendServerData,
     markJoinRequested,
-    hasRecentConnectAttempt,
   })
 
   // 5. 游戏状态检查与启动
@@ -307,7 +291,6 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     stopLogReading: logReader.stopLogReading,
     stopAutomaticJoinServer: () => fnGetters.stopAutomaticJoinServer(),
     connectToServerById: (id: number) => fnGetters.connectToServerById(id),
-    markConnectAttempt,
   })
 
   // 6. 服务器查询

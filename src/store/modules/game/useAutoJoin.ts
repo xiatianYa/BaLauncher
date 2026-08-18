@@ -86,7 +86,7 @@ export function useAutoJoin(deps: AutoJoinDeps) {
           connectServerUsingSteamUrl()
           reportPlayerAction('加入服务器')
 
-          // 发起连接后 60s 内未收到连接成功消息（GSI 地图匹配/日志 in_game 会清掉此定时器），则重新开始挤服；
+          // 发起连接后 30s 内未收到连接成功消息（GSI 地图匹配/日志 in_game 会清掉此定时器），则重新开始挤服；
           // 连接成功/人满重试由双通道与 connection_failed 日志路径驱动，这里只做兜底
           if (connectionCheckTimer) {
             clearTimeout(connectionCheckTimer)
@@ -96,10 +96,10 @@ export function useAutoJoin(deps: AutoJoinDeps) {
             connectionCheckTimer = null
             if (!isAutomaticRetry.value || !isAutomatic.value) return
             if (userConnectionStatus.value === 'in_game') return
-            pushAutoJoinLog('60 秒内未连接成功，重新挤服')
-            safeLog('⏰ 60 秒内未连接成功，重新挤服...')
+            pushAutoJoinLog('30 秒内未连接成功，重新挤服')
+            safeLog('⏰ 30 秒内未连接成功，重新挤服...')
             startAutomaticJoinServer()
-          }, 60000)
+          }, 30000)
         } else {
           isAutomatic.value = false
           isAutomaticRetry.value = false
