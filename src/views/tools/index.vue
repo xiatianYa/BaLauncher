@@ -7,6 +7,7 @@ import MapOrder from './modules/mapOrder.vue';
 import ServerMapRecord from './modules/serverMapRecord.vue';
 import BotGroup from './modules/botGroup.vue';
 import PerfView from './modules/perfView.vue';
+import Workshop from './modules/workshop.vue';
 import { $t } from '@/locales';
 
 import KeyBindIcon from '@/assets/imgs/tool/keyBind.png';
@@ -14,6 +15,7 @@ import MapOrderIcon from '@/assets/imgs/tool/mapOrder.png';
 import ServerMapRecordIcon from '@/assets/imgs/tool/serverMapRecord.png';
 import BotGroupIcon from '@/assets/imgs/tool/botGroup.png';
 import PerfViewIcon from '@/assets/imgs/tool/perfView.jpg';
+import WorkshopIcon from '@/assets/imgs/tool/workshop.png';
 
 defineOptions({
   name: 'tools'
@@ -30,6 +32,7 @@ const moduleMap: Record<UnionKey.ToolModule, ToolModule> = {
   'serverMapRecord': { label: $t('tools.serverMapRecord'), component: ServerMapRecord },
   'botGroup': { label: $t('tools.botGroup'), component: BotGroup },
   'perfView': { label: $t('tools.perfView'), component: PerfView },
+  'workshop': { label: $t('tools.workshop'), component: Workshop },
 };
 
 const activeModuleKey = ref<UnionKey.ToolModule | null>(null);
@@ -78,6 +81,13 @@ const tools = ref<ToolItem[]>([
     gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
     color: '#fa709a',
     delay: 0.4
+  },
+  {
+    id: 'workshop',
+    icon: WorkshopIcon,
+    gradient: 'linear-gradient(135deg, #a78bfa 0%, #6366f1 100%)',
+    color: '#a78bfa',
+    delay: 0.5
   }
 ]);
 
@@ -87,7 +97,8 @@ const getToolTitle = (id: UnionKey.ToolModule) => {
     'mapOrder': 'tools.mapOrderTitle',
     'serverMapRecord': 'tools.serverMapRecordTitle',
     'botGroup': 'tools.botGroupTitle',
-    'perfView': 'tools.perfViewTitle'
+    'perfView': 'tools.perfViewTitle',
+    'workshop': 'tools.workshopTitle'
   };
   return $t(keyMap[id]);
 };
@@ -98,7 +109,8 @@ const getToolDescription = (id: UnionKey.ToolModule) => {
     'mapOrder': 'tools.mapOrderDesc',
     'serverMapRecord': 'tools.serverMapRecordDesc',
     'botGroup': 'tools.botGroupDesc',
-    'perfView': 'tools.perfViewDesc'
+    'perfView': 'tools.perfViewDesc',
+    'workshop': 'tools.workshopDesc'
   };
   return $t(keyMap[id]);
 };

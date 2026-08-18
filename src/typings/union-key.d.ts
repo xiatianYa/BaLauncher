@@ -23,7 +23,7 @@ declare namespace UnionKey {
   type MouseCursor = 'app' | 'system';
 
   /** The tool module */
-  type ToolModule = 'keyBind' | 'mapOrder' | 'serverMapRecord' | 'botGroup' | 'perfView';
+  type ToolModule = 'keyBind' | 'mapOrder' | 'serverMapRecord' | 'botGroup' | 'perfView' | 'workshop';
 
   /** The server layout module */
   type ServerLayoutModule = 'cardModel' | 'tableModal';

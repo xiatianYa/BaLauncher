@@ -12,6 +12,7 @@ import { setupNotificationIpc } from '../notificationWindow'
 import { setupAgreementIpc } from './agreementWindow'
 import { setupWeatherIpc } from './weather'
 import { setupSystemMonitorIpc } from './systemMonitor'
+import { registerWorkshopScheme, setupWorkshopIpc } from './workshop'
 
 export function setupAllIpcHandlers() {
   setupWindowControlIpc()
@@ -27,4 +28,7 @@ export function setupAllIpcHandlers() {
   setupAgreementIpc()
   setupWeatherIpc()
   setupSystemMonitorIpc()
+  // 创意工坊协议必须在 app ready 前注册
+  registerWorkshopScheme()
+  setupWorkshopIpc()
 }

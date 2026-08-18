@@ -185,6 +185,13 @@ export const commonIcons = [
   'mdi:trash-can-outline',
   'mdi:update',
   'mdi:view-list',
+  // mdi - 创意工坊
+  'mdi:calendar-check',
+  'mdi:folder-open-outline',
+  'mdi:harddisk',
+  'mdi:identifier',
+  'mdi:music-note',
+  'mdi:puzzle',
   // mdi - home 页面（欢迎横幅/地图游玩/在线统计）
   'mdi:hand-wave',
   'mdi:palette-outline',
