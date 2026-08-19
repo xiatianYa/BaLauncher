@@ -32,6 +32,12 @@ const minimizeBehavior = computed({
   set: (val: MinimizeBehavior) => appStore.setMinimizeBehavior(val),
 });
 
+/** 消息提示框显示位置（九宫格 key） */
+const messagePosition = computed({
+  get: () => appStore.messagePosition,
+  set: (val: string) => appStore.setMessagePosition(val),
+});
+
 /* ===== 自定义启动项 ===== */
 
 const customStartItem = ref('');
@@ -173,6 +179,14 @@ const selectPlatform = (platform: 'international' | 'perfect') => {
             <SvgIcon icon="mdi:application" class="btn-icon" />
             <span>{{ $t('settings.minimizeToTray') }}</span>
           </button>
+        </div>
+      </div>
+
+      <!-- 消息提示框显示位置 -->
+      <div class="setting-card align-start">
+        <div class="card-label">{{ $t('settings.messageToastPosition') }}</div>
+        <div class="card-control flex-col">
+          <PositionPicker v-model="messagePosition" />
         </div>
       </div>
 

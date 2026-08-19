@@ -44,7 +44,7 @@ const formatFullTime = (timeStr: string): string => {
         <!-- 卡片主体：封面 + 图表 -->
         <div class="timeline-card-item" :class="{ 'timeline-card-first': index === 0 }">
             <!-- 左侧：地图封面 -->
-            <div class="timeline-card-left">
+            <div class="timeline-card-left" :class="{ 'no-cover': !item.mapUrl }">
                 <img v-if="item.mapUrl" :src="item.mapUrl" :alt="item.mapLabel || item.mapName" class="map-image" />
                 <!-- 渐变遮罩层 -->
                 <div class="timeline-card-overlay"></div>
@@ -109,6 +109,22 @@ const formatFullTime = (timeStr: string): string => {
         flex-shrink: 0;
         border-radius: 12px;
         overflow: hidden;
+        // 无封面图时的纯色占位背景
+        background: #e3e5e9;
+
+        // 无封面图时的地图网格纹理（有图时不移除该伪元素，避免盖在封面上）
+        &.no-cover::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+            background-size: 24px 24px;
+            mask-image: radial-gradient(75% 75% at 50% 35%, #000 0%, transparent 100%);
+            -webkit-mask-image: radial-gradient(75% 75% at 50% 35%, #000 0%, transparent 100%);
+            pointer-events: none;
+        }
     }
 
     .map-image {

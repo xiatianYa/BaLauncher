@@ -51,6 +51,8 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   const themeScheme = ref<UnionKey.ThemeScheme>(getStg<UnionKey.ThemeScheme>(APP_STORAGE_KEYS.THEME_SCHEME, 'dark'))
   /** 最小化行为：默认最小化到任务栏，可切换为隐藏到系统托盘 */
   const minimizeBehavior = ref<MinimizeBehavior>(getStg(APP_STORAGE_KEYS.MINIMIZE_BEHAVIOR, 'taskbar'))
+  /** 消息提示框显示位置（九宫格 key，默认顶部居中，与 naive message 默认 placement 'top' 一致） */
+  const messagePosition = ref(getStg(APP_STORAGE_KEYS.MESSAGE_POSITION, 'top-center'))
   const onlineUserList = ref<Api.System.OnLineUser[]>([])
 
   // 通知音频映射（key：主题名，value：该主题「订阅 / 连接服务器」两种提示音）
@@ -166,6 +168,14 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   function setMinimizeBehavior(behavior: MinimizeBehavior): void {
     minimizeBehavior.value = behavior
     setStg(APP_STORAGE_KEYS.MINIMIZE_BEHAVIOR, behavior)
+  }
+
+  /** 设置消息提示框显示位置并持久化（九宫格 key） */
+  function setMessagePosition(key: string): void {
+    messagePosition.value = key
+    setStg(APP_STORAGE_KEYS.MESSAGE_POSITION, key)
+    // 同步到主进程：地图订阅等系统浮动通知按此位置摆放
+    window.ipcRenderer?.updateNotificationPosition(key)
   }
 
   // ==================== 游戏存储读写 ====================
@@ -312,11 +322,13 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     mouseCursor,
     themeScheme,
     minimizeBehavior,
+    messagePosition,
     setTheme,
     setVolume,
     setMouseCursor,
     setThemeScheme,
     setMinimizeBehavior,
+    setMessagePosition,
     getThemeAudio,
     playThemeAudio,
 

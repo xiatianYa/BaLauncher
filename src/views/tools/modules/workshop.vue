@@ -620,7 +620,7 @@ onMounted(() => {
     <div v-if="total > 0" class="pagination-bar">
       <NPagination v-model:page="pagination.current" :item-count="total"
         :page-size="pagination.size" :page-sizes="pageSizes" show-size-picker
-        @update-page-size="handlePageSizeChange" />
+        @update:page-size="handlePageSizeChange" />
     </div>
 
     <!-- 资源详情弹窗 -->

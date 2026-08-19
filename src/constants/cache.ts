@@ -35,7 +35,9 @@ export const APP_STORAGE_KEYS = {
   /** 鼠标光标样式 */
   MOUSE_CURSOR: 'mouseCursor' as const,
   /** 最小化行为（taskbar 隐藏到任务栏 / tray 隐藏到系统托盘） */
-  MINIMIZE_BEHAVIOR: 'minimizeBehavior' as const
+  MINIMIZE_BEHAVIOR: 'minimizeBehavior' as const,
+  /** 消息提示框显示位置（九宫格 key，映射到 naive message placement） */
+  MESSAGE_POSITION: 'messagePosition' as const
 };
 
 // 认证存储键

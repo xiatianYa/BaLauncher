@@ -81,5 +81,7 @@ declare namespace StorageType {
     selectedCommunityId: number
     /** minimize behavior (taskbar / tray) */
     minimizeBehavior: string
+    /** message toast position (nine-grid key) */
+    messagePosition: string
   }
 }

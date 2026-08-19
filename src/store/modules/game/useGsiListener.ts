@@ -78,10 +78,10 @@ export function useGsiListener(deps: GsiListenerDeps) {
           const targetMap = joinServerInfo.value?.mapName
           // 检查是否是目标地图：当前地图是否包含目标地图或目标地图包含当前地图
           const currentMap = data.current
-          if (targetMap 
-            && currentMap 
-            && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) 
-            && isAutomatic.value) {
+          console.log('当前地图:', currentMap)
+          console.log('目标地图:', targetMap)
+          console.log('是否自动挤服:', isAutomatic.value)
+          if (targetMap && currentMap && (targetMap.includes(currentMap) || currentMap.includes(targetMap)) && isAutomatic.value) {
             // 防止连续 map:nameChanged 事件重复执行成功逻辑（重复播报音频/提示）
             if (joinSuccessHandled) break
             joinSuccessHandled = true

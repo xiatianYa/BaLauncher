@@ -11,6 +11,48 @@ let perfMiniWindow: BrowserWindow | null = null
 /** 性能浮窗九宫格显示位置（默认右上角，与历史行为一致） */
 let miniPosition: string = 'top-right'
 
+/** 性能小窗光标轮询定时器（根据光标是否悬停在窗口上决定隐藏/显示） */
+let miniCursorWatchTimer: ReturnType<typeof setInterval> | null = null
+
+/** 性能小窗是否处于隐藏（光标悬停穿透）状态 */
+let miniHidden = false
+
+/**
+ * 启动光标轮询：小窗隐藏/显示完全由主进程根据光标位置决定。
+ * 窗口全透明后 OS 不再向窗口派发鼠标消息，渲染进程的 mouseenter/mouseleave 事件不可靠
+ * （恢复后 Chromium 的 hover 状态卡死，第二次移入时 mouseenter 不再触发），
+ * 因此每 100ms 检测光标是否位于窗口边界内：在内 → 透明穿透，在外 → 恢复显示
+ */
+function startMiniCursorWatch(): void {
+  stopMiniCursorWatch()
+  miniCursorWatchTimer = setInterval(() => {
+    if (!perfMiniWindow || perfMiniWindow.isDestroyed()) {
+      stopMiniCursorWatch()
+      return
+    }
+    const { x, y } = screen.getCursorScreenPoint()
+    const b = perfMiniWindow.getBounds()
+    const inside = x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height
+    if (inside && !miniHidden) {
+      miniHidden = true
+      perfMiniWindow.setOpacity(0)
+      perfMiniWindow.setIgnoreMouseEvents(true, { forward: true })
+    } else if (!inside && miniHidden) {
+      miniHidden = false
+      perfMiniWindow.setOpacity(1)
+      perfMiniWindow.setIgnoreMouseEvents(false, { forward: true })
+    }
+  }, 100)
+}
+
+/** 停止光标轮询 */
+function stopMiniCursorWatch(): void {
+  if (miniCursorWatchTimer) {
+    clearInterval(miniCursorWatchTimer)
+    miniCursorWatchTimer = null
+  }
+}
+
 /** 浮窗九宫格定位：按位置 key 计算浮窗在所在显示器上的坐标并应用（含外边距） */
 function applyPerfMiniPosition(win: BrowserWindow, position: string): void {
   if (win.isDestroyed()) return
@@ -237,9 +279,6 @@ export function setupWindowControlIpc() {
       document.getElementById('gpu-t').textContent = data.gpu.temperature ?? '--';
     } catch(e){}
   }
-  // 鼠标移入浮窗 → 窗口全透明（OS 级），让出背后内容；移出 → 恢复显示
-  document.body.addEventListener('mouseenter', () => { window.ipcRenderer.setPerfMiniOpacity(0); });
-  document.body.addEventListener('mouseleave', () => { window.ipcRenderer.setPerfMiniOpacity(1); });
   setInterval(poll, 2000);
   poll();
 </script>
@@ -291,8 +330,11 @@ export function setupWindowControlIpc() {
     applyPerfMiniPosition(perfMiniWindow, miniPosition);
     perfMiniWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(MINI_WINDOW_HTML)}`);
     perfMiniWindow.on('closed', () => {
+      stopMiniCursorWatch();
       perfMiniWindow = null;
     });
+    // 光标轮询决定小窗的隐藏/显示（悬停透明穿透，移出恢复）
+    startMiniCursorWatch();
   });
 
   // 运行时更新浮窗配置（无需重开浮窗，下次轮询即生效）
@@ -319,17 +361,10 @@ export function setupWindowControlIpc() {
   });
 
   ipcMain.handle('perf-mini-close', () => {
+    stopMiniCursorWatch()
     if (perfMiniWindow && !perfMiniWindow.isDestroyed()) {
-      perfMiniWindow.close();
-      perfMiniWindow = null;
-    }
-  });
-
-  // 浮窗 OS 级透明度（0 = 全透明，1 = 不透明），鼠标移入移出时由小窗页面调用
-  ipcMain.handle('perf-mini-set-opacity', (_e, opacity: number) => {
-    if (perfMiniWindow && !perfMiniWindow.isDestroyed()) {
-      const o = Math.min(1, Math.max(0, opacity));
-      perfMiniWindow.setOpacity(o);
+      perfMiniWindow.close()
+      perfMiniWindow = null
     }
   });
 

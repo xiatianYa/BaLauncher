@@ -3,7 +3,6 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { VueFlow, useVueFlow, type Node } from '@vue-flow/core';
 import '@vue-flow/core/dist/style.css';
 import '@vue-flow/core/dist/theme-default.css';
-import SvgIcon from '@/components/custom/svg-icon.vue';
 
 /**
  * 内部画布逻辑尺寸（固定坐标系）：节点坐标始终基于 220×138 布局，
@@ -11,7 +10,7 @@ import SvgIcon from '@/components/custom/svg-icon.vue';
  */
 const CANVAS = { width: 220, height: 138 };
 const SLOT_SIZE = { width: 54, height: 24 };
-const MARGIN = 6;
+const MARGIN = 0;
 
 /** 画布缩放允许范围（容器 300px 宽时约为 1.36，窄容器下取小值） */
 const MIN_ZOOM = 0.3;
@@ -23,7 +22,6 @@ const POSITIONS: { key: string; x: number; y: number }[] = [
   { key: 'top-center', x: (CANVAS.width - SLOT_SIZE.width) / 2, y: MARGIN },
   { key: 'top-right', x: CANVAS.width - SLOT_SIZE.width - MARGIN, y: MARGIN },
   { key: 'middle-left', x: MARGIN, y: (CANVAS.height - SLOT_SIZE.height) / 2 },
-  { key: 'center', x: (CANVAS.width - SLOT_SIZE.width) / 2, y: (CANVAS.height - SLOT_SIZE.height) / 2 },
   { key: 'middle-right', x: CANVAS.width - SLOT_SIZE.width - MARGIN, y: (CANVAS.height - SLOT_SIZE.height) / 2 },
   { key: 'bottom-left', x: MARGIN, y: CANVAS.height - SLOT_SIZE.height - MARGIN },
   { key: 'bottom-center', x: (CANVAS.width - SLOT_SIZE.width) / 2, y: CANVAS.height - SLOT_SIZE.height - MARGIN },
@@ -34,10 +32,8 @@ const props = withDefaults(
   defineProps<{
     /** 当前选中的九宫格位置 key（v-model） */
     modelValue: string;
-    /** 位置文案的 i18n 命名空间，默认 perfView.trayPosition */
-    i18nPrefix?: string;
   }>(),
-  { i18nPrefix: 'perfView.trayPosition' }
+  {}
 );
 
 const emit = defineEmits<{ (e: 'update:modelValue', value: string): void }>();
@@ -50,12 +46,18 @@ const { setViewport } = useVueFlow({ id: 'position-picker' });
 
 let resizeObserver: ResizeObserver | null = null;
 
-/** 按容器实际宽度整体缩放画布，内部 220×138 坐标不变 */
+/** 按容器实际宽高整体缩放画布：取宽/高缩放比例的较小值，保证九宫格完整可见；若容器宽高比与画布不一致则居中显示 */
 const syncScale = () => {
   const el = canvasRef.value;
   if (!el) return;
-  const scale = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, el.clientWidth / CANVAS.width));
-  setViewport({ x: 0, y: 0, zoom: scale });
+  const scale = Math.max(
+    MIN_ZOOM,
+    Math.min(MAX_ZOOM, Math.min(el.clientWidth / CANVAS.width, el.clientHeight / CANVAS.height))
+  );
+  // 画布内容相对容器居中（容器宽高比与 220:138 一致时偏移为 0，完全铺满）
+  const x = (el.clientWidth - CANVAS.width * scale) / 2;
+  const y = (el.clientHeight - CANVAS.height * scale) / 2;
+  setViewport({ x, y, zoom: scale });
 };
 
 onMounted(() => {
@@ -96,7 +98,8 @@ watch(
   () => props.modelValue,
   (key) => {
     const pos = positionOf(key);
-    const tray = nodes.value.find((n) => n.id === 'tray');
+    // 用最小结构类型做查找，避免 VueFlow 深层泛型 Node 类型在 find 谓词推断时触发 TS2589（实例化过深）
+    const tray = (nodes.value as Array<{ id: string; position: { x: number; y: number } }>).find(n => n.id === 'tray');
     if (tray) tray.position = { x: pos.x, y: pos.y };
   }
 );
@@ -142,6 +145,7 @@ const handleNodeDragStop = ({ node }: { node: Node }) => {
         :max-zoom="MAX_ZOOM"
         :fit-view-on-init="false"
         :default-viewport="{ x: 0, y: 0, zoom: 1 }"
+        @init="syncScale"
         @node-click="handleNodeClick"
         @node-drag-stop="handleNodeDragStop"
       >
@@ -157,11 +161,6 @@ const handleNodeDragStop = ({ node }: { node: Node }) => {
         </template>
       </VueFlow>
     </div>
-    <!-- 当前选中位置文案 -->
-    <div class="position-label">
-      <SvgIcon icon="mdi:monitor" class="position-label-icon" />
-      <span>{{ $t(`${i18nPrefix}.${modelValue}`) }}</span>
-    </div>
   </div>
 </template>
 
@@ -173,13 +172,17 @@ const handleNodeDragStop = ({ node }: { node: Node }) => {
   width: 100%;
 }
 
-/* 屏幕预览画布：宽度跟随外部容器，高度按 220:138 等比自适应 */
+/* 屏幕预览画布：宽度跟随外部容器，高度按 220:138 等比自适应，网格背景模拟屏幕 */
 .position-canvas {
   width: 100%;
   aspect-ratio: 220 / 138;
   border-radius: 8px;
   overflow: hidden;
-  background: rgba(var(--app-rgb), 0.04);
+  background-color: rgba(var(--app-rgb), 0.04);
+  background-image:
+    linear-gradient(rgba(var(--app-rgb), 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--app-rgb), 0.06) 1px, transparent 1px);
+  background-size: 20px 20px;
   border: 1px solid rgba(var(--app-rgb), 0.08);
   cursor: default;
 
@@ -239,20 +242,6 @@ const handleNodeDragStop = ({ node }: { node: Node }) => {
         background: #10b981;
       }
     }
-  }
-}
-
-/* 当前位置文案 */
-.position-label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: rgba(var(--app-rgb), 0.55);
-
-  .position-label-icon {
-    font-size: 14px;
-    color: #667eea;
   }
 }
 </style>

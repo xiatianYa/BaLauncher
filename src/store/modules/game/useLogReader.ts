@@ -1,6 +1,7 @@
 import type { Ref } from 'vue'
 import { LOG_PATTERNS, UserConnectionStatus } from '@/constants/cs2'
 import { reportPlayerQuit } from '@/utils/ws/server'
+import { useAppStore } from '../app'
 
 interface LogReaderDeps {
   csgo2Path: Ref<string>
@@ -129,14 +130,19 @@ export function useLogReader(deps: LogReaderDeps) {
           case 'in_game':
             safeLog('✅ 用户已成功进入游戏')
             pushAutoJoinLog('连接成功，已进入游戏')
-            // 仅当本次连接由连接器发起（正在自动挤服）时才标记加入请求，
-            // 否则玩家自行进入其他服务器时也会触发，导致误抑制退出上报
+            // 仅当本次连接由连接器发起（正在自动挤服）时才执行连接成功操作：
+            // 标记加入请求 / 停止挤服 / 播放提示音，否则玩家自行进入其他服务器时也会触发，
+            // 导致误抑制退出上报
             if (isAutomatic.value) {
               markJoinRequested()
+              hasRetriedForThisConnection = false
+              // 双通道成功检测：进入游戏即判定连接成功，停止自动挤服
+              stopAutomaticJoinServer()
+
+              const appStore = useAppStore()
+              // 播放连接至服务器提示音（未配置或音频丢失时自动回退「系统」音频）
+              appStore.playThemeAudio(appStore.currentTheme, 'connect')
             }
-            hasRetriedForThisConnection = false
-            // 双通道成功检测：进入游戏即判定连接成功，停止自动挤服
-            stopAutomaticJoinServer()
             break
           case 'connection_failed':
             safeLog('❌ 服务器已满员，连接被拒绝')

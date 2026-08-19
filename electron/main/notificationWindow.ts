@@ -1,4 +1,4 @@
-import { BrowserWindow, screen } from 'electron'
+import { BrowserWindow, screen, type Display, type Rectangle } from 'electron'
 import { getMainWindow } from './windowManager'
 
 interface NotificationData {
@@ -29,9 +29,20 @@ const NOTIFICATION_CONFIG = {
   displayDuration: 30000, // 显示时长 30秒
 }
 
+/** 通知相对屏幕边缘的边距 */
+const NOTIFICATION_MARGIN = 20
+
+/** 通知显示位置（九宫格 key），由渲染进程「消息提示框显示位置」设置同步，默认与设置页一致：顶部居中 */
+let notificationPosition = 'top-center'
+
+/** 设置通知显示位置（渲染进程设置变更 / 应用启动时同步），变更后重排已显示的通知 */
+export function setNotificationPosition(position: string): void {
+  notificationPosition = position
+  repositionNotifications()
+}
+
 export function createNotificationWindow(data: NotificationData): void {
-  const primaryDisplay = screen.getPrimaryDisplay()
-  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize
+  const workArea = getNotificationDisplay().workArea
 
   // 如果超过最大通知数量，移除最旧的通知
   if (notificationWindows.length >= NOTIFICATION_CONFIG.maxNotifications) {
@@ -40,11 +51,11 @@ export function createNotificationWindow(data: NotificationData): void {
       oldest.window.close()
     }
     // 重新排列剩余通知
-    repositionNotifications(screenWidth, screenHeight)
+    repositionNotifications()
   }
 
   const notificationId = ++notificationIdCounter
-  const position = calculatePosition(notificationWindows.length, screenWidth, screenHeight)
+  const position = calculatePosition(notificationWindows.length, workArea)
 
   const notificationWindow = new BrowserWindow({
     width: NOTIFICATION_CONFIG.width,
@@ -92,22 +103,42 @@ export function createNotificationWindow(data: NotificationData): void {
   notificationWindow.on('closed', () => {
     removeNotificationFromList(notificationId)
     // 重新排列剩余通知
-    repositionNotifications(screenWidth, screenHeight)
+    repositionNotifications()
   })
 }
 
-// 计算通知位置
-function calculatePosition(index: number, screenWidth: number, screenHeight: number): { x: number; y: number } {
-  const x = screenWidth - NOTIFICATION_CONFIG.width - 20
-  const y = 20 + index * (NOTIFICATION_CONFIG.height + NOTIFICATION_CONFIG.gap)
-  return { x, y }
+/** 获取通知所在显示器：跟随主窗口所在屏（多屏下不固定主屏），主窗口不可用时回退主显示器 */
+function getNotificationDisplay(): Display {
+  const mainWindow = getMainWindow()
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    return screen.getDisplayMatching(mainWindow.getBounds())
+  }
+  return screen.getPrimaryDisplay()
+}
+
+/** 按九宫格 key 计算通知位置：基准点贴合所选边/角，多条通知向屏幕中央方向堆叠 */
+function calculatePosition(index: number, workArea: Rectangle): { x: number; y: number } {
+  const { x: dx, y: dy, width: sw, height: sh } = workArea
+  // 'center' 是 'middle-center' 的简写，统一拆成 [垂直, 水平]
+  const [vertical, horizontal] = notificationPosition === 'center' ? ['middle', 'center'] : notificationPosition.split('-')
+  let x = 0
+  let y = 0
+  if (horizontal === 'left') x = NOTIFICATION_MARGIN
+  else if (horizontal === 'right') x = sw - NOTIFICATION_CONFIG.width - NOTIFICATION_MARGIN
+  else x = Math.round((sw - NOTIFICATION_CONFIG.width) / 2)
+  const offsetY = index * (NOTIFICATION_CONFIG.height + NOTIFICATION_CONFIG.gap)
+  if (vertical === 'bottom') y = sh - NOTIFICATION_CONFIG.height - NOTIFICATION_MARGIN - offsetY
+  else if (vertical === 'top') y = NOTIFICATION_MARGIN + offsetY
+  else y = Math.round((sh - NOTIFICATION_CONFIG.height) / 2) + offsetY
+  return { x: dx + x, y: dy + y }
 }
 
 // 重新排列所有通知位置
-function repositionNotifications(screenWidth: number, screenHeight: number): void {
+function repositionNotifications(): void {
+  const workArea = getNotificationDisplay().workArea
   notificationWindows.forEach((item, index) => {
     if (!item.window.isDestroyed()) {
-      const position = calculatePosition(index, screenWidth, screenHeight)
+      const position = calculatePosition(index, workArea)
       item.window.setPosition(position.x, position.y)
     }
   })
@@ -402,5 +433,10 @@ export function setupNotificationIpc(ipcMain: typeof import('electron').ipcMain)
 
   ipcMain.handle('close-notification', () => {
     closeNotificationWindow()
+  })
+
+  // 渲染进程「消息提示框显示位置」设置变更时同步（地图订阅等系统通知按此位置摆放）
+  ipcMain.handle('update-notification-position', (_event, position: string) => {
+    setNotificationPosition(position)
   })
 }

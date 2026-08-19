@@ -408,8 +408,8 @@ const columns = computed<DataTableColumns<Api.Game.SeverVo>>(() => [
   {
     key: 'score',
     title: renderPlainTitle($t('server.score')),
-    width: resizedWidths.value['score'] ?? 84,
-    minWidth: 72,
+    width: resizedWidths.value['score'] ?? 108,
+    minWidth: 92,
     resizable: true,
     render: row => renderScoreCell(row)
   },

@@ -39,6 +39,7 @@ declare global {
       getSystemVersion: () => Promise<string>;
       showMapOrderNotification: (data: { title: string; message: string; serverName?: string; connectStr?: string; mapName?: string; mapChineseName?: string; mapImage?: string }) => Promise<void>;
       closeMapOrderNotification: () => Promise<void>;
+      updateNotificationPosition: (position: string) => Promise<void>;
       getImageCacheInfo: () => Promise<{ count: number; totalSize: number }>;
       clearImageCache: () => Promise<{ success: boolean }>;
       openInBrowser: (url: string) => Promise<void>;
