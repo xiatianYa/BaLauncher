@@ -609,6 +609,18 @@ export default {
     miniShowRam: '메모리 표시',
     miniShowGpu: 'GPU 표시',
     miniShowTemp: '온도 표시',
+    miniWindowPosition: '플로팅 창 위치',
+    trayPosition: {
+      'top-left': '좌측 상단',
+      'top-center': '상단 중앙',
+      'top-right': '우측 상단',
+      'middle-left': '좌측 중앙',
+      center: '화면 중앙',
+      'middle-right': '우측 중앙',
+      'bottom-left': '좌측 하단',
+      'bottom-center': '하단 중앙',
+      'bottom-right': '우측 하단',
+    },
   },
   keyBind: {
     title: '키 바인딩 설정',

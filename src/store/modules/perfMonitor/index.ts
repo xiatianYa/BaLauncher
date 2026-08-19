@@ -60,6 +60,8 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
   const miniShowGpu = ref(true)
   /** 是否在浮窗中显示 GPU 温度 @see PerfMonitor.PerfMiniConfig.showTemperature */
   const miniShowTemperature = ref(true)
+  /** 浮窗显示位置（九宫格，默认右上角）@see PerfMonitor.PerfMiniConfig.position */
+  const miniPosition = ref<PerfMonitor.MiniTrayPosition>('top-right')
 
   /* ===== 计算属性（数据检测） ===== */
 
@@ -135,7 +137,8 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
           showCpu: miniShowCpu.value,
           showRam: miniShowRam.value,
           showGpu: miniShowGpu.value,
-          showTemperature: miniShowTemperature.value
+          showTemperature: miniShowTemperature.value,
+          position: miniPosition.value
         })
       } else {
         await window.ipcRenderer.closePerfMiniWindow?.()
@@ -153,7 +156,8 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
         showCpu: miniShowCpu.value,
         showRam: miniShowRam.value,
         showGpu: miniShowGpu.value,
-        showTemperature: miniShowTemperature.value
+        showTemperature: miniShowTemperature.value,
+        position: miniPosition.value
       })
     } catch (err) {
       console.error('[perfMonitor] 同步浮窗配置失败:', err)
@@ -161,7 +165,7 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
   }
 
   // 浮窗配置变化时自动同步到主进程（仅浮窗已开启时）
-  watch([miniShowCpu, miniShowRam, miniShowGpu, miniShowTemperature], () => {
+  watch([miniShowCpu, miniShowRam, miniShowGpu, miniShowTemperature, miniPosition], () => {
     if (miniWindow.value) syncMiniConfig()
   })
 
@@ -183,6 +187,7 @@ export const usePerfMonitorStore = defineStore(SetupStoreId.PerfMonitor, () => {
     miniShowRam,
     miniShowGpu,
     miniShowTemperature,
+    miniPosition,
     // 计算属性
     hasGpuUsage,
     hasGpuSensors,

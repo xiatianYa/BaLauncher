@@ -28,6 +28,7 @@ const {
   miniShowRam,
   miniShowGpu,
   miniShowTemperature,
+  miniPosition,
   hasGpuUsage,
   hasGpuMem,
   hasVirtualMemory,
@@ -415,6 +416,12 @@ onUnmounted(() => {
               <span>{{ $t('perfView.miniShowTemp') }}</span>
             </div>
             <NSwitch v-model:value="miniShowTemperature" size="small" />
+          </div>
+
+          <!-- 浮窗显示位置（九宫格） -->
+          <div class="config-group-sub">
+            <div class="config-label-sub">{{ $t('perfView.miniWindowPosition') }}</div>
+            <PositionPicker v-model="miniPosition" />
           </div>
         </div>
       </NCard>
@@ -959,6 +966,22 @@ onUnmounted(() => {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 8px;
+  }
+
+  // 浮窗位置子组：缩进显示，与上方浮窗开关区分
+  .config-group-sub {
+    margin-top: 14px;
+    padding: 12px;
+    border-radius: 8px;
+    background: rgba(var(--app-rgb), 0.03);
+    border: 1px solid rgba(var(--app-rgb), 0.06);
+  }
+
+  .config-label-sub {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(var(--app-rgb), 0.6);
+    margin-bottom: 10px;
   }
 
   .config-options {

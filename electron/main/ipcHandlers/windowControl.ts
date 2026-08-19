@@ -8,6 +8,30 @@ import { setMiniConfig } from './systemMonitor'
 /** 性能监测小窗引用 */
 let perfMiniWindow: BrowserWindow | null = null
 
+/** 性能浮窗九宫格显示位置（默认右上角，与历史行为一致） */
+let miniPosition: string = 'top-right'
+
+/** 浮窗九宫格定位：按位置 key 计算浮窗在所在显示器上的坐标并应用（含外边距） */
+function applyPerfMiniPosition(win: BrowserWindow, position: string): void {
+  if (win.isDestroyed()) return
+  // 取浮窗所在显示器（多屏下跟随所在屏，而非固定主屏）
+  const display = screen.getDisplayMatching(win.getBounds())
+  const { x: dx, y: dy, width: sw, height: sh } = display.workArea
+  const [cw, ch] = win.getSize()
+  const MARGIN = 8
+  // 'center' 是 'middle-center' 的简写，统一拆成 [垂直, 水平]
+  const [vertical, horizontal] = position === 'center' ? ['middle', 'center'] : position.split('-')
+  let x = 0
+  let y = 0
+  if (horizontal === 'left') x = MARGIN
+  else if (horizontal === 'right') x = sw - cw - MARGIN
+  else x = Math.round((sw - cw) / 2)
+  if (vertical === 'top') y = MARGIN
+  else if (vertical === 'bottom') y = sh - ch - MARGIN
+  else y = Math.round((sh - ch) / 2)
+  win.setPosition(dx + x, dy + y)
+}
+
 /** 系统托盘引用（「隐藏到系统托盘」模式下懒创建，退出时随应用销毁） */
 let tray: Tray | null = null
 
@@ -227,6 +251,7 @@ export function setupWindowControlIpc() {
     showRam?: boolean
     showGpu?: boolean
     showTemperature?: boolean
+    position?: string
   }) => {
     // 保存小窗配置，供 perf-mini-data 查询时返回
     setMiniConfig({
@@ -235,24 +260,20 @@ export function setupWindowControlIpc() {
       showGpu: cfg?.showGpu ?? true,
       showTemperature: cfg?.showTemperature ?? true
     });
+    if (cfg?.position) miniPosition = cfg.position;
     if (perfMiniWindow && !perfMiniWindow.isDestroyed()) {
+      // 已存在则按新位置移动后显示
+      applyPerfMiniPosition(perfMiniWindow, miniPosition);
       perfMiniWindow.show();
       perfMiniWindow.focus();
       return;
     }
-    // 计算桌面右上角位置（距右边距 16px，顶部 8px）
-    const display = screen.getPrimaryDisplay();
-    const { width: screenWidth, height: screenHeight } = display.workAreaSize;
     // 初始宽度给个保守值，页面加载后由 fitWidth 自动贴合内容
     const winWidth = 480;
     const winHeight = 42;
-    const x = screenWidth - winWidth - 16;
-    const y = 8;
     perfMiniWindow = new BrowserWindow({
       width: winWidth,
       height: winHeight,
-      x,
-      y,
       frame: false,
       alwaysOnTop: true,
       transparent: false,
@@ -266,6 +287,8 @@ export function setupWindowControlIpc() {
         contextIsolation: true
       }
     });
+    // 创建后按九宫格位置定位（跟随所在显示器）
+    applyPerfMiniPosition(perfMiniWindow, miniPosition);
     perfMiniWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(MINI_WINDOW_HTML)}`);
     perfMiniWindow.on('closed', () => {
       perfMiniWindow = null;
@@ -278,13 +301,21 @@ export function setupWindowControlIpc() {
     showRam?: boolean
     showGpu?: boolean
     showTemperature?: boolean
+    position?: string
   }) => {
-    if (cfg) setMiniConfig({
-      showCpu: cfg.showCpu ?? true,
-      showRam: cfg.showRam ?? true,
-      showGpu: cfg.showGpu ?? true,
-      showTemperature: cfg.showTemperature ?? true
-    });
+    if (cfg) {
+      setMiniConfig({
+        showCpu: cfg.showCpu ?? true,
+        showRam: cfg.showRam ?? true,
+        showGpu: cfg.showGpu ?? true,
+        showTemperature: cfg.showTemperature ?? true
+      });
+      // 位置变化时同步移动已开启的浮窗
+      if (cfg.position) {
+        miniPosition = cfg.position;
+        if (perfMiniWindow && !perfMiniWindow.isDestroyed()) applyPerfMiniPosition(perfMiniWindow, miniPosition);
+      }
+    }
   });
 
   ipcMain.handle('perf-mini-close', () => {
@@ -308,7 +339,11 @@ export function setupWindowControlIpc() {
       const w = Math.max(60, Math.round(size.width));
       const h = Math.max(24, Math.round(size.height));
       const [cw, ch] = perfMiniWindow.getSize();
-      if (w !== cw || h !== ch) perfMiniWindow.setSize(w, h);
+      if (w !== cw || h !== ch) {
+        perfMiniWindow.setSize(w, h);
+        // 尺寸变化后重新按九宫格定位，保证贴合边缘（如右上角不被撑开）
+        applyPerfMiniPosition(perfMiniWindow, miniPosition);
+      }
     }
   });
 }

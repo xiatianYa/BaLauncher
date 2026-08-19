@@ -6,6 +6,8 @@ type PerfConfig = {
   showRam?: boolean
   showGpu?: boolean
   showTemperature?: boolean
+  /** 浮窗显示位置（九宫格：top-left / top-center / ... / bottom-right） */
+  position?: string
 }
 
 /** 向渲染进程暴露安全的 IPC API */

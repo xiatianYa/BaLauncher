@@ -49,6 +49,7 @@ declare global {
         showRam?: boolean
         showGpu?: boolean
         showTemperature?: boolean
+        position?: PerfMonitor.MiniTrayPosition
       }) => Promise<void>;
       closePerfMiniWindow: () => Promise<void>;
       updatePerfMiniConfig: (cfg?: {
@@ -56,6 +57,7 @@ declare global {
         showRam?: boolean
         showGpu?: boolean
         showTemperature?: boolean
+        position?: PerfMonitor.MiniTrayPosition
       }) => Promise<void>;
       getPerfMiniData: () => Promise<{
         stats: PerfMonitor.PerfSnapshot

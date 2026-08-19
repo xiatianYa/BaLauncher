@@ -611,6 +611,18 @@ export default {
     miniShowRam: 'Показывать RAM',
     miniShowGpu: 'Показывать GPU',
     miniShowTemp: 'Показывать температуру',
+    miniWindowPosition: 'Положение окна',
+    trayPosition: {
+      'top-left': 'Верхний левый угол',
+      'top-center': 'Сверху по центру',
+      'top-right': 'Верхний правый угол',
+      'middle-left': 'Слева по центру',
+      center: 'Центр экрана',
+      'middle-right': 'Справа по центру',
+      'bottom-left': 'Нижний левый угол',
+      'bottom-center': 'Снизу по центру',
+      'bottom-right': 'Нижний правый угол',
+    },
   },
   keyBind: {
     title: 'Настройка привязки клавиш',

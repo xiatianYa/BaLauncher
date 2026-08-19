@@ -610,6 +610,18 @@ export default {
     miniShowRam: '顯示記憶體',
     miniShowGpu: '顯示 GPU',
     miniShowTemp: '顯示溫度',
+    miniWindowPosition: '浮窗位置',
+    trayPosition: {
+      'top-left': '左上角',
+      'top-center': '頂部置中',
+      'top-right': '右上角',
+      'middle-left': '左側置中',
+      center: '螢幕中央',
+      'middle-right': '右側置中',
+      'bottom-left': '左下角',
+      'bottom-center': '底部置中',
+      'bottom-right': '右下角',
+    },
   },
   keyBind: {
     title: '按鍵綁定設定',

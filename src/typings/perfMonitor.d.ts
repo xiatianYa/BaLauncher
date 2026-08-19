@@ -161,5 +161,19 @@ declare namespace PerfMonitor {
     showGpu: boolean
     /** 是否显示 GPU 温度 */
     showTemperature: boolean
+    /** 浮窗在屏幕上的显示位置（九宫格） */
+    position: MiniTrayPosition
   }
+
+  /** 浮窗九宫格显示位置：top/middle/bottom × left/center/right */
+  type MiniTrayPosition =
+    | 'top-left'
+    | 'top-center'
+    | 'top-right'
+    | 'middle-left'
+    | 'center'
+    | 'middle-right'
+    | 'bottom-left'
+    | 'bottom-center'
+    | 'bottom-right'
 }

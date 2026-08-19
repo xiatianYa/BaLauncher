@@ -614,6 +614,18 @@ export default {
     miniShowRam: 'Show RAM',
     miniShowGpu: 'Show GPU',
     miniShowTemp: 'Show Temperature',
+    miniWindowPosition: 'Floating window position',
+    trayPosition: {
+      'top-left': 'Top Left',
+      'top-center': 'Top Center',
+      'top-right': 'Top Right',
+      'middle-left': 'Middle Left',
+      center: 'Center',
+      'middle-right': 'Middle Right',
+      'bottom-left': 'Bottom Left',
+      'bottom-center': 'Bottom Center',
+      'bottom-right': 'Bottom Right',
+    },
   },
   keyBind: {
     title: 'Key Bind Configuration',

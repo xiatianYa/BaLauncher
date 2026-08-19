@@ -614,6 +614,18 @@ export default {
     miniShowRam: 'メモリを表示',
     miniShowGpu: 'GPU を表示',
     miniShowTemp: '温度を表示',
+    miniWindowPosition: 'フローティングウィンドウの位置',
+    trayPosition: {
+      'top-left': '左上',
+      'top-center': '上部中央',
+      'top-right': '右上',
+      'middle-left': '左中央',
+      center: '画面中央',
+      'middle-right': '右中央',
+      'bottom-left': '左下',
+      'bottom-center': '下部中央',
+      'bottom-right': '右下',
+    },
   },
   keyBind: {
     title: 'キーバインド設定',
