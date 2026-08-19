@@ -17,6 +17,7 @@ export * from './system/feedback';
 export * from './monitor/monLogs';
 export * from './monitor/monLogsFile';
 export * from './monitor/monScheduler';
+export * from './workshop';
 
 
 

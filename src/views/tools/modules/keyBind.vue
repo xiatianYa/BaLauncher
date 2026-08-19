@@ -1113,21 +1113,14 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
     }
 }
 
-// 新的按键捕获弹窗样式 - 适配黑白主题
-.key-capture-wrapper {
-    :deep(.n-card) {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-        border: none;
-        overflow: hidden;
-    }
-}
+// 新的按键捕获弹窗样式见底部全局样式块（NModal teleport 后 scoped 无法命中 .n-card 结构）
 
 .key-capture-modal-new {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 0 0 16px 0;
-    color: #fff;
+    color: var(--n-text-color);
     position: relative;
 
     .capture-header {
@@ -1180,7 +1173,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.05);
+            background: color-mix(in srgb, var(--n-text-color) 6%, transparent);
             border: 2px solid rgba($accent, 0.3);
             border-radius: 12px;
             padding: 0 20px;
@@ -1238,15 +1231,15 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
             justify-content: center;
             width: 80px;
             height: 70px;
-            background: rgba(255, 255, 255, 0.03);
+            background: color-mix(in srgb, var(--n-text-color) 5%, transparent);
             border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            border: 1px solid color-mix(in srgb, var(--n-text-color) 12%, transparent);
             transition: all 0.2s ease;
             gap: 4px;
 
             &:hover {
-                background: rgba($accent, 0.1);
-                border-color: rgba($accent, 0.3);
+                background: color-mix(in srgb, $accent 10%, transparent);
+                border-color: color-mix(in srgb, $accent 30%, transparent);
             }
 
             .tip-icon {
@@ -1256,7 +1249,7 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
 
             .tip-text {
                 font-size: 11px;
-                color: rgba(255, 255, 255, 0.6);
+                color: color-mix(in srgb, var(--n-text-color) 60%, transparent);
             }
         }
     }
@@ -1277,13 +1270,13 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
         }
 
         .cancel-btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.7);
+            background: color-mix(in srgb, var(--n-text-color) 5%, transparent);
+            border: 1px solid color-mix(in srgb, var(--n-text-color) 10%, transparent);
+            color: color-mix(in srgb, var(--n-text-color) 70%, transparent);
 
             &:hover {
-                background: rgba(255, 255, 255, 0.1);
-                border-color: rgba(255, 255, 255, 0.2);
+                background: color-mix(in srgb, var(--n-text-color) 10%, transparent);
+                border-color: color-mix(in srgb, var(--n-text-color) 20%, transparent);
             }
         }
 
@@ -1438,6 +1431,45 @@ $accent-hover-deep: #2e72c4; // hover 渐变末端
     50% {
         opacity: 1;
         transform: scale(1);
+    }
+}
+</style>
+
+<style lang="scss">
+/* ===== 按键绑定配置弹窗（主题自适应配色，参考 botGroup/mapOrder 的处理方式） =====
+   NModal 默认 teleport 到 body，scoped 样式无法作用于 naive-ui 内部的 .n-card 结构，
+   故在全局样式中处理弹窗卡片背景与头部配色。
+   NModal preset="card" 时 class 会直接落在 n-card 根元素上，因此直接作用于自身即可。
+   --n-text-color / --n-card-color 由 naive-ui 内联在卡片上，teleport 后仍可读取，用于随主题自适应。 */
+.key-capture-wrapper {
+    /* 背景随主题自适应：以主题卡片色为基底叠加原深蓝渐变的淡色调，深浅主题下均保持可读 */
+    background: linear-gradient(
+        135deg,
+        color-mix(in srgb, #1a1a2e 20%, var(--n-card-color)) 0%,
+        color-mix(in srgb, #16213e 16%, var(--n-card-color)) 100%
+    );
+    border: none;
+    overflow: hidden;
+
+    /* 头部文字/关闭按钮跟随主题文字色（背景已自适应，不再强制白色） */
+    .n-card-header {
+        color: var(--n-text-color);
+
+        .n-card-header__main {
+            color: var(--n-text-color);
+        }
+    }
+
+    .n-card-header-extra {
+        color: color-mix(in srgb, var(--n-text-color) 75%, transparent);
+
+        .n-button {
+            color: color-mix(in srgb, var(--n-text-color) 75%, transparent);
+
+            &:hover {
+                color: var(--n-text-color);
+            }
+        }
     }
 }
 </style>

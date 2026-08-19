@@ -1,4 +1,6 @@
 import { app, ipcMain, protocol, shell } from 'electron'
+import { exec } from 'node:child_process'
+import { promisify } from 'node:util'
 import fs from 'node:fs'
 import path from 'node:path'
 import { getSteamPathFromRegistry } from './gamePath'
@@ -21,8 +23,136 @@ const APP_ID = '730'
 /** 创意工坊内容根目录列表（覆盖多个盘符的 Steam 库，首次读取时记录，供协议 handler 使用） */
 let workshopBases: string[] = []
 
+/** Steam 主安装路径（读取工坊清单时记录，供删除后同步 appworkshop ACF 使用） */
+let steamInstallPath = ''
+
 /** 预览图候选文件名（按优先级） */
 const PREVIEW_NAMES = ['preview.jpg', 'preview.jpeg', 'preview.png']
+
+/** VDF 值：字符串或嵌套对象 */
+type VdfValue = string | VdfObject
+
+/** VDF 嵌套对象：键值对，值可为字符串或继续嵌套 */
+interface VdfObject {
+  [key: string]: VdfValue
+}
+
+/** 解析 VDF KeyValues 文本为嵌套对象（保留文档顺序） */
+function parseVdf(text: string): Record<string, VdfValue> {
+  const tokens: string[] = []
+  const regex = /"((?:\\.|[^"\\])*)"|([{}])/g
+  let match: RegExpExecArray | null
+  while ((match = regex.exec(text)) !== null) {
+    if (match[1] !== undefined) tokens.push(match[1])
+    else tokens.push(match[2])
+  }
+  let idx = 0
+  const parseObject = (): Record<string, VdfValue> => {
+    const obj: Record<string, VdfValue> = {}
+    while (idx < tokens.length) {
+      const key = tokens[idx]
+      if (key === '}') {
+        idx++
+        return obj
+      }
+      idx++
+      if (idx >= tokens.length) break
+      const value = tokens[idx]
+      if (value === '{') {
+        idx++
+        obj[key] = parseObject()
+      } else {
+        idx++
+        obj[key] = value
+      }
+    }
+    return obj
+  }
+  return parseObject()
+}
+
+/** 将嵌套对象序列化为 VDF KeyValues 文本（tab 缩进） */
+function serializeVdf(root: Record<string, VdfValue>): string {
+  const lines: string[] = []
+  const walk = (obj: Record<string, VdfValue>, depth: number) => {
+    for (const [key, value] of Object.entries(obj)) {
+      const pad = '\t'.repeat(depth)
+      if (typeof value === 'object') {
+        lines.push(`${pad}"${key}"`)
+        lines.push(`${pad}{`)
+        walk(value, depth + 1)
+        lines.push(`${pad}}`)
+      } else {
+        lines.push(`${pad}"${key}"\t\t"${value}"`)
+      }
+    }
+  }
+  walk(root, 0)
+  return lines.join('\n')
+}
+
+/**
+ * 从 Steam 安装目录的 `{steamPath}/steamapps/workshop/appworkshop_730.acf` 中移除已删除的工坊条目。
+ * 注意：appworkshop ACF 固定位于 Steam 安装目录（如 D:\Steam）的 steamapps/workshop 下，
+ * 而非各库目录。工坊条目实际分布在两个节点（均以物品 ID 为键）：
+ * - WorkshopItemsInstalled：安装状态（size / timeupdated / manifest）
+ * - WorkshopItemDetails：订阅详情（manifest / timeupdated / subscribedby 等）
+ * 仅删除文件而不清理该清单会导致 Steam 认为内容仍已安装：进服务器报模型 ERROR 且不会重新下载。
+ */
+function removeWorkshopItemsFromAcf(steamPath: string, ids: string[]): { removed: number; updated: boolean } {
+  if (ids.length === 0 || !steamPath) return { removed: 0, updated: false }
+  let removed = 0
+  let updated = false
+  // ACF 位于 Steam 安装目录（如 D:\Steam）的 steamapps/workshop 下
+  const acfPath = path.join(steamPath, 'steamapps', 'workshop', `appworkshop_${APP_ID}.acf`)
+  if (!fs.existsSync(acfPath)) return { removed: 0, updated: false }
+  try {
+    const content = fs.readFileSync(acfPath, 'utf-8')
+    // 保留可能的 UTF-8 BOM（Steam 写入的 ACF 通常带 BOM），解析前剥离、写回时还原
+    const hasBom = content.charCodeAt(0) === 0xfeff
+    const root = parseVdf(hasBom ? content.slice(1) : content)
+    const appWorkshop = root['AppWorkshop']
+    if (!appWorkshop || typeof appWorkshop === 'string') return { removed: 0, updated: false }
+    // 遍历所有工坊条目容器（含历史遗留的 WorkshopItems），同步清理已删除的 ID
+    let changed = false
+    const removedIds = new Set<string>()
+    for (const containerName of ['WorkshopItemsInstalled', 'WorkshopItemDetails', 'WorkshopItems']) {
+      const container = appWorkshop[containerName]
+      if (!container || typeof container === 'string') continue
+      for (const id of ids) {
+        if (Object.prototype.hasOwnProperty.call(container, id)) {
+          delete container[id]
+          if (!removedIds.has(id)) {
+            removedIds.add(id)
+            removed++
+          }
+          changed = true
+        }
+      }
+    }
+    if (changed) {
+      // 重算 SizeOnDisk：等于剩余条目 size 之和（Steam 按此汇总总占用空间）
+      const installed = appWorkshop['WorkshopItemsInstalled']
+      if (installed && typeof installed === 'object') {
+        let total = 0
+        for (const entry of Object.values(installed)) {
+          if (entry && typeof entry === 'object' && typeof entry['size'] === 'string') {
+            total += Number(entry['size']) || 0
+          }
+        }
+        appWorkshop['SizeOnDisk'] = String(total)
+      }
+      // 原子写入（先写临时文件再替换），避免 Steam 读到半截文件
+      const tmpPath = `${acfPath}.tmp`
+      fs.writeFileSync(tmpPath, (hasBom ? '\uFEFF' : '') + serializeVdf(root), 'utf-8')
+      fs.renameSync(tmpPath, acfPath)
+      updated = true
+    }
+  } catch {
+    // ACF 处理失败忽略
+  }
+  return { removed, updated }
+}
 
 /**
  * 注册自定义协议（必须在 app ready 之前调用）
@@ -194,11 +324,24 @@ function readWorkshopItem(base: string, itemId: string): Record<string, unknown>
     type: guessType(`${title} ${description}`),
     preview,
     size: getDirSize(dir),
-    installed: true,
     subscribedTime: birthtime ? formatTime(birthtime) : '',
     updatedTime: mtime ? formatTime(mtime) : '',
     description,
     publishData
+  }
+}
+
+/** promisify 后的 exec，用于执行 tasklist 等命令 */
+const execPromise = promisify(exec)
+
+/** 检查 Steam 客户端是否正在运行（通过 tasklist 查询 steam.exe 进程） */
+async function isSteamRunning(): Promise<boolean> {
+  try {
+    const { stdout } = await execPromise('tasklist /FI "IMAGENAME eq steam.exe" /NH')
+    return /steam\.exe/i.test(stdout)
+  } catch {
+    // 查询失败时保守返回 false，不阻塞删除流程
+    return false
   }
 }
 
@@ -261,6 +404,9 @@ export function setupWorkshopIpc(): void {
         return { success: false, list: [], error: 'missing-steam-path' }
       }
 
+      // 记录主安装路径，供删除后同步 appworkshop ACF 使用
+      steamInstallPath = steamPath
+
       // 收集所有 Steam 库中的创意工坊目录（主目录 + libraryfolders.vdf 中的其他盘符库）
       const bases = getWorkshopBases(steamPath)
       if (bases.length === 0) {
@@ -308,6 +454,51 @@ export function setupWorkshopIpc(): void {
         return { success: !errorMessage, error: errorMessage || undefined }
       } catch {
         return { success: false, error: 'open-failed' }
+      }
+    })
+
+    // 批量删除本地创意工坊订阅目录（从所有 Steam 库中删除，不可恢复）
+    ipcMain.handle('delete-workshop-resources', async (_event, itemIds: number[] | string[]) => {
+      // 过滤出合法的数字 ID，防止路径注入
+      const ids = (itemIds || []).map(id => String(id)).filter(id => /^\d+$/.test(id))
+      if (ids.length === 0) {
+        return { success: false, deleted: 0, total: 0, error: 'invalid-item-ids' }
+      }
+      let deleted = 0
+      const failedIds: string[] = []
+      // 删除前确保用户已退出 Steam 客户端，否则文件被占用会导致删除失败/清单不同步
+      if (await isSteamRunning()) {
+        return { success: false, deleted: 0, total: ids.length, error: 'steam-running' }
+      }
+      for (const id of ids) {
+        // 在多个 Steam 库中定位并删除该订阅资源目录
+        for (const base of workshopBases) {
+          const dir = path.join(base, id)
+          if (!fs.existsSync(dir)) continue
+          try {
+            fs.rmSync(dir, { recursive: true, force: true })
+            deleted++
+          } catch {
+            // 目录存在但删除失败（如文件被 Steam/游戏占用），记录到失败列表
+            failedIds.push(id)
+          }
+          // 找到目录（已删除或删除失败）即结束，避免跨库重复统计
+          break
+        }
+      }
+      // 同步 appworkshop_730.acf：仅移除已成功删除（或目录已不存在）工坊的条目，
+      // 否则 Steam 认为内容仍已安装，进服务器会报模型 ERROR 且不会重新下载被删文件；
+      // 删除失败的条目保留在清单中，避免清单与实际文件不一致
+      const deletedIds = ids.filter(id => !failedIds.includes(id))
+      const acfSteamPath = steamInstallPath || (await getSteamPathFromRegistry())
+      const acfResult = removeWorkshopItemsFromAcf(acfSteamPath, deletedIds)
+      return {
+        success: deleted > 0,
+        deleted,
+        total: ids.length,
+        failed: failedIds.length,
+        acfRemoved: acfResult.removed,
+        acfUpdated: acfResult.updated
       }
     })
   })
