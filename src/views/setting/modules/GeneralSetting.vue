@@ -2,7 +2,7 @@
 import { ref, computed } from 'vue';
 import { NInput } from 'naive-ui';
 import type { GamePlatform } from '@/constants/app';
-import { useAppStore } from '@/store/modules/app';
+import { useAppStore, type MinimizeBehavior } from '@/store/modules/app';
 import { START_ITEMS } from '@/constants/startItems';
 import { $t } from '@/locales';
 
@@ -24,6 +24,12 @@ const csgo2Path = computed({
 const steamPath = computed({
   get: () => appStore.steamPath,
   set: (val: string) => appStore.setSteamPath(val),
+});
+
+/** 最小化行为：taskbar 隐藏到任务栏 / tray 隐藏到系统托盘 */
+const minimizeBehavior = computed({
+  get: () => appStore.minimizeBehavior,
+  set: (val: MinimizeBehavior) => appStore.setMinimizeBehavior(val),
 });
 
 /* ===== 自定义启动项 ===== */
@@ -143,6 +149,29 @@ const selectPlatform = (platform: 'international' | 'perfect') => {
           >
             <SvgIcon icon="mdi:earth" class="btn-icon" />
             <span>{{ $t('settings.perfect') }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 最小化行为 -->
+      <div class="setting-card">
+        <div class="card-label">{{ $t('settings.minimizeBehavior') }}</div>
+        <div class="card-control row-flex">
+          <button
+            class="toggle-btn"
+            :class="{ active: minimizeBehavior === 'taskbar' }"
+            @click="minimizeBehavior = 'taskbar'"
+          >
+            <SvgIcon icon="mdi:window-minimize" class="btn-icon" />
+            <span>{{ $t('settings.minimizeToTaskbar') }}</span>
+          </button>
+          <button
+            class="toggle-btn"
+            :class="{ active: minimizeBehavior === 'tray' }"
+            @click="minimizeBehavior = 'tray'"
+          >
+            <SvgIcon icon="mdi:application" class="btn-icon" />
+            <span>{{ $t('settings.minimizeToTray') }}</span>
           </button>
         </div>
       </div>

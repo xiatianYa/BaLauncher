@@ -8,6 +8,9 @@ import type { GamePlatform } from '@/constants/app'
 /** 通知音频事件类型：subscribe=地图订阅，connect=连接至服务器 */
 export type AudioEventType = 'subscribe' | 'connect'
 
+/** 最小化行为：taskbar=最小化到任务栏，tray=隐藏到系统托盘 */
+export type MinimizeBehavior = 'taskbar' | 'tray'
+
 // 通知音频资源：每个主题按「地图订阅 / 连接至服务器」两种事件各一个
 import audioSystemSubscribe from '@/assets/video/系统/系统-订阅.mp3'
 import audioSystemConnect from '@/assets/video/系统/系统-连接服务器.mp3'
@@ -46,6 +49,8 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   const locale = ref<App.I18n.LangType>(getStg(APP_STORAGE_KEYS.LANG, 'zh-CN'))
   /** 明暗主题：启动时从本地存储读取，切换后持久化，避免每次启动都回退到默认深色主题 */
   const themeScheme = ref<UnionKey.ThemeScheme>(getStg<UnionKey.ThemeScheme>(APP_STORAGE_KEYS.THEME_SCHEME, 'dark'))
+  /** 最小化行为：默认最小化到任务栏，可切换为隐藏到系统托盘 */
+  const minimizeBehavior = ref<MinimizeBehavior>(getStg(APP_STORAGE_KEYS.MINIMIZE_BEHAVIOR, 'taskbar'))
   const onlineUserList = ref<Api.System.OnLineUser[]>([])
 
   // 通知音频映射（key：主题名，value：该主题「订阅 / 连接服务器」两种提示音）
@@ -155,6 +160,12 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
   function setThemeScheme(scheme: UnionKey.ThemeScheme): void {
     themeScheme.value = scheme
     setStg(APP_STORAGE_KEYS.THEME_SCHEME, scheme)
+  }
+
+  /** 设置最小化行为并持久化（taskbar 最小化到任务栏 / tray 隐藏到系统托盘） */
+  function setMinimizeBehavior(behavior: MinimizeBehavior): void {
+    minimizeBehavior.value = behavior
+    setStg(APP_STORAGE_KEYS.MINIMIZE_BEHAVIOR, behavior)
   }
 
   // ==================== 游戏存储读写 ====================
@@ -300,10 +311,12 @@ export const useAppStore = defineStore(SetupStoreId.App, () => {
     volume,
     mouseCursor,
     themeScheme,
+    minimizeBehavior,
     setTheme,
     setVolume,
     setMouseCursor,
     setThemeScheme,
+    setMinimizeBehavior,
     getThemeAudio,
     playThemeAudio,
 

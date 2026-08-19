@@ -2,8 +2,10 @@
 import { onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { fetchGetNoticeUnreadCount } from '@/service/api';
 import { useAuthStore } from '@/store/modules/auth';
+import { useAppStore } from '@/store/modules/app';
 
 const authStore = useAuthStore();
+const appStore = useAppStore();
 
 const showCloseConfirm = ref<boolean>(false);
 /** 通知面板显示状态 */
@@ -14,8 +16,9 @@ const unreadCount = ref(0);
 /** 轮询定时器 */
 let pollTimer: ReturnType<typeof setInterval> | null = null;
 
+/** 最小化窗口：按设置决定最小化到任务栏（默认）或隐藏到系统托盘 */
 const minimizeWindow = async () => {
-  await window.ipcRenderer.invoke('window-minimize');
+  await window.ipcRenderer.invoke('window-minimize', appStore.minimizeBehavior);
 };
 
 const closeWindow = () => {

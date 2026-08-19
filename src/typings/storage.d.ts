@@ -79,5 +79,7 @@ declare namespace StorageType {
     serverViewModule: UnionKey.ServerLayoutModule
     /** selected community id */
     selectedCommunityId: number
+    /** minimize behavior (taskbar / tray) */
+    minimizeBehavior: string
   }
 }

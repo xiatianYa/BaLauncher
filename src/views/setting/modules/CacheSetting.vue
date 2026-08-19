@@ -118,7 +118,10 @@ defineExpose({ calculateCacheSize, loadImageCacheSize });
 </script>
 
 <template>
-  <section class="setting-section">
+  <!-- 组件有多个根节点（section + 弹窗），无法自动继承父级传入的 class/style，需手动绑定 $attrs，
+       使设置页下发的 setting-section 卡片样式与 --delay 错落动画生效；弹窗保持独立根节点，
+       避免被根节点的 transform 动画影响 fixed 定位 -->
+  <section class="setting-section" v-bind="$attrs">
     <div class="section-header">
       <div class="section-title">
         <SvgIcon icon="octicon:cache-24" class="section-icon" />

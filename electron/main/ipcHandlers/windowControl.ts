@@ -1,4 +1,5 @@
-import { ipcMain, BrowserWindow, dialog, app, shell, screen } from 'electron'
+import { ipcMain, BrowserWindow, dialog, app, shell, screen, Tray, Menu, nativeImage } from 'electron'
+import path from 'node:path'
 import os from 'node:os'
 import { getMainWindow } from '../windowManager'
 import { preload, indexHtml, VITE_DEV_SERVER_URL } from '../config'
@@ -6,6 +7,32 @@ import { setMiniConfig } from './systemMonitor'
 
 /** 性能监测小窗引用 */
 let perfMiniWindow: BrowserWindow | null = null
+
+/** 系统托盘引用（「隐藏到系统托盘」模式下懒创建，退出时随应用销毁） */
+let tray: Tray | null = null
+
+/** 显示并聚焦主窗口（托盘点击 / 托盘菜单「显示主界面」使用） */
+function showMainWindow(): void {
+  const win = getMainWindow()
+  if (!win || win.isDestroyed()) return
+  if (win.isMinimized()) win.restore()
+  win.show()
+  win.focus()
+}
+
+/** 确保系统托盘已创建：仅在首次「隐藏到系统托盘」时出现托盘图标 */
+function ensureTray(): void {
+  if (tray && !tray.isDestroyed()) return
+  tray = new Tray(nativeImage.createFromPath(path.join(process.env.VITE_PUBLIC, 'logo.png')))
+  tray.setToolTip('碧蓝档案登录器')
+  // 单击托盘图标恢复主窗口
+  tray.on('click', () => showMainWindow())
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: '显示主界面', click: () => showMainWindow() },
+    { type: 'separator' },
+    { label: '退出', click: () => app.quit() }
+  ]))
+}
 
 export function setupWindowControlIpc() {
   ipcMain.handle('electron:get-app-version', async () => {
@@ -54,9 +81,15 @@ export function setupWindowControlIpc() {
     shell.openExternal(url)
   })
 
-  ipcMain.handle('window-minimize', () => {
+  ipcMain.handle('window-minimize', (_e, mode: 'taskbar' | 'tray' = 'taskbar') => {
     const win = getMainWindow()
-    if (win) {
+    if (!win) return
+    if (mode === 'tray') {
+      // 隐藏到系统托盘：窗口仅隐藏不最小化，点击托盘图标可恢复
+      ensureTray()
+      win.hide()
+    } else {
+      // 默认最小化到任务栏
       win.minimize()
     }
   })
