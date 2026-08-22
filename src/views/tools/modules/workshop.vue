@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { NButton, NDataTable, NEllipsis, NGrid, NGridItem, NInput, NModal, NPagination, NSkeleton, NTooltip, type DataTableColumns } from 'naive-ui';
-import { computed, h, onMounted, reactive, ref } from 'vue';
+import { computed, h, onMounted, reactive, ref, watch } from 'vue';
 import dayjs from 'dayjs';
 import { $t } from '@/locales';
 import SvgIcon from '@/components/custom/svg-icon.vue';
@@ -178,13 +178,58 @@ const filteredList = computed(() => {
   });
 });
 
+/* ==================== 表格排序 ==================== */
+
+/** 当前排序列（列 key + 顺序），null 表示不排序 */
+const sortState = ref<{ columnKey: string; order: 'ascend' | 'descend' } | null>(null);
+
+/** 排序取值：仅使用本地稳定字段，避免接口在线信息按页加载导致跨页排序不一致 */
+const getSortValue = (row: WorkshopItem, key: string): string | number => {
+  switch (key) {
+    case 'title':
+      return row.title.toLowerCase();
+    case 'type':
+      return row.type;
+    case 'size':
+      return row.size;
+    case 'subscribed':
+      return new Date(row.subscribedTime).getTime() || 0;
+    default:
+      return 0;
+  }
+};
+
+/** 排序后的筛选结果（先排序再分页，保证跨页排序一致） */
+const sortedList = computed(() => {
+  const list = filteredList.value;
+  const s = sortState.value;
+  if (!s) return list;
+  return [...list].sort((a, b) => {
+    const va = getSortValue(a, s.columnKey);
+    const vb = getSortValue(b, s.columnKey);
+    let cmp = 0;
+    if (typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
+    else cmp = String(va).localeCompare(String(vb));
+    return s.order === 'ascend' ? cmp : -cmp;
+  });
+});
+
+/** 表格排序变化（仅维护排序状态，数据排序由 sortedList 驱动） */
+const handleUpdateSorter = (sorter: { columnKey: string; order: 'ascend' | 'descend' } | null) => {
+  if (!sorter?.columnKey || !sorter.order) {
+    sortState.value = null;
+    return;
+  }
+  sortState.value = { columnKey: sorter.columnKey, order: sorter.order };
+};
+
 /** 筛选结果总数（分页 item-count 直接取筛选后长度，搜索时自动更新，无需手动维护） */
 const total = computed(() => filteredList.value.length);
 
-/** 当前页数据（合并接口在线信息，供卡片/详情渲染使用） */
+/** 当前页数据（先排序后分页，合并接口在线信息，供卡片/详情渲染使用） */
 const pagedList = computed<WorkshopCard[]>(() => {
   const start = (pagination.current - 1) * pagination.size;
-  return filteredList.value.slice(start, start + pagination.size).map(item => ({
+  return sortedList.value.slice(start, start + pagination.size).map(item => ({
     ...item,
     apiInfo: getApiInfo(item)
   }));
@@ -342,6 +387,7 @@ const tableColumns: DataTableColumns<WorkshopCard> = [
     title: renderPlainTitle($t('workshop.tableTitle')),
     minWidth: 200,
     resizable: true,
+    sorter: true,
     render: renderTitleCell
   },
   {
@@ -349,6 +395,7 @@ const tableColumns: DataTableColumns<WorkshopCard> = [
     title: renderPlainTitle($t('workshop.tableType')),
     width: 88,
     resizable: true,
+    sorter: true,
     render: renderTypeCell
   },
   {
@@ -356,6 +403,7 @@ const tableColumns: DataTableColumns<WorkshopCard> = [
     title: renderPlainTitle($t('workshop.tableSize')),
     width: 96,
     resizable: true,
+    sorter: true,
     render: row => h('span', { class: 'td-value' }, formatSize(row.size))
   },
   {
@@ -363,6 +411,7 @@ const tableColumns: DataTableColumns<WorkshopCard> = [
     title: renderPlainTitle($t('workshop.detailSubscribed')),
     width: 130,
     resizable: true,
+    sorter: true,
     render: row => h('span', { class: 'td-value' }, formatDate(row.subscribedTime))
   },
   {
@@ -403,8 +452,8 @@ const loadData = async () => {
     const result = await window.ipcRenderer.invoke('get-workshop-resources', steamPath);
     if (result && result.success) {
       allItems.value = (result.list || []) as WorkshopItem[];
-      // 等待接口查询在线信息返回后再展示卡片（期间显示骨架屏；失败不影响本地数据渲染）
-      await loadWorkshopInfo(allItems.value.map(item => item.itemId));
+      // 仅按当前分页查询接口在线信息（不再一次性全量查询），期间显示骨架屏；失败不影响本地数据渲染
+      await loadCurrentPageWorkshopInfo();
     } else if (result?.error === 'missing-steam-path') {
       setLoadError($t('workshop.loadErrorNoPath'));
     } else if (result?.error === 'workshop-dir-not-found') {
@@ -420,20 +469,44 @@ const loadData = async () => {
 };
 
 /**
- * 调用接口批量查询本地工坊的在线信息（标题/预览图/统计/作者）
+ * 按当前分页调用接口查询本地工坊的在线信息（标题/预览图/统计/作者）
+ * 仅请求当前页尚未缓存（未查询过）的工坊 ID，避免一次性全量查询与重复请求；
+ * 查询结果合并进缓存映射，翻页/搜索时复用已查询过的数据
  * 接口鉴权由后端处理，未登录或查询失败时静默跳过，直接用本地数据渲染
  */
-const loadWorkshopInfo = async (ids: number[]) => {
-  if (!ids.length) return;
-  const { data, error } = await fetchSteamWorkshopInfo(ids.map(String));
+const loadCurrentPageWorkshopInfo = async () => {
+  const start = (pagination.current - 1) * pagination.size;
+  const pageItems = sortedList.value.slice(start, start + pagination.size);
+  if (!pageItems.length) return;
+  const missingIds = pageItems
+    .map(item => item.itemId)
+    .filter(id => !workshopInfoMap.value.has(id));
+  if (!missingIds.length) return;
+  const { data, error } = await fetchSteamWorkshopInfo(missingIds.map(String));
   if (error || !data) return;
-  const map = new Map<number, Api.Workshop.SteamWorkshopInfoVo>();
+  const next = new Map(workshopInfoMap.value);
   for (const vo of data) {
     const id = Number(vo.workshopInfo?.publishedfileid);
-    if (vo.workshopInfo && id) map.set(id, vo);
+    if (vo.workshopInfo && id) next.set(id, vo);
   }
-  workshopInfoMap.value = map;
+  workshopInfoMap.value = next;
 };
+
+/** 页码 / 每页条数变化时，按当前分页重新查询在线信息 */
+watch(
+  () => [pagination.current, pagination.size],
+  () => loadCurrentPageWorkshopInfo(),
+);
+
+/** 排序变化时当前页内容改变，按新排序重新查询在线信息 */
+watch(sortState, () => loadCurrentPageWorkshopInfo());
+
+/** 搜索关键词输入防抖查询（300ms），避免每次击键都请求接口 */
+let keywordDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+watch(keyword, () => {
+  if (keywordDebounceTimer) clearTimeout(keywordDebounceTimer);
+  keywordDebounceTimer = setTimeout(() => loadCurrentPageWorkshopInfo(), 300);
+});
 
 onMounted(() => {
   loadData();
@@ -525,8 +598,8 @@ onMounted(() => {
       <!-- 真实数据：列表模式（表格，参考服务器列表） -->
       <NDataTable v-else-if="viewMode === 'list'" class="ws-table" :columns="tableColumns" :data="pagedList"
         :row-key="tableRowKey" :row-props="tableRowProps" :checked-row-keys="checkedRowKeys"
-        @update:checked-row-keys="onTableSelectionChange" :bordered="false" :single-line="false"
-        table-layout="fixed" />
+        @update:checked-row-keys="onTableSelectionChange" @update:sorter="handleUpdateSorter" :bordered="false"
+        :single-line="false" table-layout="fixed" />
 
       <!-- 真实数据：卡片模式 -->
       <NGrid v-else :x-gap="16" :y-gap="16" :cols="3" responsive="screen" item-responsive>

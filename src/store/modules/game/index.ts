@@ -181,6 +181,8 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
    * @param serverIdOverwrite 可选：强制指定服务器ID（不传则使用 joinServerInfo.serverId）
    */
   function reportPlayerAction(actionContent: string, serverIdOverwrite?: number | string) {
+    // 数据推送关闭时：不推送玩家操作动态（开始挤服 / 暂停挤服 / 加入服务器等）
+    if (!appStore.automaticJoinConfig.pushGisValue) return
     const serverId = serverIdOverwrite != null
       ? String(serverIdOverwrite)
       : (joinServerInfo.value?.serverId != null ? String(joinServerInfo.value.serverId) : '')
@@ -192,6 +194,7 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
     joinServerInfo,
     automaticJoinConfig,
     isAutomatic,
+    isJoinServerTrayVisible,
     isAutomaticRetry,
     userConnectionStatus,
     safeLog,
@@ -248,6 +251,11 @@ export const useGameStore = defineStore(SetupStoreId.Game, () => {
 
   /** 通过 WebSocket 发送玩家数据（code 110），最快 3s 一次 */
   function sendPlayerData(player: Api.Game.CsgoPlayer): void {
+    // GIS 数据推送关闭时：不推送玩家相关数据（血量/枪械/阵容等），地图比分数据（sendServerData）仍正常推送
+    if (!appStore.automaticJoinConfig.pushGisValue) {
+      gisSendState.pendingData = null
+      return
+    }
     gisSendState.pendingData = { ...player }
     scheduleGisSend()
   }

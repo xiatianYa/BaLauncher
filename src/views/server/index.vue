@@ -2,7 +2,7 @@
 import { useGameStore } from '@/store/modules/game';
 import { useAppStore } from '@/store/modules/app';
 import LoadingSpinner from '@/components/custom/loading-spinner.vue';
-import { ref, onUnmounted, nextTick, onMounted, computed } from 'vue';
+import { ref, onUnmounted, nextTick, onMounted, computed, watch } from 'vue';
 import OpenGameConfirm from '@/views/server/modules/open-game-confirm.vue';
 import OpenGameJoin from '@/views/server/modules/open-game-join.vue';
 import JoinServerTray from '@/views/server/modules/join-server-tray.vue';
@@ -75,6 +75,20 @@ const restoreJoinServerWindow = () => {
   gameStore.isJoinServerTrayVisible = false;
   showJoinServerConfirm.value = true;
 };
+
+// 兜底保障：自动挤服窗口与挤服托盘都关闭时，必须停止自动挤服。
+// 正常流程中窗口与托盘不会同时关闭（关闭窗口→显示托盘，恢复托盘→打开窗口），
+// 若出现两者都关闭而挤服仍在进行（如开始挤服的异步间隙、连接成功但托盘标志残留等），
+// 统一在此拦截停止，避免后台继续挤服且新挤服窗口无法打开。
+watch(
+  () => [showJoinServerConfirm.value, gameStore.isJoinServerTrayVisible, gameStore.isAutomatic],
+  ([windowShown, trayShown, automatic]) => {
+    if (automatic && !windowShown && !trayShown) {
+      gameStore.stopAutomaticJoinServer();
+    }
+  },
+  { immediate: true },
+);
 
 // 开始倒计时（仅保留 15 秒一次的数据刷新定时器，动画交给 CSS/SVG）
 const startCountdown = (reset: boolean = true) => {

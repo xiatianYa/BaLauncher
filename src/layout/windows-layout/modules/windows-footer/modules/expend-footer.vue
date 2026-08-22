@@ -123,36 +123,41 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div class="flex justify-between mb-5px global-footer">
-    <button class="footer-btn" @click="changeThemeLayout()">
-      <SvgIcon icon="solar:round-alt-arrow-left-outline" class="footer-btn-icon" />
-    </button>
-    <div class="menu-wrap" ref="menuWrapRef">
-      <button v-show="showTrigger" class="footer-btn" @click.stop="toggleMenu">
-        <SvgIcon icon="solar:settings-minimalistic-outline" class="footer-btn-icon" />
-      </button>
-
-      <!-- 自定义下拉菜单 -->
-      <transition name="menu-fade">
-        <div v-if="menuVisible" class="footer-menu" :style="{ boxShadow: menuShadow }">
-          <template v-for="option in options" :key="option.key">
-            <div v-if="option.key === 'logout' || option.key === 'login'" class="footer-menu-divider" />
-            <div class="footer-menu-item mt-5px" :class="{ active: locale === option.key }"
-              @click="handleOptionClick(option.key)">
-              <SvgIcon :icon="option.icon" class="footer-menu-item-icon" />
-              <span class="footer-menu-item-text">{{ option.label }}</span>
-              <SvgIcon v-if="locale === option.key" icon="mdi:check" class="footer-menu-item-check" />
-            </div>
-          </template>
-        </div>
-      </transition>
-    </div>
-    <button class="footer-btn" @click="themeStore.toggleThemeScheme">
-      <SvgIcon :icon="icon" class="footer-btn-icon" />
-    </button>
-    <button class="footer-btn" @click="router.push('/feedback')">
+  <div class="flex flex-col gap-6px mb-5px global-footer">
+    <!-- 问题反馈：单独一行占满整行（与缩小时一致） -->
+    <button class="footer-btn feedback-btn" @click="router.push('/feedback')">
       <SvgIcon icon="mdi:message-question-outline" class="footer-btn-icon" />
     </button>
+
+    <!-- 缩小 + 设置 + 主题 一行 -->
+    <div class="footer-row">
+      <button class="footer-btn" @click="changeThemeLayout()">
+        <SvgIcon icon="solar:round-alt-arrow-left-outline" class="footer-btn-icon" />
+      </button>
+      <div class="menu-wrap" ref="menuWrapRef">
+        <button v-show="showTrigger" class="footer-btn" @click.stop="toggleMenu">
+          <SvgIcon icon="solar:settings-minimalistic-outline" class="footer-btn-icon" />
+        </button>
+
+        <!-- 自定义下拉菜单 -->
+        <transition name="menu-fade">
+          <div v-if="menuVisible" class="footer-menu" :style="{ boxShadow: menuShadow }">
+            <template v-for="option in options" :key="option.key">
+              <div v-if="option.key === 'logout' || option.key === 'login'" class="footer-menu-divider" />
+              <div class="footer-menu-item mt-5px" :class="{ active: locale === option.key }"
+                @click="handleOptionClick(option.key)">
+                <SvgIcon :icon="option.icon" class="footer-menu-item-icon" />
+                <span class="footer-menu-item-text">{{ option.label }}</span>
+                <SvgIcon v-if="locale === option.key" icon="mdi:check" class="footer-menu-item-check" />
+              </div>
+            </template>
+          </div>
+        </transition>
+      </div>
+      <button class="footer-btn" @click="themeStore.toggleThemeScheme">
+        <SvgIcon :icon="icon" class="footer-btn-icon" />
+      </button>
+    </div>
   </div>
 
   <!-- 退出登录确认弹窗 -->
@@ -180,6 +185,20 @@ onBeforeUnmount(() => {
 <style scoped lang="scss">
 .global-footer {
   width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* 问题反馈按钮：单独一行占满整行（与缩小时一致）；选择器带 .footer-btn 提高优先级，避免被 .footer-btn 的 height 覆盖 */
+.footer-btn.feedback-btn {
+  width: 100%;
+  height: 44px;
+  flex: none;
+}
+
+/* 缩小 + 设置 + 主题 一行 */
+.footer-row {
   display: flex;
   gap: 6px;
 }

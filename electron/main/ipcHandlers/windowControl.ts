@@ -326,6 +326,8 @@ export function setupWindowControlIpc() {
         contextIsolation: true
       }
     });
+    // 提升到最高置顶层级 screen-saver：Windows 下可覆盖全屏游戏/应用，保证浮窗在玩其他游戏全屏时也始终显示
+    perfMiniWindow.setAlwaysOnTop(true, 'screen-saver');
     // 创建后按九宫格位置定位（跟随所在显示器）
     applyPerfMiniPosition(perfMiniWindow, miniPosition);
     perfMiniWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(MINI_WINDOW_HTML)}`);

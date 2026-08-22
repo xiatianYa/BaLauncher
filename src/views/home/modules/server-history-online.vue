@@ -158,7 +158,14 @@ const buildBarOptions = (data: Api.Game.CommunityOnlineBarVo): ECOption => {
       textStyle: { color: isDark ? '#e8ecf4' : '#2e2b26', fontSize: 12, fontWeight: 500 },
       extraCssText: isDark
         ? 'box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25); backdrop-filter: blur(8px);'
-        : 'box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); backdrop-filter: blur(8px);'
+        : 'box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08); backdrop-filter: blur(8px);',
+      // 默认在鼠标下方展开（避免向上排列被裁剪），水平方向限制在图表宽度内
+      position: (point, _params, _dom, _rect, size) => {
+        const [x, y] = point;
+        const viewWidth = size.viewSize[0];
+        const contentWidth = size.contentSize[0];
+        return { left: Math.min(x, viewWidth - contentWidth - 8), top: y + 14 };
+      }
     },
     legend: {
       type: 'scroll',
@@ -481,7 +488,7 @@ watch(() => i18n.global.locale.value, () => {
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   animation: cardIn 0.45s ease-out forwards;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
 
   &:hover {
     transform: translateY(-3px);

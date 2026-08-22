@@ -2,15 +2,8 @@
 import { useRouter } from 'vue-router';
 import { useThemeStore } from '@/store/modules/theme';
 
-
 const themeStore = useThemeStore();
 const router = useRouter();
-
-const icons: Record<UnionKey.ThemeScheme, string> = {
-  light: 'material-symbols:sunny-outline',
-  dark: 'material-symbols:nightlight-outline',
-};
-
 
 const changeThemeLayout = () => {
   if (themeStore.layout.mode === 'expand') {
@@ -19,14 +12,16 @@ const changeThemeLayout = () => {
     themeStore.setThemeLayout('expand')
   }
 }
-
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-6px pb-5px global-footer">
-    <button class="footer-btn" @click="router.push('/feedback')">
+  <div class="flex flex-col gap-6px pb-5px global-footer">
+    <!-- 问题反馈：单独一行占满整行，高度更高 -->
+    <button class="footer-btn feedback-btn" @click="router.push('/feedback')">
       <SvgIcon icon="mdi:message-question-outline" class="footer-btn-icon" />
     </button>
+
+    <!-- 展开按钮 -->
     <button class="footer-btn" @click="changeThemeLayout()">
       <SvgIcon icon="solar:round-alt-arrow-right-outline" class="footer-btn-icon" />
     </button>
@@ -38,7 +33,6 @@ const changeThemeLayout = () => {
   width: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
   gap: 6px;
 }
 
@@ -70,5 +64,10 @@ const changeThemeLayout = () => {
   .footer-btn-icon {
     font-size: 17px;
   }
+}
+
+/* 问题反馈按钮：单独一行占满整行，高度更高 */
+.feedback-btn {
+  height: 44px;
 }
 </style>

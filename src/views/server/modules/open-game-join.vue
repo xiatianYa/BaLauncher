@@ -113,6 +113,11 @@ const currentServerUserGameDataList = computed<Api.Game.UserGameData[]>(() => {
   return gameStore.serverGameDataMap.userGameDataMap[sid]
 })
 
+// 隐藏仍在加载中的玩家（无阵营时团队标签显示为“加载中”，即数据尚未就绪）
+const visibleServerUserGameDataList = computed<Api.Game.UserGameData[]>(() =>
+  currentServerUserGameDataList.value.filter((player) => !!player.team),
+)
+
 const currentActionLogs = computed<Api.Game.PlayerActionLog[]>(() => {
   const sid = currentServerId.value
   if (!sid) return []
@@ -621,7 +626,7 @@ onBeforeUnmount(() => {
                   <SvgIcon icon="material-symbols:refresh" />
                 </div>
                 <div class="font-size-14px font-bold">
-                  {{ $t('serverJoin.gisPush') }}
+                  {{ $t('serverJoin.dataPush') }}
                 </div>
               </div>
               <NSwitch :value="appStore.automaticJoinConfig.pushGisValue" :round="false"
@@ -631,7 +636,7 @@ onBeforeUnmount(() => {
               <div class="font-size-16px mr-5px">
                 <SvgIcon icon="material-symbols:info-outline" />
               </div>
-              {{ $t('serverJoin.gisPushTip') }}
+              {{ $t('serverJoin.dataPushTip') }}
             </div>
           </div>
         </div>
@@ -753,7 +758,7 @@ onBeforeUnmount(() => {
 
         <div class="server-players overflow-y-auto">
           <NGrid x-gap="5" :cols="1">
-            <NGridItem v-for="(player, index) in currentServerUserGameDataList" :key="getPlayerKey(player, index)"
+            <NGridItem v-for="(player, index) in visibleServerUserGameDataList" :key="getPlayerKey(player, index)"
               :name="index" class="mb-5px mt-5px">
               <NCollapse accordion>
                 <NCollapseItem>

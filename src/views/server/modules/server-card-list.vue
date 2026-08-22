@@ -220,9 +220,6 @@ const getPlayerLevel = (server: Api.Game.SeverVo): string => {
   return 'player-level-5';
 };
 
-// 服务器比赛阶段文案（来自字典 game_map_phase）
-const getMapPhaseText = (phase: string) => dictLabel('game_map_phase', phase) || phase;
-
 // 比分等级：CT 领先 → 蓝，T 领先 → 金，平局 → 中性（与玩家数徽标同款彩色发光边框）
 const getScoreLevel = (server: Api.Game.SeverVo) => {
   const ct = Number(server.CTScore) || 0;
@@ -309,7 +306,7 @@ const handleShowFlow = (server: Api.Game.SeverVo) => {
               </NEllipsis>
               <div class="chip-score mr-5px" :class="getScoreLevel(server)" v-show="server.mapPhase">
                 <span class="team team-ct">{{ server.CTScore || '0' }}</span>
-                <span class="score-phase">{{ getMapPhaseText(server.mapPhase || '') }}</span>
+                <span class="score-phase">{{ dictLabel('game_map_phase', server.mapPhase || '') }}</span>
                 <span class="team team-t">{{ server.TScore || '0' }}</span>
               </div>
             </div>

@@ -64,7 +64,7 @@ export function createNotificationWindow(data: NotificationData): void {
     y: position.y,
     frame: false,
     skipTaskbar: true,
-    alwaysOnTop: true,
+    // 不置顶：游戏等全屏应用在前台时通知不会覆盖屏幕，仅在其后正常显示
     resizable: false,
     movable: false,
     focusable: false,
@@ -88,7 +88,6 @@ export function createNotificationWindow(data: NotificationData): void {
 
   notificationWindow.once('ready-to-show', () => {
     notificationWindow.show()
-    notificationWindow.setAlwaysOnTop(true, 'screen-saver')
   })
 
   // 添加到通知列表

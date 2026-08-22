@@ -1,6 +1,17 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue';
-import { NInput, NModal, NPagination, NSwitch } from 'naive-ui';
+import { computed, h, onMounted, reactive, ref } from 'vue';
+import {
+  NButton,
+  NDataTable,
+  NEllipsis,
+  NInput,
+  NModal,
+  NPagination,
+  NSwitch,
+  NTooltip,
+  type DataTableBaseColumn,
+  type DataTableColumns
+} from 'naive-ui';
 import dayjs from 'dayjs';
 import {
   fetchGetMonSchedulerPageList,
@@ -229,6 +240,170 @@ const handleCloseDeleteModal = () => {
   currentDeleteId.value = null;
 };
 
+/* ==================== NDataTable 列定义 ==================== */
+
+/** 列宽拖拽结果（按列 key 记录） */
+const resizedWidths = ref<Record<string, number>>({});
+
+/** NDataTable 列宽拖拽回调：记录调整后的宽度（受限后的宽度） */
+const handleColumnResize = (_resizedWidth: number, limitedWidth: number, column: DataTableBaseColumn) => {
+  const key = String(column.key);
+  if (key) resizedWidths.value[key] = limitedWidth;
+};
+
+/** 行 key：保证行节点稳定复用 */
+const rowKey = (row: Record<string, any>) => String(row.id ?? '');
+
+/** 文本单元格：超出省略，悬停展示完整内容 */
+const renderTextCell = (value: unknown) => {
+  const text = value == null || value === '' ? '-' : String(value);
+  return h(NEllipsis, { maxLine: 1, tooltip: { placement: 'top' } }, { default: () => text });
+};
+
+/** 运行状态：语义色徽章（NORMAL/PAUSED/COMPLETE/ERROR/BLOCKED/NONE） */
+const renderTriggerStateCell = (row: Record<string, any>) => {
+  const state = row.triggerState || '';
+  return h(
+    'span',
+    { class: ['state-badge', state.toLowerCase()] },
+    dictLabel('mon_scheduler_trigger_state', state ?? '')
+  );
+};
+
+/** 启用状态：状态点 + 徽章（启用为绿、停用为红） */
+const renderStatusCell = (row: Record<string, any>) =>
+  h(
+    'span',
+    { class: ['status-badge', { success: isSchedulerEnabled(row.status) }] },
+    [h('span', { class: 'dot' }), dictLabel('mon_scheduler_status', row.status ?? '')]
+  );
+
+/** 下次执行时间：仅展示时分秒 */
+const renderNextFireTimeCell = (row: Record<string, any>) =>
+  row.nextFireTime ? dayjs(row.nextFireTime).format('HH:mm:ss') : '-';
+
+/** 操作：编辑 / 立即执行 / 暂停恢复 / 启停 / 删除 */
+const renderActionCell = (row: Record<string, any>) =>
+  h('div', { class: 'action-cell' }, [
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(NButton, { size: 'small', class: 'act-btn edit', onClick: () => openEditScheduler(row) }, { icon: () => h(SvgIcon, { icon: 'mdi:pencil' }) }),
+        default: () => $t('logManage.scheduler.edit')
+      }
+    ),
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(NButton, { size: 'small', class: 'act-btn run', onClick: () => handleSchedulerRunOnce(row) }, { icon: () => h(SvgIcon, { icon: 'mdi:play' }) }),
+        default: () => $t('logManage.scheduler.runOnce')
+      }
+    ),
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(
+            NButton,
+            { size: 'small', class: 'act-btn pause', onClick: () => handleSchedulerPauseResume(row) },
+            { icon: () => h(SvgIcon, { icon: isSchedulerPaused(row.triggerState) ? 'mdi:play' : 'mdi:pause' }) }
+          ),
+        default: () => (isSchedulerPaused(row.triggerState) ? $t('logManage.scheduler.resume') : $t('logManage.scheduler.pause'))
+      }
+    ),
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(NButton, { size: 'small', class: 'act-btn power', onClick: () => handleSchedulerChangeStatus(row) }, { icon: () => h(SvgIcon, { icon: 'mdi:power' }) }),
+        default: () => (isSchedulerEnabled(row.status) ? $t('logManage.scheduler.disable') : $t('logManage.scheduler.enable'))
+      }
+    ),
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(NButton, { size: 'small', class: 'act-btn delete', onClick: () => handleSchedulerDelete(row) }, { icon: () => h(SvgIcon, { icon: 'mdi:delete' }) }),
+        default: () => $t('logManage.delete')
+      }
+    )
+  ]);
+
+/** NDataTable 列定义 */
+const columns = computed<DataTableColumns<Record<string, any>>>(() => [
+  {
+    key: 'jobName',
+    title: $t('logManage.scheduler.table.jobName'),
+    minWidth: 110,
+    resizable: true,
+    width: resizedWidths.value['jobName'],
+    render: row => renderTextCell(row.jobName)
+  },
+  {
+    key: 'jobGroup',
+    title: $t('logManage.scheduler.table.jobGroup'),
+    minWidth: 80,
+    resizable: true,
+    width: resizedWidths.value['jobGroup'],
+    render: row => renderTextCell(row.jobGroup)
+  },
+  {
+    key: 'triggerName',
+    title: $t('logManage.scheduler.table.triggerName'),
+    minWidth: 90,
+    resizable: true,
+    width: resizedWidths.value['triggerName'],
+    render: row => renderTextCell(row.triggerName)
+  },
+  {
+    key: 'cron',
+    title: $t('logManage.scheduler.table.cron'),
+    minWidth: 130,
+    resizable: true,
+    width: resizedWidths.value['cron'],
+    render: row => renderTextCell(row.cron)
+  },
+  {
+    key: 'triggerState',
+    title: $t('logManage.scheduler.table.triggerState'),
+    width: resizedWidths.value['triggerState'] ?? 110,
+    minWidth: 90,
+    resizable: true,
+    render: row => renderTriggerStateCell(row)
+  },
+  {
+    key: 'status',
+    title: $t('logManage.scheduler.table.status'),
+    width: resizedWidths.value['status'] ?? 130,
+    minWidth: 110,
+    resizable: true,
+    render: row => renderStatusCell(row)
+  },
+  {
+    key: 'nextFireTime',
+    title: $t('logManage.scheduler.table.nextFireTime'),
+    width: resizedWidths.value['nextFireTime'] ?? 160,
+    minWidth: 140,
+    resizable: true,
+    render: row => renderNextFireTimeCell(row)
+  },
+  {
+    key: 'actions',
+    title: $t('logManage.scheduler.table.actions'),
+    width: resizedWidths.value['actions'] ?? 210,
+    minWidth: 196,
+    resizable: true,
+    render: row => renderActionCell(row)
+  }
+]);
+
 onMounted(loadData);
 </script>
 
@@ -259,71 +434,27 @@ onMounted(loadData);
     </button>
   </div>
 
-  <!-- 调度任务表格 -->
-  <div class="log-table">
-    <div class="log-table-header scheduler">
-      <span class="s-col-name">{{ $t('logManage.scheduler.table.jobName') }}</span>
-      <span class="s-col-group">{{ $t('logManage.scheduler.table.jobGroup') }}</span>
-      <span class="s-col-trigger">{{ $t('logManage.scheduler.table.triggerName') }}</span>
-      <span class="s-col-cron">{{ $t('logManage.scheduler.table.cron') }}</span>
-      <span class="s-col-state">{{ $t('logManage.scheduler.table.triggerState') }}</span>
-      <span class="s-col-status">{{ $t('logManage.scheduler.table.status') }}</span>
-      <span class="s-col-next">{{ $t('logManage.scheduler.table.nextFireTime') }}</span>
-      <span class="s-col-actions">{{ $t('logManage.scheduler.table.actions') }}</span>
-    </div>
-    <div class="log-table-body">
-      <div v-for="row in list" :key="row.id" class="log-row scheduler">
-        <span class="s-col-name cell-text" :title="row.jobName">{{ row.jobName || '-' }}</span>
-        <span class="s-col-group cell-text" :title="row.jobGroup">{{ row.jobGroup || '-' }}</span>
-        <span class="s-col-trigger cell-text" :title="row.triggerName">{{ row.triggerName || '-' }}</span>
-        <span class="s-col-cron cell-text" :title="row.cron">{{ row.cron || '-' }}</span>
-        <span class="s-col-state">
-          <span class="state-badge" :class="String(row.triggerState || '').toLowerCase()">
-            {{ dictLabel('mon_scheduler_trigger_state', String(row.triggerState ?? '')) || row.triggerState || '-' }}
-          </span>
-        </span>
-        <span class="s-col-status">
-          <span class="status-badge" :class="{ success: isSchedulerEnabled(row.status) }">
-            <span class="dot" />
-            {{ dictLabel('mon_scheduler_status', String(row.status ?? '')) || '-' }}
-          </span>
-        </span>
-        <span class="s-col-next">{{ row.nextFireTime ? dayjs(String(row.nextFireTime)).format('YYYY-MM-DD HH:mm:ss') : '-' }}</span>
-        <span class="s-col-actions">
-          <button class="act-btn edit" :title="$t('logManage.scheduler.edit')" @click="openEditScheduler(row)">
-            <SvgIcon icon="mdi:pencil" />
-          </button>
-          <button class="act-btn run" :title="$t('logManage.scheduler.runOnce')" @click="handleSchedulerRunOnce(row)">
-            <SvgIcon icon="mdi:play" />
-          </button>
-          <button class="act-btn pause"
-            :title="isSchedulerPaused(row.triggerState) ? $t('logManage.scheduler.resume') : $t('logManage.scheduler.pause')"
-            @click="handleSchedulerPauseResume(row)">
-            <SvgIcon :icon="isSchedulerPaused(row.triggerState) ? 'mdi:play' : 'mdi:pause'" />
-          </button>
-          <button class="act-btn power"
-            :title="isSchedulerEnabled(row.status) ? $t('logManage.scheduler.disable') : $t('logManage.scheduler.enable')"
-            @click="handleSchedulerChangeStatus(row)">
-            <SvgIcon icon="mdi:power" />
-          </button>
-          <button class="act-btn delete" :title="$t('logManage.delete')" @click="handleSchedulerDelete(row)">
-            <SvgIcon icon="mdi:delete" />
-          </button>
-        </span>
-      </div>
-
-      <!-- 加载骨架 -->
-      <template v-if="loading">
-        <div v-for="i in 6" :key="`scheduler-skeleton-${i}`" class="log-row skeleton-row">
-          <span v-for="j in 8" :key="j" class="skeleton-cell" />
-        </div>
-      </template>
-
-      <!-- 空状态 -->
-      <div v-if="!loading && list.length === 0" class="log-empty">
-        <SvgIcon icon="mdi:timeline-clock" class="empty-icon" />
-        <p>{{ $t('logManage.scheduler.empty') }}</p>
-      </div>
+  <!-- 调度任务表格（NDataTable） -->
+  <div class="custom-table-wrapper">
+    <div class="custom-table">
+      <NDataTable
+        class="scheduler-table"
+        :columns="columns"
+        :data="list"
+        :loading="loading"
+        :row-key="rowKey"
+        :bordered="false"
+        :single-line="false"
+        table-layout="fixed"
+        @unstable-column-resize="handleColumnResize"
+      >
+        <template #empty>
+          <div class="log-empty">
+            <SvgIcon icon="mdi:timeline-clock" class="empty-icon" />
+            <p>{{ $t('logManage.scheduler.empty') }}</p>
+          </div>
+        </template>
+      </NDataTable>
     </div>
   </div>
 
@@ -371,23 +502,28 @@ onMounted(loadData);
     <div class="modal-form">
       <div class="form-item">
         <label class="form-label required">{{ $t('logManage.scheduler.form.jobName') }}</label>
-        <NInput v-model:value="schedulerForm.jobName" :placeholder="$t('logManage.scheduler.formPlaceholder.jobName')" size="small" />
+        <NInput v-model:value="schedulerForm.jobName" :placeholder="$t('logManage.scheduler.formPlaceholder.jobName')"
+          size="small" />
       </div>
       <div class="form-item">
         <label class="form-label">{{ $t('logManage.scheduler.form.jobGroup') }}</label>
-        <NInput v-model:value="schedulerForm.jobGroup" :placeholder="$t('logManage.scheduler.formPlaceholder.jobGroup')" size="small" />
+        <NInput v-model:value="schedulerForm.jobGroup" :placeholder="$t('logManage.scheduler.formPlaceholder.jobGroup')"
+          size="small" />
       </div>
       <div class="form-item">
         <label class="form-label">{{ $t('logManage.scheduler.form.triggerName') }}</label>
-        <NInput v-model:value="schedulerForm.triggerName" :placeholder="$t('logManage.scheduler.formPlaceholder.triggerName')" size="small" />
+        <NInput v-model:value="schedulerForm.triggerName"
+          :placeholder="$t('logManage.scheduler.formPlaceholder.triggerName')" size="small" />
       </div>
       <div class="form-item">
         <label class="form-label">{{ $t('logManage.scheduler.form.triggerGroup') }}</label>
-        <NInput v-model:value="schedulerForm.triggerGroup" :placeholder="$t('logManage.scheduler.formPlaceholder.triggerGroup')" size="small" />
+        <NInput v-model:value="schedulerForm.triggerGroup"
+          :placeholder="$t('logManage.scheduler.formPlaceholder.triggerGroup')" size="small" />
       </div>
       <div class="form-item">
         <label class="form-label required">{{ $t('logManage.scheduler.form.cron') }}</label>
-        <NInput v-model:value="schedulerForm.cron" :placeholder="$t('logManage.scheduler.formPlaceholder.cron')" size="small" />
+        <NInput v-model:value="schedulerForm.cron" :placeholder="$t('logManage.scheduler.formPlaceholder.cron')"
+          size="small" />
         <div class="form-hint">
           <SvgIcon icon="mdi:clock-outline" class="form-hint-icon" />
           <span>{{ $t('logManage.scheduler.formHint.cron') }}</span>
@@ -395,21 +531,25 @@ onMounted(loadData);
       </div>
       <div class="form-item">
         <label class="form-label required">{{ $t('logManage.scheduler.form.jobClassName') }}</label>
-        <NInput v-model:value="schedulerForm.jobClassName" :placeholder="$t('logManage.scheduler.formPlaceholder.jobClassName')" size="small" />
+        <NInput v-model:value="schedulerForm.jobClassName"
+          :placeholder="$t('logManage.scheduler.formPlaceholder.jobClassName')" size="small" />
       </div>
       <div class="form-item">
         <label class="form-label">{{ $t('logManage.scheduler.form.jobData') }}</label>
-        <NInput v-model:value="schedulerForm.jobData" :placeholder="$t('logManage.scheduler.formPlaceholder.jobData')" size="small" />
+        <NInput v-model:value="schedulerForm.jobData" :placeholder="$t('logManage.scheduler.formPlaceholder.jobData')"
+          size="small" />
       </div>
       <div class="form-item">
         <label class="form-label">{{ $t('logManage.scheduler.form.triggerData') }}</label>
-        <NInput v-model:value="schedulerForm.triggerData" :placeholder="$t('logManage.scheduler.formPlaceholder.triggerData')" size="small" />
+        <NInput v-model:value="schedulerForm.triggerData"
+          :placeholder="$t('logManage.scheduler.formPlaceholder.triggerData')" size="small" />
       </div>
       <div class="form-item">
         <label class="form-label">{{ $t('logManage.scheduler.form.status') }}</label>
         <div class="switch-wrap">
           <NSwitch v-model:value="schedulerStatus" :checked-value="1" :unchecked-value="0" />
-          <span class="switch-text">{{ schedulerForm.status === 1 ? $t('logManage.scheduler.enabled') : $t('logManage.scheduler.disabled') }}</span>
+          <span class="switch-text">{{ schedulerForm.status === 1 ? $t('logManage.scheduler.enabled') :
+            $t('logManage.scheduler.disabled') }}</span>
         </div>
       </div>
       <div class="modal-actions">
@@ -566,372 +706,244 @@ onMounted(loadData);
   }
 }
 
-/* ===== 日志表格 ===== */
-.log-table {
+/* ===== 调度任务表格（NDataTable） ===== */
+.custom-table-wrapper {
   flex: 1;
   min-height: 0;
+  padding: 4px 10px 10px;
+  overflow: auto;
+
+  .custom-table {
+    display: flex;
+    flex-direction: column;
+    // 关键：确保表格按完整列宽渲染，不随容器宽度收缩
+    min-width: 1020px;
+  }
+}
+
+/* 空状态（NDataTable #empty 插槽） */
+.log-empty {
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
-  border: 1px solid rgba(var(--app-rgb), 0.08);
-  overflow-x: auto;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px 20px;
+  color: rgba(var(--app-rgb), 0.5);
 
-  .log-table-header {
-    display: grid;
-    grid-template-columns: minmax(160px, 1.4fr) 80px minmax(180px, 1.6fr) 110px 120px 80px 150px 84px;
-    gap: 8px;
-    align-items: center;
-    padding: 10px 14px;
-    background: rgba(var(--app-rgb), 0.05);
+  .empty-icon {
+    font-size: 48px;
+    opacity: 0.4;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+/* ===== NDataTable 内部样式覆写（行卡片化，视觉与旧表格一致） ===== */
+.scheduler-table {
+  /* 去掉默认底色 */
+  :deep(.n-data-table) {
+    background: transparent;
+  }
+
+  /* 行间距：表头与首行、行与行之间留出 10px */
+  :deep(.n-data-table-table) {
+    border-collapse: separate !important;
+    border-spacing: 0 10px;
+  }
+
+  /* ===== 表头 ===== */
+  :deep(.n-data-table-th) {
+    background: transparent;
+    border: none;
     border-bottom: 1px solid rgba(var(--app-rgb), 0.08);
-    font-size: 12px;
-    font-weight: 600;
-    color: rgba(var(--app-rgb), 0.55);
-    flex-shrink: 0;
+    padding: 8px 12px;
+  }
 
-    &.login {
-      grid-template-columns: 130px 90px 120px 120px minmax(160px, 1fr) 150px 84px;
+  :deep(.n-data-table-th__title-wrapper) {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(var(--app-rgb), 0.6);
+    white-space: nowrap;
+  }
+
+  /* ===== 表体（行卡片化：圆角 + 主题背景 + hover 加深） ===== */
+  :deep(.n-data-table-td) {
+    border: none;
+    padding: 12px;
+    background: rgba(var(--app-rgb), 0.03);
+    overflow: hidden;
+    transition: background 0.25s ease;
+  }
+
+  /* 每行四角圆角：首列左圆角、末列右圆角 */
+  :deep(.n-data-table-td:first-child) {
+    border-radius: 12px 0 0 12px;
+  }
+
+  :deep(.n-data-table-td:last-child) {
+    border-radius: 0 12px 12px 0;
+  }
+
+  :deep(.n-data-table-tr:hover .n-data-table-td) {
+    background: rgba(var(--app-rgb), 0.06);
+  }
+
+  /* 加载中遮罩透明化，避免遮住卡片底色 */
+  :deep(.n-data-table__loading) {
+    background: transparent;
+  }
+
+  /* ===== 文本单元格（省略号，悬停展示完整内容） ===== */
+  :deep(.n-ellipsis) {
+    font-size: 12.5px;
+    color: rgba(var(--app-rgb), 0.85);
+  }
+
+  /* ===== 运行状态徽章（NORMAL/PAUSED/COMPLETE/ERROR/BLOCKED/NONE） ===== */
+  :deep(.state-badge) {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    color: #8b93a7;
+    background: rgba(139, 147, 167, 0.1);
+    border: 1px solid rgba(139, 147, 167, 0.2);
+
+    &.normal {
+      color: #43e97b;
+      background: rgba(67, 233, 123, 0.1);
+      border-color: rgba(67, 233, 123, 0.2);
+    }
+
+    &.paused {
+      color: #ffa325;
+      background: rgba(255, 163, 37, 0.1);
+      border-color: rgba(255, 163, 37, 0.2);
     }
 
     &.error {
-      grid-template-columns: minmax(140px, 1.2fr) minmax(160px, 1.4fr) 160px 70px 110px 150px 84px;
+      color: #f5576c;
+      background: rgba(245, 87, 108, 0.1);
+      border-color: rgba(245, 87, 108, 0.2);
     }
 
-    &.scheduler {
-      grid-template-columns: minmax(110px, 1.1fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(130px, 1.5fr) 90px 80px 140px 190px;
+    &.blocked {
+      color: #a78bfa;
+      background: rgba(167, 139, 250, 0.1);
+      border-color: rgba(167, 139, 250, 0.2);
+    }
+
+    &.complete {
+      color: #36adff;
+      background: rgba(54, 173, 255, 0.1);
+      border-color: rgba(54, 173, 255, 0.2);
     }
   }
 
-  .log-table-body {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+  /* ===== 启用状态徽章（状态点 + 语义色） ===== */
+  :deep(.status-badge) {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #f5576c;
+    background: rgba(245, 87, 108, 0.1);
+    border: 1px solid rgba(245, 87, 108, 0.2);
+    white-space: nowrap;
 
-    .log-row {
-      display: grid;
-      grid-template-columns: minmax(160px, 1.4fr) 80px minmax(180px, 1.6fr) 110px 120px 80px 150px 84px;
-      gap: 8px;
-      align-items: center;
-      padding: 9px 14px;
-      border-bottom: 1px solid rgba(var(--app-rgb), 0.05);
-      transition: background 0.2s ease;
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #f5576c;
+    }
+
+    &.success {
+      color: #43e97b;
+      background: rgba(67, 233, 123, 0.1);
+      border-color: rgba(67, 233, 123, 0.2);
+
+      .dot {
+        background: #43e97b;
+        box-shadow: 0 0 4px rgba(67, 233, 123, 0.6);
+      }
+    }
+  }
+
+  /* ===== 操作按钮：语义色图标按钮 ===== */
+  :deep(.action-cell) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  :deep(.act-btn) {
+    min-width: 28px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 8px;
+    font-size: 15px;
+    transition: all 0.2s ease;
+
+    &.edit {
+      color: #667eea;
+      background: rgba(102, 126, 234, 0.12);
+      border-color: rgba(102, 126, 234, 0.25);
 
       &:hover {
-        background: rgba(var(--app-rgb), 0.04);
-      }
-
-      &.login {
-        grid-template-columns: 130px 90px 120px 120px minmax(160px, 1fr) 150px 84px;
-      }
-
-      &.error {
-        grid-template-columns: minmax(140px, 1.2fr) minmax(160px, 1.4fr) 160px 70px 110px 150px 84px;
-      }
-
-      &.file {
-        grid-template-columns: minmax(90px, 0.8fr) minmax(100px, 1fr) minmax(180px, 1.8fr) 90px 100px 150px 84px;
-      }
-
-      &.scheduler {
-        grid-template-columns: minmax(110px, 1.1fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(130px, 1.5fr) 90px 80px 140px 190px;
-      }
-
-      /* 文件日志：路径列（缩略图 + 文本） */
-      .f-col-url {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-
-        .file-thumb {
-          flex-shrink: 0;
-          border-radius: 8px;
-          overflow: hidden;
-          border: 1px solid rgba(var(--app-rgb), 0.08);
-        }
-
-        .file-type-icon {
-          flex-shrink: 0;
-          font-size: 22px;
-          color: rgba(var(--app-rgb), 0.4);
-        }
-
-        .cell-text {
-          flex: 1;
-          min-width: 0;
-        }
-      }
-
-      .cell-text {
-        font-size: 12.5px;
-        color: rgba(var(--app-rgb), 0.85);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .col-time {
-        font-size: 12px;
-        color: rgba(var(--app-rgb), 0.5);
-        font-family: 'JetBrains Mono', Consolas, monospace;
-      }
-
-      .col-cost {
-        font-size: 12px;
-        color: rgba(var(--app-rgb), 0.65);
-        font-family: 'JetBrains Mono', Consolas, monospace;
-      }
-
-      .col-line {
-        font-size: 12.5px;
-        color: rgba(var(--app-rgb), 0.65);
-      }
-
-      .method-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 7px;
-        font-size: 11px;
-        font-weight: 600;
-        border: 1px solid transparent;
-        white-space: nowrap;
-      }
-
-      .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 2px 8px;
-        border-radius: 7px;
-        font-size: 11px;
-        font-weight: 500;
-        color: #f5576c;
-        background: rgba(245, 87, 108, 0.1);
-        border: 1px solid rgba(245, 87, 108, 0.2);
-        white-space: nowrap;
-
-        .dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #f5576c;
-        }
-
-        &.success {
-          color: #43e97b;
-          background: rgba(67, 233, 123, 0.1);
-          border-color: rgba(67, 233, 123, 0.2);
-
-          .dot {
-            background: #43e97b;
-            box-shadow: 0 0 4px rgba(67, 233, 123, 0.6);
-          }
-        }
-      }
-
-      .state-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 7px;
-        font-size: 11px;
-        font-weight: 500;
-        white-space: nowrap;
-        color: #8b93a7;
-        background: rgba(139, 147, 167, 0.1);
-        border: 1px solid rgba(139, 147, 167, 0.2);
-
-        &.normal {
-          color: #43e97b;
-          background: rgba(67, 233, 123, 0.1);
-          border-color: rgba(67, 233, 123, 0.2);
-        }
-
-        &.paused {
-          color: #ffa325;
-          background: rgba(255, 163, 37, 0.1);
-          border-color: rgba(255, 163, 37, 0.2);
-        }
-
-        &.error {
-          color: #f5576c;
-          background: rgba(245, 87, 108, 0.1);
-          border-color: rgba(245, 87, 108, 0.2);
-        }
-
-        &.blocked {
-          color: #a78bfa;
-          background: rgba(167, 139, 250, 0.1);
-          border-color: rgba(167, 139, 250, 0.2);
-        }
-
-        &.complete {
-          color: #36adff;
-          background: rgba(54, 173, 255, 0.1);
-          border-color: rgba(54, 173, 255, 0.2);
-        }
-      }
-
-      .col-actions {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-
-        .row-action-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 26px;
-          height: 26px;
-          padding: 0;
-          border: none;
-          border-radius: 7px;
-          cursor: pointer;
-          font-size: 14px;
-          color: rgba(var(--app-rgb), 0.5);
-          background: rgba(var(--app-rgb), 0.06);
-          transition: all 0.2s ease;
-
-          &:hover {
-            transform: translateY(-1px);
-          }
-
-          &.view:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.18);
-          }
-
-          &.delete:hover {
-            color: #f5576c;
-            background: rgba(245, 87, 108, 0.18);
-          }
-
-          &.run:hover {
-            color: #43e97b;
-            background: rgba(67, 233, 123, 0.18);
-          }
-
-          &.pause:hover {
-            color: #ffa325;
-            background: rgba(255, 163, 37, 0.18);
-          }
-
-          &.power:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.18);
-          }
-        }
-      }
-
-      /* 调度任务行操作：语义色图标按钮 */
-      .s-col-actions {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-
-        .act-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 28px;
-          height: 28px;
-          padding: 0;
-          border-radius: 8px;
-          border: 1px solid transparent;
-          background: rgba(var(--app-rgb), 0.05);
-          color: rgba(var(--app-rgb), 0.55);
-          cursor: pointer;
-          font-size: 15px;
-          transition: all 0.2s ease;
-
-          &:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-          }
-
-          &.edit {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.12);
-            border-color: rgba(102, 126, 234, 0.25);
-
-            &:hover {
-              background: rgba(102, 126, 234, 0.22);
-            }
-          }
-
-          &.run {
-            color: #43e97b;
-            background: rgba(67, 233, 123, 0.12);
-            border-color: rgba(67, 233, 123, 0.25);
-
-            &:hover {
-              background: rgba(67, 233, 123, 0.22);
-            }
-          }
-
-          &.pause {
-            color: #ffa325;
-            background: rgba(255, 163, 37, 0.12);
-            border-color: rgba(255, 163, 37, 0.25);
-
-            &:hover {
-              background: rgba(255, 163, 37, 0.22);
-            }
-          }
-
-          &.power {
-            color: #a78bfa;
-            background: rgba(167, 139, 250, 0.12);
-            border-color: rgba(167, 139, 250, 0.25);
-
-            &:hover {
-              background: rgba(167, 139, 250, 0.22);
-            }
-          }
-
-          &.delete {
-            color: #f5576c;
-            background: rgba(245, 87, 108, 0.12);
-            border-color: rgba(245, 87, 108, 0.25);
-
-            &:hover {
-              background: rgba(245, 87, 108, 0.22);
-            }
-          }
-        }
+        background: rgba(102, 126, 234, 0.22);
       }
     }
 
-    .skeleton-row {
-      pointer-events: none;
+    &.run {
+      color: #43e97b;
+      background: rgba(67, 233, 123, 0.12);
+      border-color: rgba(67, 233, 123, 0.25);
 
-      .skeleton-cell {
-        height: 14px;
-        border-radius: 4px;
-        background: linear-gradient(90deg, rgba(var(--app-rgb), 0.04) 25%, rgba(var(--app-rgb), 0.09) 50%, rgba(var(--app-rgb), 0.04) 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
+      &:hover {
+        background: rgba(67, 233, 123, 0.22);
       }
     }
 
-    .log-empty {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 80px 20px;
-      color: rgba(var(--app-rgb), 0.5);
+    &.pause {
+      color: #ffa325;
+      background: rgba(255, 163, 37, 0.12);
+      border-color: rgba(255, 163, 37, 0.25);
 
-      .empty-icon {
-        font-size: 48px;
-        opacity: 0.4;
+      &:hover {
+        background: rgba(255, 163, 37, 0.22);
       }
+    }
 
-      p {
-        margin: 0;
-        font-size: 13px;
+    &.power {
+      color: #a78bfa;
+      background: rgba(167, 139, 250, 0.12);
+      border-color: rgba(167, 139, 250, 0.25);
+
+      &:hover {
+        background: rgba(167, 139, 250, 0.22);
+      }
+    }
+
+    &.delete {
+      color: #f5576c;
+      background: rgba(245, 87, 108, 0.12);
+      border-color: rgba(245, 87, 108, 0.25);
+
+      &:hover {
+        background: rgba(245, 87, 108, 0.22);
       }
     }
   }
@@ -941,16 +953,6 @@ onMounted(loadData);
   display: flex;
   justify-content: center;
   flex-shrink: 0;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
 }
 
 /* ===== 详情弹窗 ===== */

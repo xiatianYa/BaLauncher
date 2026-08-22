@@ -5,6 +5,8 @@ interface AutoJoinDeps {
   joinServerInfo: Ref<Api.Game.SeverVo | undefined>
   automaticJoinConfig: Ref<Api.Game.AutomaticJoinConfig>
   isAutomatic: Ref<boolean>
+  /** 挤服托盘是否可见（停止自动挤服时必须一并复位，避免残留 true 导致托盘消失/新窗口无法打开） */
+  isJoinServerTrayVisible: Ref<boolean>
   isAutomaticRetry: Ref<boolean>
   /** 当前用户连接服务器状态（connecting/map_loading/in_game 视为连接进行中或已成功） */
   userConnectionStatus: Ref<UserConnectionStatus>
@@ -27,6 +29,7 @@ export function useAutoJoin(deps: AutoJoinDeps) {
     joinServerInfo,
     automaticJoinConfig,
     isAutomatic,
+    isJoinServerTrayVisible,
     isAutomaticRetry,
     userConnectionStatus,
     safeLog,
@@ -103,6 +106,8 @@ export function useAutoJoin(deps: AutoJoinDeps) {
         } else {
           isAutomatic.value = false
           isAutomaticRetry.value = false
+          // 挤服已找到空位并停止轮询，托盘同步关闭，避免残留 true 导致新挤服窗口无法打开
+          isJoinServerTrayVisible.value = false
           pushAutoJoinLog('发现空位，正在连接服务器')
           connectServerUsingSteamUrl()
           reportPlayerAction('加入服务器')
@@ -146,10 +151,14 @@ export function useAutoJoin(deps: AutoJoinDeps) {
     try {
       if (isAutomatic.value) {
         await window.ipcRenderer.invoke('stop-automatic-join')
-        isAutomatic.value = false
       }
     } catch (error) {
       console.error('停止自动挤服失败:', error)
+    } finally {
+      // 无论 isAutomatic 之前是否为 true，停止时都强制复位前端状态：
+      // 避免挤服已停但 isJoinServerTrayVisible 残留 true，导致托盘不显示而新挤服窗口又无法打开
+      isAutomatic.value = false
+      isJoinServerTrayVisible.value = false
     }
   }
 

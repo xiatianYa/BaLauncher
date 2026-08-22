@@ -1,6 +1,16 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue';
-import { NImage, NModal, NPagination } from 'naive-ui';
+import { computed, h, onMounted, reactive, ref } from 'vue';
+import {
+  NButton,
+  NDataTable,
+  NEllipsis,
+  NImage,
+  NModal,
+  NPagination,
+  NTooltip,
+  type DataTableBaseColumn,
+  type DataTableColumns
+} from 'naive-ui';
 import dayjs from 'dayjs';
 import { fetchGetMonLogsFilePageList, fetchRemoveMonLogsFile, fetchClearMonLogsFile } from '@/service/api';
 import { $t } from '@/locales';
@@ -183,6 +193,145 @@ const handleCloseClearModal = () => {
   showClearModal.value = false;
 };
 
+/* ==================== NDataTable 列定义 ==================== */
+
+/** 列宽拖拽结果（按列 key 记录） */
+const resizedWidths = ref<Record<string, number>>({});
+
+/** NDataTable 列宽拖拽回调：记录调整后的宽度（受限后的宽度） */
+const handleColumnResize = (_resizedWidth: number, limitedWidth: number, column: DataTableBaseColumn) => {
+  const key = String(column.key);
+  if (key) resizedWidths.value[key] = limitedWidth;
+};
+
+/** 行 key：保证行节点稳定复用 */
+const rowKey = (row: Record<string, any>) => String(row.id ?? '');
+
+/** 文本单元格：超出省略，悬停展示完整内容 */
+const renderTextCell = (value: unknown) => {
+  const text = value == null || value === '' ? '-' : String(value);
+  return h(NEllipsis, { maxLine: 1, tooltip: { placement: 'top' } }, { default: () => text });
+};
+
+/** 创建时间：等宽字体日期展示 */
+const renderTimeCell = (row: Record<string, any>) => h('span', { class: 'col-time' }, formatDate(row.createTime));
+
+/** 文件大小：等宽字体展示 */
+const renderSizeCell = (row: Record<string, any>) => h('span', { class: 'col-size' }, row.fileSize ?? '-');
+
+/** 文件路径：图片缩略图 / 文件图标 + 文本 */
+const renderFileUrlCell = (row: Record<string, any>) =>
+  h('div', { class: 'file-url-cell' }, [
+    isImageFile(row.fileUrl)
+      ? h(NImage, {
+          src: row.fileUrl,
+          class: 'file-thumb',
+          width: 34,
+          height: 34,
+          'img-props': { style: 'border-radius: 8px; object-fit: cover;' }
+        })
+      : h(SvgIcon, { icon: 'mdi:file-document-outline', class: 'file-type-icon' }),
+    h('span', { class: 'cell-text' }, [
+      row.fileUrl != null && row.fileUrl !== ''
+        ? h(
+            NEllipsis,
+            { maxLine: 1, tooltip: { placement: 'top' } },
+            { default: () => String(row.fileUrl) }
+          )
+        : '-'
+    ])
+  ]);
+
+/** 上传状态：成功绿 / 失败红 徽章 */
+const renderStatusCell = (row: Record<string, any>) =>
+  h('span', { class: `status-badge${isLoginSuccess(row.status) ? ' success' : ''}` }, [
+    h('span', { class: 'dot' }),
+    isLoginSuccess(row.status) ? $t('logManage.uploadSuccess') : $t('logManage.uploadFailed')
+  ]);
+
+/** 操作：查看详情 / 删除 */
+const renderActionCell = (row: Record<string, any>) =>
+  h('div', { class: 'action-cell' }, [
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(NButton, { size: 'small', class: 'row-action-btn view', onClick: () => handleDetail(row) }, { icon: () => h(SvgIcon, { icon: 'mdi:eye-outline' }) }),
+        default: () => $t('logManage.detailTitle')
+      }
+    ),
+    h(
+      NTooltip,
+      { trigger: 'hover', placement: 'bottom' },
+      {
+        trigger: () =>
+          h(NButton, { size: 'small', class: 'row-action-btn delete', onClick: () => handleDelete(row) }, { icon: () => h(SvgIcon, { icon: 'mdi:delete' }) }),
+        default: () => $t('logManage.delete')
+      }
+    )
+  ]);
+
+/** NDataTable 列定义 */
+const columns = computed<DataTableColumns<Record<string, any>>>(() => [
+  {
+    key: 'userId',
+    title: $t('logManage.table.userId'),
+    width: resizedWidths.value['userId'] ?? 90,
+    minWidth: 70,
+    resizable: true,
+    render: row => renderTextCell(row.userId)
+  },
+  {
+    key: 'userName',
+    title: $t('logManage.table.userName'),
+    width: resizedWidths.value['userName'] ?? 110,
+    minWidth: 90,
+    resizable: true,
+    render: row => renderTextCell(row.userName)
+  },
+  {
+    key: 'fileUrl',
+    title: $t('logManage.table.fileUrl'),
+    minWidth: 180,
+    resizable: true,
+    width: resizedWidths.value['fileUrl'],
+    render: row => renderFileUrlCell(row)
+  },
+  {
+    key: 'fileSize',
+    title: $t('logManage.table.fileSize'),
+    width: resizedWidths.value['fileSize'] ?? 90,
+    minWidth: 70,
+    resizable: true,
+    render: row => renderSizeCell(row)
+  },
+  {
+    key: 'status',
+    title: $t('logManage.table.status'),
+    width: resizedWidths.value['status'] ?? 110,
+    minWidth: 90,
+    resizable: true,
+    render: row => renderStatusCell(row)
+  },
+  {
+    key: 'createTime',
+    title: $t('logManage.table.createTime'),
+    width: resizedWidths.value['createTime'] ?? 160,
+    minWidth: 140,
+    resizable: true,
+    render: row => renderTimeCell(row)
+  },
+  {
+    key: 'actions',
+    title: $t('logManage.table.actions'),
+    width: resizedWidths.value['actions'] ?? 100,
+    minWidth: 90,
+    resizable: true,
+    render: row => renderActionCell(row)
+  }
+]);
+
 onMounted(loadData);
 </script>
 
@@ -207,57 +356,27 @@ onMounted(loadData);
     </button>
   </div>
 
-  <!-- 文件日志表格 -->
-  <div class="log-table">
-    <div class="log-table-header file">
-      <span class="f-col-userid">{{ $t('logManage.table.userId') }}</span>
-      <span class="f-col-user">{{ $t('logManage.table.userName') }}</span>
-      <span class="f-col-url">{{ $t('logManage.table.fileUrl') }}</span>
-      <span class="f-col-size">{{ $t('logManage.table.fileSize') }}</span>
-      <span class="f-col-status">{{ $t('logManage.table.status') }}</span>
-      <span class="col-time">{{ $t('logManage.table.createTime') }}</span>
-      <span class="col-actions">{{ $t('logManage.table.actions') }}</span>
-    </div>
-    <div class="log-table-body">
-      <div v-for="row in list" :key="row.id" class="log-row file">
-        <span class="f-col-userid">{{ row.userId ?? '-' }}</span>
-        <span class="f-col-user cell-text" :title="row.userName">{{ row.userName || '-' }}</span>
-        <span class="f-col-url">
-          <NImage v-if="isImageFile(row.fileUrl)" :src="row.fileUrl" class="file-thumb" width="34" height="34"
-            :img-props="{ style: 'border-radius: 8px; object-fit: cover;' }" />
-          <SvgIcon v-else icon="mdi:file-document-outline" class="file-type-icon" />
-          <span class="cell-text" :title="row.fileUrl">{{ row.fileUrl || '-' }}</span>
-        </span>
-        <span class="f-col-size">{{ row.fileSize || '-' }}</span>
-        <span class="f-col-status">
-          <span class="status-badge" :class="{ success: isLoginSuccess(row.status) }">
-            <span class="dot" />
-            {{ isLoginSuccess(row.status) ? $t('logManage.uploadSuccess') : $t('logManage.uploadFailed') }}
-          </span>
-        </span>
-        <span class="col-time">{{ formatDate(row.createTime) }}</span>
-        <span class="col-actions">
-          <button class="row-action-btn view" :title="$t('logManage.detailTitle')" @click="handleDetail(row)">
-            <SvgIcon icon="mdi:eye-outline" />
-          </button>
-          <button class="row-action-btn delete" :title="$t('logManage.delete')" @click="handleDelete(row)">
-            <SvgIcon icon="mdi:delete" />
-          </button>
-        </span>
-      </div>
-
-      <!-- 加载骨架 -->
-      <template v-if="loading">
-        <div v-for="i in 6" :key="`file-skeleton-${i}`" class="log-row skeleton-row">
-          <span v-for="j in 7" :key="j" class="skeleton-cell" />
-        </div>
-      </template>
-
-      <!-- 空状态 -->
-      <div v-if="!loading && list.length === 0" class="log-empty">
-        <SvgIcon icon="mdi:file-upload-outline" class="empty-icon" />
-        <p>{{ $t('logManage.empty') }}</p>
-      </div>
+  <!-- 文件日志表格（NDataTable） -->
+  <div class="custom-table-wrapper">
+    <div class="custom-table">
+      <NDataTable
+        class="file-table"
+        :columns="columns"
+        :data="list"
+        :loading="loading"
+        :row-key="rowKey"
+        :bordered="false"
+        :single-line="false"
+        table-layout="fixed"
+        @unstable-column-resize="handleColumnResize"
+      >
+        <template #empty>
+          <div class="log-empty">
+            <SvgIcon icon="mdi:file-upload-outline" class="empty-icon" />
+            <p>{{ $t('logManage.empty') }}</p>
+          </div>
+        </template>
+      </NDataTable>
     </div>
   </div>
 
@@ -483,372 +602,211 @@ onMounted(loadData);
   }
 }
 
-/* ===== 日志表格 ===== */
-.log-table {
+/* ===== 文件日志表格（NDataTable） ===== */
+.custom-table-wrapper {
   flex: 1;
   min-height: 0;
+  padding: 4px 10px 10px;
+  overflow: auto;
+
+  .custom-table {
+    display: flex;
+    flex-direction: column;
+    // 关键：确保表格按完整列宽渲染，不随容器宽度收缩
+    min-width: 950px;
+  }
+}
+
+/* 空状态（NDataTable #empty 插槽） */
+.log-empty {
   display: flex;
   flex-direction: column;
-  border-radius: 10px;
-  border: 1px solid rgba(var(--app-rgb), 0.08);
-  overflow-x: auto;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 60px 20px;
+  color: rgba(var(--app-rgb), 0.5);
 
-  .log-table-header {
-    display: grid;
-    grid-template-columns: minmax(160px, 1.4fr) 80px minmax(180px, 1.6fr) 110px 120px 80px 150px 84px;
-    gap: 8px;
-    align-items: center;
-    padding: 10px 14px;
-    background: rgba(var(--app-rgb), 0.05);
+  .empty-icon {
+    font-size: 48px;
+    opacity: 0.4;
+  }
+
+  p {
+    margin: 0;
+    font-size: 13px;
+  }
+}
+
+/* ===== NDataTable 内部样式覆写（行卡片化，视觉与旧表格一致） ===== */
+.file-table {
+  /* 去掉默认底色 */
+  :deep(.n-data-table) {
+    background: transparent;
+  }
+
+  /* 行间距：表头与首行、行与行之间留出 10px */
+  :deep(.n-data-table-table) {
+    border-collapse: separate !important;
+    border-spacing: 0 10px;
+  }
+
+  /* ===== 表头 ===== */
+  :deep(.n-data-table-th) {
+    background: transparent;
+    border: none;
     border-bottom: 1px solid rgba(var(--app-rgb), 0.08);
-    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  :deep(.n-data-table-th__title-wrapper) {
+    font-size: 13px;
     font-weight: 600;
-    color: rgba(var(--app-rgb), 0.55);
-    flex-shrink: 0;
+    color: rgba(var(--app-rgb), 0.6);
+    white-space: nowrap;
+  }
 
-    &.login {
-      grid-template-columns: 130px 90px 120px 120px minmax(160px, 1fr) 150px 84px;
+  /* ===== 表体（行卡片化：圆角 + 主题背景 + hover 加深） ===== */
+  :deep(.n-data-table-td) {
+    border: none;
+    padding: 12px;
+    background: rgba(var(--app-rgb), 0.03);
+    overflow: hidden;
+    transition: background 0.25s ease;
+  }
+
+  /* 每行四角圆角：首列左圆角、末列右圆角 */
+  :deep(.n-data-table-td:first-child) {
+    border-radius: 12px 0 0 12px;
+  }
+
+  :deep(.n-data-table-td:last-child) {
+    border-radius: 0 12px 12px 0;
+  }
+
+  :deep(.n-data-table-tr:hover .n-data-table-td) {
+    background: rgba(var(--app-rgb), 0.06);
+  }
+
+  /* 加载中遮罩透明化，避免遮住卡片底色 */
+  :deep(.n-data-table__loading) {
+    background: transparent;
+  }
+
+  /* ===== 文本单元格（省略号，悬停展示完整内容） ===== */
+  :deep(.n-ellipsis) {
+    font-size: 12.5px;
+    color: rgba(var(--app-rgb), 0.85);
+  }
+
+  /* 创建时间 / 文件大小：等宽字体 */
+  :deep(.col-time) {
+    font-size: 12px;
+    color: rgba(var(--app-rgb), 0.5);
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    white-space: nowrap;
+  }
+
+  :deep(.col-size) {
+    font-size: 12px;
+    color: rgba(var(--app-rgb), 0.65);
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    white-space: nowrap;
+  }
+
+  /* ===== 文件路径单元格：缩略图 / 文件图标 + 文本 ===== */
+  :deep(.file-url-cell) {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+
+    .file-thumb {
+      flex-shrink: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid rgba(var(--app-rgb), 0.08);
     }
 
-    &.error {
-      grid-template-columns: minmax(140px, 1.2fr) minmax(160px, 1.4fr) 160px 70px 110px 150px 84px;
+    .file-type-icon {
+      flex-shrink: 0;
+      font-size: 22px;
+      color: rgba(var(--app-rgb), 0.4);
     }
 
-    &.scheduler {
-      grid-template-columns: minmax(110px, 1.1fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(130px, 1.5fr) 90px 80px 140px 190px;
+    .cell-text {
+      flex: 1;
+      min-width: 0;
     }
   }
 
-  .log-table-body {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
+  /* ===== 上传状态徽章 ===== */
+  :deep(.status-badge) {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #f5576c;
+    background: rgba(245, 87, 108, 0.1);
+    border: 1px solid rgba(245, 87, 108, 0.2);
+    white-space: nowrap;
 
-    .log-row {
-      display: grid;
-      grid-template-columns: minmax(160px, 1.4fr) 80px minmax(180px, 1.6fr) 110px 120px 80px 150px 84px;
-      gap: 8px;
-      align-items: center;
-      padding: 9px 14px;
-      border-bottom: 1px solid rgba(var(--app-rgb), 0.05);
-      transition: background 0.2s ease;
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #f5576c;
+    }
+
+    &.success {
+      color: #43e97b;
+      background: rgba(67, 233, 123, 0.1);
+      border-color: rgba(67, 233, 123, 0.2);
+
+      .dot {
+        background: #43e97b;
+        box-shadow: 0 0 4px rgba(67, 233, 123, 0.6);
+      }
+    }
+  }
+
+  /* ===== 操作按钮 ===== */
+  :deep(.action-cell) {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  :deep(.row-action-btn) {
+    min-width: 26px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border-radius: 7px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+
+    &.view {
+      color: #667eea;
+      background: rgba(102, 126, 234, 0.12);
+      border-color: rgba(102, 126, 234, 0.25);
 
       &:hover {
-        background: rgba(var(--app-rgb), 0.04);
-      }
-
-      &.login {
-        grid-template-columns: 130px 90px 120px 120px minmax(160px, 1fr) 150px 84px;
-      }
-
-      &.error {
-        grid-template-columns: minmax(140px, 1.2fr) minmax(160px, 1.4fr) 160px 70px 110px 150px 84px;
-      }
-
-      &.file {
-        grid-template-columns: minmax(90px, 0.8fr) minmax(100px, 1fr) minmax(180px, 1.8fr) 90px 100px 150px 84px;
-      }
-
-      &.scheduler {
-        grid-template-columns: minmax(110px, 1.1fr) minmax(80px, 1fr) minmax(90px, 1fr) minmax(130px, 1.5fr) 90px 80px 140px 190px;
-      }
-
-      /* 文件日志：路径列（缩略图 + 文本） */
-      .f-col-url {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        min-width: 0;
-
-        .file-thumb {
-          flex-shrink: 0;
-          border-radius: 8px;
-          overflow: hidden;
-          border: 1px solid rgba(var(--app-rgb), 0.08);
-        }
-
-        .file-type-icon {
-          flex-shrink: 0;
-          font-size: 22px;
-          color: rgba(var(--app-rgb), 0.4);
-        }
-
-        .cell-text {
-          flex: 1;
-          min-width: 0;
-        }
-      }
-
-      .cell-text {
-        font-size: 12.5px;
-        color: rgba(var(--app-rgb), 0.85);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
-
-      .col-time {
-        font-size: 12px;
-        color: rgba(var(--app-rgb), 0.5);
-        font-family: 'JetBrains Mono', Consolas, monospace;
-      }
-
-      .col-cost {
-        font-size: 12px;
-        color: rgba(var(--app-rgb), 0.65);
-        font-family: 'JetBrains Mono', Consolas, monospace;
-      }
-
-      .col-line {
-        font-size: 12.5px;
-        color: rgba(var(--app-rgb), 0.65);
-      }
-
-      .method-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 7px;
-        font-size: 11px;
-        font-weight: 600;
-        border: 1px solid transparent;
-        white-space: nowrap;
-      }
-
-      .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 2px 8px;
-        border-radius: 7px;
-        font-size: 11px;
-        font-weight: 500;
-        color: #f5576c;
-        background: rgba(245, 87, 108, 0.1);
-        border: 1px solid rgba(245, 87, 108, 0.2);
-        white-space: nowrap;
-
-        .dot {
-          width: 6px;
-          height: 6px;
-          border-radius: 50%;
-          background: #f5576c;
-        }
-
-        &.success {
-          color: #43e97b;
-          background: rgba(67, 233, 123, 0.1);
-          border-color: rgba(67, 233, 123, 0.2);
-
-          .dot {
-            background: #43e97b;
-            box-shadow: 0 0 4px rgba(67, 233, 123, 0.6);
-          }
-        }
-      }
-
-      .state-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 2px 8px;
-        border-radius: 7px;
-        font-size: 11px;
-        font-weight: 500;
-        white-space: nowrap;
-        color: #8b93a7;
-        background: rgba(139, 147, 167, 0.1);
-        border: 1px solid rgba(139, 147, 167, 0.2);
-
-        &.normal {
-          color: #43e97b;
-          background: rgba(67, 233, 123, 0.1);
-          border-color: rgba(67, 233, 123, 0.2);
-        }
-
-        &.paused {
-          color: #ffa325;
-          background: rgba(255, 163, 37, 0.1);
-          border-color: rgba(255, 163, 37, 0.2);
-        }
-
-        &.error {
-          color: #f5576c;
-          background: rgba(245, 87, 108, 0.1);
-          border-color: rgba(245, 87, 108, 0.2);
-        }
-
-        &.blocked {
-          color: #a78bfa;
-          background: rgba(167, 139, 250, 0.1);
-          border-color: rgba(167, 139, 250, 0.2);
-        }
-
-        &.complete {
-          color: #36adff;
-          background: rgba(54, 173, 255, 0.1);
-          border-color: rgba(54, 173, 255, 0.2);
-        }
-      }
-
-      .col-actions {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-
-        .row-action-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 26px;
-          height: 26px;
-          padding: 0;
-          border: none;
-          border-radius: 7px;
-          cursor: pointer;
-          font-size: 14px;
-          color: rgba(var(--app-rgb), 0.5);
-          background: rgba(var(--app-rgb), 0.06);
-          transition: all 0.2s ease;
-
-          &:hover {
-            transform: translateY(-1px);
-          }
-
-          &.view:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.18);
-          }
-
-          &.delete:hover {
-            color: #f5576c;
-            background: rgba(245, 87, 108, 0.18);
-          }
-
-          &.run:hover {
-            color: #43e97b;
-            background: rgba(67, 233, 123, 0.18);
-          }
-
-          &.pause:hover {
-            color: #ffa325;
-            background: rgba(255, 163, 37, 0.18);
-          }
-
-          &.power:hover {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.18);
-          }
-        }
-      }
-
-      /* 调度任务行操作：语义色图标按钮 */
-      .s-col-actions {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-
-        .act-btn {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 28px;
-          height: 28px;
-          padding: 0;
-          border-radius: 8px;
-          border: 1px solid transparent;
-          background: rgba(var(--app-rgb), 0.05);
-          color: rgba(var(--app-rgb), 0.55);
-          cursor: pointer;
-          font-size: 15px;
-          transition: all 0.2s ease;
-
-          &:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-          }
-
-          &.edit {
-            color: #667eea;
-            background: rgba(102, 126, 234, 0.12);
-            border-color: rgba(102, 126, 234, 0.25);
-
-            &:hover {
-              background: rgba(102, 126, 234, 0.22);
-            }
-          }
-
-          &.run {
-            color: #43e97b;
-            background: rgba(67, 233, 123, 0.12);
-            border-color: rgba(67, 233, 123, 0.25);
-
-            &:hover {
-              background: rgba(67, 233, 123, 0.22);
-            }
-          }
-
-          &.pause {
-            color: #ffa325;
-            background: rgba(255, 163, 37, 0.12);
-            border-color: rgba(255, 163, 37, 0.25);
-
-            &:hover {
-              background: rgba(255, 163, 37, 0.22);
-            }
-          }
-
-          &.power {
-            color: #a78bfa;
-            background: rgba(167, 139, 250, 0.12);
-            border-color: rgba(167, 139, 250, 0.25);
-
-            &:hover {
-              background: rgba(167, 139, 250, 0.22);
-            }
-          }
-
-          &.delete {
-            color: #f5576c;
-            background: rgba(245, 87, 108, 0.12);
-            border-color: rgba(245, 87, 108, 0.25);
-
-            &:hover {
-              background: rgba(245, 87, 108, 0.22);
-            }
-          }
-        }
+        background: rgba(102, 126, 234, 0.22);
       }
     }
 
-    .skeleton-row {
-      pointer-events: none;
+    &.delete {
+      color: #f5576c;
+      background: rgba(245, 87, 108, 0.12);
+      border-color: rgba(245, 87, 108, 0.25);
 
-      .skeleton-cell {
-        height: 14px;
-        border-radius: 4px;
-        background: linear-gradient(90deg, rgba(var(--app-rgb), 0.04) 25%, rgba(var(--app-rgb), 0.09) 50%, rgba(var(--app-rgb), 0.04) 75%);
-        background-size: 200% 100%;
-        animation: shimmer 1.5s infinite;
-      }
-    }
-
-    .log-empty {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      padding: 80px 20px;
-      color: rgba(var(--app-rgb), 0.5);
-
-      .empty-icon {
-        font-size: 48px;
-        opacity: 0.4;
-      }
-
-      p {
-        margin: 0;
-        font-size: 13px;
+      &:hover {
+        background: rgba(245, 87, 108, 0.22);
       }
     }
   }
@@ -858,16 +816,6 @@ onMounted(loadData);
   display: flex;
   justify-content: center;
   flex-shrink: 0;
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: 200% 0;
-  }
-
-  100% {
-    background-position: -200% 0;
-  }
 }
 
 /* ===== 详情弹窗 ===== */
